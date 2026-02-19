@@ -1,12 +1,20 @@
 import { useState } from "react";
-import AppDialogComponent from "./components/AppDialogComponent";
 import { Box, Grid } from "@mui/system";
+import AppDialogComponent from "./components/AppDialogComponent";
+import { GlobalStyles } from "./GlobalStyles";
+import { useColorScheme } from "./hooks/useColorScheme";
+import type { ColorScheme } from "./hooks/useColorScheme";
+
+const schemes: ColorScheme[] = ["light", "dark", "system"];
 
 function App() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const toggleDialog = () => setIsDialogOpen((prev) => !prev);
+  const { preference, setPreference } = useColorScheme();
+
   return (
     <Grid>
+      <GlobalStyles />
       <Box>
         <AppDialogComponent
           accentColor="#ff6000"
@@ -26,6 +34,17 @@ function App() {
         </AppDialogComponent>
       </Box>
       <button onClick={toggleDialog}>Toggle Dialog</button>
+      <Box>
+        {schemes.map((scheme) => (
+          <button
+            key={scheme}
+            onClick={() => setPreference(scheme)}
+            disabled={preference === scheme}
+          >
+            {scheme}
+          </button>
+        ))}
+      </Box>
     </Grid>
   );
 }

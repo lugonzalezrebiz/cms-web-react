@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
 import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
@@ -41,14 +41,7 @@ const Backdrop = styled.div`
 const DialogRoot = styled("div", {
   shouldForwardProp: (prop) => prop !== "$accentColor",
 })<DialogRootProps>`
-  --accent-color:        ${({ $accentColor }) => $accentColor};
-  --border-radius:       8px;
-  --color-text:          #333;
-  --color-background:    #fff;
-  --color-header-bg:     #fefefe;
-  --color-dialog-border: #ccce;
-  --color-close-bg:      #fff2;
-  --shadow-dialog:       0 0 20px 0 #0004;
+  --accent-color: ${({ $accentColor }) => $accentColor};
 
   min-width: 50lvw;
   border: solid 1px var(--color-dialog-border);
@@ -59,15 +52,6 @@ const DialogRoot = styled("div", {
   font-family: inherit;
   background: var(--color-background);
   backdrop-filter: blur(4px);
-
-  @media (prefers-color-scheme: dark) {
-    --color-text:          #ddd;
-    --color-background:    #222;
-    --color-header-bg:     #111;
-    --color-dialog-border: #333;
-    --color-close-bg:      #0002;
-    --shadow-dialog:       0 0 20px 0 #0002;
-  }
 `;
 
 const Header = styled.div`
@@ -137,7 +121,11 @@ const Title = styled.h1`
   font-family: "Gugi", sans-serif;
   font-weight: 400;
   font-size: 1.4em;
-  color: color-mix(in srgb, var(--accent-color) 80%, var(--color-header-bg) 20%);
+  color: color-mix(
+    in srgb,
+    var(--accent-color) 80%,
+    var(--color-header-bg) 20%
+  );
 `;
 
 const DialogDescription = styled.p`
@@ -162,7 +150,9 @@ const CloseButton = styled.button`
   height: 2em;
   cursor: pointer;
   border: none;
-  transition: transform 0.2s ease, fill 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    fill 0.2s ease;
   font-size: 1em;
   line-height: 1;
 `;
@@ -176,58 +166,74 @@ const ContentSlot = styled.div`
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-const AppDialogComponent = memo(({
-  title = "Untitled",
-  description = "",
-  accentColor = "#ff6000",
-  open = false,
-  onClose,
-  children,
-}: AppDialogProps) => {
-  if (!open) return null;
+const AppDialogComponent = memo(
+  ({
+    title = "Untitled",
+    description = "",
+    accentColor = "#ff6000",
+    open = false,
+    onClose,
+    children,
+  }: AppDialogProps) => {
+    const backdropRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <Backdrop data-testid="dialog-backdrop">
-      <DialogRoot $accentColor={accentColor} role="dialog" aria-modal="true">
-        <Header>
-          <HeaderBackground>
-            <WaveWrapper
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 24 150 28"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <defs>
-                <path
-                  id="cms-dialog-wave"
-                  d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352Z"
-                />
-              </defs>
-              <WaveGroup>
-                <use href="#cms-dialog-wave" x="48" y="0" />
-                <use href="#cms-dialog-wave" x="48" y="3" />
-                <use href="#cms-dialog-wave" x="48" y="5" />
-                <use href="#cms-dialog-wave" x="48" y="7" />
-              </WaveGroup>
-            </WaveWrapper>
-          </HeaderBackground>
+    useEffect(() => {
+      const el = backdropRef.current;
+      if (!el) return;
+      if (open) {
+        el.showPopover();
+      } else {
+        el.hidePopover();
+      }
+    }, [open]);
 
-          <HeaderContent>
-            <CloseButton onClick={onClose} aria-label="Close dialog" type="button">
-              ✕
-            </CloseButton>
-            <Title>{title}</Title>
-            <DialogDescription data-testid="dialog-description">
-              {description}
-            </DialogDescription>
-          </HeaderContent>
-        </Header>
+    return (
+      <Backdrop ref={backdropRef} data-testid="dialog-backdrop" popover="manual">
+        <DialogRoot $accentColor={accentColor} role="dialog" aria-modal="true">
+          <Header>
+            <HeaderBackground>
+              <WaveWrapper
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 24 150 28"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <path
+                    id="cms-dialog-wave"
+                    d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352Z"
+                  />
+                </defs>
+                <WaveGroup>
+                  <use href="#cms-dialog-wave" x="48" y="0" />
+                  <use href="#cms-dialog-wave" x="48" y="3" />
+                  <use href="#cms-dialog-wave" x="48" y="5" />
+                  <use href="#cms-dialog-wave" x="48" y="7" />
+                </WaveGroup>
+              </WaveWrapper>
+            </HeaderBackground>
 
-        <ContentSlot>{children}</ContentSlot>
-      </DialogRoot>
-    </Backdrop>
-  );
-});
+            <HeaderContent>
+              <CloseButton
+                onClick={onClose}
+                aria-label="Close dialog"
+                type="button"
+              >
+                ✕
+              </CloseButton>
+              <Title>{title}</Title>
+              <DialogDescription data-testid="dialog-description">
+                {description}
+              </DialogDescription>
+            </HeaderContent>
+          </Header>
+
+          {children != null && <ContentSlot>{children}</ContentSlot>}
+        </DialogRoot>
+      </Backdrop>
+    );
+  },
+);
 
 AppDialogComponent.displayName = "AppDialogComponent";
 
