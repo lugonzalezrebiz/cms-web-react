@@ -188,7 +188,11 @@ const AppDialogComponent = memo(
     }, [open]);
 
     return (
-      <Backdrop ref={backdropRef} data-testid="dialog-backdrop" popover="manual">
+      <Backdrop
+        ref={backdropRef}
+        data-testid="dialog-backdrop"
+        popover="manual"
+      >
         <DialogRoot $accentColor={accentColor} role="dialog" aria-modal="true">
           <Header>
             <HeaderBackground>
@@ -234,7 +238,5 @@ const AppDialogComponent = memo(
     );
   },
 );
-
-AppDialogComponent.displayName = "AppDialogComponent";
 
 export default AppDialogComponent;
