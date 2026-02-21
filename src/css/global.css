@@ -1,0 +1,19 @@
+/* AppDialog — color tokens */
+
+:root {
+  --color-bg:        #ffffff;
+  --color-text:      #333333;
+  --color-border:    #ccccce;
+  --color-header-bg: #fefefe;
+  --color-close-bg:  rgba(255, 255, 255, 0.133);
+  --shadow-dialog:   0 0 20px 0 rgba(0, 0, 0, 0.267);
+}
+
+[data-theme='dark'] {
+  --color-bg:        #222222;
+  --color-text:      #dddddd;
+  --color-border:    #333333;
+  --color-header-bg: #111111;
+  --color-close-bg:  rgba(0, 0, 0, 0.133);
+  --shadow-dialog:   0 0 20px 0 rgba(0, 0, 0, 0.133);
+}
