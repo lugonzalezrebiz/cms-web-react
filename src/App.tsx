@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Box, Grid } from "@mui/system";
-import AppDialogComponent from "./components/AppDialogComponent";
-import { GlobalStyles } from "./GlobalStyles";
+import { ThemeProvider } from "@emotion/react";
+import { Box } from "@mui/system";
+import AppDialog from "./components/AppDialog";
+import { theme } from "./theme";
 import { useColorScheme } from "./hooks/useColorScheme";
 import type { ColorScheme } from "./hooks/useColorScheme";
+import "./css/global.css";
 
 const schemes: ColorScheme[] = ["light", "dark", "system"];
 
@@ -13,10 +15,10 @@ function App() {
   const { preference, setPreference } = useColorScheme();
 
   return (
-    <Grid>
-      <GlobalStyles />
+    <ThemeProvider theme={theme}>
+    <div>
       <Box>
-        <AppDialogComponent
+        <AppDialog
           accentColor="#ff6000"
           title="Dialog Title"
           description="This is a description of the dialog. It provides more details about the content and purpose of the dialog."
@@ -31,7 +33,7 @@ function App() {
             a nisl efficitur bibendum. Maecenas ac mi sed enim efficitur
             convallis.
           </p>
-        </AppDialogComponent>
+        </AppDialog>
       </Box>
       <button onClick={toggleDialog}>Toggle Dialog</button>
       <Box>
@@ -45,7 +47,8 @@ function App() {
           </button>
         ))}
       </Box>
-    </Grid>
+    </div>
+    </ThemeProvider>
   );
 }
 

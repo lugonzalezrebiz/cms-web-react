@@ -1,21 +1,14 @@
-export const tokens = {
-  base: {
-    "--border-radius": "8px",
+export const theme = {
+  colors: {
+    bg: 'var(--color-bg)',
+    text: 'var(--color-text)',
+    border: 'var(--color-border)',
+    headerBg: 'var(--color-header-bg)',
+    closeBg: 'var(--color-close-bg)',
   },
-  light: {
-    "--color-text": "#333",
-    "--color-background": "#fff",
-    "--color-header-bg": "#fefefe",
-    "--color-dialog-border": "#ccce",
-    "--color-close-bg": "#fff2",
-    "--shadow-dialog": "0 0 20px 0 #0004",
-  },
-  dark: {
-    "--color-text": "#ddd",
-    "--color-background": "#222",
-    "--color-header-bg": "#111",
-    "--color-dialog-border": "#333",
-    "--color-close-bg": "#0002",
-    "--shadow-dialog": "0 0 20px 0 #0002",
+  shadows: {
+    dialog: 'var(--shadow-dialog)',
   },
 } as const;
+
+export type AppTheme = typeof theme;
