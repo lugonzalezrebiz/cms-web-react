@@ -2,9 +2,24 @@ import Divider from "../components/Divider";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import { useEffect, useState } from "react";
+import type React from "react";
+
+function usePopover() {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  return {
+    anchorEl,
+    open: Boolean(anchorEl),
+    handleOpen: (e: React.MouseEvent<HTMLElement>) =>
+      setAnchorEl(e.currentTarget),
+    handleClose: () => setAnchorEl(null),
+  };
+}
 import { IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, Grid, useMediaQuery } from "@mui/system";
+import HeaderInfoMenu from "../components/HeaderInfoMenu";
+import KeyboardMenu from "../components/KeyboardMenu";
+import ClockMenu from "../components/ClockMenu";
 
 const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   position: "sticky",
@@ -104,6 +119,9 @@ const Header = ({
 }) => {
   const [scrolled, setScrolled] = useState(false);
   const [selected, setSelected] = useState(ToggleButtonTitles[0].value);
+  const menuHeader = usePopover();
+  const keyboardMenu = usePopover();
+  const ClockMenuHeader = usePopover();
 
   const mini = useMediaQuery("(max-width:1100px)");
 
@@ -141,9 +159,11 @@ const Header = ({
               width={"100%"}
             >
               <Box
+                onClick={menuHeader.handleOpen}
                 sx={{
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
+                  cursor: "pointer",
                 }}
               >
                 <StyledTitle>Store: 7437 (0079)</StyledTitle>
@@ -172,8 +192,16 @@ const Header = ({
               <Box display={"flex"}>
                 <Box>
                   <StyledImg src="../assets/ai.svg" alt="" />
-                  <StyledImg src="../assets/clock-check.svg" alt="" />
-                  <StyledImg src="../assets/keyboard-02.svg" alt="" />
+                  <StyledImg
+                    onClick={ClockMenuHeader.handleOpen}
+                    src="../assets/clock-check.svg"
+                    alt=""
+                  />
+                  <StyledImg
+                    onClick={keyboardMenu.handleOpen}
+                    src="../assets/keyboard-02.svg"
+                    alt=""
+                  />
                   <StyledImg src="../assets/notification.svg" alt="" />
                   <StyledImg src="../assets/user-circle.svg" alt="" />
                 </Box>
@@ -192,9 +220,11 @@ const Header = ({
                 size={12}
               >
                 <Box
+                  onClick={menuHeader.handleOpen}
                   sx={{
                     whiteSpace: "nowrap",
                     textOverflow: "ellipsis",
+                    cursor: "pointer",
                   }}
                 >
                   <StyledTitle>Store: 7437 (0079)</StyledTitle>
@@ -205,8 +235,16 @@ const Header = ({
                 <Box display={"flex"}>
                   <Box>
                     <StyledImg src="../assets/ai.svg" alt="" />
-                    <StyledImg src="../assets/clock-check.svg" alt="" />
-                    <StyledImg src="../assets/keyboard-02.svg" alt="" />
+                    <StyledImg
+                      onClick={ClockMenuHeader.handleOpen}
+                      src="../assets/clock-check.svg"
+                      alt=""
+                    />
+                    <StyledImg
+                      onClick={keyboardMenu.handleOpen}
+                      src="../assets/keyboard-02.svg"
+                      alt=""
+                    />
                     <StyledImg src="../assets/notification.svg" alt="" />
                     <StyledImg src="../assets/user-circle.svg" alt="" />
                   </Box>
@@ -246,57 +284,25 @@ const Header = ({
               </Grid>
             </Grid>
           )}
-
-          {/* <Box
-            display={"flex"}
-            alignItems="center"
-            justifyContent={"space-between"}
-            width={"100%"}
-          >
-            <Box
-              sx={{
-                whiteSpace: "nowrap",
-                textOverflow: "ellipsis",
-              }}
-            >
-              <StyledTitle>Store: 7437 (0079)</StyledTitle>
-              <StyledSubTitle>
-                Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
-              </StyledSubTitle>
-            </Box>
-            <Box>
-              <StyledToggleGroup
-                value={selected}
-                exclusive
-                onChange={(_event, newValue) => {
-                  if (newValue !== null) setSelected(newValue);
-                }}
-                aria-label="Time range"
-              >
-                <StyledToggleButton value="1">All</StyledToggleButton>
-                <StyledToggleButton value="2">Tunnel</StyledToggleButton>
-                <StyledToggleButton value="3">Offices</StyledToggleButton>
-                <StyledToggleButton value="4">
-                  Drying Station
-                </StyledToggleButton>
-                <StyledToggleButton value="5">Parking Lot</StyledToggleButton>
-              </StyledToggleGroup>
-            </Box>
-            <Box display={"flex"}>
-              <Box>
-                <StyledImg src="../assets/ai.svg" alt="" />
-                <StyledImg src="../assets/clock-check.svg" alt="" />
-                <StyledImg src="../assets/keyboard-02.svg" alt="" />
-                <StyledImg src="../assets/notification.svg" alt="" />
-                <StyledImg src="../assets/user-circle.svg" alt="" />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg src="../assets/minus.svg" alt="" />
-                <StyledImg src="../assets/x-close.svg" alt="" />
-              </Box>
-            </Box>
-          </Box> */}
         </StyledContainer>
+
+        <HeaderInfoMenu
+          anchorEl={menuHeader.anchorEl}
+          handleClose={menuHeader.handleClose}
+          open={menuHeader.open}
+        />
+
+        <KeyboardMenu
+          anchorEl={keyboardMenu.anchorEl}
+          open={keyboardMenu.open}
+          handleClose={keyboardMenu.handleClose}
+        />
+
+        <ClockMenu
+          anchorEl={ClockMenuHeader.anchorEl}
+          open={ClockMenuHeader.open}
+          handleClose={ClockMenuHeader.handleClose}
+        />
         <Divider marginBottom="0" />
       </Fix>
     </>
