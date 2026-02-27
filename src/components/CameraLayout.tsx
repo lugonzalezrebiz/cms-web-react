@@ -1,40 +1,22 @@
-import { useState } from "react";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
-import EventMenu, { type CameraContextMenuItem } from "./EventMenu";
 
 function CameraItem({
   index,
   media,
   cameraItemList,
   expandCamera,
-  contextMenuItems = [],
-  contextMenuTitle,
-  iconMenu,
 }: {
   index: number;
   media: string;
-  cameraItemList: () => void;
-  expandCamera: () => void;
-  contextMenuItems?: CameraContextMenuItem[];
+  cameraItemList?: () => void;
+  expandCamera?: () => void;
   contextMenuTitle?: string;
   iconMenu?: string;
 }) {
-  const [contextMenu, setContextMenu] = useState<{
-    mouseX: number;
-    mouseY: number;
-  } | null>(null);
-
-  const handleContextMenu = (event: React.MouseEvent) => {
-    if (contextMenuItems.length === 0) return;
-    event.preventDefault();
-    setContextMenu({ mouseX: event.clientX, mouseY: event.clientY });
-  };
-
   return (
     <Box
-      onContextMenu={handleContextMenu}
       sx={{
         width: "100%",
         height: "100%",
@@ -101,15 +83,6 @@ function CameraItem({
           onClick={expandCamera}
         />
       </Box>
-
-      <EventMenu
-        index={index}
-        anchorPosition={contextMenu}
-        onClose={() => setContextMenu(null)}
-        contextMenuItems={contextMenuItems}
-        contextMenuTitle={contextMenuTitle}
-        iconMenu={iconMenu}
-      />
     </Box>
   );
 }
@@ -117,23 +90,13 @@ function CameraItem({
 interface CameraLayoutProps {
   count: number;
   media: string;
-  cameraItemList: () => void;
-  expandCamera: () => void;
+  cameraItemList?: () => void;
+  expandCamera?: () => void;
   maxHeight?: number | string;
-  contextMenuItems?: CameraContextMenuItem[];
   contextMenuTitle?: string;
   iconMenu?: string;
 }
 
-/**
- *  1  → [1]
- *  2  → [2]
- *  3  → [2, 1]   4  → [2, 2]
- *  5  → [3, 2]   6  → [3, 3]
- *  7  → [4, 3]   8  → [4, 4]
- *  9  → [3,3,3]  10 → [4,3,3]  11 → [4,4,3]  12 → [4,4,4]
- * 13  → [4,3,3,3] ... 16 → [4,4,4,4]
- */
 function getRowDistribution(count: number): number[] {
   const n = Math.min(count, 16);
   if (n === 0) return [];
@@ -159,7 +122,6 @@ const CameraLayout = ({
   maxHeight = 350,
   cameraItemList,
   expandCamera,
-  contextMenuItems,
   contextMenuTitle,
   iconMenu,
 }: CameraLayoutProps) => {
@@ -219,7 +181,6 @@ const CameraLayout = ({
                   media={media}
                   cameraItemList={cameraItemList}
                   expandCamera={expandCamera}
-                  contextMenuItems={contextMenuItems}
                   contextMenuTitle={contextMenuTitle}
                   iconMenu={iconMenu}
                 />

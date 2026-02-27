@@ -37,7 +37,7 @@ export interface TimelineSnapshot {
 
 interface TimelineBodyProps {
   snapshot?: TimelineSnapshot;
-  activeTab: NavTab;
+  activeTab?: NavTab;
 }
 
 const MOCK_SNAPSHOT: TimelineSnapshot = {
@@ -103,13 +103,10 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
 };
 
 const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
-  const [zoom, setZoom] = useState(1.5); // 1 = normal
-  const [panOffsetSec, setPanOffsetSec] = useState(0); // desplazamiento en segundos
+  const [zoom] = useState(1.5);
+  const [panOffsetSec, setPanOffsetSec] = useState(0);
   const [selectedTrack, setSelectedTrack] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState<number | null>(null);
-  const [dragStartOffset, setDragStartOffset] = useState(0);
-  const [markerSec, setMarkerSec] = useState<number | null>(null);
+  const [markerSec] = useState<number | null>(null);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
 
@@ -132,7 +129,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   const data = snapshot || MOCK_SNAPSHOT;
 
   const startSec = 0;
-  const totalSec = 24 * 3600; // 24 horas fijas
+  const totalSec = 24 * 3600;
 
   const visibleStart = panOffsetSec;
   const visibleDuration = totalSec / zoom;
@@ -156,27 +153,11 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     return ranges;
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || dragStartX === null) return;
-
-    const deltaX = e.clientX - dragStartX;
-
-    const secondsPerPixel = visibleDuration / e.currentTarget.clientWidth;
-
-    const newOffset = dragStartOffset - deltaX * secondsPerPixel;
-
-    const maxOffset = totalSec - visibleDuration;
-    const minOffset = 0;
-
-    setPanOffsetSec(Math.max(minOffset, Math.min(maxOffset, newOffset)));
-  };
-
   useEffect(() => {
     const visibleDuration = totalSec / zoom;
     const maxOffset = totalSec - visibleDuration;
 
     if (firstActivitySec > 0) {
-      // 10% del rango visible como margen izquierdo
       const leftMargin = visibleDuration * 0.1;
 
       let initialOffset = firstActivitySec - leftMargin;
@@ -188,23 +169,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
       setPanOffsetSec(0);
     }
   }, [activeTab]);
-
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault(); // 🔥 bloquea zoom global del browser
-      }
-    };
-
-    el.addEventListener("wheel", handleWheel, { passive: false });
-
-    return () => {
-      el.removeEventListener("wheel", handleWheel);
-    };
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -224,47 +188,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [filteredTracks]);
-
-  useEffect(() => {
-    if (selectedTrack !== null) setMarkerSec(null);
-  }, [selectedTrack]);
-
-  useEffect(() => {
-    if (selectedTrack === null) return;
-
-    const track = filteredTracks.find((t) => t.id === selectedTrack);
-    if (!track || track.sessions.length === 0) return;
-
-    const trackTimestamps = track.sessions.map((s) => {
-      const [h, m, sec] = s.timestamp.split(":").map(Number);
-      return h * 3600 + m * 60 + sec;
-    });
-    const trackStart = Math.min(...trackTimestamps);
-    const trackEnd = Math.max(...trackTimestamps);
-
-    const step = 60; // 1 minuto por tecla
-
-    const handleArrow = (e: KeyboardEvent) => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      e.preventDefault();
-      const delta = e.key === "ArrowRight" ? step : -step;
-      setMarkerSec((prev) => {
-        const base =
-          prev !== null
-            ? prev
-            : (() => {
-                const [h, m, s] = data.timeline.times.current
-                  .split(":")
-                  .map(Number);
-                return h * 3600 + m * 60 + s;
-              })();
-        return Math.max(trackStart, Math.min(trackEnd, base + delta));
-      });
-    };
-
-    window.addEventListener("keydown", handleArrow);
-    return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTrack, filteredTracks, data.timeline.times.current]);
 
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
@@ -321,7 +244,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
           zIndex: 1,
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             display: "flex",
@@ -350,7 +272,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
           </Box>
         </Box>
 
-        {/* List */}
         <Box sx={{ flex: 1, overflowY: "auto" }}>
           {filteredTracks.map((track, index) => {
             const isSelected = selectedTrack === track.id;
@@ -382,7 +303,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                   },
                 }}
               >
-                {/* Circle index */}
                 <Box
                   sx={{
                     width: 18,
@@ -427,8 +347,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
         </Box>
       </Box>
 
-      {/* ── Time grid area ───────────────────────────── */}
-
       <Box
         sx={{
           flex: 1,
@@ -438,25 +356,14 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
           position: "relative",
         }}
       >
-        {/* ── Time header ───────────────────────── */}
         <Box
           sx={{
             height: 28,
             position: "relative",
             borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
             background: Colors.white,
-            cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default",
             userSelect: "none",
           }}
-          onMouseDown={(e) => {
-            if (zoom === 1) return;
-            setIsDragging(true);
-            setDragStartX(e.clientX);
-            setDragStartOffset(panOffsetSec);
-          }}
-          onMouseMove={handleMouseMove}
-          onMouseUp={() => setIsDragging(false)}
-          onMouseLeave={() => setIsDragging(false)}
         >
           {allTimestamps.length > 0 &&
             (() => {
@@ -513,8 +420,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
             );
           })}
         </Box>
-
-        {/* ── Grid body ───────────────────────── */}
         <Box
           ref={gridRef}
           sx={{
@@ -522,52 +427,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
             position: "relative",
             overflow: "hidden",
           }}
-          onWheel={(e) => {
-            if (!gridRef.current) return;
-
-            if (e.ctrlKey) {
-              e.preventDefault();
-
-              const rect = gridRef.current.getBoundingClientRect();
-              const mouseX = e.clientX - rect.left;
-              const width = rect.width;
-
-              const oldZoom = zoom;
-              const newZoom = Math.min(
-                4,
-                Math.max(1, oldZoom + (e.deltaY > 0 ? -0.2 : 0.2)),
-              );
-
-              if (newZoom === oldZoom) return;
-
-              const oldVisibleDuration = totalSec / oldZoom;
-              const newVisibleDuration = totalSec / newZoom;
-
-              // segundo exacto debajo del cursor antes del zoom
-              const cursorTime =
-                panOffsetSec + (mouseX / width) * oldVisibleDuration;
-
-              // nuevo offset para que cursorTime quede bajo el cursor
-              let newOffset =
-                cursorTime - (mouseX / width) * newVisibleDuration;
-
-              const maxOffset = totalSec - newVisibleDuration;
-
-              newOffset = Math.max(0, Math.min(maxOffset, newOffset));
-
-              setZoom(newZoom);
-              setPanOffsetSec(newOffset);
-            } else {
-              const visibleDuration = totalSec / zoom;
-              const maxOffset = totalSec - visibleDuration;
-
-              setPanOffsetSec((prev) =>
-                Math.max(0, Math.min(maxOffset, prev + e.deltaY * 5)),
-              );
-            }
-          }}
         >
-          {/* Vertical grid lines */}
           {Array.from({ length: 48 }).map((_, i) => {
             if (i % (hourStep * 2) !== 0) return null;
             const halfHourTime = startSec + i * 1800;
@@ -593,7 +453,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
             );
           })}
 
-          {/* Rows */}
           {filteredTracks.map((track, rowIndex) => {
             const rowHeight = 44;
             const topOffset = rowIndex * rowHeight;
@@ -618,7 +477,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                     : "transparent",
                 }}
               >
-                {/* Session bars */}
                 {ranges.map((range, i) => {
                   const start = toSeconds(range.start);
                   const end = toSeconds(range.end);
@@ -647,10 +505,8 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
             );
           })}
         </Box>
-        {/* Current time marker */}
         {isCurrentVisible && (
           <>
-            {/* Vertical line */}
             <Box
               sx={{
                 position: "absolute",
@@ -664,7 +520,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
               }}
             />
 
-            {/* Top pill indicator */}
             <Box
               sx={{
                 width: "18px",

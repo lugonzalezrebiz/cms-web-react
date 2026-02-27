@@ -246,56 +246,6 @@ const Header = ({
               </Grid>
             </Grid>
           )}
-
-          {/* <Box
-            display={"flex"}
-            alignItems="center"
-            justifyContent={"space-between"}
-            width={"100%"}
-          >
-            <Box
-              sx={{
-                whiteSpace: "nowrap",
-                textOverflow: "ellipsis",
-              }}
-            >
-              <StyledTitle>Store: 7437 (0079)</StyledTitle>
-              <StyledSubTitle>
-                Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
-              </StyledSubTitle>
-            </Box>
-            <Box>
-              <StyledToggleGroup
-                value={selected}
-                exclusive
-                onChange={(_event, newValue) => {
-                  if (newValue !== null) setSelected(newValue);
-                }}
-                aria-label="Time range"
-              >
-                <StyledToggleButton value="1">All</StyledToggleButton>
-                <StyledToggleButton value="2">Tunnel</StyledToggleButton>
-                <StyledToggleButton value="3">Offices</StyledToggleButton>
-                <StyledToggleButton value="4">
-                  Drying Station
-                </StyledToggleButton>
-                <StyledToggleButton value="5">Parking Lot</StyledToggleButton>
-              </StyledToggleGroup>
-            </Box>
-            <Box display={"flex"}>
-              <Box>
-                <StyledImg src="../assets/ai.svg" alt="" />
-                <StyledImg src="../assets/clock-check.svg" alt="" />
-                <StyledImg src="../assets/keyboard-02.svg" alt="" />
-                <StyledImg src="../assets/notification.svg" alt="" />
-                <StyledImg src="../assets/user-circle.svg" alt="" />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg src="../assets/minus.svg" alt="" />
-                <StyledImg src="../assets/x-close.svg" alt="" />
-              </Box>
-            </Box>
-          </Box> */}
         </StyledContainer>
         <Divider marginBottom="0" />
       </Fix>

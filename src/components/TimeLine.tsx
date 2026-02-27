@@ -1,58 +1,8 @@
-import { Box, Popover } from "@mui/material";
+import { Box } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
-import { useState } from "react";
 import TimelineBody, { type TimelineSnapshot } from "./TimelineBody";
 export type NavTab = "employees" | "compliances" | "activities";
-
-export interface TimeLineProps {
-  // ── Appearance ──────────────────────────────────────────────────────────
-  tracksAvailable?: boolean;
-  detached?: boolean;
-  torn?: boolean;
-  labelsWidth?: number;
-  currentTime?: string;
-  activeNav?: NavTab;
-  // ── Callbacks (UI events) ────────────────────────────────────────────────
-  onNavChange?: (tab: NavTab) => void;
-  onAddIn?: () => void;
-  onAddOut?: () => void;
-  onCutAvailable?: () => void;
-  onPatchAvailable?: () => void;
-  onMarkPerson?: () => void;
-  onUnmarkPerson?: () => void;
-  onDeleteSession?: () => void;
-  onMoveFirst?: () => void;
-  onMoveBack?: () => void;
-  onPlay?: () => void;
-  onMoveNext?: () => void;
-  onMoveLast?: () => void;
-  onAddTrack?: () => void;
-  onMode?: () => void;
-  onTear?: () => void;
-
-  // ── Renderer callbacks ───────────────────────────────────────────────────
-  onSetUi?: (patch: any) => void;
-  onTimelineChange?: (detail: any) => void;
-  onMarkersChange?: (detail: any) => void;
-  onHint?: (message: string) => void;
-  onLabelsWidthChange?: (width: number) => void;
-
-  // ── External div refs (optional – internal ones used if omitted) ──────────
-  cnvTimesRef?: React.RefObject<HTMLDivElement | null>;
-  cnvMainRef?: React.RefObject<HTMLDivElement | null>;
-  cnvMarkerRef?: React.RefObject<HTMLDivElement | null>;
-}
-
-const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
-  { id: "employees", label: "Employee punches", iconClass: "users-03" },
-  {
-    id: "compliances",
-    label: "Compliance violations",
-    iconClass: "shield-tick",
-  },
-  { id: "activities", label: "Activities", iconClass: "placeholder" },
-];
 
 const MOCK_SNAPSHOT: TimelineSnapshot = {
   timeline: {
@@ -117,22 +67,8 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
 };
 
 const TimeLine = () => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [activeTab, setActiveTab] = useState<NavTab>("employees");
-
-  const handleOpenNav = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseNav = () => {
-    setAnchorEl(null);
-  };
-
-  const openNav = Boolean(anchorEl);
-
   return (
     <Box height={"100%"}>
-      {/* ── Controls bar ─────────────────────────────────────────────────── */}
       <Grid
         container
         display={"flex"}
@@ -154,7 +90,7 @@ const TimeLine = () => {
           alignItems={"center"}
           justifyContent={"start"}
         >
-          <Box onClick={handleOpenNav}>
+          <Box onClick={() => {}}>
             <img src="../assets/layers-three-02.svg" alt="" />
           </Box>
           <Box onClick={() => {}}>
@@ -220,7 +156,7 @@ const TimeLine = () => {
             sx={{
               display: "flex",
               alignItems: "center",
-              background: "#fef7f6",
+              background: Colors.white,
               padding: "0px 4px",
               borderRadius: "50px",
             }}
@@ -279,7 +215,7 @@ const TimeLine = () => {
                 display: "flex",
                 justifyContent: "center",
                 borderRadius: "8px",
-                bgcolor: "#fef7f6",
+                bgcolor: Colors.white,
                 mb: "4px",
               }}
             >
@@ -321,7 +257,7 @@ const TimeLine = () => {
                 display: "flex",
                 justifyContent: "center",
                 borderRadius: "8px",
-                bgcolor: "#fef7f6",
+                bgcolor: Colors.white,
                 mb: "4px",
               }}
             >
@@ -340,101 +276,7 @@ const TimeLine = () => {
           </Grid>
         </Grid>
       </Grid>
-
-      {/* ── Nav dropdown menu ─────────────────────────────────────────────── */}
-      <Popover
-        open={openNav}
-        onClose={handleCloseNav}
-        anchorEl={anchorEl}
-        anchorOrigin={{ vertical: "top", horizontal: "left" }}
-        transformOrigin={{ vertical: "bottom", horizontal: "left" }}
-        slotProps={{
-          paper: {
-            sx: {
-              background: Colors.white,
-              borderRadius: "18px",
-              p: "8px",
-              boxShadow: "none",
-            },
-          },
-        }}
-      >
-        <Box
-          component="ul"
-          sx={{
-            listStyle: "none",
-            padding: "0.25em",
-            margin: 0,
-            display: "flex",
-            gap: "8px",
-          }}
-        >
-          {NAV_TABS.map(({ id, label, iconClass }) => {
-            const isSelected = id === activeTab;
-            return (
-              <Box
-                component="li"
-                key={id}
-                sx={{ flex: 1 }}
-                onClick={() => {
-                  setActiveTab(id);
-                  handleCloseNav();
-                }}
-              >
-                <Box
-                  sx={{
-                    fontFamily: Fonts.main,
-                    display: "flex",
-                    boxShadow: "0 1px 2px 0 rgba(16, 24, 40, 0.05)",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    padding: "8px",
-                    backgroundColor: isSelected
-                      ? Colors.vividOrange
-                      : Colors.white,
-                    color: isSelected ? Colors.white : "inherit",
-                    "&:hover": {
-                      backgroundColor: isSelected
-                        ? Colors.vividOrange
-                        : Colors.lightGrayishBlue,
-                    },
-                    "& img": {
-                      mb: "7px",
-                      filter: isSelected ? "brightness(0) invert(1)" : "none",
-                    },
-                    "&.selected": {
-                      backgroundColor: Colors.vividOrange,
-                      color: Colors.white,
-                      "& img": {
-                        filter: "brightness(0) invert(1)",
-                      },
-                    },
-                    "& span": {
-                      height: "40px",
-                      display: "flex",
-                      fontSize: "14px",
-                      fontWeight: "normal",
-                      textAlign: "center",
-                      lineHeight: 1.43,
-                      fontFamily: Fonts.main,
-                      alignItems: "center",
-                    },
-                  }}
-                  onClick={() => {}}
-                >
-                  <img src={`../assets/${iconClass}.svg`} alt="" />
-                  <span>{label}</span>
-                </Box>
-              </Box>
-            );
-          })}
-        </Box>
-      </Popover>
-
-      {/* ── Timeline canvas ───────────────────────────────────── */}
-      <TimelineBody snapshot={MOCK_SNAPSHOT} activeTab={activeTab} />
+      <TimelineBody snapshot={MOCK_SNAPSHOT} activeTab="employees" />
     </Box>
   );
 };
