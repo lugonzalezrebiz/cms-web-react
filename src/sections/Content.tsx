@@ -13,13 +13,6 @@ const Content = ({
       sx={{
         marginLeft: marginLeft, //@deprecated
         transition: "margin-left 0.4s ease",
-        // bgcolor: Colors.ghostoffWhite,
-        // padding: {
-        //   xs: "0 1em 1em 1em",
-        //   sm: "0 1em 1em 1em",
-        //   lg: "0 1em 1em 1em",
-        //   xl: "0 1em 1em 1em",
-        // },
       }}
     >
       {children}

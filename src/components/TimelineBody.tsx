@@ -103,15 +103,23 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
 };
 
 const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
-  const [zoom, setZoom] = useState(1.5); // 1 = normal
-  const [panOffsetSec, setPanOffsetSec] = useState(0); // desplazamiento en segundos
+  const [zoom, setZoom] = useState(1.5);
+  const [panOffsetSec, setPanOffsetSec] = useState(0);
   const [selectedTrack, setSelectedTrack] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState<number | null>(null);
   const [dragStartOffset, setDragStartOffset] = useState(0);
   const [markerSec, setMarkerSec] = useState<number | null>(null);
+  const [completedSessions, setCompletedSessions] = useState<
+    Record<number, { start: number; end: number }[]>
+  >({});
+  const [activeSessionStart, setActiveSessionStart] = useState<number | null>(
+    null,
+  );
+  const [showPunchOut, setShowPunchOut] = useState(false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filteredTracks =
     snapshot?.timeline.tracks.filter((t) => t.category === activeTab) ||
@@ -129,32 +137,22 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   const firstActivitySec =
     allTimestamps.length > 0 ? Math.min(...allTimestamps) : 0;
 
+  const hasAnyBars =
+    allTimestamps.length > 0 ||
+    Object.values(completedSessions).some((arr) => arr.length > 0) ||
+    activeSessionStart !== null;
+
   const data = snapshot || MOCK_SNAPSHOT;
 
+  const timelineStartSec = toSeconds(data.timeline.times.start);
+  const timelineEndSec = toSeconds(data.timeline.times.end);
+
   const startSec = 0;
-  const totalSec = 24 * 3600; // 24 horas fijas
+  const totalSec = 24 * 3600;
 
   const visibleStart = panOffsetSec;
   const visibleDuration = totalSec / zoom;
   const visibleEnd = visibleStart + visibleDuration;
-
-  const buildRanges = (
-    sessions: { type: "in" | "out"; timestamp: string }[],
-  ) => {
-    const ranges: { start: string; end: string }[] = [];
-
-    let currentIn: string | null = null;
-
-    sessions.forEach((s) => {
-      if (s.type === "in") currentIn = s.timestamp;
-      if (s.type === "out" && currentIn) {
-        ranges.push({ start: currentIn, end: s.timestamp });
-        currentIn = null;
-      }
-    });
-
-    return ranges;
-  };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || dragStartX === null) return;
@@ -176,7 +174,6 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     const maxOffset = totalSec - visibleDuration;
 
     if (firstActivitySec > 0) {
-      // 10% del rango visible como margen izquierdo
       const leftMargin = visibleDuration * 0.1;
 
       let initialOffset = firstActivitySec - leftMargin;
@@ -185,8 +182,17 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
 
       setPanOffsetSec(initialOffset);
     } else {
-      setPanOffsetSec(0);
+      const leftMargin = visibleDuration * 0.1;
+      let initialOffset = timelineStartSec - leftMargin;
+      initialOffset = Math.max(0, Math.min(maxOffset, initialOffset));
+      setPanOffsetSec(initialOffset);
     }
+
+    setMarkerSec(null);
+    setSelectedTrack(null);
+    setActiveSessionStart(null);
+    setShowPunchOut(false);
+    if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
   }, [activeTab]);
 
   useEffect(() => {
@@ -195,7 +201,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
 
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
-        e.preventDefault(); // 🔥 bloquea zoom global del browser
+        e.preventDefault();
       }
     };
 
@@ -209,62 +215,88 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "i") {
-        setSelectedTrack((prev) => {
+        const currentMarker = markerSec ?? timelineStartSec;
+
+        if (selectedTrack !== null && activeSessionStart !== null) {
+          setCompletedSessions((prev) => ({
+            ...prev,
+            [selectedTrack]: [
+              ...(prev[selectedTrack] ?? []),
+              { start: activeSessionStart, end: currentMarker },
+            ],
+          }));
+        }
+
+        const nextTrack = (() => {
           if (filteredTracks.length === 0) return null;
-          if (prev === null) return filteredTracks[0].id;
-          const currentIndex = filteredTracks.findIndex((t) => t.id === prev);
+          if (selectedTrack === null) return filteredTracks[0].id;
+          const currentIndex = filteredTracks.findIndex(
+            (t) => t.id === selectedTrack,
+          );
           const nextIndex = (currentIndex + 1) % filteredTracks.length;
           return filteredTracks[nextIndex].id;
-        });
+        })();
+
+        setSelectedTrack(nextTrack);
+        setActiveSessionStart(nextTrack !== null ? currentMarker : null);
       } else if (e.key === "o") {
+        const currentMarker = markerSec ?? timelineStartSec;
+
+        if (selectedTrack !== null && activeSessionStart !== null) {
+          setCompletedSessions((prev) => ({
+            ...prev,
+            [selectedTrack]: [
+              ...(prev[selectedTrack] ?? []),
+              { start: activeSessionStart, end: currentMarker },
+            ],
+          }));
+
+          setShowPunchOut(true);
+          if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
+          punchOutTimerRef.current = setTimeout(
+            () => setShowPunchOut(false),
+            1000,
+          );
+        }
+
         setSelectedTrack(null);
+        setActiveSessionStart(null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredTracks]);
+  }, [
+    filteredTracks,
+    selectedTrack,
+    activeSessionStart,
+    markerSec,
+    timelineStartSec,
+  ]);
 
   useEffect(() => {
-    if (selectedTrack !== null) setMarkerSec(null);
-  }, [selectedTrack]);
-
-  useEffect(() => {
-    if (selectedTrack === null) return;
-
-    const track = filteredTracks.find((t) => t.id === selectedTrack);
-    if (!track || track.sessions.length === 0) return;
-
-    const trackTimestamps = track.sessions.map((s) => {
-      const [h, m, sec] = s.timestamp.split(":").map(Number);
-      return h * 3600 + m * 60 + sec;
-    });
-    const trackStart = Math.min(...trackTimestamps);
-    const trackEnd = Math.max(...trackTimestamps);
-
-    const step = 60; // 1 minuto por tecla
+    const step = 60;
 
     const handleArrow = (e: KeyboardEvent) => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      if (selectedTrack !== null) {
+        if (e.key !== "ArrowRight") return;
+      } else {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      }
       e.preventDefault();
       const delta = e.key === "ArrowRight" ? step : -step;
       setMarkerSec((prev) => {
-        const base =
-          prev !== null
-            ? prev
-            : (() => {
-                const [h, m, s] = data.timeline.times.current
-                  .split(":")
-                  .map(Number);
-                return h * 3600 + m * 60 + s;
-              })();
-        return Math.max(trackStart, Math.min(trackEnd, base + delta));
+        const base = prev ?? timelineStartSec;
+        return Math.max(
+          timelineStartSec,
+          Math.min(timelineEndSec, base + delta),
+        );
       });
     };
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTrack, filteredTracks, data.timeline.times.current]);
+  }, [selectedTrack, timelineStartSec, timelineEndSec]);
 
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
@@ -277,23 +309,11 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   if (pixelsPerHour < 18) hourStep = 4;
   if (pixelsPerHour < 12) hourStep = 6;
 
-  const lastActivitySec =
-    allTimestamps.length > 0 ? Math.max(...allTimestamps) : 0;
-
-  const selectedTrackEnd = (() => {
-    if (selectedTrack === null) return null;
-    const track = filteredTracks.find((t) => t.id === selectedTrack);
-    if (!track || track.sessions.length === 0) return null;
-    return Math.max(...track.sessions.map((s) => toSeconds(s.timestamp)));
-  })();
-
   const isInActivityRange = (sec: number) => {
-    if (!allTimestamps.length) return false;
-    return sec >= firstActivitySec && sec <= lastActivitySec;
+    return sec >= timelineStartSec && sec <= timelineEndSec;
   };
 
-  const currentSec = toSeconds(data.timeline.times.start);
-  const resolvedMarkerSec = markerSec ?? currentSec;
+  const resolvedMarkerSec = markerSec ?? timelineStartSec;
 
   const isCurrentVisible =
     resolvedMarkerSec >= visibleStart && resolvedMarkerSec <= visibleEnd;
@@ -458,30 +478,29 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
           onMouseUp={() => setIsDragging(false)}
           onMouseLeave={() => setIsDragging(false)}
         >
-          {allTimestamps.length > 0 &&
-            (() => {
-              const start = Math.max(firstActivitySec, visibleStart);
-              const end = Math.min(lastActivitySec, visibleEnd);
+          {(() => {
+            const start = Math.max(timelineStartSec, visibleStart);
+            const end = Math.min(timelineEndSec, visibleEnd);
 
-              if (end <= start) return null;
+            if (end <= start) return null;
 
-              const left = ((start - visibleStart) / visibleDuration) * 100;
-              const width = ((end - start) / visibleDuration) * 100;
+            const left = ((start - visibleStart) / visibleDuration) * 100;
+            const width = ((end - start) / visibleDuration) * 100;
 
-              return (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    left: `${left}%`,
-                    width: `${width}%`,
-                    top: 0,
-                    height: "2px",
-                    background: Colors.green,
-                    zIndex: 10,
-                  }}
-                />
-              );
-            })()}
+            return (
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: `${left}%`,
+                  width: `${width}%`,
+                  top: 0,
+                  height: "2px",
+                  background: Colors.green,
+                  zIndex: 10,
+                }}
+              />
+            );
+          })()}
           {Array.from({ length: 24 }).map((_, i) => {
             if (i % hourStep !== 0) return null;
             const hourTime = startSec + i * 3600;
@@ -543,11 +562,9 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
               const oldVisibleDuration = totalSec / oldZoom;
               const newVisibleDuration = totalSec / newZoom;
 
-              // segundo exacto debajo del cursor antes del zoom
               const cursorTime =
                 panOffsetSec + (mouseX / width) * oldVisibleDuration;
 
-              // nuevo offset para que cursorTime quede bajo el cursor
               let newOffset =
                 cursorTime - (mouseX / width) * newVisibleDuration;
 
@@ -597,12 +614,34 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
           {filteredTracks.map((track, rowIndex) => {
             const rowHeight = 44;
             const topOffset = rowIndex * rowHeight;
-
-            const ranges = buildRanges(
-              track.sessions as { type: "in" | "out"; timestamp: string }[],
-            );
-
             const isSelected = selectedTrack === track.id;
+
+            const snapshotRanges = (() => {
+              const ranges: { start: number; end: number }[] = [];
+              let currentIn: number | null = null;
+              for (const s of track.sessions) {
+                if (s.type === "in") currentIn = toSeconds(s.timestamp);
+                if (s.type === "out" && currentIn !== null) {
+                  ranges.push({
+                    start: currentIn,
+                    end: toSeconds(s.timestamp),
+                  });
+                  currentIn = null;
+                }
+              }
+              return ranges;
+            })();
+            const frozen = [
+              ...snapshotRanges,
+              ...(completedSessions[track.id] ?? []),
+            ];
+            const liveBar =
+              isSelected &&
+              activeSessionStart !== null &&
+              resolvedMarkerSec > activeSessionStart
+                ? { start: activeSessionStart, end: resolvedMarkerSec }
+                : null;
+            const allRanges = liveBar ? [...frozen, liveBar] : frozen;
 
             return (
               <Box
@@ -619,12 +658,12 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                 }}
               >
                 {/* Session bars */}
-                {ranges.map((range, i) => {
-                  const start = toSeconds(range.start);
-                  const end = toSeconds(range.end);
-
-                  const left = ((start - visibleStart) / visibleDuration) * 100;
-                  const width = ((end - start) / visibleDuration) * 100;
+                {allRanges.map((range, i) => {
+                  const isLive = liveBar !== null && i === allRanges.length - 1;
+                  const left =
+                    ((range.start - visibleStart) / visibleDuration) * 100;
+                  const width =
+                    ((range.end - range.start) / visibleDuration) * 100;
                   return (
                     <Box
                       key={i}
@@ -636,9 +675,10 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                         transform: "translateY(-50%)",
                         height: 19,
                         borderRadius: "8px",
-                        background: isSelected
-                          ? Colors.vividOrange
-                          : Colors.lightGrayishBlue,
+                        background:
+                          isSelected || isLive
+                            ? Colors.vividOrange
+                            : Colors.lightGrayishBlue,
                       }}
                     />
                   );
@@ -646,6 +686,28 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
               </Box>
             );
           })}
+          {!hasAnyBars && (
+            <Box
+              sx={{
+                width: "217px",
+                height: "52px",
+                fontFamily: Fonts.main,
+                fontSize: 12,
+                color: Colors.dimGray,
+                lineHeight: 1.5,
+                textAlign: "center",
+                position: "absolute",
+                top: "30%",
+                left: "35%",
+                padding: "8px 16px",
+                bgcolor: " rgba(255, 255, 255, 0.6)",
+                borderRadius: "8px",
+              }}
+            >
+              Press <span style={{ color: Colors.vividOrange }}>i</span> on your
+              keyboard to punch-in the selected employee
+            </Box>
+          )}
         </Box>
         {/* Current time marker */}
         {isCurrentVisible && (
@@ -700,12 +762,12 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                 alt=""
               />
             </Box>
-            {selectedTrack !== null && (
+            {selectedTrack !== null && !showPunchOut && (
               <Box
                 sx={{
                   position: "absolute",
-                  left: `${currentLeft + 5}%`,
-                  top: 65,
+                  left: `${currentLeft + 1}%`,
+                  top: 40,
                   color: Colors.dimGray,
                   fontSize: 12,
                   fontWeight: 400,
@@ -717,15 +779,28 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                   fontFamily: Fonts.main,
                 }}
               >
-                {selectedTrackEnd !== null &&
-                resolvedMarkerSec >= selectedTrackEnd ? (
-                  "Punch Out"
-                ) : (
-                  <>
-                    Press <span style={{ color: Colors.vividOrange }}>o</span>{" "}
-                    to punch-out
-                  </>
-                )}
+                <>
+                  Press <span style={{ color: Colors.vividOrange }}>o</span> to
+                  punch-out
+                </>
+              </Box>
+            )}
+            {showPunchOut && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: `${currentLeft + 1}%`,
+                  top: 40,
+                  color: Colors.dimGray,
+                  fontSize: 12,
+                  fontWeight: 400,
+                  zIndex: 1,
+                  pointerEvents: "none",
+                  lineHeight: 1.5,
+                  fontFamily: Fonts.main,
+                }}
+              >
+                Punch Out
               </Box>
             )}
           </>

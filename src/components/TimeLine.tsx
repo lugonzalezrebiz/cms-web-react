@@ -5,45 +5,6 @@ import { useState } from "react";
 import TimelineBody, { type TimelineSnapshot } from "./TimelineBody";
 export type NavTab = "employees" | "compliances" | "activities";
 
-export interface TimeLineProps {
-  // ── Appearance ──────────────────────────────────────────────────────────
-  tracksAvailable?: boolean;
-  detached?: boolean;
-  torn?: boolean;
-  labelsWidth?: number;
-  currentTime?: string;
-  activeNav?: NavTab;
-  // ── Callbacks (UI events) ────────────────────────────────────────────────
-  onNavChange?: (tab: NavTab) => void;
-  onAddIn?: () => void;
-  onAddOut?: () => void;
-  onCutAvailable?: () => void;
-  onPatchAvailable?: () => void;
-  onMarkPerson?: () => void;
-  onUnmarkPerson?: () => void;
-  onDeleteSession?: () => void;
-  onMoveFirst?: () => void;
-  onMoveBack?: () => void;
-  onPlay?: () => void;
-  onMoveNext?: () => void;
-  onMoveLast?: () => void;
-  onAddTrack?: () => void;
-  onMode?: () => void;
-  onTear?: () => void;
-
-  // ── Renderer callbacks ───────────────────────────────────────────────────
-  onSetUi?: (patch: any) => void;
-  onTimelineChange?: (detail: any) => void;
-  onMarkersChange?: (detail: any) => void;
-  onHint?: (message: string) => void;
-  onLabelsWidthChange?: (width: number) => void;
-
-  // ── External div refs (optional – internal ones used if omitted) ──────────
-  cnvTimesRef?: React.RefObject<HTMLDivElement | null>;
-  cnvMainRef?: React.RefObject<HTMLDivElement | null>;
-  cnvMarkerRef?: React.RefObject<HTMLDivElement | null>;
-}
-
 const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
   { id: "employees", label: "Employee punches", iconClass: "users-03" },
   {
@@ -73,10 +34,10 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
         name: "John Smith",
         category: "employees" as NavTab,
         sessions: [
-          { type: "in" as const, timestamp: "09:05:00" },
-          { type: "out" as const, timestamp: "12:00:00" },
-          { type: "in" as const, timestamp: "13:00:00" },
-          { type: "out" as const, timestamp: "17:30:00" },
+          // { type: "in" as const, timestamp: "09:05:00" },
+          // { type: "out" as const, timestamp: "12:00:00" },
+          // { type: "in" as const, timestamp: "13:00:00" },
+          // { type: "out" as const, timestamp: "17:30:00" },
         ],
       },
       {
@@ -84,8 +45,8 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
         name: "Maria Garcia",
         category: "employees" as NavTab,
         sessions: [
-          { type: "in" as const, timestamp: "08:55:00" },
-          { type: "out" as const, timestamp: "18:05:00" },
+          // { type: "in" as const, timestamp: "08:55:00" },
+          // { type: "out" as const, timestamp: "18:05:00" },
         ],
       },
       {

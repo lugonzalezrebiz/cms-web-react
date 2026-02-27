@@ -125,15 +125,6 @@ interface CameraLayoutProps {
   iconMenu?: string;
 }
 
-/**
- *  1  → [1]
- *  2  → [2]
- *  3  → [2, 1]   4  → [2, 2]
- *  5  → [3, 2]   6  → [3, 3]
- *  7  → [4, 3]   8  → [4, 4]
- *  9  → [3,3,3]  10 → [4,3,3]  11 → [4,4,3]  12 → [4,4,4]
- * 13  → [4,3,3,3] ... 16 → [4,4,4,4]
- */
 function getRowDistribution(count: number): number[] {
   const n = Math.min(count, 16);
   if (n === 0) return [];
