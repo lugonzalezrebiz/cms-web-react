@@ -10,12 +10,16 @@ const RenderPage = ({
   toggleDrawer,
   isMobile,
   withIconMenu = true,
+  selectedTab,
+  onTabChange,
 }: {
   children: ReactNode;
   drawerOpen?: boolean;
   toggleDrawer?: () => void;
   isMobile?: boolean;
   withIconMenu?: boolean;
+  selectedTab: string;
+  onTabChange: (value: string) => void;
 }) => {
   const positionerCondition = !isMobile ? "calc(100% - 250px)" : "100%";
   const menuItems = [
@@ -39,6 +43,8 @@ const RenderPage = ({
             <Header
               withIconMenu={false}
               toggleDrawer={toggleDrawer || (() => {})}
+              selectedTab={selectedTab}
+              onTabChange={onTabChange}
             />
             <Content>{children}</Content>
           </Grid>
@@ -48,6 +54,8 @@ const RenderPage = ({
           <Header
             withIconMenu={withIconMenu}
             toggleDrawer={toggleDrawer || (() => {})}
+            selectedTab={selectedTab}
+            onTabChange={onTabChange}
           />
           <Content>{children}</Content>
         </Grid>

@@ -3,17 +3,6 @@ import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import { useEffect, useState } from "react";
 import type React from "react";
-
-function usePopover() {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  return {
-    anchorEl,
-    open: Boolean(anchorEl),
-    handleOpen: (e: React.MouseEvent<HTMLElement>) =>
-      setAnchorEl(e.currentTarget),
-    handleClose: () => setAnchorEl(null),
-  };
-}
 import { IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, Grid, useMediaQuery } from "@mui/system";
@@ -102,23 +91,38 @@ const StyledToggleGroup = styled(ToggleButtonGroup)({
   },
 });
 
-const ToggleButtonTitles = [
-  { value: "1", title: "All" },
-  { value: "2", title: "Tunnel" },
-  { value: "3", title: "Offices" },
-  { value: "4", title: "Drying Station" },
-  { value: "5", title: "Parking Lot" },
+export const ToggleButtonTitles = [
+  { value: "1", title: "All", cameraCount: 16 },
+  { value: "2", title: "Tunnel", cameraCount: 6 },
+  { value: "3", title: "Offices", cameraCount: 3 },
+  { value: "4", title: "Drying Station", cameraCount: 5 },
+  { value: "5", title: "Parking Lot", cameraCount: 2 },
 ];
+
+function usePopover() {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  return {
+    anchorEl,
+    open: Boolean(anchorEl),
+    handleOpen: (e: React.MouseEvent<HTMLElement>) =>
+      setAnchorEl(e.currentTarget),
+    handleClose: () => setAnchorEl(null),
+  };
+}
 
 const Header = ({
   toggleDrawer,
   withIconMenu = true,
+  selectedTab,
+  onTabChange,
 }: {
   toggleDrawer: () => void;
   withIconMenu?: boolean;
+  selectedTab: string;
+  onTabChange: (value: string) => void;
 }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [selected, setSelected] = useState(ToggleButtonTitles[0].value);
+  const selected = selectedTab;
   const menuHeader = usePopover();
   const keyboardMenu = usePopover();
   const ClockMenuHeader = usePopover();
@@ -176,17 +180,15 @@ const Header = ({
                   value={selected}
                   exclusive
                   onChange={(_event, newValue) => {
-                    if (newValue !== null) setSelected(newValue);
+                    if (newValue !== null) onTabChange(newValue);
                   }}
                   aria-label="Time range"
                 >
-                  <StyledToggleButton value="1">All</StyledToggleButton>
-                  <StyledToggleButton value="2">Tunnel</StyledToggleButton>
-                  <StyledToggleButton value="3">Offices</StyledToggleButton>
-                  <StyledToggleButton value="4">
-                    Drying Station
-                  </StyledToggleButton>
-                  <StyledToggleButton value="5">Parking Lot</StyledToggleButton>
+                  {ToggleButtonTitles.map(({ value, title }) => (
+                    <StyledToggleButton key={value} value={value}>
+                      {title}
+                    </StyledToggleButton>
+                  ))}
                 </StyledToggleGroup>
               </Box>
               <Box display={"flex"}>
@@ -266,19 +268,15 @@ const Header = ({
                     value={selected}
                     exclusive
                     onChange={(_event, newValue) => {
-                      if (newValue !== null) setSelected(newValue);
+                      if (newValue !== null) onTabChange(newValue);
                     }}
                     aria-label="Time range"
                   >
-                    <StyledToggleButton value="1">All</StyledToggleButton>
-                    <StyledToggleButton value="2">Tunnel</StyledToggleButton>
-                    <StyledToggleButton value="3">Offices</StyledToggleButton>
-                    <StyledToggleButton value="4">
-                      Drying Station
-                    </StyledToggleButton>
-                    <StyledToggleButton value="5">
-                      Parking Lot
-                    </StyledToggleButton>
+                    {ToggleButtonTitles.map(({ value, title }) => (
+                      <StyledToggleButton key={value} value={value}>
+                        {title}
+                      </StyledToggleButton>
+                    ))}
                   </StyledToggleGroup>
                 </Box>
               </Grid>

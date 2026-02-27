@@ -7,6 +7,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("1");
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const isMobile = useMediaQuery(Breakpoints.lg);
@@ -28,8 +29,10 @@ function App() {
             drawerOpen={drawerOpen}
             toggleDrawer={toggleDrawer}
             isMobile={isMobile}
+            selectedTab={selectedTab}
+            onTabChange={setSelectedTab}
           >
-            <Dashboard />
+            <Dashboard selectedTab={selectedTab} />
           </RenderPage>
         }
       />
