@@ -42,7 +42,7 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
           <CameraLayout
             count={cameraCount}
             media="/assets/camera/Cam thumbnail.svg"
-            maxHeight={"300px"}
+            maxHeight={"500px"}
             cameraItemList={() => alert("Camera list clicked")}
             expandCamera={() => alert("Expand camera clicked")}
             contextMenuTitle="Comp. Violations"
