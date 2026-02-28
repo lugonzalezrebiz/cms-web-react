@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx tsc:*)",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npm run lint 2>&1 | head -40)",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npm run lint 2>&1 | grep -E \"TimelineDraw|timeline/\")",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npm run lint 2>&1 | grep -A3 \"TimelineDraw\")",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npx tsc --noEmit 2>&1 && npm run lint 2>&1 | grep -E \"error|warning\" | grep -v \"CameraLayout\\\\|Tooltip\")",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npx tsc --noEmit 2>&1 | head -5 && npm run lint 2>&1 | grep -n \"TimelineDraw\" -A 20 | head -30)",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npm run lint 2>&1 | grep \"TimelineDraw\\\\|TimelineRenderer\" -A 20 | head -40)",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npx tsc --noEmit 2>&1 && npm run lint 2>&1 | grep \"error\" | grep -v \"CameraLayout\\\\|Tooltip\\\\|Dashboard\")",
+      "Bash(cd \"C:\\\\Users\\\\suesc\\\\OneDrive\\\\Escritorio\\\\cms-web-react\" && npm run lint -- --quiet 2>&1 | grep \"timeline\\\\|TimeLine\" | head -20)",
+      "Bash(cd \"C:/Users/suesc/OneDrive/Escritorio/cms-web-react\" && npx eslint src/components/timeline/TimelineDraw.tsx src/components/TimeLine.tsx src/components/timeline/TimelineRenderer.ts 2>&1 | head -60)",
+      "Bash(cd \"C:/Users/suesc/OneDrive/Escritorio/cms-web-react\" && npx eslint src/components/timeline/TimelineDraw.tsx src/components/TimeLine.tsx src/components/timeline/TimelineRenderer.ts 2>&1)",
+      "Bash(cd \"C:/Users/suesc/OneDrive/Escritorio/cms-web-react\" && npx tsc --noEmit 2>&1 && npx eslint src/components/timeline/TimelineDraw.tsx 2>&1)"
+    ]
+  }
+}
