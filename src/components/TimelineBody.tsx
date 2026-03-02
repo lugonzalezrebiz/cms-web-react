@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type NavTab = "employees" | "compliances" | "activities";
 
@@ -38,7 +38,27 @@ export interface TimelineSnapshot {
 interface TimelineBodyProps {
   snapshot?: TimelineSnapshot;
   activeTab: NavTab;
+  selectedTab?: string;
+  cameraActivities?: { id: number; cameraIndex: number; activityLabel: string }[];
 }
+
+type FlatRow = {
+  id: number;
+  name: string;
+  kind: "camera" | "activity";
+  parentCameraId?: number;
+  cameraNumber: number;
+  sessions: { type: "in" | "out"; timestamp: string }[];
+};
+
+const TUNNEL_CAMERAS: TimelineSnapshot["timeline"]["tracks"] = [
+  { id: 101, name: "Camera 1", category: "activities", sessions: [] },
+  { id: 102, name: "Camera 2", category: "activities", sessions: [] },
+  { id: 103, name: "Camera 3", category: "activities", sessions: [] },
+  { id: 104, name: "Camera 4", category: "activities", sessions: [] },
+  { id: 105, name: "Camera 5", category: "activities", sessions: [] },
+  { id: 106, name: "Camera 6", category: "activities", sessions: [] },
+];
 
 const MOCK_SNAPSHOT: TimelineSnapshot = {
   timeline: {
@@ -102,7 +122,13 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
   },
 };
 
-const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
+const TimelineBody = ({
+  snapshot,
+  activeTab,
+  selectedTab,
+  cameraActivities,
+}: TimelineBodyProps) => {
+  const isTunnel = selectedTab === "2";
   const [zoom, setZoom] = useState(1.5);
   const [panOffsetSec, setPanOffsetSec] = useState(0);
   const [selectedTracks, setSelectedTracks] = useState<Set<number>>(new Set());
@@ -120,19 +146,74 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   const [showPunchOut, setShowPunchOut] = useState(false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const listBodyRef = useRef<HTMLDivElement | null>(null);
+  const rowsScrollRef = useRef<HTMLDivElement | null>(null);
   const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Stable refs so the auto-select effect doesn't stale-close over marker values
+  const markerSecRef = useRef<number | null>(null);
+  const timelineStartSecRef = useRef(0);
+  const prevCameraActivitiesRef = useRef<
+    { id: number; cameraIndex: number; activityLabel: string }[]
+  >([]);
 
   const filteredTracks =
     snapshot?.timeline.tracks.filter((t) => t.category === activeTab) ||
     MOCK_SNAPSHOT.timeline.tracks.filter((t) => t.category === activeTab);
+
+  const headerLabel = isTunnel ? "Tunnel Activities" : activeTab;
+
+  const flatRows = useMemo((): FlatRow[] => {
+    if (!isTunnel) {
+      return filteredTracks.map((t, i) => ({
+        id: t.id,
+        name: t.name,
+        kind: "camera" as const,
+        cameraNumber: i + 1,
+        sessions: t.sessions,
+      }));
+    }
+    const rows: FlatRow[] = [];
+    let camNum = 0;
+    for (const cam of TUNNEL_CAMERAS) {
+      camNum++;
+      rows.push({
+        id: cam.id,
+        name: cam.name,
+        kind: "camera",
+        cameraNumber: camNum,
+        sessions: cam.sessions,
+      });
+      const acts = (cameraActivities ?? []).filter(
+        (a) => a.cameraIndex === cam.id - 101,
+      );
+      for (const act of acts) {
+        rows.push({
+          id: 10000 + act.id,
+          name: act.activityLabel,
+          kind: "activity",
+          parentCameraId: cam.id,
+          cameraNumber: 0,
+          sessions: [],
+        });
+      }
+    }
+    return rows;
+  }, [isTunnel, filteredTracks, cameraActivities]);
+
+  // Only activity sub-rows are cycled by the i-key in tunnel mode
+  const selectableRows = useMemo(
+    () => (isTunnel ? flatRows.filter((r) => r.kind === "activity") : flatRows),
+    [isTunnel, flatRows],
+  );
 
   const toSeconds = (time: string) => {
     const [h, m, s] = time.split(":").map(Number);
     return h * 3600 + m * 60 + s;
   };
 
-  const allTimestamps = filteredTracks.flatMap((track) =>
-    track.sessions.map((s) => toSeconds(s.timestamp)),
+  const allTimestamps = flatRows.flatMap((row) =>
+    row.sessions.map((s) => toSeconds(s.timestamp)),
   );
 
   const firstActivitySec =
@@ -147,6 +228,10 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
 
   const timelineStartSec = toSeconds(data.timeline.times.start);
   const timelineEndSec = toSeconds(data.timeline.times.end);
+
+  // Keep refs current so the auto-select effect always reads fresh values
+  markerSecRef.current = markerSec;
+  timelineStartSecRef.current = timelineStartSec;
 
   const startSec = 0;
   const totalSec = 24 * 3600;
@@ -195,7 +280,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     setActiveSessionStarts({});
     setShowPunchOut(false);
     if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
-  }, [activeTab]);
+  }, [activeTab, selectedTab]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -214,8 +299,47 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     };
   }, []);
 
+  // Auto-select an activity sub-row the moment it is added or replaced
+  useEffect(() => {
+    if (!isTunnel) {
+      prevCameraActivitiesRef.current = cameraActivities ?? [];
+      return;
+    }
+
+    const prev = prevCameraActivitiesRef.current;
+    const current = cameraActivities ?? [];
+
+    // Detect only brand-new activities (by id)
+    const prevIds = new Set(prev.map((p) => p.id));
+    const newActivities = current.filter((a) => !prevIds.has(a.id));
+
+    if (newActivities.length > 0) {
+      const currentMarker =
+        markerSecRef.current ?? timelineStartSecRef.current;
+
+      // Auto-select each new activity sub-row
+      setSelectedTracks((prev) => {
+        const next = new Set(prev);
+        newActivities.forEach((act) => next.add(10000 + act.id));
+        return next;
+      });
+
+      // Start a live session from the current marker
+      setActiveSessionStarts((prev) => {
+        const next = { ...prev };
+        newActivities.forEach((act) => {
+          next[10000 + act.id] = currentMarker;
+        });
+        return next;
+      });
+    }
+
+    prevCameraActivitiesRef.current = current;
+  }, [cameraActivities, isTunnel]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTunnel && e.key === "i") return;
       if (e.key === "i") {
         const currentMarker = markerSec ?? timelineStartSec;
 
@@ -245,13 +369,13 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
 
         // Advance to next track in cycle
         const nextTrack = (() => {
-          if (filteredTracks.length === 0) return null;
-          if (iTrackId === null) return filteredTracks[0].id;
-          const currentIndex = filteredTracks.findIndex(
-            (t) => t.id === iTrackId,
+          if (selectableRows.length === 0) return null;
+          if (iTrackId === null) return selectableRows[0].id;
+          const currentIndex = selectableRows.findIndex(
+            (r) => r.id === iTrackId,
           );
-          const nextIndex = (currentIndex + 1) % filteredTracks.length;
-          return filteredTracks[nextIndex].id;
+          const nextIndex = (currentIndex + 1) % selectableRows.length;
+          return selectableRows[nextIndex].id;
         })();
 
         setITrackId(nextTrack);
@@ -286,8 +410,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
         });
         if (Object.keys(activeSessionStarts).length > 0) {
           setShowPunchOut(true);
-          if (punchOutTimerRef.current)
-            clearTimeout(punchOutTimerRef.current);
+          if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
           punchOutTimerRef.current = setTimeout(
             () => setShowPunchOut(false),
             1000,
@@ -302,7 +425,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    filteredTracks,
+    selectableRows,
     iTrackId,
     activeSessionStarts,
     markerSec,
@@ -398,7 +521,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
               fontWeight: 700,
             }}
           >
-            {activeTab}
+            {headerLabel}
           </p>
           <Box sx={{ cursor: "pointer" }}>
             <img src="../assets/plus-1.svg" alt="" />
@@ -406,102 +529,160 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
         </Box>
 
         {/* List */}
-        <Box sx={{ flex: 1, overflowY: "auto" }}>
-          {filteredTracks.map((track, index) => {
-            const isSelected = selectedTracks.has(track.id);
+        <Box
+          ref={listBodyRef}
+          onScroll={() => {
+            if (rowsScrollRef.current && listBodyRef.current) {
+              rowsScrollRef.current.scrollTop = listBodyRef.current.scrollTop;
+            }
+          }}
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          {flatRows.map((row) => {
+            const isSelected = selectedTracks.has(row.id);
+            const isActivitySubRow = isTunnel && row.kind === "activity";
+            const isCameraInTunnel = isTunnel && row.kind === "camera";
 
-            return (
-              <Box
-                key={track.id}
-                onClick={() => {
+            // Parent camera lights up when any of its activity children is selected
+            const childSelected =
+              isCameraInTunnel &&
+              flatRows.some(
+                (r) => r.parentCameraId === row.id && selectedTracks.has(r.id),
+              );
+
+            const handleClick = isCameraInTunnel
+              ? undefined
+              : () => {
                   const currentMarker = markerSec ?? timelineStartSec;
-                  if (selectedTracks.has(track.id)) {
-                    // Deselect: complete active session if any
-                    const sessionStart = activeSessionStarts[track.id];
+                  if (selectedTracks.has(row.id)) {
+                    const sessionStart = activeSessionStarts[row.id];
                     if (
                       sessionStart !== undefined &&
                       currentMarker > sessionStart
                     ) {
                       setCompletedSessions((prev) => ({
                         ...prev,
-                        [track.id]: [
-                          ...(prev[track.id] ?? []),
+                        [row.id]: [
+                          ...(prev[row.id] ?? []),
                           { start: sessionStart, end: currentMarker },
                         ],
                       }));
                     }
                     setSelectedTracks((prev) => {
                       const next = new Set(prev);
-                      next.delete(track.id);
+                      next.delete(row.id);
                       return next;
                     });
                     setActiveSessionStarts((prev) => {
                       const next = { ...prev };
-                      delete next[track.id];
+                      delete next[row.id];
                       return next;
                     });
                   } else {
-                    // Select: add to multi-selection and start session
                     setSelectedTracks((prev) => {
                       const next = new Set(prev);
-                      next.add(track.id);
+                      next.add(row.id);
                       return next;
                     });
                     setActiveSessionStarts((prev) => ({
                       ...prev,
-                      [track.id]: currentMarker,
+                      [row.id]: currentMarker,
                     }));
                   }
-                }}
+                };
+
+            return (
+              <Box
+                key={row.id}
+                onClick={handleClick}
                 sx={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 1.5,
-                  p: "6px 8px",
-                  cursor: "pointer",
+                  gap: isActivitySubRow ? 0 : 1.5,
+                  pl: isActivitySubRow ? "32px" : "8px",
+                  pr: "8px",
+                  py: "6px",
+                  cursor: isCameraInTunnel ? "default" : "pointer",
                   fontFamily: Fonts.main,
                   fontSize: 12,
                   height: "32px",
-                  fontWeight: isSelected ? 700 : 400,
-                  backgroundColor: isSelected
-                    ? Colors.vividOrange
-                    : "transparent",
-                  color: isSelected ? Colors.white : Colors.lightBlack,
-                  transition: "all 0.15s ease",
-
-                  "&:hover": {
-                    backgroundColor: isSelected
+                  fontWeight:
+                    isCameraInTunnel
+                      ? childSelected ? 700 : 700
+                      : isSelected
+                        ? 700
+                        : 400,
+                  backgroundColor: isCameraInTunnel
+                    ? childSelected
                       ? Colors.vividOrange
-                      : Colors.white,
+                      : "transparent"
+                    : isActivitySubRow
+                      ? isSelected
+                        ? Colors.lightOrange
+                        : "transparent"
+                      : isSelected
+                        ? Colors.vividOrange
+                        : "transparent",
+                  color:
+                    (isCameraInTunnel && childSelected) || isSelected
+                      ? Colors.white
+                      : Colors.lightBlack,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    backgroundColor: isCameraInTunnel
+                      ? childSelected
+                        ? Colors.vividOrange
+                        : "transparent"
+                      : isActivitySubRow
+                        ? isSelected
+                          ? Colors.lightOrange
+                          : Colors.white
+                        : isSelected
+                          ? Colors.vividOrange
+                          : Colors.white,
                   },
                 }}
               >
-                {/* Circle index */}
-                <Box
-                  sx={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: "50%",
-                    backgroundColor: isSelected
-                      ? Colors.white
-                      : Colors.vividOrange,
-                    color: isSelected ? Colors.vividOrange : Colors.white,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: isSelected ? 700 : 400,
-                    textAlign: "center",
-                  }}
-                >
-                  {index + 1}
-                </Box>
-
-                {track.name}
+                {/* Circle index — hidden for activity sub-rows */}
+                {!isActivitySubRow && (
+                  <Box
+                    sx={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      backgroundColor:
+                        (isCameraInTunnel && childSelected) || isSelected
+                          ? Colors.white
+                          : Colors.vividOrange,
+                      color:
+                        (isCameraInTunnel && childSelected) || isSelected
+                          ? Colors.vividOrange
+                          : Colors.white,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      fontWeight:
+                        (isCameraInTunnel && childSelected) || isSelected
+                          ? 700
+                          : 400,
+                      textAlign: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {row.cameraNumber}
+                  </Box>
+                )}
+                {row.name}
               </Box>
             );
           })}
-          {filteredTracks.length === 0 && (
+          {flatRows.filter((r) => r.kind === "camera").length === 0 && (
             <Box
               sx={{
                 width: "129px",
@@ -649,12 +830,21 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
               setZoom(newZoom);
               setPanOffsetSec(newOffset);
             } else {
-              const visibleDuration = totalSec / zoom;
-              const maxOffset = totalSec - visibleDuration;
-
-              setPanOffsetSec((prev) =>
-                Math.max(0, Math.min(maxOffset, prev + e.deltaY * 5)),
-              );
+              // Vertical wheel → scroll rows
+              if (listBodyRef.current) {
+                listBodyRef.current.scrollTop += e.deltaY;
+                if (rowsScrollRef.current) {
+                  rowsScrollRef.current.scrollTop = listBodyRef.current.scrollTop;
+                }
+              }
+              // Horizontal (trackpad swipe) → pan timeline
+              if (e.deltaX !== 0) {
+                const visibleDuration = totalSec / zoom;
+                const maxOffset = totalSec - visibleDuration;
+                setPanOffsetSec((prev) =>
+                  Math.max(0, Math.min(maxOffset, prev + e.deltaX * 5)),
+                );
+              }
             }
           }}
         >
@@ -684,83 +874,156 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
             );
           })}
 
-          {/* Rows */}
-          {filteredTracks.map((track, rowIndex) => {
-            const rowHeight = 44;
-            const topOffset = rowIndex * rowHeight;
-            const isSelected = selectedTracks.has(track.id);
+          {/* Rows — scroll-synced with left list */}
+          <Box
+            ref={rowsScrollRef}
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              overflowY: "hidden",
+              pointerEvents: "none",
+            }}
+          >
+            <Box sx={{ position: "relative", height: flatRows.length * 44 }}>
+              {flatRows.map((row, rowIndex) => {
+                const rowHeight = 44;
+                const topOffset = rowIndex * rowHeight;
+                const isSelected = selectedTracks.has(row.id);
 
-            const snapshotRanges = (() => {
-              const ranges: { start: number; end: number }[] = [];
-              let currentIn: number | null = null;
-              for (const s of track.sessions) {
-                if (s.type === "in") currentIn = toSeconds(s.timestamp);
-                if (s.type === "out" && currentIn !== null) {
-                  ranges.push({
-                    start: currentIn,
-                    end: toSeconds(s.timestamp),
+                // ── Camera parent row in tunnel mode: aggregate from all activity sub-rows ──
+                if (isTunnel && row.kind === "camera") {
+                  const childIds = flatRows
+                    .filter((r) => r.parentCameraId === row.id)
+                    .map((r) => r.id);
+                  const allFrozen = childIds.flatMap(
+                    (id) => completedSessions[id] ?? [],
+                  );
+                  const allLive = childIds.flatMap((id) => {
+                    const actStart = activeSessionStarts[id];
+                    return selectedTracks.has(id) &&
+                      actStart !== undefined &&
+                      resolvedMarkerSec > actStart
+                      ? [{ start: actStart, end: resolvedMarkerSec }]
+                      : [];
                   });
-                  currentIn = null;
-                }
-              }
-              return ranges;
-            })();
-            const frozen = [
-              ...snapshotRanges,
-              ...(completedSessions[track.id] ?? []),
-            ];
-            const sessionStart = activeSessionStarts[track.id];
-            const liveBar =
-              isSelected &&
-              sessionStart !== undefined &&
-              resolvedMarkerSec > sessionStart
-                ? { start: sessionStart, end: resolvedMarkerSec }
-                : null;
-            const allRanges = liveBar ? [...frozen, liveBar] : frozen;
+                  const camRanges = [...allFrozen, ...allLive];
 
-            return (
-              <Box
-                key={track.id}
-                sx={{
-                  position: "absolute",
-                  top: topOffset,
-                  left: 0,
-                  right: 0,
-                  height: rowHeight,
-                  bgcolor: isSelected
-                    ? "rgba(255, 166, 0, 0.04)"
-                    : "transparent",
-                }}
-              >
-                {/* Session bars */}
-                {allRanges.map((range, i) => {
-                  const isLive = liveBar !== null && i === allRanges.length - 1;
-                  const left =
-                    ((range.start - visibleStart) / visibleDuration) * 100;
-                  const width =
-                    ((range.end - range.start) / visibleDuration) * 100;
                   return (
                     <Box
-                      key={i}
+                      key={row.id}
                       sx={{
                         position: "absolute",
-                        left: `${left}%`,
-                        width: `${width}%`,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        height: 19,
-                        borderRadius: "8px",
-                        background:
-                          isSelected || isLive
-                            ? Colors.vividOrange
-                            : Colors.lightGrayishBlue,
+                        top: topOffset,
+                        left: 0,
+                        right: 0,
+                        height: rowHeight,
+                        bgcolor: "transparent",
                       }}
-                    />
+                    >
+                      {camRanges.map((range, i) => {
+                        const left =
+                          ((range.start - visibleStart) / visibleDuration) *
+                          100;
+                        const width =
+                          ((range.end - range.start) / visibleDuration) * 100;
+                        return (
+                          <Box
+                            key={i}
+                            sx={{
+                              position: "absolute",
+                              left: `${left}%`,
+                              width: `${width}%`,
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              height: 19,
+                              borderRadius: "8px",
+                              background: "#fdc3e1",
+                            }}
+                          />
+                        );
+                      })}
+                    </Box>
                   );
-                })}
-              </Box>
-            );
-          })}
+                }
+
+                // ── Normal selectable row (activity in tunnel, or camera in non-tunnel) ──
+                const snapshotRanges = (() => {
+                  const ranges: { start: number; end: number }[] = [];
+                  let currentIn: number | null = null;
+                  for (const s of row.sessions) {
+                    if (s.type === "in") currentIn = toSeconds(s.timestamp);
+                    if (s.type === "out" && currentIn !== null) {
+                      ranges.push({
+                        start: currentIn,
+                        end: toSeconds(s.timestamp),
+                      });
+                      currentIn = null;
+                    }
+                  }
+                  return ranges;
+                })();
+                const frozen = [
+                  ...snapshotRanges,
+                  ...(completedSessions[row.id] ?? []),
+                ];
+                const sessionStart = activeSessionStarts[row.id];
+                const liveBar =
+                  isSelected &&
+                  sessionStart !== undefined &&
+                  resolvedMarkerSec > sessionStart
+                    ? { start: sessionStart, end: resolvedMarkerSec }
+                    : null;
+                const allRanges = liveBar ? [...frozen, liveBar] : frozen;
+
+                return (
+                  <Box
+                    key={row.id}
+                    sx={{
+                      position: "absolute",
+                      top: topOffset,
+                      left: 0,
+                      right: 0,
+                      height: rowHeight,
+                      bgcolor: isSelected
+                        ? "rgba(255, 166, 0, 0.04)"
+                        : "transparent",
+                    }}
+                  >
+                    {/* Session bars */}
+                    {allRanges.map((range, i) => {
+                      const isLive =
+                        liveBar !== null && i === allRanges.length - 1;
+                      const left =
+                        ((range.start - visibleStart) / visibleDuration) * 100;
+                      const width =
+                        ((range.end - range.start) / visibleDuration) * 100;
+                      return (
+                        <Box
+                          key={i}
+                          sx={{
+                            position: "absolute",
+                            left: `${left}%`,
+                            width: `${width}%`,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            height: 19,
+                            borderRadius: "8px",
+                            background:
+                              isSelected || isLive
+                                ? Colors.vividOrange
+                                : Colors.lightGrayishBlue,
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
           {!hasAnyBars && (
             <Box
               sx={{

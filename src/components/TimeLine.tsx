@@ -77,7 +77,13 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
   },
 };
 
-const TimeLine = () => {
+const TimeLine = ({
+  selectedTab,
+  cameraActivities,
+}: {
+  selectedTab?: string;
+  cameraActivities?: { id: number; cameraIndex: number; activityLabel: string }[];
+}) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
 
@@ -395,7 +401,7 @@ const TimeLine = () => {
       </Popover>
 
       {/* ── Timeline canvas ───────────────────────────────────── */}
-      <TimelineBody snapshot={MOCK_SNAPSHOT} activeTab={activeTab} />
+      <TimelineBody snapshot={MOCK_SNAPSHOT} activeTab={activeTab} selectedTab={selectedTab} cameraActivities={cameraActivities} />
     </Box>
   );
 };
