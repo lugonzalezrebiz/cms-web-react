@@ -105,7 +105,8 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
 const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   const [zoom, setZoom] = useState(1.5);
   const [panOffsetSec, setPanOffsetSec] = useState(0);
-  const [selectedTrack, setSelectedTrack] = useState<number | null>(null);
+  const [selectedTracks, setSelectedTracks] = useState<Set<number>>(new Set());
+  const [iTrackId, setITrackId] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState<number | null>(null);
   const [dragStartOffset, setDragStartOffset] = useState(0);
@@ -113,9 +114,9 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   const [completedSessions, setCompletedSessions] = useState<
     Record<number, { start: number; end: number }[]>
   >({});
-  const [activeSessionStart, setActiveSessionStart] = useState<number | null>(
-    null,
-  );
+  const [activeSessionStarts, setActiveSessionStarts] = useState<
+    Record<number, number>
+  >({});
   const [showPunchOut, setShowPunchOut] = useState(false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -140,7 +141,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
   const hasAnyBars =
     allTimestamps.length > 0 ||
     Object.values(completedSessions).some((arr) => arr.length > 0) ||
-    activeSessionStart !== null;
+    Object.keys(activeSessionStarts).length > 0;
 
   const data = snapshot || MOCK_SNAPSHOT;
 
@@ -189,8 +190,9 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     }
 
     setMarkerSec(null);
-    setSelectedTrack(null);
-    setActiveSessionStart(null);
+    setSelectedTracks(new Set());
+    setITrackId(null);
+    setActiveSessionStarts({});
     setShowPunchOut(false);
     if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
   }, [activeTab]);
@@ -217,50 +219,83 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
       if (e.key === "i") {
         const currentMarker = markerSec ?? timelineStartSec;
 
-        if (selectedTrack !== null && activeSessionStart !== null) {
-          setCompletedSessions((prev) => ({
-            ...prev,
-            [selectedTrack]: [
-              ...(prev[selectedTrack] ?? []),
-              { start: activeSessionStart, end: currentMarker },
-            ],
-          }));
+        // Complete the current i-cycled track's session
+        if (iTrackId !== null) {
+          const sessionStart = activeSessionStarts[iTrackId];
+          if (sessionStart !== undefined) {
+            setCompletedSessions((prev) => ({
+              ...prev,
+              [iTrackId]: [
+                ...(prev[iTrackId] ?? []),
+                { start: sessionStart, end: currentMarker },
+              ],
+            }));
+          }
+          setActiveSessionStarts((prev) => {
+            const next = { ...prev };
+            delete next[iTrackId];
+            return next;
+          });
+          setSelectedTracks((prev) => {
+            const next = new Set(prev);
+            next.delete(iTrackId);
+            return next;
+          });
         }
 
+        // Advance to next track in cycle
         const nextTrack = (() => {
           if (filteredTracks.length === 0) return null;
-          if (selectedTrack === null) return filteredTracks[0].id;
+          if (iTrackId === null) return filteredTracks[0].id;
           const currentIndex = filteredTracks.findIndex(
-            (t) => t.id === selectedTrack,
+            (t) => t.id === iTrackId,
           );
           const nextIndex = (currentIndex + 1) % filteredTracks.length;
           return filteredTracks[nextIndex].id;
         })();
 
-        setSelectedTrack(nextTrack);
-        setActiveSessionStart(nextTrack !== null ? currentMarker : null);
+        setITrackId(nextTrack);
+        if (nextTrack !== null) {
+          setSelectedTracks((prev) => {
+            const next = new Set(prev);
+            next.add(nextTrack);
+            return next;
+          });
+          setActiveSessionStarts((prev) => ({
+            ...prev,
+            [nextTrack]: currentMarker,
+          }));
+        }
       } else if (e.key === "o") {
         const currentMarker = markerSec ?? timelineStartSec;
-
-        if (selectedTrack !== null && activeSessionStart !== null) {
-          setCompletedSessions((prev) => ({
-            ...prev,
-            [selectedTrack]: [
-              ...(prev[selectedTrack] ?? []),
-              { start: activeSessionStart, end: currentMarker },
-            ],
-          }));
-
+        // Complete ALL active sessions simultaneously
+        setCompletedSessions((prev) => {
+          const updates = { ...prev };
+          for (const [idStr, sessionStart] of Object.entries(
+            activeSessionStarts,
+          )) {
+            const id = Number(idStr);
+            if (currentMarker > sessionStart) {
+              updates[id] = [
+                ...(prev[id] ?? []),
+                { start: sessionStart, end: currentMarker },
+              ];
+            }
+          }
+          return updates;
+        });
+        if (Object.keys(activeSessionStarts).length > 0) {
           setShowPunchOut(true);
-          if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
+          if (punchOutTimerRef.current)
+            clearTimeout(punchOutTimerRef.current);
           punchOutTimerRef.current = setTimeout(
             () => setShowPunchOut(false),
             1000,
           );
         }
-
-        setSelectedTrack(null);
-        setActiveSessionStart(null);
+        setITrackId(null);
+        setSelectedTracks(new Set());
+        setActiveSessionStarts({});
       }
     };
 
@@ -268,8 +303,8 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
     filteredTracks,
-    selectedTrack,
-    activeSessionStart,
+    iTrackId,
+    activeSessionStarts,
     markerSec,
     timelineStartSec,
   ]);
@@ -278,7 +313,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
     const step = 60;
 
     const handleArrow = (e: KeyboardEvent) => {
-      if (selectedTrack !== null) {
+      if (selectedTracks.size > 0) {
         if (e.key !== "ArrowRight") return;
       } else {
         if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
@@ -296,7 +331,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTrack, timelineStartSec, timelineEndSec]);
+  }, [selectedTracks, timelineStartSec, timelineEndSec]);
 
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
@@ -373,12 +408,51 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
         {/* List */}
         <Box sx={{ flex: 1, overflowY: "auto" }}>
           {filteredTracks.map((track, index) => {
-            const isSelected = selectedTrack === track.id;
+            const isSelected = selectedTracks.has(track.id);
 
             return (
               <Box
                 key={track.id}
-                onClick={() => setSelectedTrack(track.id)}
+                onClick={() => {
+                  const currentMarker = markerSec ?? timelineStartSec;
+                  if (selectedTracks.has(track.id)) {
+                    // Deselect: complete active session if any
+                    const sessionStart = activeSessionStarts[track.id];
+                    if (
+                      sessionStart !== undefined &&
+                      currentMarker > sessionStart
+                    ) {
+                      setCompletedSessions((prev) => ({
+                        ...prev,
+                        [track.id]: [
+                          ...(prev[track.id] ?? []),
+                          { start: sessionStart, end: currentMarker },
+                        ],
+                      }));
+                    }
+                    setSelectedTracks((prev) => {
+                      const next = new Set(prev);
+                      next.delete(track.id);
+                      return next;
+                    });
+                    setActiveSessionStarts((prev) => {
+                      const next = { ...prev };
+                      delete next[track.id];
+                      return next;
+                    });
+                  } else {
+                    // Select: add to multi-selection and start session
+                    setSelectedTracks((prev) => {
+                      const next = new Set(prev);
+                      next.add(track.id);
+                      return next;
+                    });
+                    setActiveSessionStarts((prev) => ({
+                      ...prev,
+                      [track.id]: currentMarker,
+                    }));
+                  }
+                }}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -614,7 +688,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
           {filteredTracks.map((track, rowIndex) => {
             const rowHeight = 44;
             const topOffset = rowIndex * rowHeight;
-            const isSelected = selectedTrack === track.id;
+            const isSelected = selectedTracks.has(track.id);
 
             const snapshotRanges = (() => {
               const ranges: { start: number; end: number }[] = [];
@@ -635,11 +709,12 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
               ...snapshotRanges,
               ...(completedSessions[track.id] ?? []),
             ];
+            const sessionStart = activeSessionStarts[track.id];
             const liveBar =
               isSelected &&
-              activeSessionStart !== null &&
-              resolvedMarkerSec > activeSessionStart
-                ? { start: activeSessionStart, end: resolvedMarkerSec }
+              sessionStart !== undefined &&
+              resolvedMarkerSec > sessionStart
+                ? { start: sessionStart, end: resolvedMarkerSec }
                 : null;
             const allRanges = liveBar ? [...frozen, liveBar] : frozen;
 
@@ -762,7 +837,7 @@ const TimelineBody = ({ snapshot, activeTab }: TimelineBodyProps) => {
                 alt=""
               />
             </Box>
-            {selectedTrack !== null && !showPunchOut && (
+            {selectedTracks.size > 0 && !showPunchOut && (
               <Box
                 sx={{
                   position: "absolute",
