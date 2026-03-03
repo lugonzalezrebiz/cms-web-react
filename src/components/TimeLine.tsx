@@ -3,7 +3,41 @@ import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
 import { useState } from "react";
 import TimelineBody, { type TimelineSnapshot } from "./TimelineBody";
+import styled from "@emotion/styled";
+import Tooltip from "./Tooltip";
+
 export type NavTab = "employees" | "compliances" | "activities";
+
+const MenuCameraContainer = styled(Box)({
+  display: "flex",
+  padding: "8px",
+  alignItems: "center",
+  gap: "10px",
+  justifyContent: "space-between",
+});
+
+const TitleCameraMenu = styled("p")({
+  margin: 0,
+  fontFamily: Fonts.main,
+  fontSize: "16px",
+  fontWeight: "600",
+  lineHeight: 1.5,
+  color: Colors.lightBlack,
+  textAlign: "left",
+  display: "flex",
+  justifyContent: "space-between",
+  borderBottom: `1px solid ${Colors.silverGrey}`,
+  padding: "4px 8px",
+});
+
+const TextCameraMenu = styled("p")({
+  margin: 0,
+  fontFamily: Fonts.main,
+  fontSize: "14px",
+  fontWeight: 400,
+  lineHeight: 1.43,
+  textAlign: "left",
+});
 
 const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
   { id: "employees", label: "Employee punches", iconClass: "users-03" },
@@ -13,6 +47,15 @@ const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
     iconClass: "shield-tick",
   },
   { id: "activities", label: "Activities", iconClass: "placeholder" },
+];
+
+const CAMERA_OPTIONS = [
+  "Off",
+  "Collision",
+  "Car door open",
+  "Violent behaviours",
+  "Human in tunnel",
+  "Slip & Fall",
 ];
 
 const MOCK_SNAPSHOT: TimelineSnapshot = {
@@ -77,25 +120,33 @@ const MOCK_SNAPSHOT: TimelineSnapshot = {
   },
 };
 
+const usePopover = () => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  return {
+    anchorEl,
+    open: Boolean(anchorEl),
+    handleOpen: (e: React.MouseEvent<HTMLElement>) =>
+      setAnchorEl(e.currentTarget),
+    handleClose: () => setAnchorEl(null),
+  };
+};
+
 const TimeLine = ({
   selectedTab,
   cameraActivities,
 }: {
   selectedTab?: string;
-  cameraActivities?: { id: number; cameraIndex: number; activityLabel: string }[];
+  cameraActivities?: {
+    id: number;
+    cameraIndex: number;
+    activityLabel: string;
+  }[];
 }) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
+  const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
 
-  const handleOpenNav = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseNav = () => {
-    setAnchorEl(null);
-  };
-
-  const openNav = Boolean(anchorEl);
+  const nav = usePopover();
+  const cameraMenu = usePopover();
 
   return (
     <Box height={"100%"}>
@@ -121,14 +172,56 @@ const TimeLine = ({
           alignItems={"center"}
           justifyContent={"start"}
         >
-          <Box onClick={handleOpenNav}>
+          <Box onClick={nav.handleOpen}>
             <img src="../assets/layers-three-02.svg" alt="" />
           </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/user-plus-01.svg" alt="" />
-          </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/camera-02.svg" alt="" />
+          {selectedTab !== "2" && (
+            <Box onClick={() => {}}>
+              <img src="../assets/user-plus-01.svg" alt="" />
+            </Box>
+          )}
+          <Box
+            position={"relative"}
+            onClick={selectedTab === "2" ? cameraMenu.handleOpen : undefined}
+            sx={{
+              opacity: selectedTab === "2" ? 1 : 0.3,
+              cursor: selectedTab === "2" ? "pointer" : "default",
+            }}
+          >
+            {selectedCameraOption !== "Off" && selectedTab === "2" && (
+              <Box
+                sx={{
+                  width: "5px",
+                  height: "5px",
+                  border: `1px solid ${Colors.white}`,
+                  bgcolor: Colors.green,
+                  borderRadius: "100%",
+                  position: "absolute",
+                  right: -1,
+                  top: -1,
+                }}
+              ></Box>
+            )}
+            {selectedCameraOption !== "Off" && selectedTab === "2" ? (
+              <Tooltip
+                withoutIcon
+                position="top"
+                detail={
+                  <Box>
+                    <Box sx={{ color: "#959fa9", fontWeight: 400 }}>
+                      Focused monitoring
+                    </Box>
+                    <Box sx={{ color: Colors.lightBlack, fontWeight: 700 }}>
+                      {selectedCameraOption}
+                    </Box>
+                  </Box>
+                }
+              >
+                <img src="../assets/camera-02.svg" alt="" />
+              </Tooltip>
+            ) : (
+              <img src="../assets/camera-02.svg" alt="" />
+            )}
           </Box>
         </Grid>
 
@@ -310,9 +403,9 @@ const TimeLine = ({
 
       {/* ── Nav dropdown menu ─────────────────────────────────────────────── */}
       <Popover
-        open={openNav}
-        onClose={handleCloseNav}
-        anchorEl={anchorEl}
+        open={nav.open}
+        onClose={nav.handleClose}
+        anchorEl={nav.anchorEl}
         anchorOrigin={{ vertical: "top", horizontal: "left" }}
         transformOrigin={{ vertical: "bottom", horizontal: "left" }}
         slotProps={{
@@ -345,7 +438,7 @@ const TimeLine = ({
                 sx={{ flex: 1 }}
                 onClick={() => {
                   setActiveTab(id);
-                  handleCloseNav();
+                  nav.handleClose();
                 }}
               >
                 <Box
@@ -400,8 +493,81 @@ const TimeLine = ({
         </Box>
       </Popover>
 
+      <Popover
+        open={cameraMenu.open}
+        onClose={cameraMenu.handleClose}
+        anchorEl={cameraMenu.anchorEl}
+        anchorOrigin={{ vertical: "top", horizontal: "left" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "left" }}
+        slotProps={{
+          paper: {
+            sx: {
+              background: Colors.white,
+              width: "100%",
+              maxWidth: "199px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: "8px",
+              boxShadow: " 0 2px 10px 0 rgba(0, 0, 0, 0.16)",
+              borderRadius: "8px",
+            },
+          },
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <TitleCameraMenu>
+            Focused monitoring
+            <img src="../assets/plus-1.svg" alt="" />
+          </TitleCameraMenu>
+          {CAMERA_OPTIONS.map((option) => {
+            const isSelected = selectedCameraOption === option;
+            return (
+              <MenuCameraContainer
+                key={option}
+                onClick={() => {
+                  setSelectedCameraOption(option);
+                  cameraMenu.handleClose();
+                }}
+                sx={{
+                  cursor: "pointer",
+                  backgroundColor: isSelected
+                    ? Colors.vividOrange
+                    : "transparent",
+                  "&:hover": {
+                    backgroundColor: isSelected
+                      ? Colors.vividOrange
+                      : Colors.lightPeach,
+                  },
+                }}
+              >
+                <TextCameraMenu
+                  style={{
+                    color: isSelected ? Colors.white : Colors.lightBlack,
+                    fontWeight: isSelected ? 500 : 400,
+                  }}
+                >
+                  {option}
+                </TextCameraMenu>
+                {isSelected && <img src="/assets/check.svg" alt="selected" />}
+              </MenuCameraContainer>
+            );
+          })}
+        </Box>
+      </Popover>
+
       {/* ── Timeline canvas ───────────────────────────────────── */}
-      <TimelineBody snapshot={MOCK_SNAPSHOT} activeTab={activeTab} selectedTab={selectedTab} cameraActivities={cameraActivities} />
+      <TimelineBody
+        snapshot={MOCK_SNAPSHOT}
+        activeTab={activeTab}
+        selectedTab={selectedTab}
+        cameraActivities={cameraActivities}
+      />
     </Box>
   );
 };

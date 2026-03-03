@@ -99,7 +99,7 @@ export const ToggleButtonTitles = [
   { value: "5", title: "Parking Lot", cameraCount: 2, navTab: "employees" },
 ];
 
-function usePopover() {
+const usePopover = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   return {
     anchorEl,
@@ -108,7 +108,7 @@ function usePopover() {
       setAnchorEl(e.currentTarget),
     handleClose: () => setAnchorEl(null),
   };
-}
+};
 
 const Header = ({
   toggleDrawer,

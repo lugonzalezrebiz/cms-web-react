@@ -39,7 +39,11 @@ interface TimelineBodyProps {
   snapshot?: TimelineSnapshot;
   activeTab: NavTab;
   selectedTab?: string;
-  cameraActivities?: { id: number; cameraIndex: number; activityLabel: string }[];
+  cameraActivities?: {
+    id: number;
+    cameraIndex: number;
+    activityLabel: string;
+  }[];
 }
 
 type FlatRow = {
@@ -314,8 +318,7 @@ const TimelineBody = ({
     const newActivities = current.filter((a) => !prevIds.has(a.id));
 
     if (newActivities.length > 0) {
-      const currentMarker =
-        markerSecRef.current ?? timelineStartSecRef.current;
+      const currentMarker = markerSecRef.current ?? timelineStartSecRef.current;
 
       // Auto-select each new activity sub-row
       setSelectedTracks((prev) => {
@@ -604,32 +607,34 @@ const TimelineBody = ({
                   display: "flex",
                   alignItems: "center",
                   gap: isActivitySubRow ? 0 : 1.5,
-                  pl: isActivitySubRow ? "32px" : "8px",
+                  pl: isActivitySubRow ? "50px" : "8px",
                   pr: "8px",
                   py: "6px",
                   cursor: isCameraInTunnel ? "default" : "pointer",
                   fontFamily: Fonts.main,
-                  fontSize: 12,
+                  fontSize: 14,
                   height: "32px",
-                  fontWeight:
-                    isCameraInTunnel
-                      ? childSelected ? 700 : 700
-                      : isSelected
-                        ? 700
-                        : 400,
+                  lineHeight: 1.43,
+                  fontWeight: isCameraInTunnel
+                    ? childSelected
+                      ? 700
+                      : 400
+                    : isSelected
+                      ? 400
+                      : 400,
                   backgroundColor: isCameraInTunnel
                     ? childSelected
                       ? Colors.vividOrange
                       : "transparent"
                     : isActivitySubRow
                       ? isSelected
-                        ? Colors.lightOrange
+                        ? Colors.blushWhite
                         : "transparent"
                       : isSelected
                         ? Colors.vividOrange
                         : "transparent",
                   color:
-                    (isCameraInTunnel && childSelected) || isSelected
+                    isCameraInTunnel && childSelected
                       ? Colors.white
                       : Colors.lightBlack,
                   transition: "all 0.15s ease",
@@ -640,7 +645,7 @@ const TimelineBody = ({
                         : "transparent"
                       : isActivitySubRow
                         ? isSelected
-                          ? Colors.lightOrange
+                          ? Colors.blushWhite
                           : Colors.white
                         : isSelected
                           ? Colors.vividOrange
@@ -834,7 +839,8 @@ const TimelineBody = ({
               if (listBodyRef.current) {
                 listBodyRef.current.scrollTop += e.deltaY;
                 if (rowsScrollRef.current) {
-                  rowsScrollRef.current.scrollTop = listBodyRef.current.scrollTop;
+                  rowsScrollRef.current.scrollTop =
+                    listBodyRef.current.scrollTop;
                 }
               }
               // Horizontal (trackpad swipe) → pan timeline
@@ -924,6 +930,7 @@ const TimelineBody = ({
                       }}
                     >
                       {camRanges.map((range, i) => {
+                        const isLive = i >= allFrozen.length;
                         const left =
                           ((range.start - visibleStart) / visibleDuration) *
                           100;
@@ -940,7 +947,10 @@ const TimelineBody = ({
                               transform: "translateY(-50%)",
                               height: 19,
                               borderRadius: "8px",
-                              background: "#fdc3e1",
+                              background:
+                                isSelected || isLive
+                                  ? Colors.softPink
+                                  : Colors.lightGrayishBlue,
                             }}
                           />
                         );
@@ -1013,7 +1023,9 @@ const TimelineBody = ({
                             borderRadius: "8px",
                             background:
                               isSelected || isLive
-                                ? Colors.vividOrange
+                                ? isTunnel
+                                  ? Colors.palePeach
+                                  : Colors.vividOrange
                                 : Colors.lightGrayishBlue,
                           }}
                         />

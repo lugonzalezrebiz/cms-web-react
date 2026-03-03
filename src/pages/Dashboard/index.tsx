@@ -16,12 +16,12 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
 
-  const handleActivitySelect = (
-    cameraIndex: number,
-    activityLabel: string,
-  ) => {
+  const handleActivitySelect = (cameraIndex: number, activityLabel: string) => {
     const newId = activityCounterRef.current++;
-    setCameraActivities((prev) => [...prev, { id: newId, cameraIndex, activityLabel }]);
+    setCameraActivities((prev) => [
+      ...prev,
+      { id: newId, cameraIndex, activityLabel },
+    ]);
   };
 
   const cameraMenuItems: CameraContextMenuItem[] = [
@@ -78,7 +78,10 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
             flexShrink: 0,
           }}
         >
-          <TimeLine selectedTab={selectedTab} cameraActivities={cameraActivities} />
+          <TimeLine
+            selectedTab={selectedTab}
+            cameraActivities={cameraActivities}
+          />
         </Box>
       </Box>
     </>
