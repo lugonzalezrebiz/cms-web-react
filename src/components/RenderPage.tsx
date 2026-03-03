@@ -22,10 +22,7 @@ const RenderPage = ({
   onTabChange: (value: string) => void;
 }) => {
   const positionerCondition = !isMobile ? "calc(100% - 250px)" : "100%";
-  const menuItems = [
-    { text: "Home", path: `/home` },
-    { text: "Monitor", path: `/dashboard` },
-  ];
+  const menuItems = [{ text: "Monitor", path: `/dashboard` }];
   return (
     <>
       {drawerOpen ? (
