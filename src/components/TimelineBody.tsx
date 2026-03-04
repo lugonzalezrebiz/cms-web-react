@@ -1036,7 +1036,7 @@ const TimelineBody = ({
               })}
             </Box>
           </Box>
-          {!hasAnyBars && (
+          {!hasAnyBars && !isTunnel && (
             <Box
               sx={{
                 width: "217px",
