@@ -3,6 +3,7 @@ import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import EventMenu, { type CameraContextMenuItem } from "./EventMenu";
+import ExpandCamara from "./ExpandCamara";
 
 function CameraItem({
   index,
@@ -16,7 +17,7 @@ function CameraItem({
   index: number;
   media: string;
   cameraItemList: () => void;
-  expandCamera: () => void;
+  expandCamera: (index: number) => void;
   contextMenuItems?: CameraContextMenuItem[];
   contextMenuTitle?: string;
   iconMenu?: string;
@@ -98,7 +99,7 @@ function CameraItem({
           style={{ cursor: "pointer" }}
           src="../assets/expand-03.svg"
           alt=""
-          onClick={expandCamera}
+          onClick={() => expandCamera(index)}
         />
       </Box>
 
@@ -118,7 +119,6 @@ interface CameraLayoutProps {
   count: number;
   media: string;
   cameraItemList: () => void;
-  expandCamera: () => void;
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
   contextMenuTitle?: string;
@@ -149,11 +149,12 @@ const CameraLayout = ({
   media,
   maxHeight = 350,
   cameraItemList,
-  expandCamera,
   contextMenuItems,
   contextMenuTitle,
   iconMenu,
 }: CameraLayoutProps) => {
+  const [expandedCamera, setExpandedCamera] = useState<number | null>(null);
+
   const safeCount = Math.min(count, 16);
   if (safeCount === 0) return null;
 
@@ -167,59 +168,65 @@ const CameraLayout = ({
   let idx = 0;
 
   return (
-    <Box
-      sx={{
-        display: "grid",
-        gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
-        gap: `${GAP}px`,
-        width: "97%",
-        height: totalHeight,
-        overflow: "hidden",
-        m: "auto",
-      }}
-    >
-      {rowDistribution.map((rowCount, rowIndex) => {
-        const startIdx = idx;
-        idx += rowCount;
+    <>
+      <ExpandCamara
+        expandedCamera={expandedCamera}
+        onClose={() => setExpandedCamera(null)}
+      />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
+          gap: `${GAP}px`,
+          width: "97%",
+          height: totalHeight,
+          overflow: "hidden",
+          m: "auto",
+        }}
+      >
+        {rowDistribution.map((rowCount, rowIndex) => {
+          const startIdx = idx;
+          idx += rowCount;
 
-        return (
-          <Box
-            key={rowIndex}
-            sx={{
-              display: "flex",
-              gap: `${GAP}px`,
-              justifyContent: "center",
-              minHeight: 0,
-              overflow: "hidden",
-            }}
-          >
-            {Array.from({ length: rowCount }, (_, colIndex) => (
-              <Box
-                key={colIndex}
-                sx={{
-                  flex: "0 0 auto",
-                  width: `calc(${100 / maxCols}% - ${
-                    (GAP * (maxCols - 1)) / maxCols
-                  }px)`,
-                  minHeight: 0,
-                  overflow: "hidden",
-                }}
-              >
-                <CameraItem
-                  index={startIdx + colIndex}
-                  media={media}
-                  cameraItemList={cameraItemList}
-                  expandCamera={expandCamera}
-                  contextMenuItems={contextMenuItems}
-                  contextMenuTitle={contextMenuTitle}
-                  iconMenu={iconMenu}
-                />
-              </Box>
-            ))}
-          </Box>
-        );
-      })}
-    </Box>
+          return (
+            <Box
+              key={rowIndex}
+              sx={{
+                display: "flex",
+                gap: `${GAP}px`,
+                justifyContent: "center",
+                minHeight: 0,
+                overflow: "hidden",
+              }}
+            >
+              {Array.from({ length: rowCount }, (_, colIndex) => (
+                <Box
+                  key={colIndex}
+                  sx={{
+                    flex: "0 0 auto",
+                    width: `calc(${100 / maxCols}% - ${
+                      (GAP * (maxCols - 1)) / maxCols
+                    }px)`,
+                    minHeight: 0,
+                    overflow: "hidden",
+                  }}
+                >
+                  <CameraItem
+                    index={startIdx + colIndex}
+                    media={media}
+                    cameraItemList={cameraItemList}
+                    expandCamera={(index) => setExpandedCamera(index)}
+                    contextMenuItems={contextMenuItems}
+                    contextMenuTitle={contextMenuTitle}
+                    iconMenu={iconMenu}
+                  />
+                </Box>
+              ))}
+            </Box>
+          );
+        })}
+      </Box>
+    </>
   );
 };
 

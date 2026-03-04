@@ -5,8 +5,6 @@ import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
@@ -15,8 +13,10 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-
-  const handleActivitySelect = (cameraIndex: number, activityLabel: string) => {
+  const handleActivitySelect = (
+    cameraIndex: number,
+    activityLabel: string,
+  ): void => {
     const newId = activityCounterRef.current++;
     setCameraActivities((prev) => [
       ...prev,
@@ -48,43 +48,35 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
   ];
 
   return (
-    <>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100%",
-          gap: 1,
-        }}
-      >
-        {/* Camera grid */}
-        <Box sx={{ flex: 1, minHeight: 0 }}>
-          <CameraLayout
-            count={cameraCount}
-            media="/assets/camera/Cam thumbnail.svg"
-            maxHeight={"500px"}
-            cameraItemList={() => alert("Camera list clicked")}
-            expandCamera={() => alert("Expand camera clicked")}
-            contextMenuTitle="Comp. Violations"
-            contextMenuItems={cameraMenuItems}
-            iconMenu="/assets/plus.svg"
-          />
-        </Box>
-
-        {/* Timeline panel */}
-        <Box
-          sx={{
-            height: "200px",
-            flexShrink: 0,
-          }}
-        >
-          <TimeLine
-            selectedTab={selectedTab}
-            cameraActivities={cameraActivities}
-          />
-        </Box>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        gap: 1,
+      }}
+    >
+      {/* Camera grid */}
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <CameraLayout
+          count={cameraCount}
+          media="/assets/camera/Cam thumbnail.svg"
+          maxHeight={"500px"}
+          cameraItemList={() => alert("Camera list clicked")}
+          contextMenuTitle="Comp. Violations"
+          contextMenuItems={cameraMenuItems}
+          iconMenu="/assets/plus.svg"
+        />
       </Box>
-    </>
+
+      {/* Timeline panel */}
+      <Box sx={{ height: "200px", flexShrink: 0 }}>
+        <TimeLine
+          selectedTab={selectedTab}
+          cameraActivities={cameraActivities}
+        />
+      </Box>
+    </Box>
   );
 };
 

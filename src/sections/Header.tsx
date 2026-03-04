@@ -9,6 +9,9 @@ import { Box, Grid, useMediaQuery } from "@mui/system";
 import HeaderInfoMenu from "../components/HeaderInfoMenu";
 import KeyboardMenu from "../components/KeyboardMenu";
 import ClockMenu from "../components/ClockMenu";
+import AiMenu from "../components/AiMenu";
+import NotificationMenu from "../components/NotificationMenu";
+import UserPanel from "../components/UserPanel";
 
 const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   position: "sticky",
@@ -123,9 +126,12 @@ const Header = ({
 }) => {
   const [scrolled, setScrolled] = useState(false);
   const selected = selectedTab;
-  const menuHeader = usePopover();
+  const MenuHeader = usePopover();
   const keyboardMenu = usePopover();
   const ClockMenuHeader = usePopover();
+  const AiMenuHeader = usePopover();
+  const NotificationHeader = usePopover();
+  const UserPanelHeader = usePopover();
 
   const mini = useMediaQuery("(max-width:1100px)");
 
@@ -163,7 +169,7 @@ const Header = ({
               width={"100%"}
             >
               <Box
-                onClick={menuHeader.handleOpen}
+                onClick={MenuHeader.handleOpen}
                 sx={{
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
@@ -193,7 +199,11 @@ const Header = ({
               </Box>
               <Box display={"flex"}>
                 <Box>
-                  <StyledImg src="../assets/ai.svg" alt="" />
+                  <StyledImg
+                    onClick={AiMenuHeader.handleOpen}
+                    src="../assets/ai.svg"
+                    alt=""
+                  />
                   <StyledImg
                     onClick={ClockMenuHeader.handleOpen}
                     src="../assets/clock-check.svg"
@@ -204,8 +214,16 @@ const Header = ({
                     src="../assets/keyboard-02.svg"
                     alt=""
                   />
-                  <StyledImg src="../assets/notification.svg" alt="" />
-                  <StyledImg src="../assets/user-circle.svg" alt="" />
+                  <StyledImg
+                    onClick={NotificationHeader.handleOpen}
+                    src="../assets/notification.svg"
+                    alt=""
+                  />
+                  <StyledImg
+                    onClick={UserPanelHeader.handleOpen}
+                    src="../assets/user-circle.svg"
+                    alt=""
+                  />
                 </Box>
                 <Box ml={"20px"}>
                   <StyledImg src="../assets/minus.svg" alt="" />
@@ -222,7 +240,7 @@ const Header = ({
                 size={12}
               >
                 <Box
-                  onClick={menuHeader.handleOpen}
+                  onClick={MenuHeader.handleOpen}
                   sx={{
                     whiteSpace: "nowrap",
                     textOverflow: "ellipsis",
@@ -236,7 +254,11 @@ const Header = ({
                 </Box>
                 <Box display={"flex"}>
                   <Box>
-                    <StyledImg src="../assets/ai.svg" alt="" />
+                    <StyledImg
+                      onClick={AiMenuHeader.handleOpen}
+                      src="../assets/ai.svg"
+                      alt=""
+                    />
                     <StyledImg
                       onClick={ClockMenuHeader.handleOpen}
                       src="../assets/clock-check.svg"
@@ -247,8 +269,16 @@ const Header = ({
                       src="../assets/keyboard-02.svg"
                       alt=""
                     />
-                    <StyledImg src="../assets/notification.svg" alt="" />
-                    <StyledImg src="../assets/user-circle.svg" alt="" />
+                    <StyledImg
+                      onClick={NotificationHeader.handleOpen}
+                      src="../assets/notification.svg"
+                      alt=""
+                    />
+                    <StyledImg
+                      onClick={UserPanelHeader.handleOpen}
+                      src="../assets/user-circle.svg"
+                      alt=""
+                    />
                   </Box>
                   <Box ml={"20px"}>
                     <StyledImg src="../assets/minus.svg" alt="" />
@@ -285,9 +315,9 @@ const Header = ({
         </StyledContainer>
 
         <HeaderInfoMenu
-          anchorEl={menuHeader.anchorEl}
-          handleClose={menuHeader.handleClose}
-          open={menuHeader.open}
+          anchorEl={MenuHeader.anchorEl}
+          handleClose={MenuHeader.handleClose}
+          open={MenuHeader.open}
         />
 
         <KeyboardMenu
@@ -300,6 +330,21 @@ const Header = ({
           anchorEl={ClockMenuHeader.anchorEl}
           open={ClockMenuHeader.open}
           handleClose={ClockMenuHeader.handleClose}
+        />
+        <AiMenu
+          anchorEl={AiMenuHeader.anchorEl}
+          handleClose={AiMenuHeader.handleClose}
+          open={AiMenuHeader.open}
+        />
+        <NotificationMenu
+          anchorEl={NotificationHeader.anchorEl}
+          handleClose={NotificationHeader.handleClose}
+          open={NotificationHeader.open}
+        />
+        <UserPanel
+          anchorEl={UserPanelHeader.anchorEl}
+          handleClose={UserPanelHeader.handleClose}
+          open={UserPanelHeader.open}
         />
         <Divider marginBottom="0" />
       </Fix>
