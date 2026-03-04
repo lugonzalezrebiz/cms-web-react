@@ -92,14 +92,14 @@ const StyledToggleGroup = styled(ToggleButtonGroup)({
 });
 
 export const ToggleButtonTitles = [
-  { value: "1", title: "All", cameraCount: 16 },
-  { value: "2", title: "Tunnel", cameraCount: 6 },
-  { value: "3", title: "Offices", cameraCount: 3 },
-  { value: "4", title: "Drying Station", cameraCount: 5 },
-  { value: "5", title: "Parking Lot", cameraCount: 2 },
+  { value: "1", title: "All", cameraCount: 16, navTab: "employees" },
+  { value: "2", title: "Tunnel", cameraCount: 6, navTab: "activities" },
+  { value: "3", title: "Offices", cameraCount: 3, navTab: "employees" },
+  { value: "4", title: "Drying Station", cameraCount: 5, navTab: "employees" },
+  { value: "5", title: "Parking Lot", cameraCount: 2, navTab: "employees" },
 ];
 
-function usePopover() {
+const usePopover = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   return {
     anchorEl,
@@ -108,7 +108,7 @@ function usePopover() {
       setAnchorEl(e.currentTarget),
     handleClose: () => setAnchorEl(null),
   };
-}
+};
 
 const Header = ({
   toggleDrawer,

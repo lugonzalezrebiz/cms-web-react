@@ -75,6 +75,7 @@ export const Colors = {
   ghostoffWhite: "#eff1f4",
   silverGrey: "#b3b3b3",
   blushWhite: "#fef7f6",
+  softPink: "#fdc3e1",
 };
 
 //Color Palette

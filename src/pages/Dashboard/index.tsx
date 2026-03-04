@@ -1,31 +1,51 @@
 import { Box } from "@mui/system";
-import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import { useRef, useState } from "react";
 import type { CameraContextMenuItem } from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
-
-// ─── Camera context menu ───────────────────────────────────────────────────────
-
-const cameraMenuItems: CameraContextMenuItem[] = [
-  {
-    label: "option 1",
-    icon: <FullscreenIcon fontSize="small" />,
-    shortcut: "F",
-    onClick: (index) => alert(`Fullscreen camera ${index + 1}`),
-    dividerAfter: true,
-  },
-  {
-    label: "option 2",
-    onClick: (index) => alert(`Download camera ${index + 1}`),
-  },
-];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
+
+  const activityCounterRef = useRef(0);
+  const [cameraActivities, setCameraActivities] = useState<
+    { id: number; cameraIndex: number; activityLabel: string }[]
+  >([]);
+
+  const handleActivitySelect = (cameraIndex: number, activityLabel: string) => {
+    const newId = activityCounterRef.current++;
+    setCameraActivities((prev) => [
+      ...prev,
+      { id: newId, cameraIndex, activityLabel },
+    ]);
+  };
+
+  const cameraMenuItems: CameraContextMenuItem[] = [
+    {
+      label: "Collision",
+      onClick: (index) => handleActivitySelect(index, "Collision"),
+    },
+    {
+      label: "Car door open",
+      onClick: (index) => handleActivitySelect(index, "Car door open"),
+    },
+    {
+      label: "Violent behaviour",
+      onClick: (index) => handleActivitySelect(index, "Violent behaviour"),
+    },
+    {
+      label: "Human in tunnel",
+      onClick: (index) => handleActivitySelect(index, "Human in tunnel"),
+    },
+    {
+      label: "Slip & Fall",
+      onClick: (index) => handleActivitySelect(index, "Slip & Fall"),
+    },
+  ];
 
   return (
     <>
@@ -58,7 +78,10 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
             flexShrink: 0,
           }}
         >
-          <TimeLine />
+          <TimeLine
+            selectedTab={selectedTab}
+            cameraActivities={cameraActivities}
+          />
         </Box>
       </Box>
     </>
