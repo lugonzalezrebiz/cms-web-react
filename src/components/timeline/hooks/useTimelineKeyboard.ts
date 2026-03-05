@@ -45,6 +45,9 @@ export const useTimelineKeyboard = ({
   // ── "i" (punch-in cycle) and "o" (punch-out all) ────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
       if (isTunnel && e.key === "i") return;
       if (e.key === "i") {
         const currentMarker = markerSec ?? timelineStartSec;
@@ -150,6 +153,9 @@ export const useTimelineKeyboard = ({
     const step = 60;
 
     const handleArrow = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
       if (selectedTracks.size > 0) {
         if (e.key !== "ArrowRight") return;
       } else {
