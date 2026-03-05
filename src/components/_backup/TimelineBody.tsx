@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { Colors, Fonts } from "../theme";
+import { Colors, Fonts } from "../../theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export type NavTab = "employees" | "compliances" | "activities";

@@ -1,10 +1,10 @@
 import { Box, Popover } from "@mui/material";
-import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
 import { useState } from "react";
 import TimelineBody, { type TimelineSnapshot } from "./TimelineBody";
 import styled from "@emotion/styled";
-import Tooltip from "./Tooltip";
+import { Colors, Fonts } from "../../theme";
+import Tooltip from "../Tooltip";
 
 export type NavTab = "employees" | "compliances" | "activities";
 
