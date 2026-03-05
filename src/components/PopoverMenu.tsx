@@ -31,7 +31,6 @@ const PopoverMenu = ({
             background: Colors.white,
             width: "100%",
             maxWidth: "332px",
-            height: "100%",
             maxHeight: height ? height : "380px",
             display: "flex",
             flexDirection: "column",

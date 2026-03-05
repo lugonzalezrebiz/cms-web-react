@@ -2,12 +2,11 @@ import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
 import { useState } from "react";
-import TimelineBody from "./TimelineBody";
+import TimelineBody, { type TimelineSnapshot } from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
-import type { NavTab } from "./timeline/types";
-import { NAV_TABS, CAMERA_OPTIONS, MOCK_SNAPSHOT } from "./timeline/constants";
-import { usePopover } from "./timeline/hooks/usePopover";
+
+export type NavTab = "employees" | "compliances" | "activities";
 
 const MenuCameraContainer = styled(Box)({
   display: "flex",
@@ -40,6 +39,97 @@ const TextCameraMenu = styled("p")({
   textAlign: "left",
 });
 
+const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
+  { id: "employees", label: "Employee punches", iconClass: "users-03" },
+  {
+    id: "compliances",
+    label: "Compliance violations",
+    iconClass: "shield-tick",
+  },
+  { id: "activities", label: "Activities", iconClass: "placeholder" },
+];
+
+const CAMERA_OPTIONS = [
+  "Off",
+  "Collision",
+  "Car door open",
+  "Violent behaviours",
+  "Human in tunnel",
+  "Slip & Fall",
+];
+
+const MOCK_SNAPSHOT: TimelineSnapshot = {
+  timeline: {
+    times: {
+      start: "09:00:00",
+      end: "19:00:00",
+      current: "12:30:00",
+      buffer: 0,
+      interval: 3600,
+      businessStart: "09:00:00",
+      businessEnd: "19:00:00",
+      actualStart: "08:55:00",
+      actualEnd: "18:05:00",
+    },
+    tracks: [
+      {
+        id: 1,
+        name: "John Smith",
+        category: "employees" as NavTab,
+        sessions: [
+          // { type: "in" as const, timestamp: "09:05:00" },
+          // { type: "out" as const, timestamp: "12:00:00" },
+          // { type: "in" as const, timestamp: "13:00:00" },
+          // { type: "out" as const, timestamp: "17:30:00" },
+        ],
+      },
+      {
+        id: 2,
+        name: "Maria Garcia",
+        category: "employees" as NavTab,
+        sessions: [
+          // { type: "in" as const, timestamp: "08:55:00" },
+          // { type: "out" as const, timestamp: "18:05:00" },
+        ],
+      },
+      {
+        id: 3,
+        name: "Speed violation",
+        category: "compliances" as NavTab,
+        sessions: [
+          { type: "in" as const, timestamp: "10:15:00" },
+          { type: "out" as const, timestamp: "10:20:00" },
+        ],
+      },
+      {
+        id: 4,
+        name: "Loading bay",
+        category: "activities" as NavTab,
+        sessions: [
+          { type: "in" as const, timestamp: "11:00:00" },
+          { type: "out" as const, timestamp: "14:30:00" },
+        ],
+      },
+    ],
+  },
+  ui: {
+    panOffsetSec: 0,
+    zoom: 1,
+    category: "employees" as NavTab,
+    playback: false,
+  },
+};
+
+const usePopover = () => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  return {
+    anchorEl,
+    open: Boolean(anchorEl),
+    handleOpen: (e: React.MouseEvent<HTMLElement>) =>
+      setAnchorEl(e.currentTarget),
+    handleClose: () => setAnchorEl(null),
+  };
+};
 
 const TimeLine = ({
   selectedTab,

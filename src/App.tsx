@@ -4,6 +4,7 @@ import { useMediaQuery } from "@mui/material";
 import { Breakpoints, Colors } from "./theme";
 import Dashboard from "./pages/Dashboard";
 import { Navigate, Route, Routes } from "react-router-dom";
+import Login from "./pages/Login";
 
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -22,6 +23,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
       <Route
         path="/dashboard"
         element={
@@ -36,7 +38,7 @@ function App() {
           </RenderPage>
         }
       />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
