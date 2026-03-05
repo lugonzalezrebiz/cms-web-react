@@ -5,6 +5,16 @@ import { Colors, Fonts } from "../theme";
 import EventMenu, { type CameraContextMenuItem } from "./EventMenu";
 import ExpandCamara from "./ExpandCamara";
 
+interface CameraItemProps {
+  index: number;
+  media: string;
+  cameraItemList: () => void;
+  expandCamera: (index: number) => void;
+  contextMenuItems?: CameraContextMenuItem[];
+  contextMenuTitle?: string;
+  iconMenu?: string;
+}
+
 function CameraItem({
   index,
   media,
@@ -13,15 +23,7 @@ function CameraItem({
   contextMenuItems = [],
   contextMenuTitle,
   iconMenu,
-}: {
-  index: number;
-  media: string;
-  cameraItemList: () => void;
-  expandCamera: (index: number) => void;
-  contextMenuItems?: CameraContextMenuItem[];
-  contextMenuTitle?: string;
-  iconMenu?: string;
-}) {
+}: CameraItemProps) {
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;

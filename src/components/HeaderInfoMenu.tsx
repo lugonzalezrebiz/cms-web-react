@@ -58,6 +58,41 @@ const SubTextHeaderMenu = styled("p")({
   textAlign: "left",
 });
 
+const HEADER_INFO_MOCK = {
+  title: "Information",
+  subTitle: {
+    store: "7437 (0079)",
+    user: "605",
+  },
+  date: "Mar 19, 2025",
+  items: [
+    {
+      activity: "Open",
+      complement: "09:00 (MST)",
+    },
+    {
+      activity: "Close",
+      complement: "19:00 (MST)",
+    },
+    {
+      activity: "Open at",
+      complement: "08:00",
+    },
+    {
+      activity: "DVR",
+      complement: "08:00",
+    },
+    {
+      activity: "Diff",
+      complement: "0",
+    },
+    {
+      activity: "Interval",
+      complement: "Events",
+    },
+  ],
+};
+
 const HeaderInfoMenu = ({ anchorEl, open, handleClose }: Props) => {
   return (
     <PopoverMenu anchorEl={anchorEl} open={open} setAnchorEl={handleClose}>
@@ -68,40 +103,19 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose }: Props) => {
         }}
       >
         <Box sx={{ borderBottom: `1px solid ${Colors.silverGrey}` }}>
-          <TitleHeaderMenu>Information</TitleHeaderMenu>
+          <TitleHeaderMenu>{HEADER_INFO_MOCK.title}</TitleHeaderMenu>
           <SubTitleHeaderMenu>
-            Store: 7437 (0079) <span style={{ margin: "0 5px" }}> - </span>{" "}
-            User: 605
+            Store: {HEADER_INFO_MOCK.subTitle.store}{" "}
+            <span style={{ margin: "0 5px" }}> - </span> User:{" "}
+            {HEADER_INFO_MOCK.subTitle.user}
           </SubTitleHeaderMenu>
         </Box>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>Date</TextHeaderMenu>
-          <SubTextHeaderMenu>Mar 19, 2025</SubTextHeaderMenu>
-        </MenuHeaderContainer>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>Open</TextHeaderMenu>
-          <SubTextHeaderMenu>09:00 (MST)</SubTextHeaderMenu>
-        </MenuHeaderContainer>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>Close</TextHeaderMenu>
-          <SubTextHeaderMenu>19:00 (MST)</SubTextHeaderMenu>
-        </MenuHeaderContainer>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>Open at</TextHeaderMenu>
-          <SubTextHeaderMenu>08:00 </SubTextHeaderMenu>
-        </MenuHeaderContainer>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>DVR</TextHeaderMenu>
-          <SubTextHeaderMenu>08:00 </SubTextHeaderMenu>
-        </MenuHeaderContainer>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>Diff</TextHeaderMenu>
-          <SubTextHeaderMenu>0</SubTextHeaderMenu>
-        </MenuHeaderContainer>
-        <MenuHeaderContainer sx={{ mt: "8px" }}>
-          <TextHeaderMenu>Interval</TextHeaderMenu>
-          <SubTextHeaderMenu>Events</SubTextHeaderMenu>
-        </MenuHeaderContainer>
+        {HEADER_INFO_MOCK.items.map((item, index) => (
+          <MenuHeaderContainer sx={{ mt: index === 0 ? "8px" : undefined }}>
+            <TextHeaderMenu>{item.activity}</TextHeaderMenu>
+            <SubTextHeaderMenu>{item.complement}</SubTextHeaderMenu>
+          </MenuHeaderContainer>
+        ))}
       </Box>
     </PopoverMenu>
   );

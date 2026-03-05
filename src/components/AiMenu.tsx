@@ -48,10 +48,6 @@ const AiMenu = ({ anchorEl, open, handleClose }: Props) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const handleSend = () => {
     if (!input.trim()) return;
     setMessages((prev) => [
@@ -60,6 +56,10 @@ const AiMenu = ({ anchorEl, open, handleClose }: Props) => {
     ]);
     setInput("");
   };
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <PopoverMenu

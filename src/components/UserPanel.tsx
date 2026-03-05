@@ -95,10 +95,23 @@ const LogoutText = styled(MenuRowText)({
   color: Colors.red,
 });
 
-const MENU_ITEMS = [
-  { icon: "../assets/user-circle.svg", label: "My Profile" },
-  { icon: "../assets/keyboard-02.svg", label: "Settings" },
-];
+const USER_PANEL_MOCK = {
+  title: "Account",
+  user: {
+    initials: "Ad",
+    name: "Admin",
+    role: "Admin",
+    email: "admin@rebiz.com",
+  },
+  items: [
+    { icon: "../assets/user-circle.svg", label: "My Profile" },
+    { icon: "../assets/keyboard-02.svg", label: "Settings" },
+  ],
+  logout: {
+    icon: "../assets/x-close.svg",
+    label: "Log out",
+  },
+};
 
 const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
   const navigate = useNavigateWithQuery();
@@ -125,24 +138,24 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
         }}
       >
         <TitleRow>
-          <TitleText>Account</TitleText>
+          <TitleText>{USER_PANEL_MOCK.title}</TitleText>
         </TitleRow>
 
         <Box
           sx={{ display: "flex", alignItems: "center", gap: "12px", py: "6px" }}
         >
-          <Avatar>Ad</Avatar>
+          <Avatar>{USER_PANEL_MOCK.user.initials}</Avatar>
           <Box>
-            <UserName>Admin</UserName>
-            <UserRole>Admin</UserRole>
-            <UserEmail>admin@rebiz.com</UserEmail>
+            <UserName>{USER_PANEL_MOCK.user.name}</UserName>
+            <UserRole>{USER_PANEL_MOCK.user.role}</UserRole>
+            <UserEmail>{USER_PANEL_MOCK.user.email}</UserEmail>
           </Box>
         </Box>
 
         <Divider sx={{ borderColor: Colors.paleGray, my: "2px" }} />
 
         <Box sx={{ display: "flex", flexDirection: "column" }}>
-          {MENU_ITEMS.map(({ icon, label }) => (
+          {USER_PANEL_MOCK.items.map(({ icon, label }) => (
             <MenuRow key={label}>
               <img src={icon} alt="" width={18} height={18} />
               <MenuRowText>{label}</MenuRowText>
@@ -152,8 +165,8 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
           <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
 
           <MenuRow onClick={handleLogout}>
-            <img src="../assets/x-close.svg" alt="" width={18} height={18} />
-            <LogoutText>Log out</LogoutText>
+            <img src={USER_PANEL_MOCK.logout.icon} alt="" width={18} height={18} />
+            <LogoutText>{USER_PANEL_MOCK.logout.label}</LogoutText>
           </MenuRow>
         </Box>
       </Box>

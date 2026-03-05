@@ -59,6 +59,32 @@ const SubTextClockMenu = styled("p")({
   textAlign: "left",
 });
 
+const CLOCK_MENU_MOCK = {
+  title: "External data",
+  items: [
+    {
+      activity: "30 min Stretch",
+      name: "Sebastian Castillo",
+      hour: "08:30",
+    },
+    {
+      activity: "30 min Stretch",
+      name: "Jethro Nicolas",
+      hour: "10:00",
+    },
+    {
+      activity: "30 min Stretch",
+      name: "David Guillory",
+      hour: "13:30",
+    },
+    {
+      activity: "60 min Stretch",
+      name: "Sebastian Castillo",
+      hour: "16:00",
+    },
+  ],
+};
+
 const ClockMenu = ({ anchorEl, open, handleClose }: Props) => {
   return (
     <PopoverMenu
@@ -74,36 +100,17 @@ const ClockMenu = ({ anchorEl, open, handleClose }: Props) => {
         }}
       >
         <TitleClockMenu style={{ marginTop: "8px" }}>
-          External data
+          {CLOCK_MENU_MOCK.title}
         </TitleClockMenu>
-        <MenuClockContainer mt={"8px"}>
-          <Box>
-            <TextClockMenu>30 min Stretch</TextClockMenu>
-            <SubTextClockMenu>Sebastian Castillo</SubTextClockMenu>
-          </Box>
-          <NumberClockMenu>08:30</NumberClockMenu>
-        </MenuClockContainer>
-        <MenuClockContainer>
-          <Box>
-            <TextClockMenu>30 min Stretch Demo</TextClockMenu>
-            <SubTextClockMenu>Jethro Nicolas</SubTextClockMenu>
-          </Box>
-          <NumberClockMenu>10:00</NumberClockMenu>
-        </MenuClockContainer>
-        <MenuClockContainer>
-          <Box>
-            <TextClockMenu>30 min Stretch</TextClockMenu>
-            <SubTextClockMenu>David Guillory</SubTextClockMenu>
-          </Box>
-          <NumberClockMenu>13:30</NumberClockMenu>
-        </MenuClockContainer>
-        <MenuClockContainer>
-          <Box>
-            <TextClockMenu>60 min Stretching Consultation</TextClockMenu>
-            <SubTextClockMenu>Sebastian Castillo</SubTextClockMenu>
-          </Box>
-          <NumberClockMenu>16:00</NumberClockMenu>
-        </MenuClockContainer>
+        {CLOCK_MENU_MOCK.items.map((item, index) => (
+          <MenuClockContainer mt={index === 0 ? "8px" : undefined}>
+            <Box>
+              <TextClockMenu>{item.activity}</TextClockMenu>
+              <SubTextClockMenu>{item.name}</SubTextClockMenu>
+            </Box>
+            <NumberClockMenu>{item.hour}</NumberClockMenu>
+          </MenuClockContainer>
+        ))}
       </Box>
     </PopoverMenu>
   );
