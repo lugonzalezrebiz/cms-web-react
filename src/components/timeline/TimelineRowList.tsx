@@ -175,7 +175,7 @@ export const TimelineRowList = ({
                   isCameraInTunnel && childSelected
                     ? Colors.white
                     : isSelected
-                      ? Colors.white
+                      ? Colors.lightBlack
                       : Colors.lightBlack,
                 transition: "all 0.15s ease",
                 "&:hover": {
