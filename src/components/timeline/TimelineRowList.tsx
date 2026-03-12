@@ -172,10 +172,12 @@ export const TimelineRowList = ({
                       ? Colors.vividOrange
                       : "transparent",
                 color:
-                  isCameraInTunnel && childSelected
-                    ? Colors.white
-                    : isSelected
-                      ? Colors.lightBlack
+                  isCameraInTunnel
+                    ? childSelected
+                      ? Colors.white
+                      : Colors.lightBlack
+                    : isSelected && !isActivitySubRow
+                      ? Colors.white
                       : Colors.lightBlack,
                 transition: "all 0.15s ease",
                 "&:hover": {
