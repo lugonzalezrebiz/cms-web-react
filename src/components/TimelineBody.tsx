@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../theme";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { NavTab, TimelineBodyProps, FlatRow } from "./timeline/types";
 import { TUNNEL_CAMERAS, MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
@@ -20,6 +20,7 @@ const TimelineBody = ({
   activeTab,
   selectedTab,
   cameraActivities,
+  onMarkerChange,
 }: TimelineBodyProps) => {
   const isTunnel = selectedTab === "2";
 
@@ -94,6 +95,10 @@ const TimelineBody = ({
     timelineEndSec,
     firstActivitySec,
   });
+
+  useEffect(() => {
+    onMarkerChange?.(state.resolvedMarkerSec);
+  }, [state.resolvedMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useTimelineKeyboard({
     isTunnel,

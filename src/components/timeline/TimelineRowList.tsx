@@ -113,14 +113,17 @@ export const TimelineRowList = ({
           const isActive = isSelected || (isFocused && !isCameraInTunnel);
 
           const bgColor = (() => {
-            if (isCameraInTunnel) return childSelected ? Colors.vividOrange : "transparent";
-            if (isActivitySubRow) return isActive ? Colors.blushWhite : "transparent";
+            if (isCameraInTunnel)
+              return childSelected ? Colors.vividOrange : "transparent";
+            if (isActivitySubRow)
+              return isActive ? Colors.blushWhite : "transparent";
             if (isActive) return Colors.vividOrange;
             return "transparent";
           })();
 
           const textColor = (() => {
-            if (isCameraInTunnel) return childSelected ? Colors.white : Colors.lightBlack;
+            if (isCameraInTunnel)
+              return childSelected ? Colors.white : Colors.lightBlack;
             if (isActivitySubRow) return Colors.lightBlack;
             if (isActive) return Colors.white;
             return Colors.lightBlack;
@@ -150,9 +153,9 @@ export const TimelineRowList = ({
               {!isActivitySubRow && (
                 <Box
                   sx={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: "50%",
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50px",
                     backgroundColor:
                       (isCameraInTunnel && childSelected) || isActive
                         ? Colors.white
@@ -162,18 +165,15 @@ export const TimelineRowList = ({
                         ? Colors.vividOrange
                         : Colors.white,
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight:
-                      (isCameraInTunnel && childSelected) || isActive
-                        ? 700
-                        : 400,
-                    textAlign: "center",
-                    flexShrink: 0,
+                    fontSize: "12px",
+                    alignItems: "center",
+                    fontWeight: 700,
+                    fontFamily: Fonts.main,
+                    padding: 0,
                   }}
                 >
-                  {row.cameraNumber}
+                  <span style={{ marginTop: "2px" }}>{row.cameraNumber}</span>
                 </Box>
               )}
               {row.name}

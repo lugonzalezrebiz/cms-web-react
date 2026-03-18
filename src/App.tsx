@@ -16,9 +16,15 @@ function App() {
   useEffect(() => {
     document.body.style.margin = "0";
     document.body.style.padding = "0";
+    document.body.style.height = "100%";
     document.documentElement.style.margin = "0";
     document.documentElement.style.padding = "0";
+    document.documentElement.style.height = "100%";
     document.documentElement.style.backgroundColor = Colors.ghostoffWhite;
+    const root = document.getElementById("root");
+    if (root) {
+      root.style.height = "100%";
+    }
   }, []);
 
   return (

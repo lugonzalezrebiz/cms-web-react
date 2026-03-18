@@ -26,8 +26,12 @@ const RenderPage = ({
   return (
     <>
       {drawerOpen ? (
-        <Grid container justifyContent={"space-between"}>
-          <Grid width={"250px"}>
+        <Grid
+          container
+          justifyContent={"space-between"}
+          sx={{ height: "100%", overflow: "hidden" }}
+        >
+          <Grid width={"250px"} sx={{ height: "100%" }}>
             <Menu
               withIcon={false}
               items={menuItems}
@@ -36,7 +40,10 @@ const RenderPage = ({
               isMobile={isMobile || false}
             />
           </Grid>
-          <Grid width={positionerCondition}>
+          <Grid
+            width={positionerCondition}
+            sx={{ display: "flex", flexDirection: "column", height: "100%" }}
+          >
             <Header
               withIconMenu={false}
               toggleDrawer={toggleDrawer || (() => {})}
@@ -47,7 +54,14 @@ const RenderPage = ({
           </Grid>
         </Grid>
       ) : (
-        <Grid>
+        <Grid
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
           <Header
             withIconMenu={withIconMenu}
             toggleDrawer={toggleDrawer || (() => {})}

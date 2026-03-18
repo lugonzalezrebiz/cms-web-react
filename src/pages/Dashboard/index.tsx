@@ -19,7 +19,8 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
   ): void => {
     setCameraActivities((prev) => {
       const alreadyExists = prev.some(
-        (a) => a.cameraIndex === cameraIndex && a.activityLabel === activityLabel,
+        (a) =>
+          a.cameraIndex === cameraIndex && a.activityLabel === activityLabel,
       );
       if (alreadyExists) return prev;
       const newId = activityCounterRef.current++;
@@ -56,15 +57,16 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        overflow: "hidden",
         gap: 1,
       }}
     >
       {/* Camera grid */}
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
         <CameraLayout
           count={cameraCount}
           media="/assets/camera/Cam thumbnail.svg"
-          maxHeight={"500px"}
+          maxHeight="100%"
           cameraItemList={() => alert("Camera list clicked")}
           contextMenuTitle="Comp. Violations"
           contextMenuItems={selectedTab === "2" ? cameraMenuItems : []}
@@ -73,7 +75,7 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
       </Box>
 
       {/* Timeline panel */}
-      <Box sx={{ height: "200px", flexShrink: 0 }}>
+      <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
           selectedTab={selectedTab}
           cameraActivities={cameraActivities}

@@ -1,7 +1,7 @@
 import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import TimelineBody from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
@@ -40,7 +40,6 @@ const TextCameraMenu = styled("p")({
   textAlign: "left",
 });
 
-
 const TimeLine = ({
   selectedTab,
   cameraActivities,
@@ -54,6 +53,18 @@ const TimeLine = ({
 }) => {
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
+  const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
+
+  const handleMarkerChange = useCallback((sec: number) => {
+    setMarkerTimeSec(sec);
+  }, []);
+
+  const secToTimeString = (sec: number) => {
+    const h = Math.floor(sec / 3600).toString().padStart(2, "0");
+    const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");
+    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    return `${h}:${m}:${s}`;
+  };
 
   const nav = usePopover();
   const cameraMenu = usePopover();
@@ -206,7 +217,9 @@ const TimeLine = ({
                 m: "0 8px 2px 0",
               }}
             >
-              {MOCK_SNAPSHOT.timeline.times.start}
+              {markerTimeSec !== null
+                ? secToTimeString(markerTimeSec)
+                : MOCK_SNAPSHOT.timeline.times.start}
             </Box>
             <Box onClick={() => {}}>
               <img src="../assets/play.svg" alt="" />
@@ -474,6 +487,7 @@ const TimeLine = ({
         activeTab={activeTab}
         selectedTab={selectedTab}
         cameraActivities={cameraActivities}
+        onMarkerChange={handleMarkerChange}
       />
     </Box>
   );
