@@ -43,6 +43,7 @@ const TextCameraMenu = styled("p")({
 const TimeLine = ({
   selectedTab,
   cameraActivities,
+  drawerOpen,
 }: {
   selectedTab?: string;
   cameraActivities?: {
@@ -50,6 +51,7 @@ const TimeLine = ({
     cameraIndex: number;
     activityLabel: string;
   }[];
+  drawerOpen?: boolean;
 }) => {
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
@@ -60,9 +62,15 @@ const TimeLine = ({
   }, []);
 
   const secToTimeString = (sec: number) => {
-    const h = Math.floor(sec / 3600).toString().padStart(2, "0");
-    const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");
-    const s = Math.floor(sec % 60).toString().padStart(2, "0");
+    const h = Math.floor(sec / 3600)
+      .toString()
+      .padStart(2, "0");
+    const m = Math.floor((sec % 3600) / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = Math.floor(sec % 60)
+      .toString()
+      .padStart(2, "0");
     return `${h}:${m}:${s}`;
   };
 
@@ -125,7 +133,8 @@ const TimeLine = ({
             {selectedCameraOption !== "Off" && selectedTab === "2" ? (
               <Tooltip
                 withoutIcon
-                position="top"
+                textAlign="center"
+                position={drawerOpen ? "top" : "right"}
                 detail={
                   <Box>
                     <Box sx={{ color: "#959fa9", fontWeight: 400 }}>
@@ -336,6 +345,8 @@ const TimeLine = ({
               borderRadius: "18px",
               p: "8px",
               boxShadow: "none",
+              marginTop: "-10px",
+              marginLeft: drawerOpen ? "0" : "-8px",
             },
           },
         }}
@@ -432,6 +443,8 @@ const TimeLine = ({
               gap: "8px",
               boxShadow: " 0 2px 10px 0 rgba(0, 0, 0, 0.16)",
               borderRadius: "8px",
+              marginTop: "-2px",
+              marginLeft: drawerOpen ? "-5px" : "-8px",
             },
           },
         }}

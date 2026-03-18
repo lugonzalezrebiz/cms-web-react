@@ -1,5 +1,7 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
+import { useState, useEffect } from "react";
+import type { FlatRow } from "./types";
 
 interface TimelineMarkerProps {
   isCurrentVisible: boolean;
@@ -7,7 +9,12 @@ interface TimelineMarkerProps {
   selectedTracks: Set<number>;
   showPunchOut: boolean;
   iTrackId: number | null;
+  flatRows: FlatRow[];
+  listBodyRef: React.RefObject<HTMLDivElement | null>;
 }
+
+const RULER_HEIGHT = 28;
+const ROW_HEIGHT = 44;
 
 export const TimelineMarker = ({
   isCurrentVisible,
@@ -15,9 +22,28 @@ export const TimelineMarker = ({
   selectedTracks,
   showPunchOut,
   iTrackId,
+  flatRows,
+  listBodyRef,
 }: TimelineMarkerProps) => {
+  const [scrollTop, setScrollTop] = useState(0);
+
+  useEffect(() => {
+    const el = listBodyRef.current;
+    if (!el) return;
+    const onScroll = () => setScrollTop(el.scrollTop);
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [listBodyRef]);
+
   const focusedNotBuilding = iTrackId !== null && !selectedTracks.has(iTrackId);
   if (!isCurrentVisible) return null;
+
+  const rowIndex =
+    iTrackId !== null ? flatRows.findIndex((r) => r.id === iTrackId) : -1;
+  const messageTop =
+    rowIndex >= 0
+      ? RULER_HEIGHT + rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 - 8 - scrollTop
+      : 42;
 
   return (
     <>
@@ -72,7 +98,7 @@ export const TimelineMarker = ({
           sx={{
             position: "absolute",
             left: `${currentLeft + 1}%`,
-            top: 42,
+            top: messageTop,
             color: Colors.dimGray,
             fontSize: 12,
             fontWeight: 400,
@@ -96,7 +122,7 @@ export const TimelineMarker = ({
           sx={{
             position: "absolute",
             left: `${currentLeft + 1}%`,
-            top: 42,
+            top: messageTop,
             color: Colors.dimGray,
             fontSize: 12,
             fontWeight: 400,
@@ -119,7 +145,7 @@ export const TimelineMarker = ({
           sx={{
             position: "absolute",
             left: `${currentLeft + 1}%`,
-            top: 40,
+            top: messageTop,
             color: Colors.dimGray,
             fontSize: 12,
             fontWeight: 400,

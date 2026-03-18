@@ -40,7 +40,7 @@ function App() {
             selectedTab={selectedTab}
             onTabChange={setSelectedTab}
           >
-            <Dashboard selectedTab={selectedTab} />
+            <Dashboard selectedTab={selectedTab} drawerOpen={drawerOpen} />
           </RenderPage>
         }
       />

@@ -197,6 +197,8 @@ const TimelineBody = ({
           selectedTracks={state.selectedTracks}
           showPunchOut={state.showPunchOut}
           iTrackId={state.iTrackId}
+          flatRows={flatRows}
+          listBodyRef={state.listBodyRef}
         />
       </Box>
     </Box>

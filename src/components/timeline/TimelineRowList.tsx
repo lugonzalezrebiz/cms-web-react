@@ -54,6 +54,7 @@ export const TimelineRowList = ({
           justifyContent: "space-between",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
           height: "28px",
+          width: "133px",
           padding: "0 4px 0 8px",
         }}
       >

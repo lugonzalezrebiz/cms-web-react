@@ -5,7 +5,7 @@ import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 
-const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
+const Dashboard = ({ selectedTab, drawerOpen }: { selectedTab: string; drawerOpen?: boolean }) => {
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
 
@@ -79,6 +79,7 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
         <TimeLine
           selectedTab={selectedTab}
           cameraActivities={cameraActivities}
+          drawerOpen={drawerOpen}
         />
       </Box>
     </Box>
