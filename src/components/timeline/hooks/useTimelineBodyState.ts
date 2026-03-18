@@ -49,15 +49,9 @@ export const useTimelineBodyState = ({
   const rowsScrollRef = useRef<HTMLDivElement | null>(null);
   const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const markerSecRef = useRef<number | null>(null);
-  const timelineStartSecRef = useRef(0);
   const prevCameraActivitiesRef = useRef<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-
-  // Keep refs current
-  markerSecRef.current = markerSec;
-  timelineStartSecRef.current = timelineStartSec;
 
   // Derived layout values
   const visibleDuration = totalSec / zoom;
@@ -145,20 +139,11 @@ export const useTimelineBodyState = ({
     const newActivities = current.filter((a) => !prevIds.has(a.id));
 
     if (newActivities.length > 0) {
-      const currentMarker =
-        markerSecRef.current ?? timelineStartSecRef.current;
-      setSelectedTracks((p) => {
-        const next = new Set(p);
-        newActivities.forEach((act) => next.add(10000 + act.id));
-        return next;
-      });
-      setActiveSessionStarts((p) => {
-        const next = { ...p };
-        newActivities.forEach((act) => {
-          next[10000 + act.id] = currentMarker;
-        });
-        return next;
-      });
+      const lastId = 10000 + newActivities[newActivities.length - 1].id;
+      setITrackId(lastId);
+      setSelectedTracks(new Set());
+      setActiveSessionStarts({});
+      setCompletedSessions({});
     }
     prevCameraActivitiesRef.current = current;
   }, [cameraActivities, isTunnel]);

@@ -50,24 +50,6 @@ export const MOCK_SNAPSHOT: TimelineSnapshot = {
         category: "employees" as NavTab,
         sessions: [],
       },
-      {
-        id: 3,
-        name: "Speed violation",
-        category: "compliances" as NavTab,
-        sessions: [
-          { type: "in" as const, timestamp: "10:15:00" },
-          { type: "out" as const, timestamp: "10:20:00" },
-        ],
-      },
-      {
-        id: 4,
-        name: "Loading bay",
-        category: "activities" as NavTab,
-        sessions: [
-          { type: "in" as const, timestamp: "11:00:00" },
-          { type: "out" as const, timestamp: "14:30:00" },
-        ],
-      },
     ],
   },
   ui: {

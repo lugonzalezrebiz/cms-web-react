@@ -17,11 +17,14 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
     cameraIndex: number,
     activityLabel: string,
   ): void => {
-    const newId = activityCounterRef.current++;
-    setCameraActivities((prev) => [
-      ...prev,
-      { id: newId, cameraIndex, activityLabel },
-    ]);
+    setCameraActivities((prev) => {
+      const alreadyExists = prev.some(
+        (a) => a.cameraIndex === cameraIndex && a.activityLabel === activityLabel,
+      );
+      if (alreadyExists) return prev;
+      const newId = activityCounterRef.current++;
+      return [...prev, { id: newId, cameraIndex, activityLabel }];
+    });
   };
 
   const cameraMenuItems: CameraContextMenuItem[] = [
@@ -64,7 +67,7 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
           maxHeight={"500px"}
           cameraItemList={() => alert("Camera list clicked")}
           contextMenuTitle="Comp. Violations"
-          contextMenuItems={cameraMenuItems}
+          contextMenuItems={selectedTab === "2" ? cameraMenuItems : []}
           iconMenu="/assets/plus.svg"
         />
       </Box>

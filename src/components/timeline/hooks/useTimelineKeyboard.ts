@@ -48,86 +48,68 @@ export const useTimelineKeyboard = ({
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
-      if (isTunnel && e.key === "i") return;
       if (e.key === "i") {
+        if (iTrackId === null) return;
         const currentMarker = markerSec ?? timelineStartSec;
 
-        // Complete the current i-cycled track's session
-        if (iTrackId !== null) {
-          const sessionStart = activeSessionStarts[iTrackId];
-          if (sessionStart !== undefined) {
-            setCompletedSessions((prev) => ({
-              ...prev,
-              [iTrackId]: [
-                ...(prev[iTrackId] ?? []),
-                { start: sessionStart, end: currentMarker },
-              ],
-            }));
-          }
-          setActiveSessionStarts((prev) => {
-            const next = { ...prev };
-            delete next[iTrackId];
-            return next;
-          });
+        if (activeSessionStarts[iTrackId] !== undefined) {
+          // Already building → deselect current (keep building), advance focus to next
           setSelectedTracks((prev) => {
             const next = new Set(prev);
             next.delete(iTrackId);
             return next;
           });
-        }
 
-        // Advance to next track in cycle
-        const nextTrack = (() => {
-          if (selectableRows.length === 0) return null;
-          if (iTrackId === null) return selectableRows[0].id;
-          const currentIndex = selectableRows.findIndex(
-            (r) => r.id === iTrackId,
-          );
+          const currentIndex = selectableRows.findIndex((r) => r.id === iTrackId);
           const nextIndex = (currentIndex + 1) % selectableRows.length;
-          return selectableRows[nextIndex].id;
-        })();
+          const nextTrack = selectableRows[nextIndex]?.id ?? null;
+          setITrackId(nextTrack);
 
-        setITrackId(nextTrack);
-        if (nextTrack !== null) {
-          setSelectedTracks((prev) => {
-            const next = new Set(prev);
-            next.add(nextTrack);
-            return next;
-          });
+          // Select next track (re-select if already building); building starts on next "i"
+          if (nextTrack !== null) {
+            setSelectedTracks(new Set([nextTrack]));
+          }
+        } else {
+          // Not yet building → start session for focused track (single selection)
+          setSelectedTracks(new Set([iTrackId]));
           setActiveSessionStarts((prev) => ({
             ...prev,
-            [nextTrack]: currentMarker,
+            [iTrackId]: currentMarker,
           }));
         }
       } else if (e.key === "o") {
         const currentMarker = markerSec ?? timelineStartSec;
-        // Complete ALL active sessions simultaneously
-        setCompletedSessions((prev) => {
-          const updates = { ...prev };
-          for (const [idStr, sessionStart] of Object.entries(
-            activeSessionStarts,
-          )) {
-            const id = Number(idStr);
-            if (currentMarker > sessionStart) {
+        // Compute which selected tracks can be completed
+        const completedIds = Object.entries(activeSessionStarts)
+          .filter(([idStr, sessionStart]) =>
+            selectedTracks.has(Number(idStr)) && currentMarker > sessionStart,
+          )
+          .map(([idStr]) => Number(idStr));
+
+        if (completedIds.length > 0) {
+          setCompletedSessions((prev) => {
+            const updates = { ...prev };
+            for (const id of completedIds) {
               updates[id] = [
                 ...(prev[id] ?? []),
-                { start: sessionStart, end: currentMarker },
+                { start: activeSessionStarts[id], end: currentMarker },
               ];
             }
-          }
-          return updates;
-        });
-        if (Object.keys(activeSessionStarts).length > 0) {
+            return updates;
+          });
           setShowPunchOut(true);
           if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
           punchOutTimerRef.current = setTimeout(
             () => setShowPunchOut(false),
             1000,
           );
+          setSelectedTracks(new Set());
+          setActiveSessionStarts((prev) => {
+            const next = { ...prev };
+            for (const id of completedIds) delete next[id];
+            return next;
+          });
         }
-        setITrackId(null);
-        setSelectedTracks(new Set());
-        setActiveSessionStarts({});
       }
     };
 

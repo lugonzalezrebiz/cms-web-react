@@ -130,11 +130,9 @@ const TimelineBody = ({
         headerLabel={headerLabel}
         listBodyRef={state.listBodyRef}
         rowsScrollRef={state.rowsScrollRef}
+        iTrackId={state.iTrackId}
+        setITrackId={state.setITrackId}
         setSelectedTracks={state.setSelectedTracks}
-        setActiveSessionStarts={state.setActiveSessionStarts}
-        setCompletedSessions={state.setCompletedSessions}
-        markerSec={state.markerSec}
-        timelineStartSec={timelineStartSec}
       />
 
       <Box
@@ -190,6 +188,7 @@ const TimelineBody = ({
           currentLeft={state.currentLeft}
           selectedTracks={state.selectedTracks}
           showPunchOut={state.showPunchOut}
+          iTrackId={state.iTrackId}
         />
       </Box>
     </Box>

@@ -10,15 +10,9 @@ interface TimelineRowListProps {
   headerLabel: string;
   listBodyRef: React.RefObject<HTMLDivElement | null>;
   rowsScrollRef: React.RefObject<HTMLDivElement | null>;
+  iTrackId: number | null;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
-  setActiveSessionStarts: React.Dispatch<
-    React.SetStateAction<Record<number, number>>
-  >;
-  setCompletedSessions: React.Dispatch<
-    React.SetStateAction<Record<number, { start: number; end: number }[]>>
-  >;
-  markerSec: number | null;
-  timelineStartSec: number;
 }
 
 export const TimelineRowList = ({
@@ -29,11 +23,9 @@ export const TimelineRowList = ({
   headerLabel,
   listBodyRef,
   rowsScrollRef,
+  iTrackId,
+  setITrackId,
   setSelectedTracks,
-  setActiveSessionStarts,
-  setCompletedSessions,
-  markerSec,
-  timelineStartSec,
 }: TimelineRowListProps) => {
   return (
     <Box
@@ -99,49 +91,40 @@ export const TimelineRowList = ({
           const childSelected =
             isCameraInTunnel &&
             flatRows.some(
-              (r) => r.parentCameraId === row.id && selectedTracks.has(r.id),
+              (r) =>
+                r.parentCameraId === row.id &&
+                (selectedTracks.has(r.id) || iTrackId === r.id),
             );
+
+          const isFocused = iTrackId === row.id;
 
           const handleClick = isCameraInTunnel
             ? undefined
             : () => {
-                const currentMarker = markerSec ?? timelineStartSec;
-                if (selectedTracks.has(row.id)) {
-                  const sessionStart = activeSessionStarts[row.id];
-                  if (
-                    sessionStart !== undefined &&
-                    currentMarker > sessionStart
-                  ) {
-                    setCompletedSessions((prev) => ({
-                      ...prev,
-                      [row.id]: [
-                        ...(prev[row.id] ?? []),
-                        { start: sessionStart, end: currentMarker },
-                      ],
-                    }));
-                  }
-                  setSelectedTracks((prev) => {
-                    const next = new Set(prev);
-                    next.delete(row.id);
-                    return next;
-                  });
-                  setActiveSessionStarts((prev) => {
-                    const next = { ...prev };
-                    delete next[row.id];
-                    return next;
-                  });
+                setITrackId(row.id);
+                // If already building → re-select so "o" can complete it; otherwise clear
+                if (activeSessionStarts[row.id] !== undefined) {
+                  setSelectedTracks(new Set([row.id]));
                 } else {
-                  setSelectedTracks((prev) => {
-                    const next = new Set(prev);
-                    next.add(row.id);
-                    return next;
-                  });
-                  setActiveSessionStarts((prev) => ({
-                    ...prev,
-                    [row.id]: currentMarker,
-                  }));
+                  setSelectedTracks(new Set());
                 }
               };
+
+          const isActive = isSelected || (isFocused && !isCameraInTunnel);
+
+          const bgColor = (() => {
+            if (isCameraInTunnel) return childSelected ? Colors.vividOrange : "transparent";
+            if (isActivitySubRow) return isActive ? Colors.blushWhite : "transparent";
+            if (isActive) return Colors.vividOrange;
+            return "transparent";
+          })();
+
+          const textColor = (() => {
+            if (isCameraInTunnel) return childSelected ? Colors.white : Colors.lightBlack;
+            if (isActivitySubRow) return Colors.lightBlack;
+            if (isActive) return Colors.white;
+            return Colors.lightBlack;
+          })();
 
           return (
             <Box
@@ -160,39 +143,8 @@ export const TimelineRowList = ({
                 height: "32px",
                 lineHeight: 1.43,
                 fontWeight: 400,
-                backgroundColor: isCameraInTunnel
-                  ? childSelected
-                    ? Colors.vividOrange
-                    : "transparent"
-                  : isActivitySubRow
-                    ? isSelected
-                      ? Colors.blushWhite
-                      : "transparent"
-                    : isSelected
-                      ? Colors.vividOrange
-                      : "transparent",
-                color:
-                  isCameraInTunnel
-                    ? childSelected
-                      ? Colors.white
-                      : Colors.lightBlack
-                    : isSelected && !isActivitySubRow
-                      ? Colors.white
-                      : Colors.lightBlack,
-                transition: "all 0.15s ease",
-                "&:hover": {
-                  backgroundColor: isCameraInTunnel
-                    ? childSelected
-                      ? Colors.vividOrange
-                      : "transparent"
-                    : isActivitySubRow
-                      ? isSelected
-                        ? Colors.blushWhite
-                        : Colors.white
-                      : isSelected
-                        ? Colors.vividOrange
-                        : Colors.white,
-                },
+                backgroundColor: bgColor,
+                color: textColor,
               }}
             >
               {!isActivitySubRow && (
@@ -202,11 +154,11 @@ export const TimelineRowList = ({
                     height: 18,
                     borderRadius: "50%",
                     backgroundColor:
-                      (isCameraInTunnel && childSelected) || isSelected
+                      (isCameraInTunnel && childSelected) || isActive
                         ? Colors.white
                         : Colors.vividOrange,
                     color:
-                      (isCameraInTunnel && childSelected) || isSelected
+                      (isCameraInTunnel && childSelected) || isActive
                         ? Colors.vividOrange
                         : Colors.white,
                     display: "flex",
@@ -214,7 +166,7 @@ export const TimelineRowList = ({
                     justifyContent: "center",
                     fontSize: 12,
                     fontWeight:
-                      (isCameraInTunnel && childSelected) || isSelected
+                      (isCameraInTunnel && childSelected) || isActive
                         ? 700
                         : 400,
                     textAlign: "center",

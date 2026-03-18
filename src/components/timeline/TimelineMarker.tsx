@@ -6,6 +6,7 @@ interface TimelineMarkerProps {
   currentLeft: number;
   selectedTracks: Set<number>;
   showPunchOut: boolean;
+  iTrackId: number | null;
 }
 
 export const TimelineMarker = ({
@@ -13,7 +14,9 @@ export const TimelineMarker = ({
   currentLeft,
   selectedTracks,
   showPunchOut,
+  iTrackId,
 }: TimelineMarkerProps) => {
+  const focusedNotBuilding = iTrackId !== null && !selectedTracks.has(iTrackId);
   if (!isCurrentVisible) return null;
 
   return (
@@ -63,13 +66,13 @@ export const TimelineMarker = ({
         />
       </Box>
 
-      {/* Punch hint */}
-      {selectedTracks.size > 0 && !showPunchOut && (
+      {/* Punch-in hint */}
+      {focusedNotBuilding && !showPunchOut && (
         <Box
           sx={{
             position: "absolute",
             left: `${currentLeft + 1}%`,
-            top: 40,
+            top: 42,
             color: Colors.dimGray,
             fontSize: 12,
             fontWeight: 400,
@@ -77,6 +80,33 @@ export const TimelineMarker = ({
             pointerEvents: "none",
             lineHeight: 1.5,
             fontFamily: Fonts.main,
+            bgcolor: "#ffffff94",
+            padding: "0 4px",
+            borderRadius: "8px",
+          }}
+        >
+          Press <span style={{ color: Colors.vividOrange }}>i</span> to
+          punch-in
+        </Box>
+      )}
+
+      {/* Punch-out hint */}
+      {selectedTracks.size > 0 && !showPunchOut && !focusedNotBuilding && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: `${currentLeft + 1}%`,
+            top: 42,
+            color: Colors.dimGray,
+            fontSize: 12,
+            fontWeight: 400,
+            zIndex: 1,
+            pointerEvents: "none",
+            lineHeight: 1.5,
+            fontFamily: Fonts.main,
+            bgcolor: "#ffffff94",
+            padding: "0 4px",
+            borderRadius: "8px",
           }}
         >
           Press <span style={{ color: Colors.vividOrange }}>o</span> to
