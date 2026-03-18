@@ -43,6 +43,7 @@ export const useTimelineBodyState = ({
     Record<number, number>
   >({});
   const [showPunchOut, setShowPunchOut] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false)
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const listBodyRef = useRef<HTMLDivElement | null>(null);
@@ -89,6 +90,14 @@ export const useTimelineBodyState = ({
     const newOffset = dragStartOffset - deltaX * secondsPerPixel;
     const maxOffset = totalSec - visibleDuration;
     setPanOffsetSec(Math.max(0, Math.min(maxOffset, newOffset)));
+  };
+
+  const handleOnCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleOnOpenDialog = () => {
+    setOpenDialog(true);
   };
 
   // Effect 1: reset pan/marker on tab change
@@ -190,5 +199,8 @@ export const useTimelineBodyState = ({
     hasAnyBars,
     isInActivityRange,
     handleMouseMove,
+    handleOnCloseDialog,
+    handleOnOpenDialog,
+    openDialog,
   };
 };

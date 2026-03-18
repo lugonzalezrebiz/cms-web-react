@@ -128,6 +128,9 @@ const TimelineBody = ({
       }}
     >
       <TimelineRowList
+        dialogOnClose={state.handleOnCloseDialog}
+        onOpenDialog={state.handleOnOpenDialog}
+        openDialog={state.openDialog}
         flatRows={flatRows}
         selectedTracks={state.selectedTracks}
         activeSessionStarts={state.activeSessionStarts}

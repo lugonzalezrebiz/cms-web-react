@@ -1,6 +1,7 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import type { FlatRow } from "./types";
+import TimelineDialog from "./TimelineDialog";
 
 interface TimelineRowListProps {
   flatRows: FlatRow[];
@@ -13,6 +14,9 @@ interface TimelineRowListProps {
   iTrackId: number | null;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
+  dialogOnClose?: () => void;
+  onOpenDialog?: () => void;
+  openDialog?: boolean;
 }
 
 export const TimelineRowList = ({
@@ -26,6 +30,9 @@ export const TimelineRowList = ({
   iTrackId,
   setITrackId,
   setSelectedTracks,
+  dialogOnClose,
+  onOpenDialog,
+  openDialog = false,
 }: TimelineRowListProps) => {
   return (
     <Box
@@ -63,9 +70,10 @@ export const TimelineRowList = ({
         >
           {headerLabel}
         </p>
-        <Box sx={{ cursor: "pointer" }}>
+        <Box sx={{ cursor: "pointer" }} onClick={onOpenDialog}>
           <img src="../assets/plus-1.svg" alt="" />
         </Box>
+        <TimelineDialog dialogOnClose={dialogOnClose} openDialog={openDialog} />
       </Box>
 
       {/* List */}
