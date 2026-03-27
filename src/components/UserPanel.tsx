@@ -103,10 +103,7 @@ const USER_PANEL_MOCK = {
     role: "Admin",
     email: "admin@rebiz.com",
   },
-  items: [
-    { icon: "../assets/user-circle.svg", label: "My Profile" },
-    { icon: "../assets/keyboard-02.svg", label: "Settings" },
-  ],
+  items: [],
   logout: {
     icon: "../assets/x-close.svg",
     label: "Log out",
@@ -165,7 +162,12 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
           <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
 
           <MenuRow onClick={handleLogout}>
-            <img src={USER_PANEL_MOCK.logout.icon} alt="" width={18} height={18} />
+            <img
+              src={USER_PANEL_MOCK.logout.icon}
+              alt=""
+              width={18}
+              height={18}
+            />
             <LogoutText>{USER_PANEL_MOCK.logout.label}</LogoutText>
           </MenuRow>
         </Box>

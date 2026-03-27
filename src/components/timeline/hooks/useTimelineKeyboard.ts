@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
@@ -23,6 +23,13 @@ interface UseTimelineKeyboardParams {
   punchOutTimerRef: React.MutableRefObject<
     ReturnType<typeof setTimeout> | null
   >;
+  zoom: number;
+  setZoom: React.Dispatch<React.SetStateAction<number>>;
+  panOffsetSec: number;
+  setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
+  totalSec: number;
+  gridRef: React.RefObject<HTMLDivElement | null>;
+  setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useTimelineKeyboard = ({
@@ -41,7 +48,28 @@ export const useTimelineKeyboard = ({
   setMarkerSec,
   setShowPunchOut,
   punchOutTimerRef,
+  zoom,
+  setZoom,
+  panOffsetSec,
+  setPanOffsetSec,
+  totalSec,
+  gridRef,
+  setGoToTimeOpen,
 }: UseTimelineKeyboardParams) => {
+  // Track mouse X relative to the grid element
+  const mouseXRef = useRef<number>(0);
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      mouseXRef.current = e.clientX - rect.left;
+    };
+    el.addEventListener("mousemove", onMouseMove);
+    return () => el.removeEventListener("mousemove", onMouseMove);
+  }, [gridRef]);
+
   // ── "i" (punch-in cycle) and "o" (punch-out all) ────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,6 +105,11 @@ export const useTimelineKeyboard = ({
             [iTrackId]: currentMarker,
           }));
         }
+      } else if (e.key === "G" && e.shiftKey) {
+        e.preventDefault();
+        setGoToTimeOpen(true);
+      } else if (e.key === "h") {
+        setMarkerSec(timelineStartSec);
       } else if (e.key === "o") {
         const currentMarker = markerSec ?? timelineStartSec;
         // Compute which selected tracks can be completed
@@ -128,12 +161,11 @@ export const useTimelineKeyboard = ({
     setCompletedSessions,
     setShowPunchOut,
     punchOutTimerRef,
+    setGoToTimeOpen,
   ]);
 
   // ── Arrow keys: move marker ──────────────────────────────────────────────
   useEffect(() => {
-    const step = 60;
-
     const handleArrow = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
@@ -144,6 +176,7 @@ export const useTimelineKeyboard = ({
         if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       }
       e.preventDefault();
+      const step = e.ctrlKey ? 10 : 1;
       const delta = e.key === "ArrowRight" ? step : -step;
       setMarkerSec((prev) => {
         const base = prev ?? timelineStartSec;
@@ -157,4 +190,37 @@ export const useTimelineKeyboard = ({
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
   }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec]);
+
+  // ── + / - keys: zoom centered on mouse position ───────────────────────────
+  useEffect(() => {
+    const handleZoom = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
+      if (e.key !== "+" && e.key !== "-") return;
+      e.preventDefault();
+
+      const el = gridRef.current;
+      const width = el?.clientWidth ?? 1;
+      const mouseX = Math.max(0, Math.min(mouseXRef.current, width));
+
+      const oldZoom = zoom;
+      const newZoom = Math.min(4, Math.max(1, oldZoom + (e.key === "+" ? 0.2 : -0.2)));
+      if (newZoom === oldZoom) return;
+
+      const oldVisibleDuration = totalSec / oldZoom;
+      const newVisibleDuration = totalSec / newZoom;
+      const cursorTime = panOffsetSec + (mouseX / width) * oldVisibleDuration;
+      const newOffset = Math.max(
+        0,
+        Math.min(totalSec - newVisibleDuration, cursorTime - (mouseX / width) * newVisibleDuration),
+      );
+
+      setZoom(newZoom);
+      setPanOffsetSec(newOffset);
+    };
+
+    window.addEventListener("keydown", handleZoom);
+    return () => window.removeEventListener("keydown", handleZoom);
+  }, [zoom, panOffsetSec, totalSec, gridRef, setZoom, setPanOffsetSec]);
 };

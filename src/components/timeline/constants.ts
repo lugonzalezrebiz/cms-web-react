@@ -27,8 +27,8 @@ export const TUNNEL_CAMERAS: TimelineSnapshot["timeline"]["tracks"] = [
 export const MOCK_SNAPSHOT: TimelineSnapshot = {
   timeline: {
     times: {
-      start: "09:00:00",
-      end: "19:00:00",
+      start: "08:00:00",
+      end: "23:00:00",
       current: "12:30:00",
       buffer: 0,
       interval: 3600,

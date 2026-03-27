@@ -201,7 +201,7 @@ const Header = ({
               </Box>
               <Box display={"flex"}>
                 <Box>
-                  <StyledImg
+                  {/*<StyledImg
                     onClick={AiMenuHeader.handleOpen}
                     src="../assets/ai.svg"
                     alt=""
@@ -211,14 +211,15 @@ const Header = ({
                     src="../assets/clock-check.svg"
                     alt=""
                   />
+                    <StyledImg
+                      onClick={NotificationHeader.handleOpen}
+                      src="../assets/notification.svg"
+                      alt=""
+                    />
+                  */}
                   <StyledImg
                     onClick={keyboardMenu.handleOpen}
                     src="../assets/keyboard-02.svg"
-                    alt=""
-                  />
-                  <StyledImg
-                    onClick={NotificationHeader.handleOpen}
-                    src="../assets/notification.svg"
                     alt=""
                   />
                   <StyledImg
@@ -256,24 +257,26 @@ const Header = ({
                 </Box>
                 <Box display={"flex"}>
                   <Box>
+                    {/*
                     <StyledImg
                       onClick={AiMenuHeader.handleOpen}
                       src="../assets/ai.svg"
                       alt=""
-                    />
-                    <StyledImg
-                      onClick={ClockMenuHeader.handleOpen}
-                      src="../assets/clock-check.svg"
-                      alt=""
-                    />
+                      />
+                      <StyledImg
+                        onClick={ClockMenuHeader.handleOpen}
+                        src="../assets/clock-check.svg"
+                        alt=""
+                      />
+                      <StyledImg
+                        onClick={NotificationHeader.handleOpen}
+                        src="../assets/notification.svg"
+                        alt=""
+                      />
+                    */}
                     <StyledImg
                       onClick={keyboardMenu.handleOpen}
                       src="../assets/keyboard-02.svg"
-                      alt=""
-                    />
-                    <StyledImg
-                      onClick={NotificationHeader.handleOpen}
-                      src="../assets/notification.svg"
                       alt=""
                     />
                     <StyledImg

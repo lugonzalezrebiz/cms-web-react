@@ -11,7 +11,7 @@ interface TimelineGridRowsProps {
   panOffsetSec: number;
   totalSec: number;
   startSec: number;
-  hourStep: number;
+  tickStepSec: number;
   selectedTracks: Set<number>;
   completedSessions: Record<number, { start: number; end: number }[]>;
   activeSessionStarts: Record<number, number>;
@@ -38,7 +38,7 @@ export const TimelineGridRows = ({
   panOffsetSec,
   totalSec,
   startSec,
-  hourStep,
+  tickStepSec,
   selectedTracks,
   completedSessions,
   activeSessionStarts,
@@ -106,15 +106,13 @@ export const TimelineGridRows = ({
       }}
     >
       {/* Vertical grid lines */}
-      {Array.from({ length: 48 }).map((_, i) => {
-        if (i % (hourStep * 2) !== 0) return null;
-        const halfHourTime = startSec + i * 1800;
-        if (halfHourTime < visibleStart || halfHourTime > visibleEnd)
-          return null;
-        const left = ((halfHourTime - visibleStart) / visibleDuration) * 100;
+      {Array.from({ length: Math.floor(totalSec / tickStepSec) + 1 }).map((_, i) => {
+        const tickTime = startSec + i * tickStepSec;
+        if (tickTime < visibleStart || tickTime > visibleEnd) return null;
+        const left = ((tickTime - visibleStart) / visibleDuration) * 100;
         return (
           <Box
-            key={i}
+            key={tickTime}
             sx={{
               position: "absolute",
               left: `${left}%`,

@@ -1,143 +1,172 @@
-import {
-  Divider,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  MenuList,
-  Typography,
-} from "@mui/material";
+import { Divider, Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useState } from "react";
 import { Box } from "@mui/system";
+import PopoverMenu from "./PopoverMenu";
 
 export interface CameraContextMenuItem {
+  id: number;
+  name: string;
   label: string;
-  icon?: ReactNode;
+  icon?: string;
   shortcut?: string;
   dividerAfter?: boolean;
   onClick: (cameraIndex: number) => void;
 }
 
 const EventMenu = ({
-  index,
   contextMenuTitle,
   iconMenu,
   contextMenuItems = [],
-  anchorPosition,
-  onClose,
 }: {
-  index: number;
   contextMenuTitle?: string;
   iconMenu?: string;
   contextMenuItems?: CameraContextMenuItem[];
-  anchorPosition: { mouseX: number; mouseY: number } | null;
-  onClose: () => void;
 }) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  if (contextMenuItems.length === 0) return null;
+
   return (
-    <Menu
-      open={anchorPosition !== null}
-      onClose={onClose}
-      anchorReference="anchorPosition"
-      anchorPosition={
-        anchorPosition !== null
-          ? { top: anchorPosition.mouseY, left: anchorPosition.mouseX }
-          : undefined
-      }
-      PaperProps={{
-        sx: {
-          bgcolor: Colors.paleSteal,
-          backdropFilter: "blur(8px)",
-          color: Colors.lightBlack,
-          minWidth: 163,
-          borderRadius: "6px",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "none",
-        },
-      }}
-    >
-      {contextMenuTitle && (
-        <Box
-          sx={{
-            px: "8px",
-            py: "8px",
-            borderBottom: `1px solid ${Colors.silverGrey}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+    <>
+      <Box
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          px: "10px",
+          py: "5px",
+          bgcolor: Colors.white,
+          border: `1px solid ${Colors.silverGrey}`,
+          borderRadius: "8px",
+          cursor: "pointer",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+          "&:hover": { bgcolor: Colors.lightGray },
+        }}
+      >
+        {iconMenu && <img src={iconMenu} alt="" style={{ display: "block" }} />}
+        {contextMenuTitle && (
           <Typography
             sx={{
               fontFamily: Fonts.main,
-              fontWeight: 700,
-              fontSize: 16,
+              fontSize: 13,
+              fontWeight: 500,
               color: Colors.lightBlack,
-              letterSpacing: 0.3,
+              lineHeight: 1,
             }}
           >
             {contextMenuTitle}
           </Typography>
-          <img
-            style={{ marginLeft: "8px" }}
-            src={iconMenu || "../assets/plus.svg"}
-            alt=""
-          />
-        </Box>
-      )}
-      <MenuList dense disablePadding sx={{ p: "8px 0 0 0" }}>
-        {contextMenuItems.map((item, i) => (
-          <Fragment key={i}>
-            <MenuItem
-              onClick={() => {
-                item.onClick(index);
-                onClose();
-              }}
+        )}
+      </Box>
+
+      <PopoverMenu
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        setAnchorEl={() => setAnchorEl(null)}
+        maxWidth="170px"
+      >
+        {contextMenuTitle && (
+          <Box
+            sx={{
+              pb: "12px",
+              mb: "12px",
+              borderBottom: `1px solid ${Colors.silverGrey}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              pr: "28px",
+            }}
+          >
+            <Typography
               sx={{
-                px: 2,
-                py: 0.75,
+                fontFamily: Fonts.main,
+                fontWeight: 700,
+                fontSize: 16,
                 color: Colors.lightBlack,
-                "&:hover": {
-                  bgcolor: Colors.transparentWhite,
-                },
               }}
             >
-              {item.icon && (
-                <ListItemIcon
-                  sx={{ color: Colors.softSteelBlue, minWidth: 32 }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-              )}
-              <ListItemText
-                primary={item.label}
-                primaryTypographyProps={{
-                  fontFamily: Fonts.main,
-                  fontSize: 14,
-                  color: Colors.lightBlack,
+              {contextMenuTitle}
+            </Typography>
+          </Box>
+        )}
+
+        <Typography
+          sx={{
+            fontFamily: Fonts.main,
+            fontSize: 11,
+            color: Colors.dimGray,
+            mb: "10px",
+          }}
+        >
+          Drag an item onto a camera
+        </Typography>
+
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          {contextMenuItems.map((item) => (
+            <Fragment key={item.id}>
+              <Box
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData("eventMenuItemId", String(item.id));
+                  e.dataTransfer.effectAllowed = "copy";
+                  setAnchorEl(null);
                 }}
-              />
-              {item.shortcut && (
-                <Typography
-                  variant="body2"
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  px: "10px",
+                  py: "6px",
+                  bgcolor: Colors.main,
+                  color: Colors.white,
+                  borderRadius: "6px",
+                  cursor: "grab",
+                  userSelect: "none",
+                  fontSize: 12,
+                  fontFamily: Fonts.main,
+                  fontWeight: 500,
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                  "&:active": { cursor: "grabbing", opacity: 0.85 },
+                }}
+              >
+                {item.icon && (
+                  <Box
+                    sx={{ display: "flex", alignItems: "center", fontSize: 14 }}
+                  >
+                    <img src={item.icon} alt="" />
+                  </Box>
+                )}
+                {item.label}
+                {item.shortcut && (
+                  <Typography
+                    component="span"
+                    sx={{
+                      fontFamily: Fonts.main,
+                      fontSize: 10,
+                      opacity: 0.75,
+                      ml: "2px",
+                    }}
+                  >
+                    {item.shortcut}
+                  </Typography>
+                )}
+              </Box>
+              {item.dividerAfter && (
+                <Divider
                   sx={{
-                    color: Colors.blueGray,
-                    ml: 2,
-                    fontFamily: Fonts.main,
-                    fontSize: 12,
+                    width: "100%",
+                    borderColor: Colors.paleSlateBlue,
+                    my: 0.5,
                   }}
-                >
-                  {item.shortcut}
-                </Typography>
+                />
               )}
-            </MenuItem>
-            {item.dividerAfter && (
-              <Divider sx={{ borderColor: Colors.paleSlateBlue, my: 0.5 }} />
-            )}
-          </Fragment>
-        ))}
-      </MenuList>
-    </Menu>
+            </Fragment>
+          ))}
+        </Box>
+      </PopoverMenu>
+    </>
   );
 };
 

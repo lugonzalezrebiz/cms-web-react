@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../theme";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NavTab, TimelineBodyProps, FlatRow } from "./timeline/types";
 import { TUNNEL_CAMERAS, MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
@@ -9,6 +9,7 @@ import { TimelineRowList } from "./timeline/TimelineRowList";
 import { TimelineTimeRuler } from "./timeline/TimelineTimeRuler";
 import { TimelineGridRows } from "./timeline/TimelineGridRows";
 import { TimelineMarker } from "./timeline/TimelineMarker";
+import { GoToTimeDialog } from "./timeline/GoToTimeDialog";
 
 const toSeconds = (time: string) => {
   const [h, m, s] = time.split(":").map(Number);
@@ -22,6 +23,7 @@ const TimelineBody = ({
   cameraActivities,
   onMarkerChange,
 }: TimelineBodyProps) => {
+  const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const isTunnel = selectedTab === "2";
 
   const data = snapshot || MOCK_SNAPSHOT;
@@ -116,6 +118,13 @@ const TimelineBody = ({
     setMarkerSec: state.setMarkerSec,
     setShowPunchOut: state.setShowPunchOut,
     punchOutTimerRef: state.punchOutTimerRef,
+    zoom: state.zoom,
+    setZoom: state.setZoom,
+    panOffsetSec: state.panOffsetSec,
+    setPanOffsetSec: state.setPanOffsetSec,
+    totalSec: state.totalSec,
+    gridRef: state.gridRef,
+    setGoToTimeOpen,
   });
 
   return (
@@ -165,7 +174,7 @@ const TimelineBody = ({
           visibleStart={state.visibleStart}
           visibleDuration={state.visibleDuration}
           startSec={state.startSec}
-          hourStep={state.hourStep}
+          tickStepSec={state.tickStepSec}
           isInActivityRange={state.isInActivityRange}
         />
 
@@ -178,7 +187,7 @@ const TimelineBody = ({
           panOffsetSec={state.panOffsetSec}
           totalSec={state.totalSec}
           startSec={state.startSec}
-          hourStep={state.hourStep}
+          tickStepSec={state.tickStepSec}
           selectedTracks={state.selectedTracks}
           completedSessions={state.completedSessions}
           activeSessionStarts={state.activeSessionStarts}
@@ -201,6 +210,14 @@ const TimelineBody = ({
           listBodyRef={state.listBodyRef}
         />
       </Box>
+
+      <GoToTimeDialog
+        open={goToTimeOpen}
+        onClose={() => setGoToTimeOpen(false)}
+        onConfirm={(sec) => state.setMarkerSec(sec)}
+        timelineStartSec={timelineStartSec}
+        timelineEndSec={timelineEndSec}
+      />
     </Box>
   );
 };
