@@ -49,4 +49,5 @@ export interface TimelineBodyProps {
     cameraIndex: number;
     activityLabel: string;
   }[];
+  onMarkerChange?: (sec: number) => void;
 }

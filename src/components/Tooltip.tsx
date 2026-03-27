@@ -13,7 +13,8 @@ export interface Props {
   iconHeight?: string;
   withoutIcon?: boolean;
   size?: "small";
-  position?: "top";
+  position?: "top" | "bottom" | "left" | "right";
+  textAlign?: "left" | "center" | "right";
   children?: ReactNode;
   bold?: boolean;
   disabled?: boolean;
@@ -21,40 +22,40 @@ export interface Props {
 
 interface StyledTooltipProps extends TooltipProps {
   size?: "small";
-  position?: "top";
+  textAlign?: "left" | "center" | "right";
   bold?: boolean;
 }
 
 const StyledTooltip = styled(
-  ({ className, size, position, bold, ...props }: StyledTooltipProps) => (
+  ({ className, size, textAlign, bold, ...props }: StyledTooltipProps) => (
     <MuiTooltip {...props} classes={{ popper: className }} />
   ),
   {
-    shouldForwardProp: (prop) => prop !== "size" && prop !== "position",
+    shouldForwardProp: (prop) =>
+      prop !== "size" && prop !== "textAlign" && prop !== "bold",
   },
-)<StyledTooltipProps>(({ size, position, bold }) => ({
+)<StyledTooltipProps>(({ size, textAlign, bold }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     maxWidth: size === "small" ? "120px" : "200px",
     display: "flex",
     flexDirection: "row",
     justifyContent:
-      size === "small"
+      size === "small" || textAlign === "center"
         ? "center"
-        : position === "top"
-          ? "center"
+        : textAlign === "right"
+          ? "flex-end"
           : "flex-start",
     alignItems: "center",
     boxShadow: "0px 1px 6px 0px rgba(0, 0, 0, 0.25)",
     flexGrow: 0,
-    fontFamily: bold ? Fonts.main : "Inter",
+    fontFamily: Fonts.main,
     fontSize: "12px",
     fontWeight: bold ? 700 : 400,
     fontStretch: "normal",
     fontStyle: "normal",
     lineHeight: "normal",
     letterSpacing: "normal",
-    textAlign:
-      size === "small" ? "center" : position === "top" ? "center" : "left",
+    textAlign: size === "small" ? "center" : textAlign ?? "left",
     color: bold ? Colors.lightBlack : "#959fa9",
     padding: "8px 10px",
     backgroundColor: "#fff",
@@ -88,16 +89,17 @@ const Tooltip = memo(
     children,
     size,
     position,
+    textAlign,
     bold,
     disabled,
   }: Props) => {
     return (
       <StyledTooltip
         title={detail}
-        placement={withoutIcon ? "top" : position === "top" ? "top" : "left"}
+        placement={position ?? (withoutIcon ? "top" : "left")}
         arrow
         size={size}
-        position={position}
+        textAlign={textAlign}
         bold={bold}
       >
         {withoutIcon ? (

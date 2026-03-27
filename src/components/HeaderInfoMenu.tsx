@@ -95,7 +95,12 @@ const HEADER_INFO_MOCK = {
 
 const HeaderInfoMenu = ({ anchorEl, open, handleClose }: Props) => {
   return (
-    <PopoverMenu anchorEl={anchorEl} open={open} setAnchorEl={handleClose}>
+    <PopoverMenu
+      anchorEl={anchorEl}
+      open={open}
+      setAnchorEl={handleClose}
+      maxWidth="284px"
+    >
       <Box
         sx={{
           width: "100%",

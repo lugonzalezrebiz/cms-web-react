@@ -5,7 +5,7 @@ import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 
-const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
+const Dashboard = ({ selectedTab, drawerOpen }: { selectedTab: string; drawerOpen?: boolean }) => {
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
 
@@ -17,11 +17,15 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
     cameraIndex: number,
     activityLabel: string,
   ): void => {
-    const newId = activityCounterRef.current++;
-    setCameraActivities((prev) => [
-      ...prev,
-      { id: newId, cameraIndex, activityLabel },
-    ]);
+    setCameraActivities((prev) => {
+      const alreadyExists = prev.some(
+        (a) =>
+          a.cameraIndex === cameraIndex && a.activityLabel === activityLabel,
+      );
+      if (alreadyExists) return prev;
+      const newId = activityCounterRef.current++;
+      return [...prev, { id: newId, cameraIndex, activityLabel }];
+    });
   };
 
   const cameraMenuItems: CameraContextMenuItem[] = [
@@ -53,27 +57,29 @@ const Dashboard = ({ selectedTab }: { selectedTab: string }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        overflow: "hidden",
         gap: 1,
       }}
     >
       {/* Camera grid */}
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
         <CameraLayout
           count={cameraCount}
           media="/assets/camera/Cam thumbnail.svg"
-          maxHeight={"500px"}
+          maxHeight="100%"
           cameraItemList={() => alert("Camera list clicked")}
           contextMenuTitle="Comp. Violations"
-          contextMenuItems={cameraMenuItems}
+          contextMenuItems={selectedTab === "2" ? cameraMenuItems : []}
           iconMenu="/assets/plus.svg"
         />
       </Box>
 
       {/* Timeline panel */}
-      <Box sx={{ height: "200px", flexShrink: 0 }}>
+      <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
           selectedTab={selectedTab}
           cameraActivities={cameraActivities}
+          drawerOpen={drawerOpen}
         />
       </Box>
     </Box>

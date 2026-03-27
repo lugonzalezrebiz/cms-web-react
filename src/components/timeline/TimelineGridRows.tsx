@@ -82,8 +82,7 @@ export const TimelineGridRows = ({
           const newVisibleDuration = totalSec / newZoom;
           const cursorTime =
             panOffsetSec + (mouseX / width) * oldVisibleDuration;
-          let newOffset =
-            cursorTime - (mouseX / width) * newVisibleDuration;
+          let newOffset = cursorTime - (mouseX / width) * newVisibleDuration;
           const maxOffset = totalSec - newVisibleDuration;
           newOffset = Math.max(0, Math.min(maxOffset, newOffset));
 
@@ -112,8 +111,7 @@ export const TimelineGridRows = ({
         const halfHourTime = startSec + i * 1800;
         if (halfHourTime < visibleStart || halfHourTime > visibleEnd)
           return null;
-        const left =
-          ((halfHourTime - visibleStart) / visibleDuration) * 100;
+        const left = ((halfHourTime - visibleStart) / visibleDuration) * 100;
         return (
           <Box
             key={i}
@@ -158,9 +156,7 @@ export const TimelineGridRows = ({
               );
               const allLive = childIds.flatMap((id) => {
                 const actStart = activeSessionStarts[id];
-                return selectedTracks.has(id) &&
-                  actStart !== undefined &&
-                  resolvedMarkerSec > actStart
+                return actStart !== undefined && resolvedMarkerSec > actStart
                   ? [{ start: actStart, end: resolvedMarkerSec }]
                   : [];
               });
@@ -214,7 +210,10 @@ export const TimelineGridRows = ({
               for (const s of row.sessions) {
                 if (s.type === "in") currentIn = toSeconds(s.timestamp);
                 if (s.type === "out" && currentIn !== null) {
-                  ranges.push({ start: currentIn, end: toSeconds(s.timestamp) });
+                  ranges.push({
+                    start: currentIn,
+                    end: toSeconds(s.timestamp),
+                  });
                   currentIn = null;
                 }
               }
@@ -225,10 +224,9 @@ export const TimelineGridRows = ({
               ...(completedSessions[row.id] ?? []),
             ];
             const sessionStart = activeSessionStarts[row.id];
+            const isBuilding = sessionStart !== undefined;
             const liveBar =
-              isSelected &&
-              sessionStart !== undefined &&
-              resolvedMarkerSec > sessionStart
+              isBuilding && resolvedMarkerSec > sessionStart
                 ? { start: sessionStart, end: resolvedMarkerSec }
                 : null;
             const allRanges = liveBar ? [...frozen, liveBar] : frozen;
@@ -248,8 +246,6 @@ export const TimelineGridRows = ({
                 }}
               >
                 {allRanges.map((range, i) => {
-                  const isLive =
-                    liveBar !== null && i === allRanges.length - 1;
                   const left =
                     ((range.start - visibleStart) / visibleDuration) * 100;
                   const width =
@@ -266,7 +262,7 @@ export const TimelineGridRows = ({
                         height: 19,
                         borderRadius: "8px",
                         background:
-                          isSelected || isLive
+                          isSelected
                             ? isTunnel
                               ? Colors.palePeach
                               : Colors.vividOrange

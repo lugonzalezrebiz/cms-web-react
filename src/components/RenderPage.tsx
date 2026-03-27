@@ -24,40 +24,39 @@ const RenderPage = ({
   const positionerCondition = !isMobile ? "calc(100% - 250px)" : "100%";
   const menuItems = [{ text: "Monitor", path: `/dashboard` }];
   return (
-    <>
-      {drawerOpen ? (
-        <Grid container justifyContent={"space-between"}>
-          <Grid width={"250px"}>
-            <Menu
-              withIcon={false}
-              items={menuItems}
-              open={drawerOpen}
-              toggleDrawer={toggleDrawer || (() => {})}
-              isMobile={isMobile || false}
-            />
-          </Grid>
-          <Grid width={positionerCondition}>
-            <Header
-              withIconMenu={false}
-              toggleDrawer={toggleDrawer || (() => {})}
-              selectedTab={selectedTab}
-              onTabChange={onTabChange}
-            />
-            <Content>{children}</Content>
-          </Grid>
-        </Grid>
-      ) : (
-        <Grid>
-          <Header
-            withIconMenu={withIconMenu}
+    <Grid
+      container={!!drawerOpen}
+      justifyContent={drawerOpen ? "space-between" : undefined}
+      sx={
+        drawerOpen
+          ? { height: "100%", overflow: "hidden" }
+          : { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }
+      }
+    >
+      {drawerOpen && (
+        <Grid width={"250px"} sx={{ height: "100%" }}>
+          <Menu
+            withIcon={false}
+            items={menuItems}
+            open={drawerOpen}
             toggleDrawer={toggleDrawer || (() => {})}
-            selectedTab={selectedTab}
-            onTabChange={onTabChange}
+            isMobile={isMobile || false}
           />
-          <Content>{children}</Content>
         </Grid>
       )}
-    </>
+      <Grid
+        width={drawerOpen ? positionerCondition : "100%"}
+        sx={{ display: "flex", flexDirection: "column", height: "100%" }}
+      >
+        <Header
+          withIconMenu={drawerOpen ? false : withIconMenu}
+          toggleDrawer={toggleDrawer || (() => {})}
+          selectedTab={selectedTab}
+          onTabChange={onTabChange}
+        />
+        <Content>{children}</Content>
+      </Grid>
+    </Grid>
   );
 };
 

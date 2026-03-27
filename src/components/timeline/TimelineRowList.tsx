@@ -1,6 +1,7 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import type { FlatRow } from "./types";
+import TimelineDialog from "./TimelineDialog";
 
 interface TimelineRowListProps {
   flatRows: FlatRow[];
@@ -10,15 +11,12 @@ interface TimelineRowListProps {
   headerLabel: string;
   listBodyRef: React.RefObject<HTMLDivElement | null>;
   rowsScrollRef: React.RefObject<HTMLDivElement | null>;
+  iTrackId: number | null;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
-  setActiveSessionStarts: React.Dispatch<
-    React.SetStateAction<Record<number, number>>
-  >;
-  setCompletedSessions: React.Dispatch<
-    React.SetStateAction<Record<number, { start: number; end: number }[]>>
-  >;
-  markerSec: number | null;
-  timelineStartSec: number;
+  dialogOnClose?: () => void;
+  onOpenDialog?: () => void;
+  openDialog?: boolean;
 }
 
 export const TimelineRowList = ({
@@ -29,11 +27,12 @@ export const TimelineRowList = ({
   headerLabel,
   listBodyRef,
   rowsScrollRef,
+  iTrackId,
+  setITrackId,
   setSelectedTracks,
-  setActiveSessionStarts,
-  setCompletedSessions,
-  markerSec,
-  timelineStartSec,
+  dialogOnClose,
+  onOpenDialog,
+  openDialog = false,
 }: TimelineRowListProps) => {
   return (
     <Box
@@ -55,6 +54,7 @@ export const TimelineRowList = ({
           justifyContent: "space-between",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
           height: "28px",
+          width: "133px",
           padding: "0 4px 0 8px",
         }}
       >
@@ -71,9 +71,10 @@ export const TimelineRowList = ({
         >
           {headerLabel}
         </p>
-        <Box sx={{ cursor: "pointer" }}>
+        <Box sx={{ cursor: "pointer" }} onClick={onOpenDialog}>
           <img src="../assets/plus-1.svg" alt="" />
         </Box>
+        <TimelineDialog dialogOnClose={dialogOnClose} openDialog={openDialog} />
       </Box>
 
       {/* List */}
@@ -99,49 +100,43 @@ export const TimelineRowList = ({
           const childSelected =
             isCameraInTunnel &&
             flatRows.some(
-              (r) => r.parentCameraId === row.id && selectedTracks.has(r.id),
+              (r) =>
+                r.parentCameraId === row.id &&
+                (selectedTracks.has(r.id) || iTrackId === r.id),
             );
+
+          const isFocused = iTrackId === row.id;
 
           const handleClick = isCameraInTunnel
             ? undefined
             : () => {
-                const currentMarker = markerSec ?? timelineStartSec;
-                if (selectedTracks.has(row.id)) {
-                  const sessionStart = activeSessionStarts[row.id];
-                  if (
-                    sessionStart !== undefined &&
-                    currentMarker > sessionStart
-                  ) {
-                    setCompletedSessions((prev) => ({
-                      ...prev,
-                      [row.id]: [
-                        ...(prev[row.id] ?? []),
-                        { start: sessionStart, end: currentMarker },
-                      ],
-                    }));
-                  }
-                  setSelectedTracks((prev) => {
-                    const next = new Set(prev);
-                    next.delete(row.id);
-                    return next;
-                  });
-                  setActiveSessionStarts((prev) => {
-                    const next = { ...prev };
-                    delete next[row.id];
-                    return next;
-                  });
+                setITrackId(row.id);
+                // If already building → re-select so "o" can complete it; otherwise clear
+                if (activeSessionStarts[row.id] !== undefined) {
+                  setSelectedTracks(new Set([row.id]));
                 } else {
-                  setSelectedTracks((prev) => {
-                    const next = new Set(prev);
-                    next.add(row.id);
-                    return next;
-                  });
-                  setActiveSessionStarts((prev) => ({
-                    ...prev,
-                    [row.id]: currentMarker,
-                  }));
+                  setSelectedTracks(new Set());
                 }
               };
+
+          const isActive = isSelected || (isFocused && !isCameraInTunnel);
+
+          const bgColor = (() => {
+            if (isCameraInTunnel)
+              return childSelected ? Colors.vividOrange : "transparent";
+            if (isActivitySubRow)
+              return isActive ? Colors.blushWhite : "transparent";
+            if (isActive) return Colors.vividOrange;
+            return "transparent";
+          })();
+
+          const textColor = (() => {
+            if (isCameraInTunnel)
+              return childSelected ? Colors.white : Colors.lightBlack;
+            if (isActivitySubRow) return Colors.lightBlack;
+            if (isActive) return Colors.white;
+            return Colors.lightBlack;
+          })();
 
           return (
             <Box
@@ -160,68 +155,34 @@ export const TimelineRowList = ({
                 height: "32px",
                 lineHeight: 1.43,
                 fontWeight: 400,
-                backgroundColor: isCameraInTunnel
-                  ? childSelected
-                    ? Colors.vividOrange
-                    : "transparent"
-                  : isActivitySubRow
-                    ? isSelected
-                      ? Colors.blushWhite
-                      : "transparent"
-                    : isSelected
-                      ? Colors.vividOrange
-                      : "transparent",
-                color:
-                  isCameraInTunnel
-                    ? childSelected
-                      ? Colors.white
-                      : Colors.lightBlack
-                    : isSelected && !isActivitySubRow
-                      ? Colors.white
-                      : Colors.lightBlack,
-                transition: "all 0.15s ease",
-                "&:hover": {
-                  backgroundColor: isCameraInTunnel
-                    ? childSelected
-                      ? Colors.vividOrange
-                      : "transparent"
-                    : isActivitySubRow
-                      ? isSelected
-                        ? Colors.blushWhite
-                        : Colors.white
-                      : isSelected
-                        ? Colors.vividOrange
-                        : Colors.white,
-                },
+                backgroundColor: bgColor,
+                color: textColor,
               }}
             >
               {!isActivitySubRow && (
                 <Box
                   sx={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: "50%",
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50px",
                     backgroundColor:
-                      (isCameraInTunnel && childSelected) || isSelected
+                      (isCameraInTunnel && childSelected) || isActive
                         ? Colors.white
                         : Colors.vividOrange,
                     color:
-                      (isCameraInTunnel && childSelected) || isSelected
+                      (isCameraInTunnel && childSelected) || isActive
                         ? Colors.vividOrange
                         : Colors.white,
                     display: "flex",
-                    alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight:
-                      (isCameraInTunnel && childSelected) || isSelected
-                        ? 700
-                        : 400,
-                    textAlign: "center",
-                    flexShrink: 0,
+                    fontSize: "12px",
+                    alignItems: "center",
+                    fontWeight: 700,
+                    fontFamily: Fonts.main,
+                    padding: 0,
                   }}
                 >
-                  {row.cameraNumber}
+                  <span style={{ marginTop: "2px" }}>{row.cameraNumber}</span>
                 </Box>
               )}
               {row.name}

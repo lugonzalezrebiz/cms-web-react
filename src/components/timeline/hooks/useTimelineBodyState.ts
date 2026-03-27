@@ -43,21 +43,16 @@ export const useTimelineBodyState = ({
     Record<number, number>
   >({});
   const [showPunchOut, setShowPunchOut] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false)
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const listBodyRef = useRef<HTMLDivElement | null>(null);
   const rowsScrollRef = useRef<HTMLDivElement | null>(null);
   const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const markerSecRef = useRef<number | null>(null);
-  const timelineStartSecRef = useRef(0);
   const prevCameraActivitiesRef = useRef<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-
-  // Keep refs current
-  markerSecRef.current = markerSec;
-  timelineStartSecRef.current = timelineStartSec;
 
   // Derived layout values
   const visibleDuration = totalSec / zoom;
@@ -95,6 +90,14 @@ export const useTimelineBodyState = ({
     const newOffset = dragStartOffset - deltaX * secondsPerPixel;
     const maxOffset = totalSec - visibleDuration;
     setPanOffsetSec(Math.max(0, Math.min(maxOffset, newOffset)));
+  };
+
+  const handleOnCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleOnOpenDialog = () => {
+    setOpenDialog(true);
   };
 
   // Effect 1: reset pan/marker on tab change
@@ -145,20 +148,11 @@ export const useTimelineBodyState = ({
     const newActivities = current.filter((a) => !prevIds.has(a.id));
 
     if (newActivities.length > 0) {
-      const currentMarker =
-        markerSecRef.current ?? timelineStartSecRef.current;
-      setSelectedTracks((p) => {
-        const next = new Set(p);
-        newActivities.forEach((act) => next.add(10000 + act.id));
-        return next;
-      });
-      setActiveSessionStarts((p) => {
-        const next = { ...p };
-        newActivities.forEach((act) => {
-          next[10000 + act.id] = currentMarker;
-        });
-        return next;
-      });
+      const lastId = 10000 + newActivities[newActivities.length - 1].id;
+      setITrackId(lastId);
+      setSelectedTracks(new Set());
+      setActiveSessionStarts({});
+      setCompletedSessions({});
     }
     prevCameraActivitiesRef.current = current;
   }, [cameraActivities, isTunnel]);
@@ -205,5 +199,8 @@ export const useTimelineBodyState = ({
     hasAnyBars,
     isInActivityRange,
     handleMouseMove,
+    handleOnCloseDialog,
+    handleOnOpenDialog,
+    openDialog,
   };
 };

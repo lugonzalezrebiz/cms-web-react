@@ -85,7 +85,7 @@ const EventMenu = ({
           />
         </Box>
       )}
-      <MenuList dense disablePadding sx={{ py: "8px" }}>
+      <MenuList dense disablePadding sx={{ p: "8px 0 0 0" }}>
         {contextMenuItems.map((item, i) => (
           <Fragment key={i}>
             <MenuItem

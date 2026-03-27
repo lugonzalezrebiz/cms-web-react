@@ -9,6 +9,7 @@ interface PopoverMenuProps {
   setAnchorEl: () => void;
   children: ReactNode;
   height?: string;
+  maxWidth?: string;
 }
 
 const PopoverMenu = ({
@@ -17,6 +18,7 @@ const PopoverMenu = ({
   setAnchorEl,
   children,
   height,
+  maxWidth,
 }: PopoverMenuProps) => {
   return (
     <Popover
@@ -30,7 +32,7 @@ const PopoverMenu = ({
           sx: {
             background: Colors.white,
             width: "100%",
-            maxWidth: "332px",
+            maxWidth: maxWidth ? maxWidth : "284px",
             maxHeight: height ? height : "380px",
             display: "flex",
             flexDirection: "column",

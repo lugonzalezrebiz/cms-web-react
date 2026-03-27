@@ -50,24 +50,6 @@ export const MOCK_SNAPSHOT: TimelineSnapshot = {
         category: "employees" as NavTab,
         sessions: [],
       },
-      {
-        id: 3,
-        name: "Speed violation",
-        category: "compliances" as NavTab,
-        sessions: [
-          { type: "in" as const, timestamp: "10:15:00" },
-          { type: "out" as const, timestamp: "10:20:00" },
-        ],
-      },
-      {
-        id: 4,
-        name: "Loading bay",
-        category: "activities" as NavTab,
-        sessions: [
-          { type: "in" as const, timestamp: "11:00:00" },
-          { type: "out" as const, timestamp: "14:30:00" },
-        ],
-      },
     ],
   },
   ui: {
@@ -77,3 +59,38 @@ export const MOCK_SNAPSHOT: TimelineSnapshot = {
     playback: false,
   },
 };
+
+export const TABS_DIALOG = [
+  { key: "all", label: "All", icon: "../assets/users-03.svg" },
+  { key: "sales", label: "Sales", icon: "../assets/tag-01.svg" },
+  { key: "nonsales", label: "Non.Sales", icon: "../assets/user-02.svg" },
+  { key: "unknown", label: "Unknow", icon: "../assets/help-circle.svg" },
+];
+
+export const PEOPLE = [
+  {
+    name: "Name Last Name",
+    lastSeen: "Last seen 1 Day ago",
+    role: "Sales representative",
+  },
+  {
+    name: "Name Last Name",
+    lastSeen: "Last seen 1 Day ago",
+    role: "Sales representative",
+  },
+  {
+    name: "Name Last Name",
+    lastSeen: "Last seen 1 Day ago",
+    role: "Sales representative",
+  },
+  {
+    name: "Name Last Name",
+    lastSeen: "Last seen 1 Day ago",
+    role: "Sales representative",
+  },
+  {
+    name: "Name Last Name",
+    lastSeen: "Last seen 1 Day ago",
+    role: "Sales representative",
+  },
+];

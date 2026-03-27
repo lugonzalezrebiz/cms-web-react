@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../theme";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { NavTab, TimelineBodyProps, FlatRow } from "./timeline/types";
 import { TUNNEL_CAMERAS, MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
@@ -20,6 +20,7 @@ const TimelineBody = ({
   activeTab,
   selectedTab,
   cameraActivities,
+  onMarkerChange,
 }: TimelineBodyProps) => {
   const isTunnel = selectedTab === "2";
 
@@ -95,6 +96,10 @@ const TimelineBody = ({
     firstActivitySec,
   });
 
+  useEffect(() => {
+    onMarkerChange?.(state.resolvedMarkerSec);
+  }, [state.resolvedMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useTimelineKeyboard({
     isTunnel,
     selectableRows,
@@ -123,6 +128,9 @@ const TimelineBody = ({
       }}
     >
       <TimelineRowList
+        dialogOnClose={state.handleOnCloseDialog}
+        onOpenDialog={state.handleOnOpenDialog}
+        openDialog={state.openDialog}
         flatRows={flatRows}
         selectedTracks={state.selectedTracks}
         activeSessionStarts={state.activeSessionStarts}
@@ -130,11 +138,9 @@ const TimelineBody = ({
         headerLabel={headerLabel}
         listBodyRef={state.listBodyRef}
         rowsScrollRef={state.rowsScrollRef}
+        iTrackId={state.iTrackId}
+        setITrackId={state.setITrackId}
         setSelectedTracks={state.setSelectedTracks}
-        setActiveSessionStarts={state.setActiveSessionStarts}
-        setCompletedSessions={state.setCompletedSessions}
-        markerSec={state.markerSec}
-        timelineStartSec={timelineStartSec}
       />
 
       <Box
@@ -190,6 +196,9 @@ const TimelineBody = ({
           currentLeft={state.currentLeft}
           selectedTracks={state.selectedTracks}
           showPunchOut={state.showPunchOut}
+          iTrackId={state.iTrackId}
+          flatRows={flatRows}
+          listBodyRef={state.listBodyRef}
         />
       </Box>
     </Box>

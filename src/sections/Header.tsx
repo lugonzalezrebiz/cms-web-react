@@ -54,6 +54,7 @@ const StyledImg = styled("img")({
 });
 
 const StyledToggleButton = styled(ToggleButton)({
+  color: Colors.mediumGray,
   flex: 1,
   fontFamily: Fonts.main,
   textTransform: "none",
@@ -65,8 +66,9 @@ const StyledToggleButton = styled(ToggleButton)({
   borderRadius: 35,
   whiteSpace: "nowrap",
   "&.Mui-selected": {
+    color: Colors.lightBlack,
     backgroundColor: Colors.white,
-    fontWeight: "bold",
+    //fontWeight: "bold",
   },
   "&.Mui-selected:hover": {
     backgroundColor: Colors.white,
