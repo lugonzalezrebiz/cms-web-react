@@ -21,7 +21,7 @@ const RenderPage = ({
   selectedTab: string;
   onTabChange: (value: string) => void;
 }) => {
-  const positionerCondition = !isMobile ? "calc(100% - 250px)" : "100%";
+  const positionerCondition = "calc(100% - 250px)";
   const menuItems = [{ text: "Monitor", path: `/dashboard` }];
   return (
     <Grid
@@ -30,7 +30,12 @@ const RenderPage = ({
       sx={
         drawerOpen
           ? { height: "100%", overflow: "hidden" }
-          : { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }
+          : {
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              overflow: "hidden",
+            }
       }
     >
       {drawerOpen && (
