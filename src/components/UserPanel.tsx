@@ -149,8 +149,9 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: Colors.paleGray, my: "2px" }} />
-
+        {USER_PANEL_MOCK.items.map(() => (
+          <Divider sx={{ borderColor: Colors.paleGray, my: "2px" }} />
+        ))}
         <Box sx={{ display: "flex", flexDirection: "column" }}>
           {USER_PANEL_MOCK.items.map(({ icon, label }) => (
             <MenuRow key={label}>
