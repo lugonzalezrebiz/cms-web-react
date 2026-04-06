@@ -61,13 +61,10 @@ export const useTimelineBodyState = ({
 
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
-  const pixelsPerHour = pixelsPerSecond * 3600;
 
-  let hourStep = 1;
-  if (pixelsPerHour < 40) hourStep = 2;
-  if (pixelsPerHour < 25) hourStep = 3;
-  if (pixelsPerHour < 18) hourStep = 4;
-  if (pixelsPerHour < 12) hourStep = 6;
+  const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
+  const MIN_PIXELS_PER_TICK = 60;
+  const tickStepSec = TICK_STEPS.find((s) => s * pixelsPerSecond >= MIN_PIXELS_PER_TICK) ?? 21600;
 
   const resolvedMarkerSec = markerSec ?? timelineStartSec;
   const isCurrentVisible =
@@ -192,7 +189,7 @@ export const useTimelineBodyState = ({
     visibleStart,
     visibleDuration,
     visibleEnd,
-    hourStep,
+    tickStepSec,
     resolvedMarkerSec,
     isCurrentVisible,
     currentLeft,

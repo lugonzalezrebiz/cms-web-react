@@ -18,23 +18,32 @@ export interface Props {
   children?: ReactNode;
   bold?: boolean;
   disabled?: boolean;
+  dark?: boolean;
 }
 
 interface StyledTooltipProps extends TooltipProps {
   size?: "small";
   textAlign?: "left" | "center" | "right";
   bold?: boolean;
+  dark?: boolean;
 }
 
 const StyledTooltip = styled(
-  ({ className, size, textAlign, bold, ...props }: StyledTooltipProps) => (
+  ({
+    className,
+    size,
+    textAlign,
+    bold,
+    dark,
+    ...props
+  }: StyledTooltipProps) => (
     <MuiTooltip {...props} classes={{ popper: className }} />
   ),
   {
     shouldForwardProp: (prop) =>
       prop !== "size" && prop !== "textAlign" && prop !== "bold",
   },
-)<StyledTooltipProps>(({ size, textAlign, bold }) => ({
+)<StyledTooltipProps>(({ size, textAlign, bold, dark }) => ({
   [`& .${tooltipClasses.tooltip}`]: {
     maxWidth: size === "small" ? "120px" : "200px",
     display: "flex",
@@ -55,16 +64,17 @@ const StyledTooltip = styled(
     fontStyle: "normal",
     lineHeight: "normal",
     letterSpacing: "normal",
-    textAlign: size === "small" ? "center" : textAlign ?? "left",
-    color: bold ? Colors.lightBlack : "#959fa9",
+    textAlign: size === "small" ? "center" : (textAlign ?? "left"),
+    color: bold ? Colors.lightBlack : dark ? Colors.white : "#959fa9",
     padding: "8px 10px",
-    backgroundColor: "#fff",
+    backgroundColor: dark ? Colors.semiTransparentBlack : Colors.white,
     borderRadius: 8,
+    whiteSpace: "pre-line",
   },
   [`& .${tooltipClasses.arrow}:before`]: {
     position: "relative",
     boxSizing: "border-box",
-    background: "#fff",
+    background: dark ? Colors.semiTransparentBlack : Colors.white,
     boxShadow: "0.1px -0.5px 3px 0.2px rgba(0, 0, 0, 0.25)",
   },
 }));
@@ -92,6 +102,7 @@ const Tooltip = memo(
     textAlign,
     bold,
     disabled,
+    dark,
   }: Props) => {
     return (
       <StyledTooltip
@@ -101,6 +112,7 @@ const Tooltip = memo(
         size={size}
         textAlign={textAlign}
         bold={bold}
+        dark={dark}
       >
         {withoutIcon ? (
           <span style={{ display: "inline-flex" }}>{children}</span>

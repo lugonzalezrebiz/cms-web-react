@@ -20,6 +20,7 @@ const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   backgroundColor: Colors.white,
   boxShadow: scrolled ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
   transition: "all 0.2s ease-in-out",
+  ["WebkitAppRegion" as string]: "drag",
 }));
 
 const StyledContainer = styled("div")({
@@ -29,6 +30,10 @@ const StyledContainer = styled("div")({
   gap: "10px",
   justifyContent: "space-between",
 });
+
+const noDrag = {
+  ["WebkitAppRegion" as string]: "no-drag",
+} as React.CSSProperties;
 
 const StyledTitle = styled("p")({
   margin: 0,
@@ -153,9 +158,8 @@ const Header = ({
           {withIconMenu && (
             <IconButton
               edge="start"
-              sx={{
-                color: Colors.main,
-              }}
+              style={noDrag}
+              sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
             >
@@ -172,6 +176,7 @@ const Header = ({
             >
               <Box
                 onClick={MenuHeader.handleOpen}
+                style={noDrag}
                 sx={{
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
@@ -183,7 +188,7 @@ const Header = ({
                   Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
                 </StyledSubTitle>
               </Box>
-              <Box>
+              <Box style={noDrag}>
                 <StyledToggleGroup
                   value={selected}
                   exclusive
@@ -199,9 +204,9 @@ const Header = ({
                   ))}
                 </StyledToggleGroup>
               </Box>
-              <Box display={"flex"}>
+              <Box display={"flex"} style={noDrag}>
                 <Box>
-                  <StyledImg
+                  {/*<StyledImg
                     onClick={AiMenuHeader.handleOpen}
                     src="../assets/ai.svg"
                     alt=""
@@ -211,14 +216,15 @@ const Header = ({
                     src="../assets/clock-check.svg"
                     alt=""
                   />
+                    <StyledImg
+                      onClick={NotificationHeader.handleOpen}
+                      src="../assets/notification.svg"
+                      alt=""
+                    />
+                  */}
                   <StyledImg
                     onClick={keyboardMenu.handleOpen}
                     src="../assets/keyboard-02.svg"
-                    alt=""
-                  />
-                  <StyledImg
-                    onClick={NotificationHeader.handleOpen}
-                    src="../assets/notification.svg"
                     alt=""
                   />
                   <StyledImg
@@ -228,8 +234,22 @@ const Header = ({
                   />
                 </Box>
                 <Box ml={"20px"}>
-                  <StyledImg src="../assets/minus.svg" alt="" />
-                  <StyledImg src="../assets/x-close.svg" alt="" />
+                  <StyledImg
+                    src="../assets/minus.svg"
+                    alt=""
+                    onClick={() => window.api?.minimize()}
+                  />
+                  <StyledImg
+                    style={{ marginBottom: "2px" }}
+                    src="../assets/expand-03.svg"
+                    alt=""
+                    onClick={() => window.api?.maximize()}
+                  />
+                  <StyledImg
+                    src="../assets/x-close.svg"
+                    alt=""
+                    onClick={() => window.api?.close()}
+                  />
                 </Box>
               </Box>
             </Box>
@@ -243,6 +263,7 @@ const Header = ({
               >
                 <Box
                   onClick={MenuHeader.handleOpen}
+                  style={noDrag}
                   sx={{
                     whiteSpace: "nowrap",
                     textOverflow: "ellipsis",
@@ -254,26 +275,28 @@ const Header = ({
                     Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
                   </StyledSubTitle>
                 </Box>
-                <Box display={"flex"}>
+                <Box display={"flex"} style={noDrag}>
                   <Box>
+                    {/*
                     <StyledImg
                       onClick={AiMenuHeader.handleOpen}
                       src="../assets/ai.svg"
                       alt=""
-                    />
-                    <StyledImg
-                      onClick={ClockMenuHeader.handleOpen}
-                      src="../assets/clock-check.svg"
-                      alt=""
-                    />
+                      />
+                      <StyledImg
+                        onClick={ClockMenuHeader.handleOpen}
+                        src="../assets/clock-check.svg"
+                        alt=""
+                      />
+                      <StyledImg
+                        onClick={NotificationHeader.handleOpen}
+                        src="../assets/notification.svg"
+                        alt=""
+                      />
+                    */}
                     <StyledImg
                       onClick={keyboardMenu.handleOpen}
                       src="../assets/keyboard-02.svg"
-                      alt=""
-                    />
-                    <StyledImg
-                      onClick={NotificationHeader.handleOpen}
-                      src="../assets/notification.svg"
                       alt=""
                     />
                     <StyledImg
@@ -283,8 +306,21 @@ const Header = ({
                     />
                   </Box>
                   <Box ml={"20px"}>
-                    <StyledImg src="../assets/minus.svg" alt="" />
-                    <StyledImg src="../assets/x-close.svg" alt="" />
+                    <StyledImg
+                      src="../assets/minus.svg"
+                      alt=""
+                      onClick={() => window.api?.minimize()}
+                    />
+                    <StyledImg
+                      src="../assets/expand-03.svg"
+                      alt=""
+                      onClick={() => window.api?.maximize()}
+                    />
+                    <StyledImg
+                      src="../assets/x-close.svg"
+                      alt=""
+                      onClick={() => window.api?.close()}
+                    />
                   </Box>
                 </Box>
               </Grid>

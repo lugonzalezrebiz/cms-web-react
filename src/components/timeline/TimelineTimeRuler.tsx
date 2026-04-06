@@ -14,9 +14,18 @@ interface TimelineTimeRulerProps {
   visibleStart: number;
   visibleDuration: number;
   startSec: number;
-  hourStep: number;
+  tickStepSec: number;
   isInActivityRange: (sec: number) => boolean;
 }
+
+const formatSec = (sec: number): string => {
+  const h = Math.floor(sec / 3600) % 24;
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (s === 0 && m === 0) return `${h.toString().padStart(2, "0")}:00`;
+  if (s === 0) return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+};
 
 export const TimelineTimeRuler = ({
   zoom,
@@ -31,10 +40,14 @@ export const TimelineTimeRuler = ({
   visibleStart,
   visibleDuration,
   startSec,
-  hourStep,
+  tickStepSec,
   isInActivityRange,
 }: TimelineTimeRulerProps) => {
   const visibleEnd = visibleStart + visibleDuration;
+  const totalSec = 24 * 3600;
+
+  const firstTick = Math.ceil(startSec / tickStepSec) * tickStepSec;
+  const tickCount = Math.floor((startSec + totalSec - firstTick) / tickStepSec) + 1;
 
   return (
     <Box
@@ -78,16 +91,14 @@ export const TimelineTimeRuler = ({
         );
       })()}
 
-      {/* Hour labels */}
-      {Array.from({ length: 24 }).map((_, i) => {
-        if (i % hourStep !== 0) return null;
-        const hourTime = startSec + i * 3600;
-        if (hourTime < visibleStart || hourTime > visibleEnd) return null;
-        const left = ((hourTime - visibleStart) / visibleDuration) * 100;
-        const hour = Math.floor((hourTime / 3600) % 24);
+      {/* Second-based tick labels */}
+      {Array.from({ length: tickCount }).map((_, i) => {
+        const tickSec = firstTick + i * tickStepSec;
+        if (tickSec < visibleStart || tickSec > visibleEnd) return null;
+        const left = ((tickSec - visibleStart) / visibleDuration) * 100;
         return (
           <Box
-            key={i}
+            key={tickSec}
             sx={{
               position: "absolute",
               left: `${left}%`,
@@ -95,13 +106,13 @@ export const TimelineTimeRuler = ({
               transform: "translateX(-50%)",
               fontSize: 14,
               fontFamily: Fonts.main,
-              color: isInActivityRange(hourTime)
+              color: isInActivityRange(tickSec)
                 ? Colors.vividOrange
                 : Colors.mediumGray,
               fontWeight: 400,
             }}
           >
-            {`${hour.toString().padStart(2, "0")}:00`}
+            {formatSec(tickSec)}
           </Box>
         );
       })}

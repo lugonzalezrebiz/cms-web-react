@@ -6,59 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev       # Start Vite dev server with HMR
-npm run build     # Type-check (tsc -b) then bundle (vite build)
-npm run lint      # Run ESLint
-npm run preview   # Serve the production build locally
+npm run build     # tsc -b && vite build
+npm run lint      # ESLint check (flat config v9+)
+npm run preview   # Preview the production build
 ```
 
-There are no automated tests configured in this project.
+No test runner is configured.
 
 ## Architecture
 
-### Entry & Routing
+**Stack:** React 19 + TypeScript 5.9 (strict) + Vite + MUI v6 + Emotion. No Redux — state is managed with plain React hooks and props.
 
-`src/main.tsx` wraps the app in `BrowserRouter`. `src/App.tsx` is the route shell — currently only `/dashboard` exists; everything else redirects there.
+**Routing:** React Router v7. Two pages: `/login` and `/dashboard`. Everything else redirects to `/login`.
 
-### Page Layout Pattern
+**Layout shell:** `RenderPage` wraps authenticated pages with a top `Header` and a collapsible sidebar `Menu`. The main content area is rendered via `Content`.
 
-Every page is rendered inside `RenderPage` (a layout shell in `src/components/`):
+**Theme:** Centralised in `src/theme.ts` — defines the MUI theme, a large named-colour palette (primary orange `#fb5103`), font families (Fira Sans / Inter / Outfit), and custom MUI shadows/overrides.
 
-```
-App → RenderPage → sections/Header (sticky) + sections/Content (body)
-                          ↓
-                    <children> (page component)
-```
+**Timeline system** (most complex part of the codebase):
+- `TimeLine.tsx` — outer shell; camera selector, nav tabs, imperative handle via `forwardRef`
+- `TimelineBody.tsx` — core canvas/row rendering; delegates to sub-components and hooks
+- `src/components/timeline/` — co-located sub-components (ruler, rows, marker, dialogs) and hooks (`useTimelineBodyState`, `useTimelineKeyboard`, `usePopover`)
+- `TimelineRenderer.ts` — low-level canvas renderer (ported from `migrate/component.js`); instantiated inside a `useEffect`, exposed via `TimeLineHandle.renderer`
+- `src/migrate/moment.ts` — mutable dayjs shim that mirrors the moment.js API; used internally by `TimelineRenderer`
 
-`RenderPage` manages the sidebar `Menu` drawer open/closed state. New pages follow the pattern: add a `<Route>` in `App.tsx` pointing to a page component, wrapped in `RenderPage`.
+**UI component conventions:**
+- Shared primitives live in `src/components/` (`Button`, `Card`, `Dialog`, `Tooltip`, `Divider`, `PopoverMenu`)
+- Menus (Clock, AI, Keyboard, Notification, Event) all compose `PopoverMenu`
 
-Pages live in `src/pages/<PageName>/index.tsx`.
+**Deployment:** Vercel SPA — all routes rewrite to `/index.html` (`vercel.json`).
 
-### Theming
-
-**Always** import colors, fonts, and breakpoints from `src/theme.ts` — never use inline hex values. Key exports:
-
-- `Colors.*` — full color palette (primary brand: `Colors.main = "#fb5103"`)
-- `Fonts.*` — `Fonts.main = "Fira Sans"`, `Fonts.secondary = "Inter"`, `Fonts.buttonFont = "Outfit"`
-- `Breakpoints.lg` — `"@media (max-width: 1200px)"` (main responsive breakpoint)
-- `BarChartPalette` — array of colors for chart series
-
-All styling is done with MUI's `sx` prop or `@emotion/styled`. No CSS modules or global stylesheets.
-
-### Timeline System (Two-File Split)
-
-The timeline is split across two files for separation of concerns:
-
-- **`src/components/TimeLine.tsx`** — React shell. Uses `forwardRef` to expose a `TimeLineHandle` imperative API (`setCategory`, `on/off/once/emit`, `renderer`). Three canvas elements (`timesRef`, `mainRef`, `markerRef`) are created in JSX and passed to the renderer. The renderer is instantiated in a **mount-only `useEffect`** (empty dep array) and destroyed on unmount. Snapshot data flows in via `renderer.invalidateSnapshot(snapshot)` in a separate effect.
-
-- **`src/components/TimelineRenderer.ts`** — Canvas drawing engine (ported from `src/migrate/component.js`). Uses private class fields (`#field` syntax). Exposes a rich API: `init()`, `destroy()`, `invalidateSnapshot()`, `addTrack()`, `cut()`, `patch()`, `addSession()`, `moveToFirst/Last/Forward/Backward()`, `togglePlay()`, `setCategory()`, etc.
-
-- **`src/migrate/moment.ts`** — Dayjs shim that mirrors the moment.js API. Use this instead of importing moment.js (not installed).
-- **`src/migrate/ComponentComplement.ts`** — Event-emitter base class used by the renderer.
-
-### CameraLayout
-
-`src/components/CameraLayout.tsx` renders 1–16 cameras in an adaptive grid. The `getRowDistribution()` function determines row layout automatically. Each camera slot uses a right-click `EventMenu` for context actions.
-
-### TypeScript Config
-
-Strict mode is on with `noUnusedLocals` and `noUnusedParameters`. Target is `ES2022` (private class fields `#field` are valid). Run `tsc --noEmit` to type-check without building.
+**Git hooks:** Husky + lint-staged run ESLint on staged files before commits.
