@@ -4,6 +4,9 @@ import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { type CameraContextMenuItem } from "./EventMenu";
 import Tooltip from "./Tooltip";
+import type { CameraEventPoint } from "./timeline/types";
+
+const TAG_TOLERANCE_SEC = 300;
 
 interface CameraItemProps {
   index: number;
@@ -13,6 +16,7 @@ interface CameraItemProps {
   isExpanded?: boolean;
   tags: CameraContextMenuItem[];
   onDrop: (itemId: string) => void;
+  onRemoveTag: (tagId: number) => void;
 }
 
 function CameraItem({
@@ -23,6 +27,7 @@ function CameraItem({
   isExpanded = false,
   tags,
   onDrop,
+  onRemoveTag,
 }: CameraItemProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -128,21 +133,47 @@ function CameraItem({
             <Box
               key={tag.id}
               sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
                 bgcolor: Colors.main,
                 color: Colors.white,
-                px: "6px",
+                pl: "6px",
+                pr: "4px",
                 py: "2px",
                 borderRadius: "4px",
                 fontSize: 10,
                 fontFamily: Fonts.main,
                 lineHeight: 1.4,
                 whiteSpace: "nowrap",
-                maxWidth: "80px",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                maxWidth: "100px",
               }}
             >
-              {tag.name}
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "60px",
+                }}
+              >
+                {tag.name}
+              </span>
+              <Box
+                component="span"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveTag(tag.id);
+                }}
+                sx={{
+                  cursor: "pointer",
+                  lineHeight: 1,
+                  opacity: 0.8,
+                  fontSize: 10,
+                  "&:hover": { opacity: 1 },
+                }}
+              >
+                ✕
+              </Box>
             </Box>
           ))}
           {tags.length > 2 && (
@@ -197,6 +228,9 @@ interface CameraLayoutProps {
   cameraItemList: () => void;
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
+  cameraEventPoints?: CameraEventPoint[];
+  markerSec?: number;
+  onRemoveEventPoint?: (id: number) => void;
 }
 
 function getRowDistribution(count: number): number[] {
@@ -224,11 +258,11 @@ const CameraLayout = ({
   maxHeight = 350,
   cameraItemList,
   contextMenuItems = [],
+  cameraEventPoints = [],
+  markerSec = 0,
+  onRemoveEventPoint,
 }: CameraLayoutProps) => {
   const [expandedCamera, setExpandedCamera] = useState<number | null>(null);
-  const [cameraTags, setCameraTags] = useState<
-    Record<number, CameraContextMenuItem[]>
-  >({});
 
   useEffect(() => {
     if (expandedCamera === null) return;
@@ -249,15 +283,24 @@ const CameraLayout = ({
     setExpandedCamera((prev) => (prev === index ? null : index));
   };
 
-  const handleDrop = (cameraIndex: number, itemId: string) => {
+  const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
+    cameraEventPoints
+      .filter(
+        (ep) =>
+          ep.cameraId === 101 + cameraIndex &&
+          Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
+      )
+      .map((ep) => ({
+        id: ep.id,
+        name: ep.label,
+        label: ep.label,
+        onClick: () => {},
+      }));
+
+  const handleDrop = (cameraIndex: number, itemId: number) => {
     const item = contextMenuItems.find((i) => i.id === itemId);
     if (!item) return;
     item.onClick(cameraIndex);
-    setCameraTags((prev) => {
-      const existing = prev[cameraIndex] ?? [];
-      if (existing.some((t) => t.id === itemId)) return prev;
-      return { ...prev, [cameraIndex]: [...existing, item] };
-    });
   };
 
   if (expandedCamera !== null) {
@@ -276,8 +319,9 @@ const CameraLayout = ({
           cameraItemList={cameraItemList}
           expandCamera={handleExpandCamera}
           isExpanded
-          tags={cameraTags[expandedCamera] ?? []}
-          onDrop={(itemId) => handleDrop(expandedCamera, itemId)}
+          tags={getTagsForCamera(expandedCamera)}
+          onDrop={(itemId) => handleDrop(expandedCamera, Number(itemId))}
+          onRemoveTag={(tagId) => onRemoveEventPoint?.(tagId)}
         />
       </Box>
     );
@@ -335,8 +379,9 @@ const CameraLayout = ({
                     media={media}
                     cameraItemList={cameraItemList}
                     expandCamera={handleExpandCamera}
-                    tags={cameraTags[camIndex] ?? []}
-                    onDrop={(itemId) => handleDrop(camIndex, itemId)}
+                    tags={getTagsForCamera(camIndex)}
+                    onDrop={(itemId) => handleDrop(camIndex, Number(itemId))}
+                    onRemoveTag={(tagId) => onRemoveEventPoint?.(tagId)}
                   />
                 </Box>
               );

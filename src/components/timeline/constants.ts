@@ -22,6 +22,16 @@ export const TUNNEL_CAMERAS: TimelineSnapshot["timeline"]["tracks"] = [
   { id: 104, name: "Camera 4", category: "activities", sessions: [] },
   { id: 105, name: "Camera 5", category: "activities", sessions: [] },
   { id: 106, name: "Camera 6", category: "activities", sessions: [] },
+  { id: 107, name: "Camera 7", category: "activities", sessions: [] },
+  { id: 108, name: "Camera 8", category: "activities", sessions: [] },
+  { id: 109, name: "Camera 9", category: "activities", sessions: [] },
+  { id: 110, name: "Camera 10", category: "activities", sessions: [] },
+  { id: 111, name: "Camera 11", category: "activities", sessions: [] },
+  { id: 112, name: "Camera 12", category: "activities", sessions: [] },
+  { id: 113, name: "Camera 13", category: "activities", sessions: [] },
+  { id: 114, name: "Camera 14", category: "activities", sessions: [] },
+  { id: 115, name: "Camera 15", category: "activities", sessions: [] },
+  { id: 116, name: "Camera 16", category: "activities", sessions: [] },
 ];
 
 export const MOCK_SNAPSHOT: TimelineSnapshot = {

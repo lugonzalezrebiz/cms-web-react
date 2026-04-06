@@ -34,10 +34,17 @@ export interface TimelineSnapshot {
 export type FlatRow = {
   id: number;
   name: string;
-  kind: "camera" | "activity";
+  kind: "camera" | "activity" | "event";
   parentCameraId?: number;
   cameraNumber: number;
   sessions: { type: "in" | "out"; timestamp: string }[];
+};
+
+export type CameraEventPoint = {
+  id: number;
+  cameraId: number;
+  timeSec: number;
+  label: string;
 };
 
 export interface TimelineBodyProps {
@@ -49,5 +56,6 @@ export interface TimelineBodyProps {
     cameraIndex: number;
     activityLabel: string;
   }[];
+  cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
 }

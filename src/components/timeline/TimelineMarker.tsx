@@ -1,5 +1,8 @@
 import { Box } from "@mui/system";
-import { Colors, Fonts } from "../../theme";
+import {
+  Colors,
+  //, Fonts
+} from "../../theme";
 import { useState, useEffect } from "react";
 import type { FlatRow } from "./types";
 
@@ -13,16 +16,16 @@ interface TimelineMarkerProps {
   listBodyRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const RULER_HEIGHT = 28;
-const ROW_HEIGHT = 44;
+// const RULER_HEIGHT = 28;
+// const ROW_HEIGHT = 44;
 
 export const TimelineMarker = ({
-  isCurrentVisible,
+  //isCurrentVisible,
   currentLeft,
-  selectedTracks,
-  showPunchOut,
-  iTrackId,
-  flatRows,
+  //selectedTracks,
+  //showPunchOut,
+  // iTrackId,
+  // flatRows,
   listBodyRef,
 }: TimelineMarkerProps) => {
   const [scrollTop, setScrollTop] = useState(0);
@@ -35,15 +38,15 @@ export const TimelineMarker = ({
     return () => el.removeEventListener("scroll", onScroll);
   }, [listBodyRef]);
 
-  const focusedNotBuilding = iTrackId !== null && !selectedTracks.has(iTrackId);
-  if (!isCurrentVisible) return null;
+  // const focusedNotBuilding = iTrackId !== null && !selectedTracks.has(iTrackId);
+  // if (!isCurrentVisible) return null;
 
-  const rowIndex =
-    iTrackId !== null ? flatRows.findIndex((r) => r.id === iTrackId) : -1;
-  const messageTop =
-    rowIndex >= 0
-      ? RULER_HEIGHT + rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 - 8 - scrollTop
-      : 42;
+  // const rowIndex =
+  //   iTrackId !== null ? flatRows.findIndex((r) => r.id === iTrackId) : -1;
+  // const messageTop =
+  //   rowIndex >= 0
+  //     ? RULER_HEIGHT + rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2 - 8 - scrollTop
+  //     : 42;
 
   return (
     <>
@@ -93,7 +96,7 @@ export const TimelineMarker = ({
       </Box>
 
       {/* Punch-in hint */}
-      {focusedNotBuilding && !showPunchOut && (
+      {/* {focusedNotBuilding && !showPunchOut && (
         <Box
           sx={{
             position: "absolute",
@@ -111,13 +114,12 @@ export const TimelineMarker = ({
             borderRadius: "8px",
           }}
         >
-          Press <span style={{ color: Colors.vividOrange }}>i</span> to
-          punch-in
+          Press <span style={{ color: Colors.vividOrange }}>i</span> to punch-in
         </Box>
-      )}
+      )} */}
 
       {/* Punch-out hint */}
-      {selectedTracks.size > 0 && !showPunchOut && !focusedNotBuilding && (
+      {/* {selectedTracks.size > 0 && !showPunchOut && !focusedNotBuilding && (
         <Box
           sx={{
             position: "absolute",
@@ -138,9 +140,9 @@ export const TimelineMarker = ({
           Press <span style={{ color: Colors.vividOrange }}>o</span> to
           punch-out
         </Box>
-      )}
+      )} */}
 
-      {showPunchOut && (
+      {/* {showPunchOut && (
         <Box
           sx={{
             position: "absolute",
@@ -157,7 +159,7 @@ export const TimelineMarker = ({
         >
           Punch Out
         </Box>
-      )}
+      )} */}
     </>
   );
 };

@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
-import type { FlatRow } from "./types";
+import type { FlatRow, CameraEventPoint } from "./types";
 
 interface TimelineGridRowsProps {
   flatRows: FlatRow[];
@@ -22,6 +22,7 @@ interface TimelineGridRowsProps {
   hasAnyBars: boolean;
   setZoom: React.Dispatch<React.SetStateAction<number>>;
   setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
+  cameraEventPoints?: CameraEventPoint[];
 }
 
 const toSeconds = (time: string) => {
@@ -49,6 +50,7 @@ export const TimelineGridRows = ({
   hasAnyBars,
   setZoom,
   setPanOffsetSec,
+  cameraEventPoints = [],
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -106,24 +108,26 @@ export const TimelineGridRows = ({
       }}
     >
       {/* Vertical grid lines */}
-      {Array.from({ length: Math.floor(totalSec / tickStepSec) + 1 }).map((_, i) => {
-        const tickTime = startSec + i * tickStepSec;
-        if (tickTime < visibleStart || tickTime > visibleEnd) return null;
-        const left = ((tickTime - visibleStart) / visibleDuration) * 100;
-        return (
-          <Box
-            key={tickTime}
-            sx={{
-              position: "absolute",
-              left: `${left}%`,
-              top: 0,
-              bottom: 0,
-              width: "1px",
-              background: Colors.paleGray,
-            }}
-          />
-        );
-      })}
+      {Array.from({ length: Math.floor(totalSec / tickStepSec) + 1 }).map(
+        (_, i) => {
+          const tickTime = startSec + i * tickStepSec;
+          if (tickTime < visibleStart || tickTime > visibleEnd) return null;
+          const left = ((tickTime - visibleStart) / visibleDuration) * 100;
+          return (
+            <Box
+              key={tickTime}
+              sx={{
+                position: "absolute",
+                left: `${left}%`,
+                top: 0,
+                bottom: 0,
+                width: "1px",
+                background: Colors.paleGray,
+              }}
+            />
+          );
+        },
+      )}
 
       {/* Rows — scroll-synced with left list */}
       <Box
@@ -201,6 +205,51 @@ export const TimelineGridRows = ({
               );
             }
 
+            // Event sub-row (non-tunnel drag-and-drop markers)
+            if (row.kind === "event") {
+              return (
+                <Box
+                  key={row.id}
+                  sx={{
+                    position: "absolute",
+                    top: topOffset,
+                    left: 0,
+                    right: 0,
+                    height: rowHeight,
+                  }}
+                >
+                  {cameraEventPoints
+                    .filter(
+                      (ep) =>
+                        ep.cameraId === row.parentCameraId &&
+                        ep.label === row.name,
+                    )
+                    .map((ep) => {
+                      if (ep.timeSec < visibleStart || ep.timeSec > visibleEnd)
+                        return null;
+                      const left =
+                        ((ep.timeSec - visibleStart) / visibleDuration) * 100;
+                      return (
+                        <Box
+                          key={ep.id}
+                          sx={{
+                            position: "absolute",
+                            left: `${left}%`,
+                            top: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: 18,
+                            height: 18,
+                            borderRadius: "50%",
+                            background: Colors.green,
+                            zIndex: 2,
+                          }}
+                        />
+                      );
+                    })}
+                </Box>
+              );
+            }
+
             // Normal selectable row
             const snapshotRanges = (() => {
               const ranges: { start: number; end: number }[] = [];
@@ -259,12 +308,11 @@ export const TimelineGridRows = ({
                         transform: "translateY(-50%)",
                         height: 19,
                         borderRadius: "8px",
-                        background:
-                          isSelected
-                            ? isTunnel
-                              ? Colors.palePeach
-                              : Colors.vividOrange
-                            : Colors.lightGrayishBlue,
+                        background: isSelected
+                          ? isTunnel
+                            ? Colors.palePeach
+                            : Colors.vividOrange
+                          : Colors.lightGrayishBlue,
                       }}
                     />
                   );
@@ -276,7 +324,7 @@ export const TimelineGridRows = ({
       </Box>
 
       {/* Empty state hint */}
-      {!hasAnyBars && !isTunnel && (
+      {/* {!hasAnyBars && !isTunnel && (
         <Box
           sx={{
             width: "217px",
@@ -297,7 +345,7 @@ export const TimelineGridRows = ({
           Press <span style={{ color: Colors.vividOrange }}>i</span> on your
           keyboard to punch-in the selected employee
         </Box>
-      )}
+      )} */}
     </Box>
   );
 };
