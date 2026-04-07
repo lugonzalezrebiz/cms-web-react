@@ -33,7 +33,7 @@ export function useCameraFrame(params: {
     const timestamps = useTimestampIndex(company, location, date, camera);
 
     const [src, setSrc] = useState("");
-    const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
         clearTimeout(debounceRef.current);

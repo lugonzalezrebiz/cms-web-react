@@ -54,7 +54,13 @@ function CameraItem({
 
   const liveSrc = useCameraFrame(
     useRealImages
-      ? { company: company!, location: location!, date: date!, camera: cameraId!, timestamp: timestamp! }
+      ? {
+          company: company!,
+          location: location!,
+          date: date!,
+          camera: cameraId!,
+          timestamp: timestamp!,
+        }
       : { company: 0, location: 0, date: "", camera: 0, timestamp: "" },
   );
 

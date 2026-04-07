@@ -1,5 +1,9 @@
+import { useEffect } from "react";
 import { Box } from "@mui/system";
-import { Colors, Fonts } from "../../theme";
+import {
+  Colors,
+  //, Fonts
+} from "../../theme";
 import type { FlatRow, CameraEventPoint } from "./types";
 
 interface TimelineGridRowsProps {
@@ -47,12 +51,63 @@ export const TimelineGridRows = ({
   isTunnel,
   visibleStart,
   visibleDuration,
-  hasAnyBars,
+  //hasAnyBars,
   setZoom,
   setPanOffsetSec,
   cameraEventPoints = [],
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
+
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+
+        const rect = el.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const width = rect.width;
+
+        const oldZoom = zoom;
+        const newZoom = Math.min(
+          4,
+          Math.max(1, oldZoom + (e.deltaY > 0 ? -0.2 : 0.2)),
+        );
+
+        if (newZoom === oldZoom) return;
+
+        const oldVisibleDuration = totalSec / oldZoom;
+        const newVisibleDuration = totalSec / newZoom;
+        const cursorTime =
+          panOffsetSec + (mouseX / width) * oldVisibleDuration;
+        let newOffset = cursorTime - (mouseX / width) * newVisibleDuration;
+        const maxOffset = totalSec - newVisibleDuration;
+        newOffset = Math.max(0, Math.min(maxOffset, newOffset));
+
+        setZoom(newZoom);
+        setPanOffsetSec(newOffset);
+      } else {
+        if (listBodyRef.current) {
+          listBodyRef.current.scrollTop += e.deltaY;
+          if (rowsScrollRef.current) {
+            rowsScrollRef.current.scrollTop = listBodyRef.current.scrollTop;
+          }
+        }
+        if (e.deltaX !== 0) {
+          const vd = totalSec / zoom;
+          const maxOffset = totalSec - vd;
+          setPanOffsetSec((prev) =>
+            Math.max(0, Math.min(maxOffset, prev + e.deltaX * 5)),
+          );
+        }
+      }
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [zoom, panOffsetSec, totalSec, setZoom, setPanOffsetSec, gridRef, listBodyRef, rowsScrollRef]);
 
   return (
     <Box
@@ -61,50 +116,6 @@ export const TimelineGridRows = ({
         flex: 1,
         position: "relative",
         overflow: "hidden",
-      }}
-      onWheel={(e) => {
-        if (!gridRef.current) return;
-
-        if (e.ctrlKey) {
-          e.preventDefault();
-
-          const rect = gridRef.current.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const width = rect.width;
-
-          const oldZoom = zoom;
-          const newZoom = Math.min(
-            4,
-            Math.max(1, oldZoom + (e.deltaY > 0 ? -0.2 : 0.2)),
-          );
-
-          if (newZoom === oldZoom) return;
-
-          const oldVisibleDuration = totalSec / oldZoom;
-          const newVisibleDuration = totalSec / newZoom;
-          const cursorTime =
-            panOffsetSec + (mouseX / width) * oldVisibleDuration;
-          let newOffset = cursorTime - (mouseX / width) * newVisibleDuration;
-          const maxOffset = totalSec - newVisibleDuration;
-          newOffset = Math.max(0, Math.min(maxOffset, newOffset));
-
-          setZoom(newZoom);
-          setPanOffsetSec(newOffset);
-        } else {
-          if (listBodyRef.current) {
-            listBodyRef.current.scrollTop += e.deltaY;
-            if (rowsScrollRef.current) {
-              rowsScrollRef.current.scrollTop = listBodyRef.current.scrollTop;
-            }
-          }
-          if (e.deltaX !== 0) {
-            const vd = totalSec / zoom;
-            const maxOffset = totalSec - vd;
-            setPanOffsetSec((prev) =>
-              Math.max(0, Math.min(maxOffset, prev + e.deltaX * 5)),
-            );
-          }
-        }
       }}
     >
       {/* Vertical grid lines */}
@@ -225,6 +236,9 @@ export const TimelineGridRows = ({
                         ep.label === row.name,
                     )
                     .map((ep) => {
+                      console.log(
+                        `[EventPoint] id=${ep.id} cameraId=${ep.cameraId} label="${ep.label}" timeSec=${ep.timeSec}`,
+                      );
                       if (ep.timeSec < visibleStart || ep.timeSec > visibleEnd)
                         return null;
                       const left =
@@ -237,8 +251,8 @@ export const TimelineGridRows = ({
                             left: `${left}%`,
                             top: "50%",
                             transform: "translate(-50%, -50%)",
-                            width: 18,
-                            height: 18,
+                            width: 15,
+                            height: 15,
                             borderRadius: "50%",
                             background: Colors.green,
                             zIndex: 2,

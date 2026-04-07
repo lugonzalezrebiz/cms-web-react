@@ -72,7 +72,6 @@ const Dashboard = ({
   const location = Number(searchParams.get("location") ?? 0);
   const date = searchParams.get("date") ?? ""; // YYYYMMDD
 
-
   // ── Camera list — read from DVR folder via Electron IPC ──────────────────
   const [cameras, setCameras] = useState<CameraInfo[]>([]);
   useEffect(() => {
@@ -117,15 +116,29 @@ const Dashboard = ({
       return [...prev, { id: newId, cameraIndex, activityLabel }];
     });
     const cameraId = 101 + cameraIndex;
-    setCameraEventPoints((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        cameraId,
-        timeSec: markerSecRef.current,
-        label: activityLabel,
-      },
-    ]);
+    const timeSec = markerSecRef.current; // Use the current marker position for the event point
+    const startSec = Math.floor(timeSec / 3600) * 3600;
+    const endSec = startSec + 3600;
+    setCameraEventPoints((prev) => {
+      const duplicate = prev.some(
+        (ep) =>
+          ep.cameraId === cameraId &&
+          ep.label === activityLabel &&
+          Math.abs(timeSec - ep.timeSec) <= 300,
+      );
+      if (duplicate) return prev;
+      return [
+        ...prev,
+        {
+          id: Date.now(),
+          cameraId,
+          timeSec,
+          startSec,
+          endSec,
+          label: activityLabel,
+        },
+      ];
+    });
   };
 
   const [extraMenuItems, setExtraMenuItems] = useState<CameraContextMenuItem[]>(
@@ -237,7 +250,7 @@ const Dashboard = ({
           cameraEventPoints={cameraEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleRemoveEventPoint}
-           // Real image props
+          // Real image props
           cameras={cameras}
           company={company}
           location={location}
