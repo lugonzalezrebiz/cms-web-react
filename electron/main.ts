@@ -2,6 +2,10 @@ import { app, BrowserWindow, ipcMain, protocol } from "electron";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
+import { config } from "dotenv";
+
+// Load .env from the project root (works in both dev and prod)
+config({ path: path.join(app.getAppPath(), ".env") });
 
 const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
 
