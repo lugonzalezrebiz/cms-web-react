@@ -178,7 +178,7 @@ export const useTimelineKeyboard = ({
         if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       }
       e.preventDefault();
-      const step = e.ctrlKey ? 10 : 1;
+      const step = e.ctrlKey ? 15 : 1;
       const delta = e.key === "ArrowRight" ? step : -step;
       setMarkerSec((prev) => {
         const base = prev ?? timelineStartSec;
