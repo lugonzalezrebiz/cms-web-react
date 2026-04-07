@@ -6,13 +6,62 @@ import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout, { type CameraInfo } from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
+import type { CameraEventPoint } from "../../components/timeline/types";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import styled from "@emotion/styled";
+import { Colors, Fonts } from "../../theme";
+
+const StyledToggleButton = styled(ToggleButton)({
+  color: Colors.mediumGray,
+  flex: 1,
+  fontFamily: Fonts.main,
+  textTransform: "none",
+  fontWeight: "normal",
+  backgroundColor: Colors.lightGray,
+  border: "none",
+  margin: 0,
+  fontSize: "14px",
+  borderRadius: 35,
+  whiteSpace: "nowrap",
+  "&.Mui-selected": {
+    color: Colors.lightBlack,
+    backgroundColor: Colors.white,
+    //fontWeight: "bold",
+  },
+  "&.Mui-selected:hover": {
+    backgroundColor: Colors.white,
+  },
+  "&:not(.Mui-selected)": {
+    backgroundColor: Colors.lightGray,
+  },
+});
+
+const StyledToggleGroup = styled(ToggleButtonGroup)({
+  padding: 4,
+  backgroundColor: Colors.lightGray,
+  borderRadius: 30,
+  height: "32px",
+  width: "100%",
+  boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
+  "& .MuiToggleButtonGroup-lastButton": {
+    margin: 0,
+  },
+  "& .MuiToggleButtonGroup-firstButton": {
+    margin: 1,
+  },
+  "& .MuiToggleButtonGroup-grouped": {
+    borderRadius: 35,
+  },
+});
 
 const Dashboard = ({
   selectedTab,
   drawerOpen,
+  onTabChange,
 }: {
   selectedTab: string;
   drawerOpen?: boolean;
+  onTabChange: (value: string) => void;
 }) => {
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
@@ -44,6 +93,16 @@ const Dashboard = ({
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
+  const [cameraEventPoints, setCameraEventPoints] = useState<
+    CameraEventPoint[]
+  >([]);
+  const [markerSec, setMarkerSec] = useState<number>(0);
+  const markerSecRef = useRef<number>(0);
+
+  const handleRemoveEventPoint = (id: number) => {
+    setCameraEventPoints((prev) => prev.filter((ep) => ep.id !== id));
+  };
+
   const handleActivitySelect = (
     cameraIndex: number,
     activityLabel: string,
@@ -57,6 +116,32 @@ const Dashboard = ({
       const newId = activityCounterRef.current++;
       return [...prev, { id: newId, cameraIndex, activityLabel }];
     });
+    const cameraId = 101 + cameraIndex;
+    setCameraEventPoints((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        cameraId,
+        timeSec: markerSecRef.current,
+        label: activityLabel,
+      },
+    ]);
+  };
+
+  const [extraMenuItems, setExtraMenuItems] = useState<CameraContextMenuItem[]>(
+    [],
+  );
+
+  const handleAddMenuItem = (label: string) => {
+    setExtraMenuItems((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        name: label,
+        label,
+        onClick: (index) => handleActivitySelect(index, label),
+      },
+    ]);
   };
 
   const cameraMenuItems: CameraContextMenuItem[] = [
@@ -92,6 +177,10 @@ const Dashboard = ({
     },
   ];
 
+  const allMenuItems = [...cameraMenuItems, ...extraMenuItems];
+
+  const selected = selectedTab;
+
   return (
     <Box
       sx={{
@@ -102,6 +191,41 @@ const Dashboard = ({
         gap: 1,
       }}
     >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          m: "10px 16px 0 16px",
+        }}
+      >
+        <Box>
+          <StyledToggleGroup
+            value={selected}
+            exclusive
+            onChange={(_event, newValue) => {
+              if (newValue !== null) onTabChange(newValue);
+            }}
+            aria-label="Time range"
+          >
+            {ToggleButtonTitles.map(({ value, title }) => (
+              <StyledToggleButton key={value} value={value}>
+                {title}
+              </StyledToggleButton>
+            ))}
+          </StyledToggleGroup>
+        </Box>
+
+        <EventMenu
+          contextMenuTitle="Comp. Violations"
+          contextMenuItems={allMenuItems}
+          iconMenu="/assets/plus-1.svg"
+          onAddItem={handleAddMenuItem}
+          cameraEventPoints={cameraEventPoints}
+          markerSec={markerSec}
+        />
+      </Box>
+
       {/* Camera grid */}
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
         <CameraLayout
@@ -109,8 +233,11 @@ const Dashboard = ({
           media="/assets/camera/Cam thumbnail.svg"
           maxHeight="100%"
           cameraItemList={() => alert("Camera list clicked")}
-          contextMenuItems={selectedTab === "2" ? cameraMenuItems : []}
-          // Real image props
+          contextMenuItems={allMenuItems}
+          cameraEventPoints={cameraEventPoints}
+          markerSec={markerSec}
+          onRemoveEventPoint={handleRemoveEventPoint}
+           // Real image props
           cameras={cameras}
           company={company}
           location={location}
@@ -119,21 +246,16 @@ const Dashboard = ({
         />
       </Box>
 
-      {selectedTab === "2" && (
-        <Box sx={{ display: "flex", justifyContent: "flex-end", px: "1.5%" }}>
-          <EventMenu
-            contextMenuTitle="Comp. Violations"
-            contextMenuItems={cameraMenuItems}
-            iconMenu="/assets/plus-1.svg"
-          />
-        </Box>
-      )}
-
       {/* Timeline panel */}
       <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
           selectedTab={selectedTab}
           cameraActivities={cameraActivities}
+          cameraEventPoints={cameraEventPoints}
+          onMarkerChange={(sec) => {
+            markerSecRef.current = sec;
+            setMarkerSec(sec);
+          }}
           drawerOpen={drawerOpen}
           onTimeChange={setTimestamp}
         />

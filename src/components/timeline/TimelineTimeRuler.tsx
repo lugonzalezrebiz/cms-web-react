@@ -23,7 +23,8 @@ const formatSec = (sec: number): string => {
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
   if (s === 0 && m === 0) return `${h.toString().padStart(2, "0")}:00`;
-  if (s === 0) return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  if (s === 0)
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
@@ -47,7 +48,8 @@ export const TimelineTimeRuler = ({
   const totalSec = 24 * 3600;
 
   const firstTick = Math.ceil(startSec / tickStepSec) * tickStepSec;
-  const tickCount = Math.floor((startSec + totalSec - firstTick) / tickStepSec) + 1;
+  const tickCount =
+    Math.floor((startSec + totalSec - firstTick) / tickStepSec) + 1;
 
   return (
     <Box

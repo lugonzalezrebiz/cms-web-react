@@ -1,11 +1,11 @@
 import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
-import { useCallback, useEffect, useState } from "react";
-import TimelineBody from "./TimelineBody";
+import { useCallback, useRef, useState, useEffect } from "react";
+import TimelineBody, { type TimelineBodyHandle } from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
-import type { NavTab } from "./timeline/types";
+import type { NavTab, CameraEventPoint } from "./timeline/types";
 import { NAV_TABS, CAMERA_OPTIONS, MOCK_SNAPSHOT } from "./timeline/constants";
 import { usePopover } from "./timeline/hooks/usePopover";
 
@@ -43,8 +43,10 @@ const TextCameraMenu = styled("p")({
 const TimeLine = ({
   selectedTab,
   cameraActivities,
+  cameraEventPoints,
   drawerOpen,
   onTimeChange,
+  onMarkerChange,
 }: {
   selectedTab?: string;
   cameraActivities?: {
@@ -52,24 +54,26 @@ const TimeLine = ({
     cameraIndex: number;
     activityLabel: string;
   }[];
+  cameraEventPoints?: CameraEventPoint[];
   drawerOpen?: boolean;
   onTimeChange?: (timestamp: string) => void;
+  onMarkerChange?: (sec: number) => void;
 }) => {
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const timelineBodyRef = useRef<TimelineBodyHandle>(null);
 
-  const handleMarkerChange = useCallback((sec: number) => {
-    setMarkerTimeSec(sec);
-  }, []);
+  const handleMarkerChange = useCallback(
+    (sec: number) => {
+      setMarkerTimeSec(sec);
+      onMarkerChange?.(sec);
+    },
+    [onMarkerChange],
+  );
 
-  useEffect(() => {
-    if (markerTimeSec === null) return;
-    onTimeChange?.(secToTimeString(markerTimeSec));
-  }, [markerTimeSec, onTimeChange]);
-
-  const secToTimeString = (sec: number) => {
+   const secToTimeString = (sec: number) => {
     const h = Math.floor(sec / 3600)
       .toString()
       .padStart(2, "0");
@@ -82,11 +86,17 @@ const TimeLine = ({
     return `${h}:${m}:${s}`;
   };
 
+  useEffect(() => {
+    if (markerTimeSec === null) return;
+    onTimeChange?.(secToTimeString(markerTimeSec));
+  }, [markerTimeSec, onTimeChange]);
+
+ 
   const nav = usePopover();
   const cameraMenu = usePopover();
 
   return (
-    <Box height={"100%"}>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <Grid
         container
         display={"flex"}
@@ -108,8 +118,14 @@ const TimeLine = ({
           alignItems={"center"}
           justifyContent={"start"}
         >
-          <Box onClick={nav.handleOpen}>
-            <img src="../assets/layers-three-02.svg" alt="" />
+          <Box
+          //onClick={nav.handleOpen}
+          >
+            <img
+              style={{ opacity: 0.5 }}
+              src="../assets/layers-three-02.svg"
+              alt=""
+            />
           </Box>
           {selectedTab !== "2" && (
             <Box onClick={() => {}}>
@@ -118,10 +134,10 @@ const TimeLine = ({
           )}
           <Box
             position={"relative"}
-            onClick={selectedTab === "2" ? cameraMenu.handleOpen : undefined}
+            // onClick={selectedTab === "2" ? cameraMenu.handleOpen : undefined}
             sx={{
-              opacity: selectedTab === "2" ? 1 : 0.3,
-              cursor: selectedTab === "2" ? "pointer" : "default",
+              opacity: selectedTab === "2" ? 1 : 0.5,
+              //   cursor: selectedTab === "2" ? "pointer" : "default",
             }}
           >
             {selectedCameraOption !== "Off" && selectedTab === "2" && (
@@ -170,10 +186,18 @@ const TimeLine = ({
           justifyContent={"start"}
         >
           <Box onClick={() => {}}>
-            <img src="../assets/reverse-left.svg" alt="" />
+            <img
+              style={{ opacity: 0.5 }}
+              src="../assets/reverse-left.svg"
+              alt=""
+            />
           </Box>
           <Box onClick={() => {}}>
-            <img src="../assets/reverse-right.svg" alt="" />
+            <img
+              style={{ opacity: 0.5 }}
+              src="../assets/reverse-right.svg"
+              alt=""
+            />
           </Box>
           <Box onClick={() => {}}>
             <img src="../assets/trash-02.svg" alt="" />
@@ -207,11 +231,25 @@ const TimeLine = ({
           alignItems={"center"}
           justifyContent={"center"}
         >
-          <Box mr={"4px"} onClick={() => {}}>
-            <img src="../assets/align-left-01.svg" alt="" />
+          <Box
+            mr={"4px"}
+            onClick={() => timelineBodyRef.current?.stepMarker(-3600)}
+          >
+            <img
+              style={{ cursor: "pointer" }}
+              src="../assets/align-left-01.svg"
+              alt=""
+            />
           </Box>
-          <Box mr={"8px"} onClick={() => {}}>
-            <img src="../assets/chevron-left.svg" alt="" />
+          <Box
+            mr={"8px"}
+            onClick={() => timelineBodyRef.current?.stepMarker(-15)}
+          >
+            <img
+              style={{ cursor: "pointer" }}
+              src="../assets/chevron-left.svg"
+              alt=""
+            />
           </Box>
           <Box
             sx={{
@@ -245,11 +283,19 @@ const TimeLine = ({
               />
             </Box>
           </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/chevron-right.svg" alt="" />
+          <Box onClick={() => timelineBodyRef.current?.stepMarker(+15)}>
+            <img
+              style={{ cursor: "pointer" }}
+              src="../assets/chevron-right.svg"
+              alt=""
+            />
           </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/align-right-01.svg" alt="" />
+          <Box onClick={() => timelineBodyRef.current?.stepMarker(+3600)}>
+            <img
+              style={{ cursor: "pointer" }}
+              src="../assets/align-right-01.svg"
+              alt=""
+            />
           </Box>
         </Grid>
 
@@ -265,7 +311,11 @@ const TimeLine = ({
             justifyContent={"flex-end"}
           >
             <Box onClick={() => {}}>
-              <img src="../assets/dots-grid.svg" alt="" />
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/dots-grid.svg"
+                alt=""
+              />
             </Box>
           </Grid>
 
@@ -307,7 +357,11 @@ const TimeLine = ({
         >
           <Grid display={"flex"} justifyContent={"flex-end"} size={4}>
             <Box onClick={() => {}}>
-              <img src="../assets/search-sm.svg" alt="" />
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/search-sm.svg"
+                alt=""
+              />
             </Box>
           </Grid>
           <Grid
@@ -337,7 +391,11 @@ const TimeLine = ({
               ></Box>
             </Box>
             <Box ml={"18px"} onClick={() => {}}>
-              <img src="../assets/expand-06.svg" alt="" />
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/expand-06.svg"
+                alt=""
+              />
             </Box>
           </Grid>
         </Grid>
@@ -507,10 +565,12 @@ const TimeLine = ({
       </Popover>
 
       <TimelineBody
+        ref={timelineBodyRef}
         snapshot={MOCK_SNAPSHOT}
         activeTab={activeTab}
         selectedTab={selectedTab}
         cameraActivities={cameraActivities}
+        cameraEventPoints={cameraEventPoints}
         onMarkerChange={handleMarkerChange}
         onPlayingChange={setIsPlaying}
       />

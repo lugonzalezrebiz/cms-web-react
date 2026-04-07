@@ -1,8 +1,9 @@
-import { Divider, Typography } from "@mui/material";
+import { Divider, IconButton, InputBase, Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Fragment, useState } from "react";
 import { Box } from "@mui/system";
 import PopoverMenu from "./PopoverMenu";
+import type { CameraEventPoint } from "./timeline/types";
 
 export interface CameraContextMenuItem {
   id: number;
@@ -14,18 +15,33 @@ export interface CameraContextMenuItem {
   onClick: (cameraIndex: number) => void;
 }
 
+const TAG_TOLERANCE_SEC = 300;
+
 const EventMenu = ({
   contextMenuTitle,
   iconMenu,
   contextMenuItems = [],
+  onAddItem,
+  cameraEventPoints = [],
+  markerSec = 0,
 }: {
   contextMenuTitle?: string;
   iconMenu?: string;
   contextMenuItems?: CameraContextMenuItem[];
+  onAddItem?: (label: string) => void;
+  cameraEventPoints?: CameraEventPoint[];
+  markerSec?: number;
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [input, setInput] = useState("");
 
-  if (contextMenuItems.length === 0) return null;
+  const handleAdd = () => {
+    if (!input.trim()) return;
+    onAddItem?.(input.trim());
+    setInput("");
+  };
+
+  const allItems = contextMenuItems;
 
   return (
     <>
@@ -100,11 +116,11 @@ const EventMenu = ({
             mb: "10px",
           }}
         >
-          Drag an item onto a camera
+          Drag an event onto a camera to assign it
         </Typography>
 
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {contextMenuItems.map((item) => (
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px", mb: "12px" }}>
+          {allItems.map((item) => (
             <Fragment key={item.id}>
               <Box
                 draggable
@@ -114,13 +130,15 @@ const EventMenu = ({
                   setAnchorEl(null);
                 }}
                 sx={{
+                  width: "100%",
                   display: "inline-flex",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   gap: "6px",
                   px: "10px",
                   py: "6px",
-                  bgcolor: Colors.main,
-                  color: Colors.white,
+                  bgcolor: Colors.white,
+                  color: Colors.lightBlack,
                   borderRadius: "6px",
                   cursor: "grab",
                   userSelect: "none",
@@ -139,6 +157,45 @@ const EventMenu = ({
                   </Box>
                 )}
                 {item.label}
+
+                <Box sx={{ color: Colors.vividOrange }}>
+                  {(() => {
+                    const count = new Set(
+                      cameraEventPoints
+                        .filter(
+                          (ep) =>
+                            ep.label === item.label &&
+                            Math.abs(markerSec - ep.timeSec) <=
+                              TAG_TOLERANCE_SEC,
+                        )
+                        .map((ep) => ep.cameraId),
+                    ).size;
+                    return (
+                      count > 0 && (
+                        <Box
+                          sx={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: "16px",
+                            height: "16px",
+                            px: "4px",
+                            bgcolor: Colors.transparenvividOrange,
+                            color: Colors.vividOrange,
+                            borderRadius: "8px",
+                            fontSize: 10,
+                            fontFamily: Fonts.main,
+                            lineHeight: 1,
+                            fontWeight: 600,
+                          }}
+                        >
+                          <span>{count} cam</span>
+                        </Box>
+                      )
+                    );
+                  })()}
+                  <span style={{ marginLeft: "5px" }}>{item.id}</span>
+                </Box>
                 {item.shortcut && (
                   <Typography
                     component="span"
@@ -164,6 +221,45 @@ const EventMenu = ({
               )}
             </Fragment>
           ))}
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            border: `1px solid ${Colors.paleGray}`,
+            borderRadius: "12px",
+            px: "12px",
+            py: "6px",
+            backgroundColor: Colors.ghostWhite,
+          }}
+        >
+          <InputBase
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            placeholder="Add option..."
+            fullWidth
+            sx={{
+              fontFamily: Fonts.main,
+              fontSize: "13px",
+              color: Colors.lightBlack,
+              "& input::placeholder": { color: Colors.paleSilver },
+            }}
+          />
+          <IconButton
+            size="small"
+            onClick={handleAdd}
+            disabled={!input.trim()}
+            sx={{ p: "4px", opacity: input.trim() ? 1 : 0.3 }}
+          >
+            <img
+              src="../assets/arrow-narrow-right.svg"
+              alt="add"
+              style={{ height: "18px" }}
+            />
+          </IconButton>
         </Box>
       </PopoverMenu>
     </>

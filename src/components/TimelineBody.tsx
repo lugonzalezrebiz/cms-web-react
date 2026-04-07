@@ -1,7 +1,11 @@
 import { Box } from "@mui/system";
 import { Colors } from "../theme";
-import { useEffect, useMemo, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { NavTab, TimelineBodyProps, FlatRow } from "./timeline/types";
+
+export interface TimelineBodyHandle {
+  stepMarker: (deltaSec: number) => void;
+}
 import { TUNNEL_CAMERAS, MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
@@ -16,34 +20,53 @@ const toSeconds = (time: string) => {
   return h * 3600 + m * 60 + s;
 };
 
-const TimelineBody = ({
+const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(({
   snapshot,
   activeTab,
   selectedTab,
   cameraActivities,
+  cameraEventPoints,
   onMarkerChange,
   onPlayingChange,
-}: TimelineBodyProps) => {
+}, ref) => {
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const isTunnel = selectedTab === "2";
 
   const data = snapshot || MOCK_SNAPSHOT;
   const timelineStartSec = toSeconds(data.timeline.times.start);
   const timelineEndSec = toSeconds(data.timeline.times.end);
-
-  const filteredTracks =
-    snapshot?.timeline.tracks.filter((t) => t.category === activeTab) ||
-    MOCK_SNAPSHOT.timeline.tracks.filter((t) => t.category === activeTab);
-
+  
   const flatRows = useMemo((): FlatRow[] => {
     if (!isTunnel) {
-      return filteredTracks.map((t, i) => ({
-        id: t.id,
-        name: t.name,
-        kind: "camera" as const,
-        cameraNumber: i + 1,
-        sessions: t.sessions,
-      }));
+      const rows: FlatRow[] = [];
+      for (let i = 0; i < TUNNEL_CAMERAS.length; i++) {
+        const cam = TUNNEL_CAMERAS[i];
+        rows.push({
+          id: cam.id,
+          name: cam.name,
+          kind: "camera" as const,
+          cameraNumber: i + 1,
+          sessions: cam.sessions,
+        });
+        const labels = [
+          ...new Set(
+            (cameraEventPoints ?? [])
+              .filter((ep) => ep.cameraId === cam.id)
+              .map((ep) => ep.label),
+          ),
+        ].sort();
+        labels.forEach((label, idx) => {
+          rows.push({
+            id: cam.id * 1000 + idx,
+            name: label,
+            kind: "event" as const,
+            parentCameraId: cam.id,
+            cameraNumber: 0,
+            sessions: [],
+          });
+        });
+      }
+      return rows;
     }
     const rows: FlatRow[] = [];
     let camNum = 0;
@@ -71,10 +94,13 @@ const TimelineBody = ({
       }
     }
     return rows;
-  }, [isTunnel, filteredTracks, cameraActivities]);
+  }, [isTunnel, cameraActivities, cameraEventPoints]);
 
   const selectableRows = useMemo(
-    () => (isTunnel ? flatRows.filter((r) => r.kind === "activity") : flatRows),
+    () =>
+      isTunnel
+        ? flatRows.filter((r) => r.kind === "activity")
+        : flatRows.filter((r) => r.kind !== "event"),
     [isTunnel, flatRows],
   );
 
@@ -106,6 +132,17 @@ const TimelineBody = ({
   useEffect(() => {
     onPlayingChange?.(state.isPlaying);
   }, [state.isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Auto-select the camera row when a new event point is dropped onto it
+  const prevEventCountRef = useRef(cameraEventPoints?.length ?? 0);
+  useEffect(() => {
+    const count = cameraEventPoints?.length ?? 0;
+    if (count > prevEventCountRef.current && cameraEventPoints?.length) {
+      const last = cameraEventPoints[cameraEventPoints.length - 1];
+      state.setITrackId(last.cameraId);
+      state.setSelectedTracks(new Set());
+    }
+    prevEventCountRef.current = count;
+  }, [cameraEventPoints]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useTimelineKeyboard({
     isTunnel,
@@ -134,11 +171,22 @@ const TimelineBody = ({
     setGoToTimeOpen,
   });
 
+  useImperativeHandle(ref, () => ({
+    stepMarker: (deltaSec: number) => {
+      const next = Math.max(
+        timelineStartSec,
+        Math.min(timelineEndSec, state.resolvedMarkerSec + deltaSec),
+      );
+      state.setMarkerSec(next);
+    },
+  }));
+
   return (
     <Box
       sx={{
         display: "flex",
-        height: "100%",
+        flex: 1,
+        minHeight: 0,
         borderTop: `1px solid ${Colors.lightGrayishBlue}`,
         overflow: "hidden",
       }}
@@ -205,6 +253,7 @@ const TimelineBody = ({
           hasAnyBars={state.hasAnyBars}
           setZoom={state.setZoom}
           setPanOffsetSec={state.setPanOffsetSec}
+          cameraEventPoints={cameraEventPoints}
         />
 
         <TimelineMarker
@@ -227,6 +276,6 @@ const TimelineBody = ({
       />
     </Box>
   );
-};
+});
 
 export default TimelineBody;
