@@ -1,7 +1,7 @@
 import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TimelineBody from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
@@ -44,6 +44,7 @@ const TimeLine = ({
   selectedTab,
   cameraActivities,
   drawerOpen,
+  onTimeChange,
 }: {
   selectedTab?: string;
   cameraActivities?: {
@@ -52,14 +53,21 @@ const TimeLine = ({
     activityLabel: string;
   }[];
   drawerOpen?: boolean;
+  onTimeChange?: (timestamp: string) => void;
 }) => {
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handleMarkerChange = useCallback((sec: number) => {
     setMarkerTimeSec(sec);
   }, []);
+
+  useEffect(() => {
+    if (markerTimeSec === null) return;
+    onTimeChange?.(secToTimeString(markerTimeSec));
+  }, [markerTimeSec, onTimeChange]);
 
   const secToTimeString = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -230,8 +238,11 @@ const TimeLine = ({
                 ? secToTimeString(markerTimeSec)
                 : MOCK_SNAPSHOT.timeline.times.start}
             </Box>
-            <Box onClick={() => {}}>
-              <img src="../assets/play.svg" alt="" />
+            <Box onClick={() => setIsPlaying((p) => !p)} sx={{ cursor: "pointer" }}>
+              <img
+                src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
+                alt={isPlaying ? "Pause" : "Play"}
+              />
             </Box>
           </Box>
           <Box onClick={() => {}}>
@@ -501,6 +512,7 @@ const TimeLine = ({
         selectedTab={selectedTab}
         cameraActivities={cameraActivities}
         onMarkerChange={handleMarkerChange}
+        onPlayingChange={setIsPlaying}
       />
     </Box>
   );

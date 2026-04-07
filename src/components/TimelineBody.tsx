@@ -22,6 +22,7 @@ const TimelineBody = ({
   selectedTab,
   cameraActivities,
   onMarkerChange,
+  onPlayingChange,
 }: TimelineBodyProps) => {
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const isTunnel = selectedTab === "2";
@@ -102,6 +103,10 @@ const TimelineBody = ({
     onMarkerChange?.(state.resolvedMarkerSec);
   }, [state.resolvedMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    onPlayingChange?.(state.isPlaying);
+  }, [state.isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useTimelineKeyboard({
     isTunnel,
     selectableRows,
@@ -118,6 +123,8 @@ const TimelineBody = ({
     setMarkerSec: state.setMarkerSec,
     setShowPunchOut: state.setShowPunchOut,
     punchOutTimerRef: state.punchOutTimerRef,
+    isPlaying: state.isPlaying,
+    setIsPlaying: state.setIsPlaying,
     zoom: state.zoom,
     setZoom: state.setZoom,
     panOffsetSec: state.panOffsetSec,

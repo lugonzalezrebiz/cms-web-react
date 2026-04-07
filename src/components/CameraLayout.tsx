@@ -4,6 +4,8 @@ import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { type CameraContextMenuItem } from "./EventMenu";
 import Tooltip from "./Tooltip";
+import { useCameraFrame } from "../hooks/useCameraFrame";
+
 
 interface CameraItemProps {
   index: number;
@@ -13,6 +15,13 @@ interface CameraItemProps {
   isExpanded?: boolean;
   tags: CameraContextMenuItem[];
   onDrop: (itemId: string) => void;
+  // Real image props — when provided, loads from DVR via dvr:// protocol
+  cameraId?: number;
+  cameraName?: string;
+  company?: number;
+  location?: number;
+  date?: string;
+  timestamp?: string;
 }
 
 function CameraItem({
@@ -23,8 +32,29 @@ function CameraItem({
   isExpanded = false,
   tags,
   onDrop,
+  cameraId,
+  cameraName,
+  company,
+  location,
+  date,
+  timestamp,
 }: CameraItemProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+
+  const useRealImages =
+    cameraId !== undefined &&
+    company !== undefined &&
+    location !== undefined &&
+    date !== undefined &&
+    timestamp !== undefined;
+
+  const liveSrc = useCameraFrame(
+    useRealImages
+      ? { company: company!, location: location!, date: date!, camera: cameraId!, timestamp: timestamp! }
+      : { company: 0, location: 0, date: "", camera: 0, timestamp: "" },
+  );
+
+  const imageSrc = useRealImages ? liveSrc : media;
 
   return (
     <Box
@@ -65,13 +95,14 @@ function CameraItem({
       )}
 
       <img
-        src={media}
-        alt={`Camera ${index + 1}`}
+        src={imageSrc || media}
+        alt={cameraName ?? `Camera ${index + 1}`}
         style={{
           width: "100%",
           height: "100%",
           objectFit: "contain",
           display: "block",
+          opacity: useRealImages && !liveSrc ? 0.15 : 1,
         }}
       />
 
@@ -191,12 +222,20 @@ function CameraItem({
   );
 }
 
+export type CameraInfo = { id: number; name: string };
+
 interface CameraLayoutProps {
   count: number;
   media: string;
   cameraItemList: () => void;
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
+  // Real image props — pass these to load DVR footage via dvr:// protocol
+  cameras?: CameraInfo[];
+  company?: number;
+  location?: number;
+  date?: string;
+  timestamp?: string;
 }
 
 function getRowDistribution(count: number): number[] {
@@ -224,6 +263,11 @@ const CameraLayout = ({
   maxHeight = 350,
   cameraItemList,
   contextMenuItems = [],
+  cameras,
+  company,
+  location,
+  date,
+  timestamp,
 }: CameraLayoutProps) => {
   const [expandedCamera, setExpandedCamera] = useState<number | null>(null);
   const [cameraTags, setCameraTags] = useState<
@@ -278,6 +322,12 @@ const CameraLayout = ({
           isExpanded
           tags={cameraTags[expandedCamera] ?? []}
           onDrop={(itemId) => handleDrop(expandedCamera, itemId)}
+          cameraId={cameras?.[expandedCamera]?.id}
+          cameraName={cameras?.[expandedCamera]?.name}
+company={company}
+          location={location}
+          date={date}
+          timestamp={timestamp}
         />
       </Box>
     );
@@ -337,6 +387,12 @@ const CameraLayout = ({
                     expandCamera={handleExpandCamera}
                     tags={cameraTags[camIndex] ?? []}
                     onDrop={(itemId) => handleDrop(camIndex, itemId)}
+                    cameraId={cameras?.[camIndex]?.id}
+                    cameraName={cameras?.[camIndex]?.name}
+                    company={company}
+                    location={location}
+                    date={date}
+                    timestamp={timestamp}
                   />
                 </Box>
               );

@@ -30,6 +30,8 @@ interface UseTimelineKeyboardParams {
   totalSec: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  isPlaying: boolean;
+  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useTimelineKeyboard = ({
@@ -55,6 +57,8 @@ export const useTimelineKeyboard = ({
   totalSec,
   gridRef,
   setGoToTimeOpen,
+  isPlaying,
+  setIsPlaying,
 }: UseTimelineKeyboardParams) => {
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
@@ -176,7 +180,7 @@ export const useTimelineKeyboard = ({
         if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       }
       e.preventDefault();
-      const step = e.ctrlKey ? 10 : 1;
+      const step = e.ctrlKey ? 600 : 180; // Ctrl: 10 min, default: 3 min
       const delta = e.key === "ArrowRight" ? step : -step;
       setMarkerSec((prev) => {
         const base = prev ?? timelineStartSec;
@@ -190,6 +194,20 @@ export const useTimelineKeyboard = ({
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
   }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec]);
+
+  // ── Space: play / pause ──────────────────────────────────────────────────
+  useEffect(() => {
+    const handleSpace = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
+      e.preventDefault();
+      setIsPlaying((prev) => !prev);
+    };
+    window.addEventListener("keydown", handleSpace);
+    return () => window.removeEventListener("keydown", handleSpace);
+  }, [setIsPlaying]);
 
   // ── + / - keys: zoom centered on mouse position ───────────────────────────
   useEffect(() => {

@@ -50,4 +50,5 @@ export interface TimelineBodyProps {
     activityLabel: string;
   }[];
   onMarkerChange?: (sec: number) => void;
+  onPlayingChange?: (playing: boolean) => void;
 }
