@@ -43,7 +43,8 @@ export const useTimelineBodyState = ({
     Record<number, number>
   >({});
   const [showPunchOut, setShowPunchOut] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false)
+  const [openDialog, setOpenDialog] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
   const listBodyRef = useRef<HTMLDivElement | null>(null);
@@ -96,6 +97,34 @@ export const useTimelineBodyState = ({
   const handleOnOpenDialog = () => {
     setOpenDialog(true);
   };
+
+  const STOP_SEC = 21 * 3600; // 9pm
+  const STEP_SEC = 180;       // 3 min per tick
+
+  // Playback: advance marker by 3 min every second, stop at 9pm
+  useEffect(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => {
+      setMarkerSec((prev) => {
+        const next = (prev ?? timelineStartSec) + STEP_SEC;
+        if (next >= STOP_SEC) {
+          setIsPlaying(false);
+          return STOP_SEC;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isPlaying, timelineStartSec]);
+
+  // Keep the marker visible while playing by panning
+  useEffect(() => {
+    if (!isPlaying || markerSec === null) return;
+    if (markerSec < visibleStart || markerSec > visibleEnd) {
+      const maxOffset = totalSec - visibleDuration;
+      setPanOffsetSec(Math.max(0, Math.min(maxOffset, markerSec - visibleDuration * 0.1)));
+    }
+  }, [markerSec, isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Effect 1: reset pan/marker on tab change
   useEffect(() => {
@@ -178,6 +207,8 @@ export const useTimelineBodyState = ({
     setActiveSessionStarts,
     showPunchOut,
     setShowPunchOut,
+    isPlaying,
+    setIsPlaying,
     // refs
     gridRef,
     listBodyRef,

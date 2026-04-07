@@ -1,9 +1,10 @@
 import { Box } from "@mui/system";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { CameraContextMenuItem } from "../../components/EventMenu";
 import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout from "../../components/CameraLayout";
+import CameraLayout, { type CameraInfo } from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 import type { CameraEventPoint } from "../../components/timeline/types";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
@@ -65,6 +66,29 @@ const Dashboard = ({
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
 
+  // ── URL params (?company=1&location=2&date=20240101) ──────────────────────
+  const [searchParams] = useSearchParams();
+  const company = Number(searchParams.get("company") ?? 0);
+  const location = Number(searchParams.get("location") ?? 0);
+  const date = searchParams.get("date") ?? ""; // YYYYMMDD
+
+
+  // ── Camera list — read from DVR folder via Electron IPC ──────────────────
+  const [cameras, setCameras] = useState<CameraInfo[]>([]);
+  useEffect(() => {
+    if (!company || !location || !date) return;
+    window.api
+      .cameras({ company, location, date })
+      .then((list) => {
+        if (list.length > 0) setCameras(list);
+      })
+      .catch(console.error);
+  }, [company, location, date]);
+
+  // ── Timeline position ─────────────────────────────────────────────────────
+  const [timestamp, setTimestamp] = useState(""); // "HH:mm:ss"
+
+  // ── Camera activity overlay ───────────────────────────────────────────────
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
@@ -205,7 +229,7 @@ const Dashboard = ({
       {/* Camera grid */}
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
         <CameraLayout
-          count={cameraCount}
+          count={cameras.length || cameraCount}
           media="/assets/camera/Cam thumbnail.svg"
           maxHeight="100%"
           cameraItemList={() => alert("Camera list clicked")}
@@ -213,6 +237,12 @@ const Dashboard = ({
           cameraEventPoints={cameraEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleRemoveEventPoint}
+           // Real image props
+          cameras={cameras}
+          company={company}
+          location={location}
+          date={date}
+          timestamp={timestamp}
         />
       </Box>
 
@@ -227,6 +257,7 @@ const Dashboard = ({
             setMarkerSec(sec);
           }}
           drawerOpen={drawerOpen}
+          onTimeChange={setTimestamp}
         />
       </Box>
     </Box>

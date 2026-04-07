@@ -1,7 +1,7 @@
 import { Box } from "@mui/system";
 import { Colors } from "../theme";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
-import type { NavTab, TimelineBodyProps, FlatRow, CameraEventPoint } from "./timeline/types";
+import type { NavTab, TimelineBodyProps, FlatRow } from "./timeline/types";
 
 export interface TimelineBodyHandle {
   stepMarker: (deltaSec: number) => void;
@@ -27,6 +27,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(({
   cameraActivities,
   cameraEventPoints,
   onMarkerChange,
+  onPlayingChange,
 }, ref) => {
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const isTunnel = selectedTab === "2";
@@ -34,11 +35,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(({
   const data = snapshot || MOCK_SNAPSHOT;
   const timelineStartSec = toSeconds(data.timeline.times.start);
   const timelineEndSec = toSeconds(data.timeline.times.end);
-
-  const filteredTracks =
-    snapshot?.timeline.tracks.filter((t) => t.category === activeTab) ||
-    MOCK_SNAPSHOT.timeline.tracks.filter((t) => t.category === activeTab);
-
+  
   const flatRows = useMemo((): FlatRow[] => {
     if (!isTunnel) {
       const rows: FlatRow[] = [];
@@ -97,7 +94,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(({
       }
     }
     return rows;
-  }, [isTunnel, filteredTracks, cameraActivities, cameraEventPoints]);
+  }, [isTunnel, cameraActivities, cameraEventPoints]);
 
   const selectableRows = useMemo(
     () =>
@@ -132,6 +129,9 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(({
     onMarkerChange?.(state.resolvedMarkerSec);
   }, [state.resolvedMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    onPlayingChange?.(state.isPlaying);
+  }, [state.isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
   // Auto-select the camera row when a new event point is dropped onto it
   const prevEventCountRef = useRef(cameraEventPoints?.length ?? 0);
   useEffect(() => {
@@ -160,6 +160,8 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(({
     setMarkerSec: state.setMarkerSec,
     setShowPunchOut: state.setShowPunchOut,
     punchOutTimerRef: state.punchOutTimerRef,
+    isPlaying: state.isPlaying,
+    setIsPlaying: state.setIsPlaying,
     zoom: state.zoom,
     setZoom: state.setZoom,
     panOffsetSec: state.panOffsetSec,

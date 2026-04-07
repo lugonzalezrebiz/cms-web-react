@@ -1,7 +1,7 @@
 import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import TimelineBody, { type TimelineBodyHandle } from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
@@ -45,6 +45,7 @@ const TimeLine = ({
   cameraActivities,
   cameraEventPoints,
   drawerOpen,
+  onTimeChange,
   onMarkerChange,
 }: {
   selectedTab?: string;
@@ -55,11 +56,13 @@ const TimeLine = ({
   }[];
   cameraEventPoints?: CameraEventPoint[];
   drawerOpen?: boolean;
+  onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
 }) => {
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const timelineBodyRef = useRef<TimelineBodyHandle>(null);
 
   const handleMarkerChange = useCallback(
@@ -70,7 +73,7 @@ const TimeLine = ({
     [onMarkerChange],
   );
 
-  const secToTimeString = (sec: number) => {
+   const secToTimeString = (sec: number) => {
     const h = Math.floor(sec / 3600)
       .toString()
       .padStart(2, "0");
@@ -83,6 +86,12 @@ const TimeLine = ({
     return `${h}:${m}:${s}`;
   };
 
+  useEffect(() => {
+    if (markerTimeSec === null) return;
+    onTimeChange?.(secToTimeString(markerTimeSec));
+  }, [markerTimeSec, onTimeChange]);
+
+ 
   const nav = usePopover();
   const cameraMenu = usePopover();
 
@@ -267,8 +276,11 @@ const TimeLine = ({
                 ? secToTimeString(markerTimeSec)
                 : MOCK_SNAPSHOT.timeline.times.start}
             </Box>
-            <Box onClick={() => {}}>
-              <img src="../assets/play.svg" alt="" />
+            <Box onClick={() => setIsPlaying((p) => !p)} sx={{ cursor: "pointer" }}>
+              <img
+                src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
+                alt={isPlaying ? "Pause" : "Play"}
+              />
             </Box>
           </Box>
           <Box onClick={() => timelineBodyRef.current?.stepMarker(+15)}>
@@ -560,6 +572,7 @@ const TimeLine = ({
         cameraActivities={cameraActivities}
         cameraEventPoints={cameraEventPoints}
         onMarkerChange={handleMarkerChange}
+        onPlayingChange={setIsPlaying}
       />
     </Box>
   );

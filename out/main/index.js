@@ -1,9 +1,18 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { protocol, app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
+import os from "os";
+import fs from "fs/promises";
 import __cjs_mod__ from "node:module";
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
 const require2 = __cjs_mod__.createRequire(import.meta.url);
+const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "dvr",
+    privileges: { secure: true, standard: true, supportFetchAPI: true, corsEnabled: true }
+  }
+]);
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -20,6 +29,36 @@ function createWindow() {
     else win.maximize();
   });
   ipcMain.on("window:close", () => win.close());
+  ipcMain.handle("app:homedir", () => os.homedir());
+  ipcMain.handle("dvr:basePath", () => DVR_BASE);
+  ipcMain.handle(
+    "dvr:timestamps",
+    async (_, { company, location, date, camera }) => {
+      const dir = path.join(DVR_BASE, String(company), String(location), String(date), String(camera));
+      try {
+        const files = await fs.readdir(dir);
+        return files.filter((f) => f.endsWith(".jpg")).map((f) => {
+          const ts = f.split("_")[1]?.replace(".jpg", "");
+          if (!ts || ts.length !== 6) return null;
+          return Number(ts.slice(0, 2)) * 3600 + Number(ts.slice(2, 4)) * 60 + Number(ts.slice(4, 6));
+        }).filter((t) => t !== null).sort((a, b) => a - b);
+      } catch {
+        return [];
+      }
+    }
+  );
+  ipcMain.handle(
+    "dvr:cameras",
+    async (_, { company, location, date }) => {
+      const dir = path.join(DVR_BASE, String(company), String(location), String(date));
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        return entries.filter((e) => e.isDirectory()).map((e) => ({ id: Number(e.name), name: `Camera ${e.name}` })).sort((a, b) => a.id - b.id);
+      } catch {
+        return [];
+      }
+    }
+  );
   win.once("ready-to-show", () => {
     win.maximize();
     win.show();
@@ -30,4 +69,16 @@ function createWindow() {
     win.loadFile("out/renderer/index.html");
   }
 }
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  protocol.handle("dvr", async (request) => {
+    const url = new URL(request.url);
+    const filePath = path.join(DVR_BASE, url.pathname);
+    try {
+      const data = await fs.readFile(filePath);
+      return new Response(data, { headers: { "content-type": "image/jpeg" } });
+    } catch {
+      return new Response(null, { status: 404 });
+    }
+  });
+  createWindow();
+});

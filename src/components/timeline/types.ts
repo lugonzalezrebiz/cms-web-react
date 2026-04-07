@@ -58,4 +58,5 @@ export interface TimelineBodyProps {
   }[];
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
+  onPlayingChange?: (playing: boolean) => void;
 }
