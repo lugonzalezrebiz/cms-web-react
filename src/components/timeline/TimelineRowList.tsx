@@ -94,7 +94,8 @@ export const TimelineRowList = ({
       >
         {flatRows.map((row) => {
           const isSelected = selectedTracks.has(row.id);
-          const isActivitySubRow = isTunnel && row.kind === "activity";
+          const isActivitySubRow =
+            (isTunnel && row.kind === "activity") || row.kind === "event";
           const isCameraInTunnel = isTunnel && row.kind === "camera";
 
           const childSelected =
@@ -105,9 +106,14 @@ export const TimelineRowList = ({
                 (selectedTracks.has(r.id) || iTrackId === r.id),
             );
 
+          const isEventWithActiveParent =
+            row.kind === "event" &&
+            row.parentCameraId !== undefined &&
+            iTrackId === row.parentCameraId;
+
           const isFocused = iTrackId === row.id;
 
-          const handleClick = isCameraInTunnel
+          const handleClick = isCameraInTunnel || row.kind === "event"
             ? undefined
             : () => {
                 setITrackId(row.id);
@@ -125,7 +131,7 @@ export const TimelineRowList = ({
             if (isCameraInTunnel)
               return childSelected ? Colors.vividOrange : "transparent";
             if (isActivitySubRow)
-              return isActive ? Colors.blushWhite : "transparent";
+              return isActive || isEventWithActiveParent ? Colors.blushWhite : "transparent";
             if (isActive) return Colors.vividOrange;
             return "transparent";
           })();
@@ -203,7 +209,7 @@ export const TimelineRowList = ({
             }}
           >
             Press <span style={{ color: Colors.vividOrange }}>+</span> on your
-            keyboard to add a new employee
+            keyboard to add a new camera
           </Box>
         )}
       </Box>

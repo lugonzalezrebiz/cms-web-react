@@ -3,7 +3,10 @@ import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import { useEffect, useState } from "react";
 import type React from "react";
-import { IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import {
+  IconButton,
+  //  ToggleButton, ToggleButtonGroup
+} from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, Grid, useMediaQuery } from "@mui/system";
 import HeaderInfoMenu from "../components/HeaderInfoMenu";
@@ -58,55 +61,55 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const StyledToggleButton = styled(ToggleButton)({
-  color: Colors.mediumGray,
-  flex: 1,
-  fontFamily: Fonts.main,
-  textTransform: "none",
-  fontWeight: "normal",
-  backgroundColor: Colors.lightGray,
-  border: "none",
-  margin: 0,
-  fontSize: "14px",
-  borderRadius: 35,
-  whiteSpace: "nowrap",
-  "&.Mui-selected": {
-    color: Colors.lightBlack,
-    backgroundColor: Colors.white,
-    //fontWeight: "bold",
-  },
-  "&.Mui-selected:hover": {
-    backgroundColor: Colors.white,
-  },
-  "&:not(.Mui-selected)": {
-    backgroundColor: Colors.lightGray,
-  },
-});
+// const StyledToggleButton = styled(ToggleButton)({
+//   color: Colors.mediumGray,
+//   flex: 1,
+//   fontFamily: Fonts.main,
+//   textTransform: "none",
+//   fontWeight: "normal",
+//   backgroundColor: Colors.lightGray,
+//   border: "none",
+//   margin: 0,
+//   fontSize: "14px",
+//   borderRadius: 35,
+//   whiteSpace: "nowrap",
+//   "&.Mui-selected": {
+//     color: Colors.lightBlack,
+//     backgroundColor: Colors.white,
+//     //fontWeight: "bold",
+//   },
+//   "&.Mui-selected:hover": {
+//     backgroundColor: Colors.white,
+//   },
+//   "&:not(.Mui-selected)": {
+//     backgroundColor: Colors.lightGray,
+//   },
+// });
 
-const StyledToggleGroup = styled(ToggleButtonGroup)({
-  padding: 4,
-  backgroundColor: Colors.lightGray,
-  borderRadius: 30,
-  height: "32px",
-  width: "100%",
-  boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
-  "& .MuiToggleButtonGroup-lastButton": {
-    margin: 0,
-  },
-  "& .MuiToggleButtonGroup-firstButton": {
-    margin: 1,
-  },
-  "& .MuiToggleButtonGroup-grouped": {
-    borderRadius: 35,
-  },
-});
+// const StyledToggleGroup = styled(ToggleButtonGroup)({
+//   padding: 4,
+//   backgroundColor: Colors.lightGray,
+//   borderRadius: 30,
+//   height: "32px",
+//   width: "100%",
+//   boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
+//   "& .MuiToggleButtonGroup-lastButton": {
+//     margin: 0,
+//   },
+//   "& .MuiToggleButtonGroup-firstButton": {
+//     margin: 1,
+//   },
+//   "& .MuiToggleButtonGroup-grouped": {
+//     borderRadius: 35,
+//   },
+// });
 
 export const ToggleButtonTitles = [
-  { value: "1", title: "All", cameraCount: 16, navTab: "employees" },
-  { value: "2", title: "Tunnel", cameraCount: 6, navTab: "activities" },
-  { value: "3", title: "Offices", cameraCount: 3, navTab: "employees" },
-  { value: "4", title: "Drying Station", cameraCount: 5, navTab: "employees" },
-  { value: "5", title: "Parking Lot", cameraCount: 2, navTab: "employees" },
+  { value: "1", title: "All", cameraCount: 9, navTab: "employees" },
+  // { value: "2", title: "Tunnel", cameraCount: 6, navTab: "activities" },
+  // { value: "3", title: "Offices", cameraCount: 3, navTab: "employees" },
+  // { value: "4", title: "Drying Station", cameraCount: 5, navTab: "employees" },
+  // { value: "5", title: "Parking Lot", cameraCount: 2, navTab: "employees" },
 ];
 
 const usePopover = () => {
@@ -123,8 +126,8 @@ const usePopover = () => {
 const Header = ({
   toggleDrawer,
   withIconMenu = true,
-  selectedTab,
-  onTabChange,
+  // selectedTab,
+  // onTabChange,
 }: {
   toggleDrawer: () => void;
   withIconMenu?: boolean;
@@ -132,7 +135,7 @@ const Header = ({
   onTabChange: (value: string) => void;
 }) => {
   const [scrolled, setScrolled] = useState(false);
-  const selected = selectedTab;
+  // const selected = selectedTab;
   const MenuHeader = usePopover();
   const keyboardMenu = usePopover();
   const ClockMenuHeader = usePopover();
@@ -188,7 +191,7 @@ const Header = ({
                   Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
                 </StyledSubTitle>
               </Box>
-              <Box style={noDrag}>
+              {/* <Box style={noDrag}>
                 <StyledToggleGroup
                   value={selected}
                   exclusive
@@ -203,7 +206,7 @@ const Header = ({
                     </StyledToggleButton>
                   ))}
                 </StyledToggleGroup>
-              </Box>
+              </Box> */}
               <Box display={"flex"} style={noDrag}>
                 <Box>
                   {/*<StyledImg
@@ -331,7 +334,7 @@ const Header = ({
                 justifyContent={"center"}
                 mt={"5px"}
               >
-                <Box>
+                {/* <Box>
                   <StyledToggleGroup
                     value={selected}
                     exclusive
@@ -346,7 +349,7 @@ const Header = ({
                       </StyledToggleButton>
                     ))}
                   </StyledToggleGroup>
-                </Box>
+                </Box> */}
               </Grid>
             </Grid>
           )}
