@@ -15,6 +15,8 @@ import ClockMenu from "../components/ClockMenu";
 import AiMenu from "../components/AiMenu";
 import NotificationMenu from "../components/NotificationMenu";
 import UserPanel from "../components/UserPanel";
+import { useSearchParams } from "react-router-dom";
+import { MOCK_SNAPSHOT } from "../components/timeline/constants";
 
 const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   position: "sticky",
@@ -136,6 +138,34 @@ const Header = ({
 }) => {
   const [scrolled, setScrolled] = useState(false);
   // const selected = selectedTab;
+
+  // ── Route params ─────────────────────────────────────────────────────────
+  const [searchParams] = useSearchParams();
+  const companyParam = searchParams.get("company") ?? "";
+  const locationParam = searchParams.get("location") ?? "";
+  const dateParam = searchParams.get("date") ?? ""; // YYYYMMDD
+
+  const companyLabel = companyParam ? companyParam.padStart(4, "0") : "----";
+  const storeLabel = locationParam || "----";
+
+  const formattedDate = (() => {
+    if (dateParam.length === 8) {
+      const y = Number(dateParam.slice(0, 4));
+      const m = Number(dateParam.slice(4, 6)) - 1;
+      const d = Number(dateParam.slice(6, 8));
+      return new Date(y, m, d).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    return dateParam || "----";
+  })();
+
+  const { start, end } = MOCK_SNAPSHOT.timeline.times;
+  const toHHmm = (t: string) => t.slice(0, 5); // "09:00:00" → "09:00"
+  const timeRange = `${toHHmm(start)} - ${toHHmm(end)}`;
+
   const MenuHeader = usePopover();
   const keyboardMenu = usePopover();
   const ClockMenuHeader = usePopover();
@@ -186,9 +216,11 @@ const Header = ({
                   cursor: "pointer",
                 }}
               >
-                <StyledTitle>Store: 7437 (0079)</StyledTitle>
+                <StyledTitle>
+                  Store: {storeLabel} ({companyLabel})
+                </StyledTitle>
                 <StyledSubTitle>
-                  Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
+                  {formattedDate} / {timeRange} / Events
                 </StyledSubTitle>
               </Box>
               {/* <Box style={noDrag}>

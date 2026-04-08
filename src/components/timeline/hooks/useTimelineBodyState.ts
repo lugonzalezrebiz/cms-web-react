@@ -98,24 +98,23 @@ export const useTimelineBodyState = ({
     setOpenDialog(true);
   };
 
-  const STOP_SEC = 21 * 3600; // 9pm
   const STEP_SEC = 180;       // 3 min per tick
 
-  // Playback: advance marker by 3 min every second, stop at 9pm
+  // Playback: advance marker by 3 min every second, stop at timeline end
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
       setMarkerSec((prev) => {
         const next = (prev ?? timelineStartSec) + STEP_SEC;
-        if (next >= STOP_SEC) {
+        if (next >= timelineEndSec) {
           setIsPlaying(false);
-          return STOP_SEC;
+          return timelineEndSec;
         }
         return next;
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [isPlaying, timelineStartSec]);
+  }, [isPlaying, timelineStartSec, timelineEndSec]);
 
   // Keep the marker visible while playing by panning
   useEffect(() => {

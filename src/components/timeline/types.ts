@@ -44,6 +44,8 @@ export type CameraEventPoint = {
   id: number;
   cameraId: number;
   timeSec: number;
+  startSec: number;
+  endSec: number;
   label: string;
 };
 

@@ -243,7 +243,7 @@ const TimeLine = ({
           </Box>
           <Box
             mr={"8px"}
-            onClick={() => timelineBodyRef.current?.stepMarker(-15)}
+            onClick={() => timelineBodyRef.current?.stepMarker(-600)}
           >
             <img
               style={{ cursor: "pointer" }}
@@ -276,14 +276,14 @@ const TimeLine = ({
                 ? secToTimeString(markerTimeSec)
                 : MOCK_SNAPSHOT.timeline.times.start}
             </Box>
-            <Box onClick={() => setIsPlaying((p) => !p)} sx={{ cursor: "pointer" }}>
+            <Box onClick={() => timelineBodyRef.current?.togglePlay()} sx={{ cursor: "pointer" }}>
               <img
                 src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
                 alt={isPlaying ? "Pause" : "Play"}
               />
             </Box>
           </Box>
-          <Box onClick={() => timelineBodyRef.current?.stepMarker(+15)}>
+          <Box onClick={() => timelineBodyRef.current?.stepMarker(+600)}>
             <img
               style={{ cursor: "pointer" }}
               src="../assets/chevron-right.svg"
