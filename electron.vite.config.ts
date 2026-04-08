@@ -28,6 +28,15 @@ export default defineConfig({
     renderer: {
         plugins: [react()],
         root: resolve(__dirname, "."),
+        server: {
+            proxy: {
+                "/api": {
+                    target: "https://cmsweb.rebiz.com",
+                    changeOrigin: true,
+                    secure: false,
+                },
+            },
+        },
         build: {
             rollupOptions: {
                 input: {

@@ -6,8 +6,10 @@ import TimelineBody, { type TimelineBodyHandle } from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
 import type { NavTab, CameraEventPoint } from "./timeline/types";
-import { NAV_TABS, CAMERA_OPTIONS, MOCK_SNAPSHOT } from "./timeline/constants";
+import { NAV_TABS, CAMERA_OPTIONS } from "./timeline/constants";
+import { useMonitoring } from "./timeline/hooks/useMonitoring";
 import { usePopover } from "./timeline/hooks/usePopover";
+import Button from "./Button";
 
 const MenuCameraContainer = styled(Box)({
   display: "flex",
@@ -59,6 +61,11 @@ const TimeLine = ({
   onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
 }) => {
+  const { snapshot, eventPoints: monitoringEventPoints } = useMonitoring();
+  const mergedEventPoints = [
+    ...(cameraEventPoints ?? []),
+    ...monitoringEventPoints,
+  ];
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
@@ -73,7 +80,7 @@ const TimeLine = ({
     [onMarkerChange],
   );
 
-   const secToTimeString = (sec: number) => {
+  const secToTimeString = (sec: number) => {
     const h = Math.floor(sec / 3600)
       .toString()
       .padStart(2, "0");
@@ -91,7 +98,63 @@ const TimeLine = ({
     onTimeChange?.(secToTimeString(markerTimeSec));
   }, [markerTimeSec, onTimeChange]);
 
- 
+  const toSeconds = (time: string) => {
+    const [h, m, s] = time.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+  };
+
+  const timelineEndSec = snapshot?.timeline.times.end
+    ? toSeconds(snapshot.timeline.times.end)
+    : null;
+
+  const isMarkerAtEnd =
+    markerTimeSec !== null &&
+    timelineEndSec !== null &&
+    markerTimeSec >= timelineEndSec;
+
+  // Maps event label → tracker_id (mirrors cameraMenuItems ids in Dashboard)
+  const LABEL_TO_TRACKER_ID: Record<string, number> = {
+    "Collision": 11,
+    "Car door open": 2,
+    "Violent behaviour": 3,
+    "Human in tunnel": 4,
+    "Slip & Fall": 5,
+  };
+
+  const handleDone = () => {
+    const monitoringId = import.meta.env.VITE_MONITORING_ID as string;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const grouped = new Map<string, { trackerId: number; cameraId: number; timestamps: string[] }>();
+
+    for (const ep of mergedEventPoints) {
+      // Drag-drop events: resolve tracker_id by label; API events: decode from id encoding
+      const trackerId =
+        LABEL_TO_TRACKER_ID[ep.label] ?? Math.floor(ep.id / 10000);
+      const key = `${trackerId}-${ep.cameraId}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, { trackerId, cameraId: ep.cameraId, timestamps: [] });
+      }
+      grouped.get(key)!.timestamps.push(secToTimeString(ep.timeSec));
+    }
+
+    const payload = {
+      success: true,
+      monitoring: Array.from(grouped.values()).map(({ trackerId, cameraId, timestamps }) => ({
+        tracker_id: trackerId,
+        monitoring_id: monitoringId,
+        camera_id: cameraId,
+        zone_id: null,
+        transactions: timestamps.map((t) => ({
+          sales_timestamp: `${today} ${t}`,
+          attended: true,
+        })),
+      })),
+    };
+
+    console.log(JSON.stringify(payload, null, 2));
+  };
+
   const nav = usePopover();
   const cameraMenu = usePopover();
 
@@ -274,9 +337,12 @@ const TimeLine = ({
             >
               {markerTimeSec !== null
                 ? secToTimeString(markerTimeSec)
-                : MOCK_SNAPSHOT.timeline.times.start}
+                : snapshot.timeline.times.start}
             </Box>
-            <Box onClick={() => timelineBodyRef.current?.togglePlay()} sx={{ cursor: "pointer" }}>
+            <Box
+              onClick={() => timelineBodyRef.current?.togglePlay()}
+              sx={{ cursor: "pointer" }}
+            >
               <img
                 src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
                 alt={isPlaying ? "Pause" : "Play"}
@@ -310,6 +376,13 @@ const TimeLine = ({
             display={"flex"}
             justifyContent={"flex-end"}
           >
+            {isMarkerAtEnd && (
+              <Box>
+                <Button onClick={handleDone} sx={{ height: "20px", mr: "36px", mb: "2px" }}>
+                  done
+                </Button>
+              </Box>
+            )}
             <Box onClick={() => {}}>
               <img
                 style={{ opacity: 0.5 }}
@@ -566,11 +639,11 @@ const TimeLine = ({
 
       <TimelineBody
         ref={timelineBodyRef}
-        snapshot={MOCK_SNAPSHOT}
+        snapshot={snapshot}
         activeTab={activeTab}
         selectedTab={selectedTab}
         cameraActivities={cameraActivities}
-        cameraEventPoints={cameraEventPoints}
+        cameraEventPoints={mergedEventPoints}
         onMarkerChange={handleMarkerChange}
         onPlayingChange={setIsPlaying}
       />

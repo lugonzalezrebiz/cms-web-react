@@ -3,9 +3,10 @@ import { Box, Grid } from "@mui/system";
 import styled from "@emotion/styled";
 import { useState } from "react";
 import { Colors, Fonts } from "../../../theme";
-import useNavigateWithQuery from "../../../hooks/useNavigate";
 import Card from "../../../components/Card";
 import Button from "../../../components/Button";
+import useAuth from "../../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const SubTitle = styled("p")({
   color: Colors.main,
@@ -58,17 +59,36 @@ const TextFieldStyled = styled(TextField)({
 });
 //context
 
+const DEFAULT_REDIRECT = "/dashboard?company=222&location=9001&date=20260407";
+
 const Login = () => {
-  const navigate = useNavigateWithQuery();
+  const navigate = useNavigate();
+  const { setToken } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (username === "admin" && password === "1234") {
-      navigate(`/dashboard`);
-    } else {
-      setError("Invalid username or password.");
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${import.meta.env.VITE_URL_API}auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        setToken(data.token);
+        navigate(DEFAULT_REDIRECT, { replace: true });
+      } else {
+        setError("Invalid username or password.");
+      }
+    } catch {
+      setError("Connection error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,8 +169,9 @@ const Login = () => {
               square
               type="submit"
               style={{ marginTop: "16px" }}
+              disabled={loading}
             >
-              Log In
+              {loading ? "Logging in..." : "Log In"}
             </Button>
           </form>
           <Box

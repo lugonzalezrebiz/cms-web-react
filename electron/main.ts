@@ -23,6 +23,7 @@ function createWindow() {
         height: 800,
         frame: false,
         show: false,
+        icon: path.join(__dirname, "../../public/assets/rebiz-icon-1.png"),
         webPreferences: {
             preload: path.join(__dirname, "../preload/index.cjs"),
         },

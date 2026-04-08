@@ -14,7 +14,7 @@ export interface TimelineBodyHandle {
   stepMarker: (deltaSec: number) => void;
   togglePlay: () => void;
 }
-import { TUNNEL_CAMERAS, MOCK_SNAPSHOT } from "./timeline/constants";
+import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { TimelineRowList } from "./timeline/TimelineRowList";
@@ -49,10 +49,11 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
     const timelineEndSec = toSeconds(data.timeline.times.end);
 
     const flatRows = useMemo((): FlatRow[] => {
+      const tracks = data.timeline.tracks;
       if (!isTunnel) {
         const rows: FlatRow[] = [];
-        for (let i = 0; i < TUNNEL_CAMERAS.length; i++) {
-          const cam = TUNNEL_CAMERAS[i];
+        for (let i = 0; i < tracks.length; i++) {
+          const cam = tracks[i];
           rows.push({
             id: cam.id,
             name: cam.name,
@@ -82,7 +83,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
       }
       const rows: FlatRow[] = [];
       let camNum = 0;
-      for (const cam of TUNNEL_CAMERAS) {
+      for (const cam of tracks) {
         camNum++;
         rows.push({
           id: cam.id,
@@ -92,7 +93,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
           sessions: cam.sessions,
         });
         const acts = (cameraActivities ?? []).filter(
-          (a) => a.cameraIndex === cam.id - 101,
+          (a) => a.cameraIndex === cam.id - 1,
         );
         for (const act of acts) {
           rows.push({
@@ -106,7 +107,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
         }
       }
       return rows;
-    }, [isTunnel, cameraActivities, cameraEventPoints]);
+    }, [isTunnel, cameraActivities, cameraEventPoints, data]);
 
     const selectableRows = useMemo(
       () =>

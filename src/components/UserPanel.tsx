@@ -3,7 +3,8 @@ import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
 import { Divider } from "@mui/material";
-import useNavigateWithQuery from "../hooks/useNavigate";
+import { useNavigate } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
 
 interface Props {
   open: boolean;
@@ -95,26 +96,17 @@ const LogoutText = styled(MenuRowText)({
   color: Colors.red,
 });
 
-const USER_PANEL_MOCK = {
-  title: "Account",
-  user: {
-    initials: "Ad",
-    name: "Admin",
-    role: "Admin",
-    email: "admin@rebiz.com",
-  },
-  items: [],
-  logout: {
-    icon: "../assets/x-close.svg",
-    label: "Log out",
-  },
-};
-
 const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
-  const navigate = useNavigateWithQuery();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const initials = user?.name
+    ? user.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "??";
 
   const handleLogout = () => {
-    navigate(`/login`, { replace: true });
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -135,41 +127,26 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
         }}
       >
         <TitleRow>
-          <TitleText>{USER_PANEL_MOCK.title}</TitleText>
+          <TitleText>Account</TitleText>
         </TitleRow>
 
         <Box
           sx={{ display: "flex", alignItems: "center", gap: "12px", py: "6px" }}
         >
-          <Avatar>{USER_PANEL_MOCK.user.initials}</Avatar>
+          <Avatar>{initials}</Avatar>
           <Box>
-            <UserName>{USER_PANEL_MOCK.user.name}</UserName>
-            <UserRole>{USER_PANEL_MOCK.user.role}</UserRole>
-            <UserEmail>{USER_PANEL_MOCK.user.email}</UserEmail>
+            <UserName>{user?.name}</UserName>
+            <UserRole>{user?.username}</UserRole>
+            <UserEmail>{user?.email}</UserEmail>
           </Box>
         </Box>
 
-        {USER_PANEL_MOCK.items.map(() => (
-          <Divider sx={{ borderColor: Colors.paleGray, my: "2px" }} />
-        ))}
         <Box sx={{ display: "flex", flexDirection: "column" }}>
-          {USER_PANEL_MOCK.items.map(({ icon, label }) => (
-            <MenuRow key={label}>
-              <img src={icon} alt="" width={18} height={18} />
-              <MenuRowText>{label}</MenuRowText>
-            </MenuRow>
-          ))}
-
           <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
 
           <MenuRow onClick={handleLogout}>
-            <img
-              src={USER_PANEL_MOCK.logout.icon}
-              alt=""
-              width={18}
-              height={18}
-            />
-            <LogoutText>{USER_PANEL_MOCK.logout.label}</LogoutText>
+            <img src="../assets/x-close.svg" alt="" width={18} height={18} />
+            <LogoutText>Log out</LogoutText>
           </MenuRow>
         </Box>
       </Box>
