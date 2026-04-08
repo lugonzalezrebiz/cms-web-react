@@ -7,6 +7,7 @@ import TimeLine from "../../components/TimeLine";
 import CameraLayout, { type CameraInfo } from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 import type { CameraEventPoint } from "../../components/timeline/types";
+import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
@@ -97,6 +98,20 @@ const Dashboard = ({
   >([]);
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
+
+  const { eventPoints: monitoringEventPoints } = useMonitoring();
+
+  useEffect(() => {
+    if (monitoringEventPoints.length === 0) return;
+    setCameraEventPoints((prev) => {
+      const existingIds = new Set(prev.map((ep) => ep.id));
+      const newPoints = monitoringEventPoints.filter(
+        (ep) => !existingIds.has(ep.id),
+      );
+      if (newPoints.length === 0) return prev;
+      return [...prev, ...newPoints];
+    });
+  }, [monitoringEventPoints]);
 
   const handleRemoveEventPoint = (id: number) => {
     setCameraEventPoints((prev) => prev.filter((ep) => ep.id !== id));

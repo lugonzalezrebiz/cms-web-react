@@ -7,7 +7,7 @@ import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
 import type { NavTab, CameraEventPoint } from "./timeline/types";
 import { NAV_TABS, CAMERA_OPTIONS } from "./timeline/constants";
-import { useMonitoring } from "./timeline/hooks/useMonitoring";
+import { MOCK_SNAPSHOT, TUNNEL_CAMERAS } from "./timeline/constants";
 import { usePopover } from "./timeline/hooks/usePopover";
 import Button from "./Button";
 
@@ -61,11 +61,14 @@ const TimeLine = ({
   onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
 }) => {
-  const { snapshot, eventPoints: monitoringEventPoints } = useMonitoring();
-  const mergedEventPoints = [
-    ...(cameraEventPoints ?? []),
-    ...monitoringEventPoints,
-  ];
+  const snapshot = {
+    ...MOCK_SNAPSHOT,
+    timeline: {
+      ...MOCK_SNAPSHOT.timeline,
+      tracks: TUNNEL_CAMERAS.map((cam) => ({ ...cam, sessions: [] })),
+    },
+  };
+  const mergedEventPoints = cameraEventPoints ?? [];
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
