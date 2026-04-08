@@ -305,9 +305,11 @@ const Header = ({
                     cursor: "pointer",
                   }}
                 >
-                  <StyledTitle>Store: 7437 (0079)</StyledTitle>
+                  <StyledTitle>
+                    Store: {storeLabel} ({companyLabel})
+                  </StyledTitle>
                   <StyledSubTitle>
-                    Mar 19, 2025 / 09:00 (MST) - 19:00 (MST) / Events
+                    {formattedDate} / {timeRange} / Events
                   </StyledSubTitle>
                 </Box>
                 <Box display={"flex"} style={noDrag}>

@@ -115,7 +115,7 @@ const Dashboard = ({
       const newId = activityCounterRef.current++;
       return [...prev, { id: newId, cameraIndex, activityLabel }];
     });
-    const cameraId = 101 + cameraIndex;
+    const cameraId = 1 + cameraIndex;
     const timeSec = markerSecRef.current; // Use the current marker position for the event point
     const startSec = Math.floor(timeSec / 3600) * 3600;
     const endSec = startSec + 3600;
@@ -159,7 +159,7 @@ const Dashboard = ({
 
   const cameraMenuItems: CameraContextMenuItem[] = [
     {
-      id: 1,
+      id: 11,
       name: "Collision",
       label: "Collision",
       onClick: (index) => handleActivitySelect(index, "Collision"),

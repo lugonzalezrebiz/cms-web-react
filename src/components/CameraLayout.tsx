@@ -336,7 +336,7 @@ const CameraLayout = ({
     cameraEventPoints
       .filter(
         (ep) =>
-          ep.cameraId === 101 + cameraIndex &&
+          ep.cameraId === 1 + cameraIndex &&
           Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
       )
       .map((ep) => ({

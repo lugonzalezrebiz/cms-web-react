@@ -5,6 +5,14 @@ import { Breakpoints, Colors } from "./theme";
 import Dashboard from "./pages/Dashboard";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
+import useAuth from "./hooks/useAuth";
+import type { ReactNode } from "react";
+
+function ProtectedDashboard({ children }: { children: ReactNode }) {
+  const { authenticated } = useAuth();
+  if (!authenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -33,15 +41,21 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <RenderPage
-            drawerOpen={drawerOpen}
-            toggleDrawer={toggleDrawer}
-            isMobile={isMobile}
-            selectedTab={selectedTab}
-            onTabChange={setSelectedTab}
-          >
-            <Dashboard selectedTab={selectedTab} drawerOpen={drawerOpen} />
-          </RenderPage>
+          <ProtectedDashboard>
+            <RenderPage
+              drawerOpen={drawerOpen}
+              toggleDrawer={toggleDrawer}
+              isMobile={isMobile}
+              selectedTab={selectedTab}
+              onTabChange={setSelectedTab}
+            >
+              <Dashboard
+                onTabChange={setSelectedTab}
+                selectedTab={selectedTab}
+                drawerOpen={drawerOpen}
+              />
+            </RenderPage>
+          </ProtectedDashboard>
         }
       />
       <Route path="/" element={<Navigate to="/login" replace />} />
