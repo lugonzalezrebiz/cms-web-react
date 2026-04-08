@@ -81,7 +81,7 @@ const Dashboard = ({
       .then((list) => {
         if (list.length > 0) setCameras(list);
       })
-      .catch(console.error);
+      .catch(() => {});
   }, [company, location, date]);
 
   // ── Timeline position ─────────────────────────────────────────────────────

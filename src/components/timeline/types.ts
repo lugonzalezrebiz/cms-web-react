@@ -43,9 +43,9 @@ export type FlatRow = {
 export type CameraEventPoint = {
   id: number;
   cameraId: number;
-  timeSec: number;   // hora exacta (para log y uso futuro)
-  startSec: number;  // inicio del rango (para renderizar)
-  endSec: number;    // fin del rango (para renderizar)
+  timeSec: number;
+  startSec: number;
+  endSec: number;
   label: string;
 };
 

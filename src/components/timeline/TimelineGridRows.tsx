@@ -236,9 +236,6 @@ export const TimelineGridRows = ({
                         ep.label === row.name,
                     )
                     .map((ep) => {
-                      console.log(
-                        `[EventPoint] id=${ep.id} cameraId=${ep.cameraId} label="${ep.label}" timeSec=${ep.timeSec}`,
-                      );
                       if (ep.timeSec < visibleStart || ep.timeSec > visibleEnd)
                         return null;
                       const left =

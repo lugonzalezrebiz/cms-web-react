@@ -8,8 +8,6 @@ import { config } from "dotenv";
 config({ path: path.join(app.getAppPath(), ".env") });
 
 const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
-console.log("DVR_BASE:", DVR_BASE);
-console.log("homedir:", os.homedir());
 
 // Must be called before app.whenReady()
 protocol.registerSchemesAsPrivileged([
@@ -46,10 +44,8 @@ function createWindow() {
         "dvr:timestamps",
         async (_, { company, location, date, camera }: { company: number; location: number; date: string; camera: number }) => {
             const dir = path.join(DVR_BASE, String(company), String(location), String(date), String(camera));
-            console.log("[dvr:timestamps] reading dir:", dir);
             try {
                 const files = await fs.readdir(dir);
-                console.log("[dvr:timestamps] files found:", files.length);
                 return files
                     .filter((f) => f.endsWith(".jpg"))
                     .map((f) => {
@@ -105,14 +101,10 @@ app.whenReady().then(() => {
         // dvr://local/{company}/{location}/{date}/{camera}/{filename}
         // hostname is fixed as "local"; full path is in url.pathname
         const filePath = path.join(DVR_BASE, url.pathname);
-        console.log("[dvr] request:", request.url);
-        console.log("[dvr] filePath:", filePath);
         try {
             const data = await fs.readFile(filePath);
-            console.log("[dvr] OK, bytes:", data.length);
             return new Response(data, { headers: { "content-type": "image/jpeg" } });
-        } catch (err) {
-            console.error("[dvr] ERROR:", err);
+        } catch {
             return new Response(null, { status: 404 });
         }
     });

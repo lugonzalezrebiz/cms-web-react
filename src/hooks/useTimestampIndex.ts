@@ -46,7 +46,7 @@ export function useTimestampIndex(
                 INDEX_CACHE.set(key, ts);
                 setTimestamps(ts);
             })
-            .catch(console.error);
+            .catch(() => {});
     }, [key, company, location, date, camera]);
 
     return timestamps;

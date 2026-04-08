@@ -306,8 +306,6 @@ function requireMain() {
 var mainExports = requireMain();
 mainExports.config({ path: path.join(app.getAppPath(), ".env") });
 const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
-console.log("DVR_BASE:", DVR_BASE);
-console.log("homedir:", os.homedir());
 protocol.registerSchemesAsPrivileged([
   {
     scheme: "dvr",
@@ -336,10 +334,8 @@ function createWindow() {
     "dvr:timestamps",
     async (_, { company, location, date, camera }) => {
       const dir = path.join(DVR_BASE, String(company), String(location), String(date), String(camera));
-      console.log("[dvr:timestamps] reading dir:", dir);
       try {
         const files = await fs.readdir(dir);
-        console.log("[dvr:timestamps] files found:", files.length);
         return files.filter((f) => f.endsWith(".jpg")).map((f) => {
           const ts = f.split("_")[1]?.replace(".jpg", "");
           if (!ts || ts.length !== 6) return null;
@@ -376,14 +372,10 @@ app.whenReady().then(() => {
   protocol.handle("dvr", async (request) => {
     const url = new URL(request.url);
     const filePath = path.join(DVR_BASE, url.pathname);
-    console.log("[dvr] request:", request.url);
-    console.log("[dvr] filePath:", filePath);
     try {
       const data = await fs.readFile(filePath);
-      console.log("[dvr] OK, bytes:", data.length);
       return new Response(data, { headers: { "content-type": "image/jpeg" } });
-    } catch (err) {
-      console.error("[dvr] ERROR:", err);
+    } catch {
       return new Response(null, { status: 404 });
     }
   });
