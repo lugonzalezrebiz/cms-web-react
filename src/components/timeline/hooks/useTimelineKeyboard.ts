@@ -57,7 +57,7 @@ export const useTimelineKeyboard = ({
   totalSec,
   gridRef,
   setGoToTimeOpen,
-  isPlaying,
+  isPlaying: _isPlaying,
   setIsPlaying,
 }: UseTimelineKeyboardParams) => {
   // Track mouse X relative to the grid element

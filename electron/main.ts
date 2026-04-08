@@ -110,5 +110,9 @@ app.whenReady().then(() => {
         }
     });
 
+    if (process.platform === "darwin") {
+        app.dock.setIcon(path.join(__dirname, "../../public/assets/rebiz-icon-1.png"));
+    }
+
     createWindow();
 });

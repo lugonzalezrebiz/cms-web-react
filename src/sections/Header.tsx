@@ -145,7 +145,7 @@ const Header = ({
   const locationParam = searchParams.get("location") ?? "";
   const dateParam = searchParams.get("date") ?? ""; // YYYYMMDD
 
-  const companyLabel = companyParam ? companyParam.padStart(4, "0") : "----";
+  const companyLabel = companyParam || "----";
   const storeLabel = locationParam || "----";
 
   const formattedDate = (() => {

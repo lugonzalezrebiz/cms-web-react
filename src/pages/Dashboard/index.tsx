@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { CameraContextMenuItem } from "../../components/EventMenu";
 import EventMenu from "../../components/EventMenu";
+import useAuth from "../../hooks/useAuth";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout, { type CameraInfo } from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 import type { CameraEventPoint } from "../../components/timeline/types";
+import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
@@ -141,6 +143,22 @@ const Dashboard = ({
     });
   };
 
+  const { token } = useAuth();
+  const [trackers, setTrackers] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    const monitoringID = import.meta.env.VITE_MONITORING_ID;
+    if (!monitoringID || !token) return;
+    fetch(`${import.meta.env.VITE_URL_API}tracker/${monitoringID}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data: { success: boolean; trackers: { id: number; name: string }[] }) => {
+        if (data.success) setTrackers(data.trackers);
+      })
+      .catch(() => {});
+  }, [token]);
+
   const [extraMenuItems, setExtraMenuItems] = useState<CameraContextMenuItem[]>(
     [],
   );
@@ -157,40 +175,18 @@ const Dashboard = ({
     ]);
   };
 
-  const cameraMenuItems: CameraContextMenuItem[] = [
-    {
-      id: 11,
-      name: "Collision",
-      label: "Collision",
-      onClick: (index) => handleActivitySelect(index, "Collision"),
-    },
-    {
-      id: 2,
-      name: "Car door open",
-      label: "Car door open",
-      onClick: (index) => handleActivitySelect(index, "Car door open"),
-    },
-    {
-      id: 3,
-      name: "Violent behaviour",
-      label: "Violent behaviour",
-      onClick: (index) => handleActivitySelect(index, "Violent behaviour"),
-    },
-    {
-      id: 4,
-      name: "Human in tunnel",
-      label: "Human in tunnel",
-      onClick: (index) => handleActivitySelect(index, "Human in tunnel"),
-    },
-    {
-      id: 5,
-      name: "Slip & Fall",
-      label: "Slip & Fall",
-      onClick: (index) => handleActivitySelect(index, "Slip & Fall"),
-    },
-  ];
+  const { snapshot, eventPoints: preloadedEventPoints } = useMonitoring(trackers);
+
+  const cameraMenuItems: CameraContextMenuItem[] = trackers.map((t) => ({
+    id: t.id,
+    name: t.name,
+    label: t.name,
+    onClick: (index) => handleActivitySelect(index, t.name),
+  }));
 
   const allMenuItems = [...cameraMenuItems, ...extraMenuItems];
+
+  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
   const selected = selectedTab;
 
@@ -234,7 +230,7 @@ const Dashboard = ({
           contextMenuItems={allMenuItems}
           iconMenu="/assets/plus-1.svg"
           onAddItem={handleAddMenuItem}
-          cameraEventPoints={cameraEventPoints}
+          cameraEventPoints={allEventPoints}
           markerSec={markerSec}
         />
       </Box>
@@ -247,7 +243,7 @@ const Dashboard = ({
           maxHeight="100%"
           cameraItemList={() => alert("Camera list clicked")}
           contextMenuItems={allMenuItems}
-          cameraEventPoints={cameraEventPoints}
+          cameraEventPoints={allEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleRemoveEventPoint}
           // Real image props
@@ -263,8 +259,10 @@ const Dashboard = ({
       <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
           selectedTab={selectedTab}
+          trackers={trackers}
+          snapshot={snapshot}
           cameraActivities={cameraActivities}
-          cameraEventPoints={cameraEventPoints}
+          cameraEventPoints={allEventPoints}
           onMarkerChange={(sec) => {
             markerSecRef.current = sec;
             setMarkerSec(sec);

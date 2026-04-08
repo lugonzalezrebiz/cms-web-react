@@ -3,7 +3,7 @@ import {
   Colors,
   //, Fonts
 } from "../../theme";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import type { FlatRow } from "./types";
 
 interface TimelineMarkerProps {
@@ -28,12 +28,10 @@ export const TimelineMarker = ({
   // flatRows,
   listBodyRef,
 }: TimelineMarkerProps) => {
-  const [scrollTop, setScrollTop] = useState(0);
-
   useEffect(() => {
     const el = listBodyRef.current;
     if (!el) return;
-    const onScroll = () => setScrollTop(el.scrollTop);
+    const onScroll = () => {};
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
   }, [listBodyRef]);

@@ -2,14 +2,15 @@ import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
 import { useCallback, useRef, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import TimelineBody, { type TimelineBodyHandle } from "./TimelineBody";
 import styled from "@emotion/styled";
 import Tooltip from "./Tooltip";
-import type { NavTab, CameraEventPoint } from "./timeline/types";
+import type { NavTab, CameraEventPoint, TimelineSnapshot } from "./timeline/types";
 import { NAV_TABS, CAMERA_OPTIONS } from "./timeline/constants";
-import { useMonitoring } from "./timeline/hooks/useMonitoring";
 import { usePopover } from "./timeline/hooks/usePopover";
 import Button from "./Button";
+import useAuth from "../hooks/useAuth";
 
 const MenuCameraContainer = styled(Box)({
   display: "flex",
@@ -42,6 +43,9 @@ const TextCameraMenu = styled("p")({
   textAlign: "left",
 });
 
+const monitoringId = import.meta.env.VITE_MONITORING_ID as string;
+const reviewerRole = Number(import.meta.env.VITE_REVIEWER_ROLE);
+
 const TimeLine = ({
   selectedTab,
   cameraActivities,
@@ -49,6 +53,8 @@ const TimeLine = ({
   drawerOpen,
   onTimeChange,
   onMarkerChange,
+  trackers = [],
+  snapshot,
 }: {
   selectedTab?: string;
   cameraActivities?: {
@@ -60,12 +66,17 @@ const TimeLine = ({
   drawerOpen?: boolean;
   onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
+  trackers?: { id: number; name: string }[];
+  snapshot: TimelineSnapshot;
 }) => {
-  const { snapshot, eventPoints: monitoringEventPoints } = useMonitoring();
-  const mergedEventPoints = [
-    ...(cameraEventPoints ?? []),
-    ...monitoringEventPoints,
-  ];
+  const { token, user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get("date") ?? ""; // YYYYMMDD
+  const sessionDate =
+    dateParam.length === 8
+      ? `${dateParam.slice(0, 4)}-${dateParam.slice(4, 6)}-${dateParam.slice(6, 8)}`
+      : new Date().toISOString().slice(0, 10);
+  const mergedEventPoints = cameraEventPoints ?? [];
   const [activeTab, setActiveTab] = useState<NavTab>("employees");
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
@@ -112,18 +123,12 @@ const TimeLine = ({
     timelineEndSec !== null &&
     markerTimeSec >= timelineEndSec;
 
-  // Maps event label → tracker_id (mirrors cameraMenuItems ids in Dashboard)
-  const LABEL_TO_TRACKER_ID: Record<string, number> = {
-    "Collision": 11,
-    "Car door open": 2,
-    "Violent behaviour": 3,
-    "Human in tunnel": 4,
-    "Slip & Fall": 5,
-  };
+  const LABEL_TO_TRACKER_ID: Record<string, number> = Object.fromEntries(
+    trackers.map((t) => [t.name, t.id]),
+  );
 
   const handleDone = () => {
-    const monitoringId = import.meta.env.VITE_MONITORING_ID as string;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = sessionDate;
 
     const grouped = new Map<string, { trackerId: number; cameraId: number; timestamps: string[] }>();
 
@@ -138,21 +143,36 @@ const TimeLine = ({
       grouped.get(key)!.timestamps.push(secToTimeString(ep.timeSec));
     }
 
-    const payload = {
-      success: true,
-      monitoring: Array.from(grouped.values()).map(({ trackerId, cameraId, timestamps }) => ({
+    const reviewerPayload = {
+      reviewed: true,
+      review_date: new Date().toISOString(),
+    };
+    console.log("Reviewer payload:", user?.roleID);
+    const payload = Array.from(grouped.values()).map(({ trackerId, cameraId, timestamps }) => ({
         tracker_id: trackerId,
         monitoring_id: monitoringId,
         camera_id: cameraId,
         zone_id: null,
         transactions: timestamps.map((t) => ({
           sales_timestamp: `${today} ${t}`,
-          attended: true,
+          attended: false,
+          ...(user?.roleID === reviewerRole ? reviewerPayload : {}),
         })),
-      })),
-    };
+      }));
 
-    console.log(JSON.stringify(payload, null, 2));
+    fetch(`${import.meta.env.VITE_URL_API}monitoring/${monitoringId}/save`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) alert("Monitoring saved successfully.");
+      })
+      .catch(() => {});
   };
 
   const nav = usePopover();
@@ -379,7 +399,7 @@ const TimeLine = ({
             {isMarkerAtEnd && (
               <Box>
                 <Button onClick={handleDone} sx={{ height: "20px", mr: "36px", mb: "2px" }}>
-                  done
+                  Finalize
                 </Button>
               </Box>
             )}

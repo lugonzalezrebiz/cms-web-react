@@ -59,7 +59,7 @@ const TextFieldStyled = styled(TextField)({
 });
 //context
 
-const DEFAULT_REDIRECT = "/dashboard?company=222&location=9001&date=20260407";
+const DEFAULT_REDIRECT = "/dashboard?company=9001&location=222&date=20260407";
 
 const Login = () => {
   const navigate = useNavigate();

@@ -194,7 +194,6 @@ const EventMenu = ({
                       )
                     );
                   })()}
-                  <span style={{ marginLeft: "5px" }}>{item.id}</span>
                 </Box>
                 {item.shortcut && (
                   <Typography
