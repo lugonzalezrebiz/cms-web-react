@@ -38,6 +38,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
       cameraEventPoints,
       onMarkerChange,
       onPlayingChange,
+      onUpdateEventPoint,
     },
     ref,
   ) => {
@@ -271,6 +272,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
             setZoom={state.setZoom}
             setPanOffsetSec={state.setPanOffsetSec}
             cameraEventPoints={cameraEventPoints}
+            onUpdateEventPoint={onUpdateEventPoint}
           />
 
           <TimelineMarker
@@ -281,6 +283,12 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
             iTrackId={state.iTrackId}
             flatRows={flatRows}
             listBodyRef={state.listBodyRef}
+            setMarkerSec={state.setMarkerSec}
+            visibleStart={state.visibleStart}
+            visibleDuration={state.visibleDuration}
+            timelineStartSec={timelineStartSec}
+            timelineEndSec={timelineEndSec}
+            gridRef={state.gridRef}
           />
         </Box>
 

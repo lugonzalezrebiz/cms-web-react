@@ -3,7 +3,7 @@ import {
   Colors,
   //, Fonts
 } from "../../theme";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { FlatRow } from "./types";
 
 interface TimelineMarkerProps {
@@ -14,6 +14,12 @@ interface TimelineMarkerProps {
   iTrackId: number | null;
   flatRows: FlatRow[];
   listBodyRef: React.RefObject<HTMLDivElement | null>;
+  setMarkerSec: (sec: number) => void;
+  visibleStart: number;
+  visibleDuration: number;
+  timelineStartSec: number;
+  timelineEndSec: number;
+  gridRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // const RULER_HEIGHT = 28;
@@ -27,7 +33,15 @@ export const TimelineMarker = ({
   // iTrackId,
   // flatRows,
   listBodyRef,
+  setMarkerSec,
+  visibleStart,
+  visibleDuration,
+  timelineStartSec,
+  timelineEndSec,
+  gridRef,
 }: TimelineMarkerProps) => {
+  const [isDraggingMarker, setIsDraggingMarker] = useState(false);
+
   useEffect(() => {
     const el = listBodyRef.current;
     if (!el) return;
@@ -35,6 +49,31 @@ export const TimelineMarker = ({
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
   }, [listBodyRef]);
+
+  useEffect(() => {
+    if (!isDraggingMarker) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = gridRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const relX = (e.clientX - rect.left) / rect.width;
+      const newSec = visibleStart + relX * visibleDuration;
+      setMarkerSec(Math.max(timelineStartSec, Math.min(timelineEndSec, newSec)));
+    };
+    const handleMouseUp = () => setIsDraggingMarker(false);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDraggingMarker, visibleStart, visibleDuration, timelineStartSec, timelineEndSec, gridRef, setMarkerSec]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingMarker(true);
+  };
 
   // const focusedNotBuilding = iTrackId !== null && !selectedTracks.has(iTrackId);
   // if (!isCurrentVisible) return null;
@@ -50,20 +89,32 @@ export const TimelineMarker = ({
     <>
       {/* Vertical line */}
       <Box
+        onMouseDown={handleMouseDown}
         sx={{
           position: "absolute",
           left: `${currentLeft}%`,
           top: 0,
           bottom: 0,
-          width: "3px",
-          background: Colors.vividOrange,
+          width: "11px",
+          background: "transparent",
           transform: "translateX(-50%)",
           zIndex: 20,
+          cursor: isDraggingMarker ? "grabbing" : "grab",
+          display: "flex",
+          justifyContent: "center",
+          "&::after": {
+            content: '""',
+            display: "block",
+            width: "3px",
+            height: "100%",
+            background: Colors.vividOrange,
+          },
         }}
       />
 
       {/* Top pill */}
       <Box
+        onMouseDown={handleMouseDown}
         sx={{
           width: "18px",
           height: "7px",
@@ -77,7 +128,7 @@ export const TimelineMarker = ({
           display: "flex",
           alignItems: "center",
           zIndex: 21,
-          pointerEvents: "none",
+          cursor: isDraggingMarker ? "grabbing" : "grab",
           justifyContent: "space-between",
         }}
       >

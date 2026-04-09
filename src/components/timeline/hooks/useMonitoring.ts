@@ -33,13 +33,13 @@ function buildEventPoints(monitoring: MonitoringEntry[], trackerLabels: Record<n
   for (const entry of monitoring) {
     for (const t of entry.transactions) {
       const timeSec = toSec(t.sales_timestamp);
-      const startSec = Math.floor(timeSec / 3600) * 3600;
+      const startSec = Math.max(0, timeSec - 120);
       points.push({
         id: entry.tracker_id * 10000 + points.length,
         cameraId: entry.camera_id,
         timeSec,
         startSec,
-        endSec: startSec + 3600,
+        endSec: timeSec + 120,
         label: trackerLabels[entry.tracker_id] ?? "Event",
       });
     }

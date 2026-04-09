@@ -55,6 +55,7 @@ const TimeLine = ({
   onMarkerChange,
   trackers = [],
   snapshot,
+  onUpdateEventPoint,
 }: {
   selectedTab?: string;
   cameraActivities?: {
@@ -68,6 +69,7 @@ const TimeLine = ({
   onMarkerChange?: (sec: number) => void;
   trackers?: { id: number; name: string }[];
   snapshot: TimelineSnapshot;
+  onUpdateEventPoint?: (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => void;
 }) => {
   const { token, user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -666,6 +668,7 @@ const TimeLine = ({
         cameraEventPoints={mergedEventPoints}
         onMarkerChange={handleMarkerChange}
         onPlayingChange={setIsPlaying}
+        onUpdateEventPoint={onUpdateEventPoint}
       />
     </Box>
   );
