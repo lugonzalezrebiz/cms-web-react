@@ -1,12 +1,10 @@
 import { TextField } from "@mui/material";
 import { Box, Grid } from "@mui/system";
 import styled from "@emotion/styled";
-import { useState } from "react";
 import { Colors, Fonts } from "../../../theme";
 import Card from "../../../components/Card";
 import Button from "../../../components/Button";
-import useAuth from "../../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import useLogin from "./hooks/useLogin";
 
 const SubTitle = styled("p")({
   color: Colors.main,
@@ -57,40 +55,8 @@ const TextFieldStyled = styled(TextField)({
     border: "solid 1px #d0d5dd",
   },
 });
-//context
-
-const DEFAULT_REDIRECT = "/dashboard?company=9001&location=222&date=20260407";
-
 const Login = () => {
-  const navigate = useNavigate();
-  const { setToken } = useAuth();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`${import.meta.env.VITE_URL_API}auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (data.success && data.token) {
-        setToken(data.token);
-        navigate(DEFAULT_REDIRECT, { replace: true });
-      } else {
-        setError("Invalid username or password.");
-      }
-    } catch {
-      setError("Connection error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { username, setUsername, password, setPassword, error, setError, loading, handleLogin } = useLogin();
 
   return (
     <Box
