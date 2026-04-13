@@ -1,9 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Box } from "@mui/system";
-import {
-  Colors,
-  //, Fonts
-} from "../../theme";
+import { Colors } from "../../theme";
 import type { FlatRow, CameraEventPoint } from "./types";
 
 interface TimelineGridRowsProps {
@@ -27,6 +24,10 @@ interface TimelineGridRowsProps {
   setZoom: React.Dispatch<React.SetStateAction<number>>;
   setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
   cameraEventPoints?: CameraEventPoint[];
+  onUpdateEventPoint?: (
+    id: number,
+    update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
+  ) => void;
 }
 
 const toSeconds = (time: string) => {
@@ -55,8 +56,46 @@ export const TimelineGridRows = ({
   setZoom,
   setPanOffsetSec,
   cameraEventPoints = [],
+  onUpdateEventPoint,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
+
+  const [resizing, setResizing] = useState<{
+    id: number;
+    side: "left" | "right";
+  } | null>(null);
+
+  useEffect(() => {
+    if (!resizing) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = gridRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const relX = (e.clientX - rect.left) / rect.width;
+      const newSec = Math.max(
+        0,
+        Math.min(totalSec, visibleStart + relX * visibleDuration),
+      );
+      onUpdateEventPoint?.(
+        resizing.id,
+        resizing.side === "left" ? { startSec: newSec } : { endSec: newSec },
+      );
+    };
+    const handleMouseUp = () => setResizing(null);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [
+    resizing,
+    visibleStart,
+    visibleDuration,
+    totalSec,
+    gridRef,
+    onUpdateEventPoint,
+  ]); // only depends on resizing — values are read from refs
 
   useEffect(() => {
     const el = gridRef.current;
@@ -80,8 +119,7 @@ export const TimelineGridRows = ({
 
         const oldVisibleDuration = totalSec / oldZoom;
         const newVisibleDuration = totalSec / newZoom;
-        const cursorTime =
-          panOffsetSec + (mouseX / width) * oldVisibleDuration;
+        const cursorTime = panOffsetSec + (mouseX / width) * oldVisibleDuration;
         let newOffset = cursorTime - (mouseX / width) * newVisibleDuration;
         const maxOffset = totalSec - newVisibleDuration;
         newOffset = Math.max(0, Math.min(maxOffset, newOffset));
@@ -107,7 +145,16 @@ export const TimelineGridRows = ({
 
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
-  }, [zoom, panOffsetSec, totalSec, setZoom, setPanOffsetSec, gridRef, listBodyRef, rowsScrollRef]);
+  }, [
+    zoom,
+    panOffsetSec,
+    totalSec,
+    setZoom,
+    setPanOffsetSec,
+    gridRef,
+    listBodyRef,
+    rowsScrollRef,
+  ]);
 
   return (
     <Box
@@ -227,6 +274,7 @@ export const TimelineGridRows = ({
                     left: 0,
                     right: 0,
                     height: rowHeight,
+                    pointerEvents: "none",
                   }}
                 >
                   {cameraEventPoints
@@ -236,25 +284,85 @@ export const TimelineGridRows = ({
                         ep.label === row.name,
                     )
                     .map((ep) => {
-                      if (ep.timeSec < visibleStart || ep.timeSec > visibleEnd)
-                        return null;
-                      const left =
-                        ((ep.timeSec - visibleStart) / visibleDuration) * 100;
+                      const barStart = Math.max(ep.startSec, visibleStart);
+                      const barEnd = Math.min(ep.endSec, visibleEnd);
+                      if (barStart >= barEnd) return null;
+                      const leftPct =
+                        ((ep.startSec - visibleStart) / visibleDuration) * 100;
+                      const widthPct =
+                        ((ep.endSec - ep.startSec) / visibleDuration) * 100;
+                      const dotLeftPct =
+                        ((ep.timeSec - ep.startSec) /
+                          (ep.endSec - ep.startSec)) *
+                        100;
                       return (
                         <Box
                           key={ep.id}
                           sx={{
                             position: "absolute",
-                            left: `${left}%`,
+                            left: `${leftPct}%`,
+                            width: `${widthPct}%`,
                             top: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: 15,
+                            transform: "translate(-50%)",
+                            borderRadius: "8px",
+                            background: `${Colors.green}33`,
+                            border: `2px solid ${Colors.green}`,
                             height: 15,
-                            borderRadius: "50%",
-                            background: Colors.green,
                             zIndex: 2,
+                            pointerEvents: "auto",
                           }}
-                        />
+                        >
+                          {/* Left resize handle */}
+                          <Box
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setResizing({ id: ep.id, side: "left" });
+                            }}
+                            sx={{
+                              position: "absolute",
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 8,
+                              cursor: "ew-resize",
+                              bgcolor: Colors.green,
+                              borderRadius: "6px 0 0 6px",
+                            }}
+                          />
+                          {/* Dot at timeSec */}
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              left: `${dotLeftPct}%`,
+                              top: "50%",
+                              transform: "translate(-50%, -50%)",
+                              width: 7,
+                              height: 7,
+                              borderRadius: "50%",
+                              bgcolor: Colors.green,
+                              pointerEvents: "none",
+                            }}
+                          />
+                          {/* Right resize handle */}
+                          <Box
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setResizing({ id: ep.id, side: "right" });
+                            }}
+                            sx={{
+                              position: "absolute",
+                              right: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 8,
+                              cursor: "ew-resize",
+                              bgcolor: Colors.green,
+                              borderRadius: "0 6px 6px 0",
+                            }}
+                          />
+                        </Box>
                       );
                     })}
                 </Box>

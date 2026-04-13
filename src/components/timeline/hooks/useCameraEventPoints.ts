@@ -14,6 +14,12 @@ export const useCameraEventPoints = () => {
     setCameraEventPoints((prev) => prev.filter((ep) => ep.id !== id));
   };
 
+  const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
+    setCameraEventPoints((prev) =>
+      prev.map((ep) => (ep.id === id ? { ...ep, ...update } : ep)),
+    );
+  };
+
   const handleActivitySelect = (
     cameraIndex: number,
     activityLabel: string,
@@ -29,8 +35,8 @@ export const useCameraEventPoints = () => {
     });
     const cameraId = 1 + cameraIndex;
     const timeSec = markerSecRef.current;
-    const startSec = Math.floor(timeSec / 3600) * 3600;
-    const endSec = startSec + 3600;
+    const startSec = Math.max(0, timeSec - 120);
+    const endSec = timeSec + 120;
     setCameraEventPoints((prev) => {
       const duplicate = prev.some(
         (ep) =>
@@ -58,5 +64,6 @@ export const useCameraEventPoints = () => {
     handleRemoveEventPoint,
     handleActivitySelect,
     handleMarkerChange,
+    handleUpdateEventPoint,
   };
 };
