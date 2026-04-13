@@ -58,7 +58,9 @@ export const TimelineMarker = ({
       const rect = el.getBoundingClientRect();
       const relX = (e.clientX - rect.left) / rect.width;
       const newSec = visibleStart + relX * visibleDuration;
-      setMarkerSec(Math.max(timelineStartSec, Math.min(timelineEndSec, newSec)));
+      setMarkerSec(
+        Math.max(timelineStartSec, Math.min(timelineEndSec, newSec)),
+      );
     };
     const handleMouseUp = () => setIsDraggingMarker(false);
     window.addEventListener("mousemove", handleMouseMove);
@@ -67,7 +69,15 @@ export const TimelineMarker = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDraggingMarker, visibleStart, visibleDuration, timelineStartSec, timelineEndSec, gridRef, setMarkerSec]);
+  }, [
+    isDraggingMarker,
+    visibleStart,
+    visibleDuration,
+    timelineStartSec,
+    timelineEndSec,
+    gridRef,
+    setMarkerSec,
+  ]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();

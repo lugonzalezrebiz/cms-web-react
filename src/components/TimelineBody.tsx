@@ -4,11 +4,10 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from "react";
-import type { TimelineBodyProps, FlatRow } from "./timeline/types";
+import type { TimelineBodyProps } from "./timeline/types";
 
 export interface TimelineBodyHandle {
   stepMarker: (deltaSec: number) => void;
@@ -17,16 +16,12 @@ export interface TimelineBodyHandle {
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
+import { useFlatRows } from "./timeline/hooks/useFlatRows";
 import { TimelineRowList } from "./timeline/TimelineRowList";
 import { TimelineTimeRuler } from "./timeline/TimelineTimeRuler";
 import { TimelineGridRows } from "./timeline/TimelineGridRows";
 import { TimelineMarker } from "./timeline/TimelineMarker";
 import { GoToTimeDialog } from "./timeline/GoToTimeDialog";
-
-const toSeconds = (time: string) => {
-  const [h, m, s] = time.split(":").map(Number);
-  return h * 3600 + m * 60 + s;
-};
 
 const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
   (
@@ -46,83 +41,13 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
     const isTunnel = selectedTab === "2";
 
     const data = snapshot || MOCK_SNAPSHOT;
-    const timelineStartSec = toSeconds(data.timeline.times.start);
-    const timelineEndSec = toSeconds(data.timeline.times.end);
-
-    const flatRows = useMemo((): FlatRow[] => {
-      const tracks = data.timeline.tracks;
-      if (!isTunnel) {
-        const rows: FlatRow[] = [];
-        for (let i = 0; i < tracks.length; i++) {
-          const cam = tracks[i];
-          rows.push({
-            id: cam.id,
-            name: cam.name,
-            kind: "camera" as const,
-            cameraNumber: i + 1,
-            sessions: cam.sessions,
-          });
-          const labels = [
-            ...new Set(
-              (cameraEventPoints ?? [])
-                .filter((ep) => ep.cameraId === cam.id)
-                .map((ep) => ep.label),
-            ),
-          ].sort();
-          labels.forEach((label, idx) => {
-            rows.push({
-              id: cam.id * 1000 + idx,
-              name: label,
-              kind: "event" as const,
-              parentCameraId: cam.id,
-              cameraNumber: 0,
-              sessions: [],
-            });
-          });
-        }
-        return rows;
-      }
-      const rows: FlatRow[] = [];
-      let camNum = 0;
-      for (const cam of tracks) {
-        camNum++;
-        rows.push({
-          id: cam.id,
-          name: cam.name,
-          kind: "camera",
-          cameraNumber: camNum,
-          sessions: cam.sessions,
-        });
-        const acts = (cameraActivities ?? []).filter(
-          (a) => a.cameraIndex === cam.id - 1,
-        );
-        for (const act of acts) {
-          rows.push({
-            id: 10000 + act.id,
-            name: act.activityLabel,
-            kind: "activity",
-            parentCameraId: cam.id,
-            cameraNumber: 0,
-            sessions: [],
-          });
-        }
-      }
-      return rows;
-    }, [isTunnel, cameraActivities, cameraEventPoints, data]);
-
-    const selectableRows = useMemo(
-      () =>
-        isTunnel
-          ? flatRows.filter((r) => r.kind === "activity")
-          : flatRows.filter((r) => r.kind !== "event"),
-      [isTunnel, flatRows],
-    );
-
-    const allTimestamps = flatRows.flatMap((row) =>
-      row.sessions.map((s) => toSeconds(s.timestamp)),
-    );
-    const firstActivitySec =
-      allTimestamps.length > 0 ? Math.min(...allTimestamps) : 0;
+    const {
+      flatRows,
+      selectableRows,
+      timelineStartSec,
+      timelineEndSec,
+      firstActivitySec,
+    } = useFlatRows({ isTunnel, data, cameraActivities, cameraEventPoints });
 
     const headerLabel = "Cameras";
 

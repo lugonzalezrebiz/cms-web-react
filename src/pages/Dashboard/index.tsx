@@ -1,17 +1,18 @@
 import { Box } from "@mui/system";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { CameraContextMenuItem } from "../../components/EventMenu";
 import EventMenu from "../../components/EventMenu";
-import useAuth from "../../hooks/useAuth";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout, { type CameraInfo } from "../../components/CameraLayout";
+import CameraLayout from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
-import type { CameraEventPoint } from "../../components/timeline/types";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
+import { useCameras } from "./hooks/useCameras";
+import { useTrackers } from "./hooks/useTrackers";
+import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
+import { useMenuItems } from "./hooks/useMenuItems";
 
 const StyledToggleButton = styled(ToggleButton)({
   color: Colors.mediumGray,
@@ -74,127 +75,30 @@ const Dashboard = ({
   const location = Number(searchParams.get("location") ?? 0);
   const date = searchParams.get("date") ?? ""; // YYYYMMDD
 
-  // ── Camera list — read from DVR folder via Electron IPC ──────────────────
-  const [cameras, setCameras] = useState<CameraInfo[]>([]);
-  useEffect(() => {
-    if (!company || !location || !date) return;
-    window.api
-      .cameras({ company, location, date })
-      .then((list) => {
-        if (list.length > 0) setCameras(list);
-      })
-      .catch(() => {});
-  }, [company, location, date]);
+  const cameras = useCameras(company, location, date);
+  const trackers = useTrackers();
 
-  // ── Timeline position ─────────────────────────────────────────────────────
-  const [timestamp, setTimestamp] = useState(""); // "HH:mm:ss"
+  const {
+    cameraActivities,
+    cameraEventPoints,
+    markerSec,
+    handleRemoveEventPoint,
+    handleActivitySelect,
+    handleMarkerChange,
+    handleUpdateEventPoint,
+  } = useCameraEventPoints();
 
-  // ── Camera activity overlay ───────────────────────────────────────────────
-  const activityCounterRef = useRef(0);
-  const [cameraActivities, setCameraActivities] = useState<
-    { id: number; cameraIndex: number; activityLabel: string }[]
-  >([]);
-  const [cameraEventPoints, setCameraEventPoints] = useState<
-    CameraEventPoint[]
-  >([]);
-  const [markerSec, setMarkerSec] = useState<number>(0);
-  const markerSecRef = useRef<number>(0);
-
-  const handleRemoveEventPoint = (id: number) => {
-    setCameraEventPoints((prev) => prev.filter((ep) => ep.id !== id));
-  };
-
-  const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
-    setCameraEventPoints((prev) =>
-      prev.map((ep) => (ep.id === id ? { ...ep, ...update } : ep)),
-    );
-  };
-
-  const handleActivitySelect = (
-    cameraIndex: number,
-    activityLabel: string,
-  ): void => {
-    setCameraActivities((prev) => {
-      const alreadyExists = prev.some(
-        (a) =>
-          a.cameraIndex === cameraIndex && a.activityLabel === activityLabel,
-      );
-      if (alreadyExists) return prev;
-      const newId = activityCounterRef.current++;
-      return [...prev, { id: newId, cameraIndex, activityLabel }];
-    });
-    const cameraId = 1 + cameraIndex;
-    const timeSec = markerSecRef.current; // Use the current marker position for the event point
-    const startSec = Math.max(0, timeSec - 120);
-    const endSec = timeSec + 120;
-    setCameraEventPoints((prev) => {
-      const duplicate = prev.some(
-        (ep) =>
-          ep.cameraId === cameraId &&
-          ep.label === activityLabel &&
-          Math.abs(timeSec - ep.timeSec) <= 300,
-      );
-      if (duplicate) return prev;
-      return [
-        ...prev,
-        {
-          id: Date.now(),
-          cameraId,
-          timeSec,
-          startSec,
-          endSec,
-          label: activityLabel,
-        },
-      ];
-    });
-  };
-
-  const { token } = useAuth();
-  const [trackers, setTrackers] = useState<{ id: number; name: string }[]>([]);
-
-  useEffect(() => {
-    const monitoringID = import.meta.env.VITE_MONITORING_ID;
-    if (!monitoringID || !token) return;
-    fetch(`${import.meta.env.VITE_URL_API}tracker/${monitoringID}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data: { success: boolean; trackers: { id: number; name: string }[] }) => {
-        if (data.success) setTrackers(data.trackers);
-      })
-      .catch(() => {});
-  }, [token]);
-
-  const [extraMenuItems, setExtraMenuItems] = useState<CameraContextMenuItem[]>(
-    [],
+  const { allMenuItems, handleAddMenuItem } = useMenuItems(
+    trackers,
+    handleActivitySelect,
   );
 
-  const handleAddMenuItem = (label: string) => {
-    setExtraMenuItems((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name: label,
-        label,
-        onClick: (index) => handleActivitySelect(index, label),
-      },
-    ]);
-  };
-
-  const { snapshot, eventPoints: preloadedEventPoints } = useMonitoring(trackers);
-
-  const cameraMenuItems: CameraContextMenuItem[] = trackers.map((t) => ({
-    id: t.id,
-    name: t.name,
-    label: t.name,
-    onClick: (index) => handleActivitySelect(index, t.name),
-  }));
-
-  const allMenuItems = [...cameraMenuItems, ...extraMenuItems];
+  const { snapshot, eventPoints: preloadedEventPoints } =
+    useMonitoring(trackers);
 
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const selected = selectedTab;
+  const [timestamp, setTimestamp] = useState("");
 
   return (
     <Box
@@ -216,7 +120,7 @@ const Dashboard = ({
       >
         <Box>
           <StyledToggleGroup
-            value={selected}
+            value={selectedTab}
             exclusive
             onChange={(_event, newValue) => {
               if (newValue !== null) onTabChange(newValue);
@@ -252,7 +156,6 @@ const Dashboard = ({
           cameraEventPoints={allEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleRemoveEventPoint}
-          // Real image props
           cameras={cameras}
           company={company}
           location={location}
@@ -269,10 +172,7 @@ const Dashboard = ({
           snapshot={snapshot}
           cameraActivities={cameraActivities}
           cameraEventPoints={allEventPoints}
-          onMarkerChange={(sec) => {
-            markerSecRef.current = sec;
-            setMarkerSec(sec);
-          }}
+          onMarkerChange={handleMarkerChange}
           drawerOpen={drawerOpen}
           onTimeChange={setTimestamp}
           onUpdateEventPoint={handleUpdateEventPoint}
