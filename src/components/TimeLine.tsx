@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import { Grid } from "@mui/system";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import TimelineBody, { type TimelineBodyHandle } from "./TimelineBody";
 import Tooltip from "./Tooltip";
 import type {
@@ -29,6 +29,9 @@ const TimeLine = ({
   onMarkerChange,
   trackers = [],
   snapshot,
+  posSnapshot,
+  posEventPoints,
+  targetMarkerSec,
   onUpdateEventPoint,
 }: {
   selectedTab?: string;
@@ -43,6 +46,9 @@ const TimeLine = ({
   onMarkerChange?: (sec: number) => void;
   trackers?: { id: number; name: string }[];
   snapshot: TimelineSnapshot;
+  posSnapshot?: TimelineSnapshot;
+  posEventPoints?: CameraEventPoint[];
+  targetMarkerSec?: number;
   onUpdateEventPoint?: (
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
@@ -53,6 +59,12 @@ const TimeLine = ({
   const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
   const [isPlaying, setIsPlaying] = useState(false);
   const timelineBodyRef = useRef<TimelineBodyHandle>(null);
+
+  useEffect(() => {
+    if (targetMarkerSec !== undefined) {
+      timelineBodyRef.current?.setMarker(targetMarkerSec);
+    }
+  }, [targetMarkerSec]);
 
   const sessionDate = useSessionDate();
   const { markerTimeSec, handleMarkerChange, isMarkerAtEnd } =
@@ -410,6 +422,8 @@ const TimeLine = ({
       <TimelineBody
         ref={timelineBodyRef}
         snapshot={snapshot}
+        posSnapshot={posSnapshot}
+        posEventPoints={posEventPoints}
         activeTab={activeTab}
         selectedTab={selectedTab}
         cameraActivities={cameraActivities}

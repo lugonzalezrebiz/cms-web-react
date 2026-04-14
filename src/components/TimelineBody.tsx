@@ -3,25 +3,22 @@ import { Colors } from "../theme";
 import {
   forwardRef,
   useEffect,
-  useImperativeHandle,
-  useRef,
   useState,
 } from "react";
-import type { TimelineBodyProps } from "./timeline/types";
-
-export interface TimelineBodyHandle {
-  stepMarker: (deltaSec: number) => void;
-  togglePlay: () => void;
-}
+import type { TimelineBodyHandle, TimelineBodyProps } from "./timeline/types";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
+import { useTimelineHandle } from "./timeline/hooks/useTimelineHandle";
+import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
 import { TimelineRowList } from "./timeline/TimelineRowList";
 import { TimelineTimeRuler } from "./timeline/TimelineTimeRuler";
 import { TimelineGridRows } from "./timeline/TimelineGridRows";
 import { TimelineMarker } from "./timeline/TimelineMarker";
 import { GoToTimeDialog } from "./timeline/GoToTimeDialog";
+
+export type { TimelineBodyHandle };
 
 const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
   (
@@ -38,7 +35,7 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
     ref,
   ) => {
     const [goToTimeOpen, setGoToTimeOpen] = useState(false);
-    const isTunnel = selectedTab === "2";
+    const isTunnel = false;
 
     const data = snapshot || MOCK_SNAPSHOT;
     const {
@@ -72,16 +69,11 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
       onPlayingChange?.(state.isPlaying);
     }, [state.isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
     // Auto-select the camera row when a new event point is dropped onto it
-    const prevEventCountRef = useRef(cameraEventPoints?.length ?? 0);
-    useEffect(() => {
-      const count = cameraEventPoints?.length ?? 0;
-      if (count > prevEventCountRef.current && cameraEventPoints?.length) {
-        const last = cameraEventPoints[cameraEventPoints.length - 1];
-        state.setITrackId(last.cameraId);
-        state.setSelectedTracks(new Set());
-      }
-      prevEventCountRef.current = count;
-    }, [cameraEventPoints]); // eslint-disable-line react-hooks/exhaustive-deps
+    useAutoSelectOnEventPoint({
+      cameraEventPoints,
+      setITrackId: state.setITrackId,
+      setSelectedTracks: state.setSelectedTracks,
+    });
 
     useTimelineKeyboard({
       isTunnel,
@@ -110,18 +102,14 @@ const TimelineBody = forwardRef<TimelineBodyHandle, TimelineBodyProps>(
       setGoToTimeOpen,
     });
 
-    useImperativeHandle(ref, () => ({
-      stepMarker: (deltaSec: number) => {
-        const next = Math.max(
-          timelineStartSec,
-          Math.min(timelineEndSec, state.resolvedMarkerSec + deltaSec),
-        );
-        state.setMarkerSec(next);
-      },
-      togglePlay: () => {
-        state.setIsPlaying((prev) => !prev);
-      },
-    }));
+    useTimelineHandle({
+      ref,
+      timelineStartSec,
+      timelineEndSec,
+      resolvedMarkerSec: state.resolvedMarkerSec,
+      setMarkerSec: state.setMarkerSec,
+      setIsPlaying: state.setIsPlaying,
+    });
 
     return (
       <Box

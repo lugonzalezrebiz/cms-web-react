@@ -1,6 +1,4 @@
 import { Box } from "@mui/system";
-import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
@@ -12,7 +10,12 @@ import { Colors, Fonts } from "../../theme";
 import { useCameras } from "./hooks/useCameras";
 import { useTrackers } from "./hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
+import MediaCarousel from "../../components/MediaCarousel";
 import { useMenuItems } from "./hooks/useMenuItems";
+import { useSalesTransactions } from "./hooks/useSalesTransactions";
+import { useDashboardParams } from "./hooks/useDashboardParams";
+import { usePosData } from "./hooks/usePosData";
+import { useMarkerState } from "./hooks/useMarkerState";
 
 const StyledToggleButton = styled(ToggleButton)({
   color: Colors.mediumGray,
@@ -69,11 +72,7 @@ const Dashboard = ({
   const cameraCount =
     ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
 
-  // ── URL params (?company=1&location=2&date=20240101) ──────────────────────
-  const [searchParams] = useSearchParams();
-  const company = Number(searchParams.get("company") ?? 0);
-  const location = Number(searchParams.get("location") ?? 0);
-  const date = searchParams.get("date") ?? ""; // YYYYMMDD
+  const { company, location, date } = useDashboardParams();
 
   const cameras = useCameras(company, location, date);
   const trackers = useTrackers();
@@ -98,7 +97,12 @@ const Dashboard = ({
 
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const [timestamp, setTimestamp] = useState("");
+  const { transactions } = useSalesTransactions();
+
+  const { posSnapshot, posEventPoints } = usePosData(transactions, snapshot);
+
+  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec } =
+    useMarkerState(selectedTab, markerSec);
 
   return (
     <Box
@@ -141,27 +145,42 @@ const Dashboard = ({
           iconMenu="/assets/plus-1.svg"
           onAddItem={handleAddMenuItem}
           cameraEventPoints={allEventPoints}
-          markerSec={markerSec}
+          markerSec={activeMarkerSec}
         />
       </Box>
 
       {/* Camera grid */}
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
-        <CameraLayout
-          count={cameras.length || cameraCount}
-          media="/assets/camera/Cam thumbnail.svg"
-          maxHeight="100%"
-          cameraItemList={() => alert("Camera list clicked")}
-          contextMenuItems={allMenuItems}
-          cameraEventPoints={allEventPoints}
-          markerSec={markerSec}
-          onRemoveEventPoint={handleRemoveEventPoint}
-          cameras={cameras}
-          company={company}
-          location={location}
-          date={date}
-          timestamp={timestamp}
-        />
+        {selectedTab === "2" ? (
+          <MediaCarousel
+            company={company}
+            location={location}
+            transactions={transactions}
+            onSlideChange={setPosMarkerSec}
+            onDropMenuItem={(itemId, cameraId, timeSec) => {
+              const item = allMenuItems.find((m) => m.id === itemId);
+              if (!item) return;
+              handleMarkerChange(timeSec);
+              handleActivitySelect(cameraId - 1, item.label);
+            }}
+          />
+        ) : (
+          <CameraLayout
+            count={cameras.length || cameraCount}
+            media="/assets/camera/Cam thumbnail.svg"
+            maxHeight="100%"
+            cameraItemList={() => alert("Camera list clicked")}
+            contextMenuItems={allMenuItems}
+            cameraEventPoints={allEventPoints}
+            markerSec={markerSec}
+            onRemoveEventPoint={handleRemoveEventPoint}
+            cameras={cameras}
+            company={company}
+            location={location}
+            date={date}
+            timestamp={timestamp}
+          />
+        )}
       </Box>
 
       {/* Timeline panel */}
@@ -170,9 +189,12 @@ const Dashboard = ({
           selectedTab={selectedTab}
           trackers={trackers}
           snapshot={snapshot}
+          posSnapshot={posSnapshot}
+          posEventPoints={posEventPoints}
           cameraActivities={cameraActivities}
           cameraEventPoints={allEventPoints}
           onMarkerChange={handleMarkerChange}
+          targetMarkerSec={selectedTab === "2" && posMarkerSec !== null ? posMarkerSec : undefined}
           drawerOpen={drawerOpen}
           onTimeChange={setTimestamp}
           onUpdateEventPoint={handleUpdateEventPoint}
