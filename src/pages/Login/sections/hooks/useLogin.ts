@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuth from "../../../../hooks/useAuth";
 import { usePost } from "../../../../hooks/useApi";
 
-const DEFAULT_REDIRECT = "/dashboard?company=222&location=9001&date=20260407";
+const DEFAULT_REDIRECT = "/dashboard?company=9001&location=222&date=20260407";
 
 type LoginResponse = { success: boolean; token: string };
 type LoginPayload = { username: string; password: string };
