@@ -29,7 +29,7 @@ export const useSaveMonitoring = ({
   eventPoints,
   sessionDate,
 }: {
-  trackers: { id: number; name: string }[];
+  trackers: { id: number; name: string; attended?: boolean }[];
   eventPoints: CameraEventPoint[];
   sessionDate: string;
 }) => {
@@ -47,17 +47,25 @@ export const useSaveMonitoring = ({
     const labelToTrackerId: Record<string, number> = Object.fromEntries(
       trackers.map((t) => [t.name, t.id]),
     );
+    const trackerAttended: Record<number, boolean> = Object.fromEntries(
+      trackers.map((t) => [t.id, t.attended ?? false]),
+    );
 
     const grouped = new Map<
       string,
-      { trackerId: number; cameraId: number; timestamps: string[] }
+      { trackerId: number; cameraId: number; timestamps: string[]; attended: boolean }
     >();
 
     for (const ep of eventPoints) {
       const trackerId = labelToTrackerId[ep.label] ?? Math.floor(ep.id / 10000);
       const key = `${trackerId}-${ep.cameraId}`;
       if (!grouped.has(key)) {
-        grouped.set(key, { trackerId, cameraId: ep.cameraId, timestamps: [] });
+        grouped.set(key, {
+          trackerId,
+          cameraId: ep.cameraId,
+          timestamps: [],
+          attended: trackerAttended[trackerId] ?? false,
+        });
       }
       grouped.get(key)!.timestamps.push(secToTimeString(ep.timeSec));
     }
@@ -68,14 +76,14 @@ export const useSaveMonitoring = ({
     };
 
     const payload: SaveEntry[] = Array.from(grouped.values()).map(
-      ({ trackerId, cameraId, timestamps }) => ({
+      ({ trackerId, cameraId, timestamps, attended }) => ({
         tracker_id: trackerId,
         monitoring_id: MONITORING_ID,
         camera_id: cameraId,
         zone_id: null,
         transactions: timestamps.map((t) => ({
           sales_timestamp: `${sessionDate} ${t}`,
-          attended: false,
+          attended,
           ...(user?.roleID === REVIEWER_ROLE ? reviewerPayload : {}),
         })),
       }),

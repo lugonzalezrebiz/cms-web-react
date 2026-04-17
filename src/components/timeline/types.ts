@@ -1,5 +1,11 @@
 export type NavTab = "employees" | "compliances" | "activities";
 
+export interface TimelineBodyHandle {
+  stepMarker: (deltaSec: number) => void;
+  setMarker: (sec: number) => void;
+  togglePlay: () => void;
+}
+
 export interface TimelineSnapshot {
   timeline: {
     times: {
@@ -51,6 +57,8 @@ export type CameraEventPoint = {
 
 export interface TimelineBodyProps {
   snapshot?: TimelineSnapshot;
+  posSnapshot?: TimelineSnapshot;
+  posEventPoints?: CameraEventPoint[];
   activeTab: NavTab;
   selectedTab?: string;
   cameraActivities?: {

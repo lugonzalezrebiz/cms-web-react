@@ -126,6 +126,7 @@ const EventMenu = ({
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData("eventMenuItemId", String(item.id));
+                  e.dataTransfer.setData("eventmenuid", String(item.id));
                   e.dataTransfer.effectAllowed = "copy";
                   setAnchorEl(null);
                 }}
