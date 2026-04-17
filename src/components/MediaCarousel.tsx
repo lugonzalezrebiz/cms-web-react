@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Box, IconButton, Typography, CircularProgress } from "@mui/material";
 import { ChevronLeft, ChevronRight, Check } from "@mui/icons-material";
 import styled from "@emotion/styled";
@@ -10,6 +10,7 @@ import {
 } from "../pages/Dashboard/hooks/useSalesTransactions";
 import { useCameraFrame } from "../hooks/useCameraFrame";
 import { useCarousel } from "../hooks/useCarousel";
+import { useSaveMonitoring } from "./timeline/hooks/useSaveMonitoring";
 
 type AttendedValue = "attended" | "unattended";
 
@@ -144,6 +145,30 @@ const MediaCarousel = ({
   const { current, goTo, prev, next } = useCarousel(count, (index) => {
     const tx = transactions[index];
     if (tx) onSlideChange?.(toMarkerSec(tx));
+  });
+
+  const currentTx = transactions[current];
+  const sessionDate = currentTx?.timestamp.split(" ")[0] ?? "";
+  const eventPoints = useMemo(() => {
+    if (!currentTx) return [];
+    const timeSec = toMarkerSec(currentTx);
+    return [
+      {
+        id: 8 * 10000 + currentTx.terminal.id,
+        cameraId: currentTx.terminal.id,
+        timeSec,
+        startSec: timeSec,
+        endSec: timeSec,
+        label: "Pay Station Attendance",
+      },
+    ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTx]);
+
+  const { handleDone } = useSaveMonitoring({
+    trackers: [{ id: 8, name: "Pay Station Attendance", attended: attended === "attended" }],
+    eventPoints,
+    sessionDate,
   });
 
   // Sync marker on initial load (and when transactions first arrive)
@@ -334,11 +359,10 @@ const MediaCarousel = ({
           {attended !== null && (
             <Box bgcolor={Colors.vividOrange} borderRadius={"6px"}>
               <IconButton
-                onClick={() => console.log("Attendance:", attended)}
+                onClick={handleDone}
                 size="small"
                 sx={{
                   color: Colors.main,
-                  "&:hover": { backgroundColor: Colors.secondary },
                 }}
               >
                 <Check fontSize="small" sx={{ color: Colors.white }} />
