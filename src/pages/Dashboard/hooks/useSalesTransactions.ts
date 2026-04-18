@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
-import useAuth from "../../../hooks/useAuth";
-
-const monitoringId = import.meta.env.VITE_MONITORING_ID;
+import { useGet } from "../../../hooks/useApi";
+import { MONITORING_ID } from "../../../config";
 
 interface Terminal {
   id: number;
@@ -30,27 +28,13 @@ interface SalesResponse {
 }
 
 export function useSalesTransactions() {
-  const { token } = useAuth();
-  const [transactions, setTransactions] = useState<SalesTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isPending: loading, error } = useGet<SalesResponse>(
+    `sales/${MONITORING_ID}/list`,
+  );
 
-  useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-
-    fetch(`${import.meta.env.VITE_URL_API}sales/${monitoringId}/list`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data: SalesResponse) => {
-        if (data.success) setTransactions(data.transactions);
-        else setError("Failed to load sales data");
-      })
-      .catch(() => setError("Connection error"))
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  return { transactions, loading, error };
+  return {
+    transactions: data?.success ? data.transactions : [],
+    loading,
+    error: error ? error.message : null,
+  };
 }

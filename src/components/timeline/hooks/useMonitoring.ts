@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { TimelineSnapshot, CameraEventPoint } from "../types";
 import { MOCK_SNAPSHOT, TUNNEL_CAMERAS } from "../constants";
-import useAuth from "../../../hooks/useAuth";
+import { useGet } from "../../../hooks/useApi";
+import { MONITORING_ID } from "../../../config";
 
 
 interface MonitoringTransaction {
@@ -47,7 +48,6 @@ function buildEventPoints(monitoring: MonitoringEntry[], trackerLabels: Record<n
   return points;
 }
 
-const monitoringId = import.meta.env.VITE_MONITORING_ID;
 
 export function useMonitoring(trackers: { id: number; name: string }[]): {
   snapshot: TimelineSnapshot;
@@ -55,8 +55,6 @@ export function useMonitoring(trackers: { id: number; name: string }[]): {
   loading: boolean;
   error: string | null;
 } {
-  const { token } = useAuth();
-
   const [snapshot] = useState<TimelineSnapshot>({
     ...MOCK_SNAPSHOT,
     timeline: {
@@ -64,29 +62,13 @@ export function useMonitoring(trackers: { id: number; name: string }[]): {
       tracks: TUNNEL_CAMERAS.map((cam) => ({ ...cam, sessions: [] })),
     },
   });
-  const [monitoringEntries, setMonitoringEntries] = useState<MonitoringEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
+  const { data, isPending: loading, error: queryError } = useGet<MonitoringResponse>(
+    `monitoring/${MONITORING_ID}/load`,
+  );
 
-    fetch(`${import.meta.env.VITE_URL_API}monitoring/${monitoringId}/load`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data: MonitoringResponse) => {
-        if (data.success) {
-          setMonitoringEntries(data.monitoring);
-        } else {
-          setError("Failed to load monitoring data");
-        }
-      })
-      .catch(() => setError("Connection error"))
-      .finally(() => setLoading(false));
-  }, [token]);
+  const monitoringEntries = data?.success ? data.monitoring : [];
+  const error = queryError ? queryError.message : null;
 
   const trackerLabels = useMemo(
     () => Object.fromEntries(trackers.map((t) => [t.id, t.name])),

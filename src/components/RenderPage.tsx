@@ -3,6 +3,8 @@ import Menu from "../components/Menu";
 import Header from "../sections/Header";
 import Content from "../sections/Content";
 import type { ReactNode } from "react";
+import useAuth from "../hooks/useAuth";
+import { ADMIN_ROLE } from "../config";
 
 const RenderPage = ({
   children,
@@ -22,7 +24,11 @@ const RenderPage = ({
   onTabChange: (value: string) => void;
 }) => {
   const positionerCondition = "calc(100% - 250px)";
-  const menuItems = [{ text: "Monitor", path: `/dashboard` }];
+  const { user } = useAuth();
+  const isAdmin = user?.roleID === ADMIN_ROLE;
+  const menuItems = isAdmin
+    ? [{ text: "Admin Form", path: `/admin-form` }]
+    : [{ text: "Monitor", path: `/dashboard` }];
   return (
     <Grid
       container={!!drawerOpen}

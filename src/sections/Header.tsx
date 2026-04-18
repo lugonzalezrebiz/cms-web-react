@@ -4,6 +4,7 @@ import { Colors, Fonts } from "../theme";
 import { useEffect, useState } from "react";
 import type React from "react";
 import { IconButton } from "@mui/material";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box, Grid, useMediaQuery } from "@mui/system";
 import HeaderInfoMenu from "../components/HeaderInfoMenu";
@@ -12,8 +13,11 @@ import ClockMenu from "../components/ClockMenu";
 import AiMenu from "../components/AiMenu";
 import NotificationMenu from "../components/NotificationMenu";
 import UserPanel from "../components/UserPanel";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
+import useNavigateWithQuery from "../hooks/useNavigate";
 import { MOCK_SNAPSHOT } from "../components/timeline/constants";
+import useAuth from "../hooks/useAuth";
+import { ADMIN_ROLE } from "../config";
 
 const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   position: "sticky",
@@ -117,6 +121,15 @@ const Header = ({
   const toHHmm = (t: string) => t.slice(0, 5); // "09:00:00" → "09:00"
   const timeRange = `${toHHmm(start)} - ${toHHmm(end)}`;
 
+  const { user } = useAuth();
+  const isAdmin = user?.roleID === ADMIN_ROLE;
+
+  const { pathname } = useLocation();
+  const navigate = useNavigateWithQuery();
+  const monitoringPath = pathname === "/monitor";
+  const canGoBack = !monitoringPath && !isAdmin;
+  const goBack = () => navigate(-1);
+
   const MenuHeader = usePopover();
   const keyboardMenu = usePopover();
   const ClockMenuHeader = usePopover();
@@ -150,6 +163,16 @@ const Header = ({
               <MenuIcon />
             </IconButton>
           )}
+          {canGoBack && (
+            <IconButton
+              style={noDrag}
+              sx={{ color: Colors.main }}
+              onClick={goBack}
+              aria-label="go back"
+            >
+              <ArrowBackIosNewIcon fontSize="small" />
+            </IconButton>
+          )}
 
           {!mini ? (
             <Box
@@ -167,21 +190,56 @@ const Header = ({
                   cursor: "pointer",
                 }}
               >
-                <StyledTitle>
-                  Store: {storeLabel} ({companyLabel})
-                </StyledTitle>
-                <StyledSubTitle>
-                  {formattedDate} / {timeRange} / Events
-                </StyledSubTitle>
+                {isAdmin ? (
+                  <StyledTitle>Admin Form</StyledTitle>
+                ) : monitoringPath ? (
+                  <Box display={"flex"} alignItems="center" gap={"12px"}>
+                    <StyledTitle>Monitoring Dashboart</StyledTitle>
+                    <Box
+                      sx={{
+                        bgcolor: Colors.lightLime,
+                        p: "4px 12px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        borderRadius: "20px",
+                        fontFamily: Fonts.main,
+                        fontSize: "16px",
+                        fontWeight: 600,
+                        color: Colors.vividLime,
+                      }}
+                    >
+                      <img src="./assets/online.svg" alt="" />
+                      <p style={{ margin: "0 0 0 8px" }}>Online</p>
+                    </Box>
+                  </Box>
+                ) : (
+                  <>
+                    <StyledTitle>
+                      Store: {storeLabel} ({companyLabel})
+                    </StyledTitle>
+                    <StyledSubTitle>
+                      {formattedDate} / {timeRange} / Events
+                    </StyledSubTitle>
+                  </>
+                )}
               </Box>
 
               <Box display={"flex"} style={noDrag}>
                 <Box>
-                  <StyledImg
-                    onClick={keyboardMenu.handleOpen}
-                    src="../assets/keyboard-02.svg"
-                    alt=""
-                  />
+                  {monitoringPath && (
+                    <StyledImg
+                      onClick={NotificationHeader.handleOpen}
+                      src="../assets/notification.svg"
+                      alt=""
+                    />
+                  )}
+                  {!isAdmin && !monitoringPath && (
+                    <StyledImg
+                      onClick={keyboardMenu.handleOpen}
+                      src="../assets/keyboard-02.svg"
+                      alt=""
+                    />
+                  )}
                   <StyledImg
                     onClick={UserPanelHeader.handleOpen}
                     src="../assets/user-circle.svg"
@@ -225,20 +283,48 @@ const Header = ({
                     cursor: "pointer",
                   }}
                 >
-                  <StyledTitle>
-                    Store: {storeLabel} ({companyLabel})
-                  </StyledTitle>
-                  <StyledSubTitle>
-                    {formattedDate} / {timeRange} / Events
-                  </StyledSubTitle>
+                  {isAdmin ? (
+                    <StyledTitle>Admin Form</StyledTitle>
+                  ) : monitoringPath ? (
+                    <Box display={"flex"} alignItems="center" gap={"12px"}>
+                      <StyledTitle>Monitoring Dashboart</StyledTitle>
+                      <Box
+                        sx={{
+                          bgcolor: Colors.lightLime,
+                          p: "4px 12px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          borderRadius: "20px",
+                          fontFamily: Fonts.main,
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: Colors.vividLime,
+                        }}
+                      >
+                        <img src="./assets/online.svg" alt="" />
+                        <p style={{ margin: "0 0 0 8px" }}>Online</p>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <>
+                      <StyledTitle>
+                        Store: {storeLabel} ({companyLabel})
+                      </StyledTitle>
+                      <StyledSubTitle>
+                        {formattedDate} / {timeRange} / Events
+                      </StyledSubTitle>
+                    </>
+                  )}
                 </Box>
                 <Box display={"flex"} style={noDrag}>
                   <Box>
-                    <StyledImg
-                      onClick={keyboardMenu.handleOpen}
-                      src="../assets/keyboard-02.svg"
-                      alt=""
-                    />
+                    {!isAdmin && !monitoringPath && (
+                      <StyledImg
+                        onClick={keyboardMenu.handleOpen}
+                        src="../assets/keyboard-02.svg"
+                        alt=""
+                      />
+                    )}
                     <StyledImg
                       onClick={UserPanelHeader.handleOpen}
                       src="../assets/user-circle.svg"
