@@ -1,8 +1,5 @@
 import { Box } from "@mui/system";
-import {
-  Colors,
-  //, Fonts
-} from "../../theme";
+import { Colors } from "../../theme";
 import { useEffect, useState } from "react";
 import type { FlatRow } from "./types";
 

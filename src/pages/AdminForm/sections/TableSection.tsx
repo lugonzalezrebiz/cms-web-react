@@ -1,18 +1,12 @@
 import Table from "../../../components/Table";
 import type { Column } from "../../../components/Table";
 
-const columns: Column[] = [
-  { title: "User", key: "user" },
-  { title: "Location", key: "location" },
-  { title: "Company", key: "company" },
-  { title: "Date", key: "date" },
-];
-
 interface Props {
   rows: Record<string, string>[];
+  columns: Column[];
 }
 
-const TableSection = ({ rows }: Props) => (
+const TableSection = ({ rows, columns }: Props) => (
   <Table
     mainColumnWidth="20px"
     rowWidth="20px"

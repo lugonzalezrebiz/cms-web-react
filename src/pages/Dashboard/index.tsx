@@ -1,12 +1,13 @@
+import { useMemo } from "react";
 import { Box } from "@mui/system";
 import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { ToggleButtonTitles } from "../../sections/Header";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
-import styled from "@emotion/styled";
-import { Colors, Fonts } from "../../theme";
+import { IconButton } from "@mui/material";
+import { Check } from "@mui/icons-material";
+import { Colors } from "../../theme";
 import { useCameras } from "./hooks/useCameras";
 import { useTrackers } from "./hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
@@ -16,49 +17,9 @@ import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { usePosData } from "./hooks/usePosData";
 import { useMarkerState } from "./hooks/useMarkerState";
-
-const StyledToggleButton = styled(ToggleButton)({
-  color: Colors.mediumGray,
-  flex: 1,
-  fontFamily: Fonts.main,
-  textTransform: "none",
-  fontWeight: "normal",
-  backgroundColor: Colors.lightGray,
-  border: "none",
-  margin: 0,
-  fontSize: "14px",
-  borderRadius: 35,
-  whiteSpace: "nowrap",
-  "&.Mui-selected": {
-    color: Colors.lightBlack,
-    backgroundColor: Colors.white,
-    //fontWeight: "bold",
-  },
-  "&.Mui-selected:hover": {
-    backgroundColor: Colors.white,
-  },
-  "&:not(.Mui-selected)": {
-    backgroundColor: Colors.lightGray,
-  },
-});
-
-const StyledToggleGroup = styled(ToggleButtonGroup)({
-  padding: 4,
-  backgroundColor: Colors.lightGray,
-  borderRadius: 30,
-  height: "32px",
-  width: "100%",
-  boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
-  "& .MuiToggleButtonGroup-lastButton": {
-    margin: 0,
-  },
-  "& .MuiToggleButtonGroup-firstButton": {
-    margin: 1,
-  },
-  "& .MuiToggleButtonGroup-grouped": {
-    borderRadius: 35,
-  },
-});
+import { usePosAttendance } from "./hooks/usePosAttendance";
+import Button from "../../components/Button";
+import { StyledToggleButton, StyledToggleGroup } from "./styled";
 
 const Dashboard = ({
   selectedTab,
@@ -95,14 +56,25 @@ const Dashboard = ({
   const { snapshot, eventPoints: preloadedEventPoints } =
     useMonitoring(trackers);
 
-  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+  const allEventPoints = useMemo(
+    () => [...cameraEventPoints, ...preloadedEventPoints],
+    [cameraEventPoints, preloadedEventPoints],
+  );
 
-  const { transactions } = useSalesTransactions();
+  const { transactions, loading: transactionsLoading } = useSalesTransactions();
 
   const { posSnapshot, posEventPoints } = usePosData(transactions, snapshot);
 
-  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec } =
-    useMarkerState(selectedTab, markerSec);
+  const {
+    timestamp,
+    setTimestamp,
+    posMarkerSec,
+    setPosMarkerSec,
+    activeMarkerSec,
+  } = useMarkerState(selectedTab, markerSec);
+
+  const { attended, setCurrentTx, toggleAttended, toMarkerSec, handleDone } =
+    usePosAttendance();
 
   return (
     <Box
@@ -156,12 +128,16 @@ const Dashboard = ({
             company={company}
             location={location}
             transactions={transactions}
-            onSlideChange={setPosMarkerSec}
-            onDropMenuItem={(itemId, cameraId, timeSec) => {
+            loading={transactionsLoading}
+            onSlideChange={(tx) => {
+              setPosMarkerSec(toMarkerSec(tx));
+              setCurrentTx(tx);
+            }}
+            onDropMenuItem={(itemId, tx) => {
               const item = allMenuItems.find((m) => m.id === itemId);
               if (!item) return;
-              handleMarkerChange(timeSec);
-              handleActivitySelect(cameraId - 1, item.label);
+              handleMarkerChange(toMarkerSec(tx));
+              handleActivitySelect(tx.terminal.id - 1, item.label);
             }}
           />
         ) : (
@@ -183,6 +159,33 @@ const Dashboard = ({
         )}
       </Box>
 
+      {/* Attendance buttons — POS tab only */}
+      {selectedTab === "2" && (
+        <Box sx={{ display: "flex", gap: 0.75, alignItems: "center", px: 2 }}>
+          <Button
+            selected={attended === "attended"}
+            onClick={() => toggleAttended("attended")}
+            disableRipple={false}
+          >
+            Attended
+          </Button>
+          <Button
+            selected={attended === "unattended"}
+            onClick={() => toggleAttended("unattended")}
+            disableRipple={false}
+          >
+            Unattended
+          </Button>
+          {attended !== null && (
+            <Box bgcolor={Colors.vividOrange} borderRadius="6px">
+              <IconButton onClick={handleDone} size="small">
+                <Check fontSize="small" sx={{ color: Colors.white }} />
+              </IconButton>
+            </Box>
+          )}
+        </Box>
+      )}
+
       {/* Timeline panel */}
       <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
@@ -194,7 +197,11 @@ const Dashboard = ({
           cameraActivities={cameraActivities}
           cameraEventPoints={allEventPoints}
           onMarkerChange={handleMarkerChange}
-          targetMarkerSec={selectedTab === "2" && posMarkerSec !== null ? posMarkerSec : undefined}
+          targetMarkerSec={
+            selectedTab === "2" && posMarkerSec !== null
+              ? posMarkerSec
+              : undefined
+          }
           drawerOpen={drawerOpen}
           onTimeChange={setTimestamp}
           onUpdateEventPoint={handleUpdateEventPoint}

@@ -1,22 +1,18 @@
 import { Box } from "@mui/system";
-import { Colors } from "../theme";
-import {
-  forwardRef,
-  useEffect,
-  useState,
-} from "react";
-import type { TimelineBodyHandle, TimelineBodyProps } from "./timeline/types";
-import { MOCK_SNAPSHOT } from "./timeline/constants";
-import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
-import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
-import { useFlatRows } from "./timeline/hooks/useFlatRows";
-import { useTimelineHandle } from "./timeline/hooks/useTimelineHandle";
-import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
-import { TimelineRowList } from "./timeline/TimelineRowList";
-import { TimelineTimeRuler } from "./timeline/TimelineTimeRuler";
-import { TimelineGridRows } from "./timeline/TimelineGridRows";
-import { TimelineMarker } from "./timeline/TimelineMarker";
-import { GoToTimeDialog } from "./timeline/GoToTimeDialog";
+import { Colors } from "../../theme";
+import { forwardRef, useEffect, useState } from "react";
+import type { TimelineBodyHandle, TimelineBodyProps } from "./types";
+import { MOCK_SNAPSHOT } from "./constants";
+import { useTimelineKeyboard } from "./hooks/useTimelineKeyboard";
+import { useTimelineBodyState } from "./hooks/useTimelineBodyState";
+import { useFlatRows } from "./hooks/useFlatRows";
+import { useTimelineHandle } from "./hooks/useTimelineHandle";
+import { useAutoSelectOnEventPoint } from "./hooks/useAutoSelectOnEventPoint";
+import { TimelineRowList } from "./TimelineRowList";
+import { TimelineTimeRuler } from "./TimelineTimeRuler";
+import { TimelineGridRows } from "./TimelineGridRows";
+import { TimelineMarker } from "./TimelineMarker";
+import { GoToTimeDialog } from "./GoToTimeDialog";
 
 export type { TimelineBodyHandle };
 
