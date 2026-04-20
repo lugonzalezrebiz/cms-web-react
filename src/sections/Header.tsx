@@ -6,7 +6,7 @@ import type React from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Box, Grid, useMediaQuery } from "@mui/system";
+import { Box } from "@mui/system";
 import HeaderInfoMenu from "../components/HeaderInfoMenu";
 import KeyboardMenu from "../components/KeyboardMenu";
 import ClockMenu from "../components/ClockMenu";
@@ -16,8 +16,6 @@ import UserPanel from "../components/UserPanel";
 import { useLocation, useSearchParams } from "react-router-dom";
 import useNavigateWithQuery from "../hooks/useNavigate";
 import { MOCK_SNAPSHOT } from "../components/timeline/constants";
-import useAuth from "../hooks/useAuth";
-import { ADMIN_ROLE } from "../config";
 
 const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   position: "sticky",
@@ -64,14 +62,6 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-export const ToggleButtonTitles = [
-  { value: "1", title: "All", cameraCount: 9, navTab: "employees" },
-  { value: "2", title: "POS", navTab: "activities" },
-  // { value: "3", title: "Offices", cameraCount: 3, navTab: "employees" },
-  // { value: "4", title: "Drying Station", cameraCount: 5, navTab: "employees" },
-  // { value: "5", title: "Parking Lot", cameraCount: 2, navTab: "employees" },
-];
-
 const usePopover = () => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   return {
@@ -86,11 +76,11 @@ const usePopover = () => {
 const Header = ({
   toggleDrawer,
   withIconMenu = true,
+  allowGoBack = false,
 }: {
   toggleDrawer: () => void;
   withIconMenu?: boolean;
-  selectedTab: string;
-  onTabChange: (value: string) => void;
+  allowGoBack?: boolean;
 }) => {
   const [scrolled, setScrolled] = useState(false);
 
@@ -121,13 +111,9 @@ const Header = ({
   const toHHmm = (t: string) => t.slice(0, 5); // "09:00:00" → "09:00"
   const timeRange = `${toHHmm(start)} - ${toHHmm(end)}`;
 
-  const { user } = useAuth();
-  const isAdmin = user?.roleID === ADMIN_ROLE;
-
   const { pathname } = useLocation();
   const navigate = useNavigateWithQuery();
   const monitoringPath = pathname === "/monitor";
-  const canGoBack = !monitoringPath && !isAdmin;
   const goBack = () => navigate(-1);
 
   const MenuHeader = usePopover();
@@ -137,7 +123,7 @@ const Header = ({
   const NotificationHeader = usePopover();
   const UserPanelHeader = usePopover();
 
-  const mini = useMediaQuery("(max-width:1100px)");
+  const isAdmin = true
 
   useEffect(() => {
     const handleScroll = () => {
@@ -163,7 +149,7 @@ const Header = ({
               <MenuIcon />
             </IconButton>
           )}
-          {canGoBack && (
+          {allowGoBack && (
             <IconButton
               style={noDrag}
               sx={{ color: Colors.main }}
@@ -173,8 +159,7 @@ const Header = ({
               <ArrowBackIosNewIcon fontSize="small" />
             </IconButton>
           )}
-
-          {!mini ? (
+          
             <Box
               display={"flex"}
               alignItems="center"
@@ -194,7 +179,7 @@ const Header = ({
                   <StyledTitle>Admin Form</StyledTitle>
                 ) : monitoringPath ? (
                   <Box display={"flex"} alignItems="center" gap={"12px"}>
-                    <StyledTitle>Monitoring Dashboart</StyledTitle>
+                    <StyledTitle>Monitoring Dashboad</StyledTitle>
                     <Box
                       sx={{
                         bgcolor: Colors.lightLime,
@@ -233,7 +218,7 @@ const Header = ({
                       alt=""
                     />
                   )}
-                  {!isAdmin && !monitoringPath && (
+                  {!monitoringPath && (
                     <StyledImg
                       onClick={keyboardMenu.handleOpen}
                       src="../assets/keyboard-02.svg"
@@ -266,99 +251,7 @@ const Header = ({
                 </Box>
               </Box>
             </Box>
-          ) : (
-            <Grid container alignItems="center" width={"100%"}>
-              <Grid
-                display={"flex"}
-                justifyContent={"space-between"}
-                alignItems="center"
-                size={12}
-              >
-                <Box
-                  onClick={MenuHeader.handleOpen}
-                  style={noDrag}
-                  sx={{
-                    whiteSpace: "nowrap",
-                    textOverflow: "ellipsis",
-                    cursor: "pointer",
-                  }}
-                >
-                  {isAdmin ? (
-                    <StyledTitle>Admin Form</StyledTitle>
-                  ) : monitoringPath ? (
-                    <Box display={"flex"} alignItems="center" gap={"12px"}>
-                      <StyledTitle>Monitoring Dashboart</StyledTitle>
-                      <Box
-                        sx={{
-                          bgcolor: Colors.lightLime,
-                          p: "4px 12px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          borderRadius: "20px",
-                          fontFamily: Fonts.main,
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: Colors.vividLime,
-                        }}
-                      >
-                        <img src="./assets/online.svg" alt="" />
-                        <p style={{ margin: "0 0 0 8px" }}>Online</p>
-                      </Box>
-                    </Box>
-                  ) : (
-                    <>
-                      <StyledTitle>
-                        Store: {storeLabel} ({companyLabel})
-                      </StyledTitle>
-                      <StyledSubTitle>
-                        {formattedDate} / {timeRange} / Events
-                      </StyledSubTitle>
-                    </>
-                  )}
-                </Box>
-                <Box display={"flex"} style={noDrag}>
-                  <Box>
-                    {!isAdmin && !monitoringPath && (
-                      <StyledImg
-                        onClick={keyboardMenu.handleOpen}
-                        src="../assets/keyboard-02.svg"
-                        alt=""
-                      />
-                    )}
-                    <StyledImg
-                      onClick={UserPanelHeader.handleOpen}
-                      src="../assets/user-circle.svg"
-                      alt=""
-                    />
-                  </Box>
-                  <Box ml={"20px"}>
-                    <StyledImg
-                      src="../assets/minus.svg"
-                      alt=""
-                      onClick={() => window.api?.minimize()}
-                    />
-                    <StyledImg
-                      src="../assets/expand-03.svg"
-                      alt=""
-                      onClick={() => window.api?.maximize()}
-                    />
-                    <StyledImg
-                      src="../assets/x-close.svg"
-                      alt=""
-                      onClick={() => window.api?.close()}
-                    />
-                  </Box>
-                </Box>
-              </Grid>
-              <Grid
-                size={12}
-                display={"flex"}
-                alignItems="center"
-                justifyContent={"center"}
-                mt={"5px"}
-              ></Grid>
-            </Grid>
-          )}
+          
         </StyledContainer>
 
         <HeaderInfoMenu

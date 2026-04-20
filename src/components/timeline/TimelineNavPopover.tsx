@@ -7,7 +7,6 @@ interface Props {
   open: boolean;
   anchorEl: HTMLElement | null;
   onClose: () => void;
-  drawerOpen?: boolean;
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
 }
@@ -16,7 +15,6 @@ const TimelineNavPopover = ({
   open,
   anchorEl,
   onClose,
-  drawerOpen,
   activeTab,
   onTabChange,
 }: Props) => (
@@ -34,7 +32,7 @@ const TimelineNavPopover = ({
           p: "8px",
           boxShadow: "none",
           marginTop: "-10px",
-          marginLeft: drawerOpen ? "0" : "-8px",
+          marginLeft: "-8px",  
         },
       },
     }}

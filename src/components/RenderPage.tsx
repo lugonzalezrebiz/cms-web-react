@@ -12,23 +12,22 @@ const RenderPage = ({
   toggleDrawer,
   isMobile,
   withIconMenu = true,
-  selectedTab,
-  onTabChange,
+  allowGoBack,
 }: {
   children: ReactNode;
   drawerOpen?: boolean;
   toggleDrawer?: () => void;
   isMobile?: boolean;
   withIconMenu?: boolean;
-  selectedTab: string;
-  onTabChange: (value: string) => void;
+  allowGoBack?: boolean;
 }) => {
   const positionerCondition = "calc(100% - 250px)";
   const { user } = useAuth();
   const isAdmin = user?.roleID === ADMIN_ROLE;
   const menuItems = isAdmin
-    ? [{ text: "Admin Form", path: `/admin-form` }]
-    : [{ text: "Monitor", path: `/dashboard` }];
+    ? [{ text: "Admin Form", path: "/assignments" }]
+    : [{ text: "Monitor", path: "/monitor" }];
+
   return (
     <Grid
       container={!!drawerOpen}
@@ -62,8 +61,7 @@ const RenderPage = ({
         <Header
           withIconMenu={drawerOpen ? false : withIconMenu}
           toggleDrawer={toggleDrawer || (() => {})}
-          selectedTab={selectedTab}
-          onTabChange={onTabChange}
+          allowGoBack={allowGoBack}
         />
         <Content>{children}</Content>
       </Grid>

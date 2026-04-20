@@ -1,152 +1,203 @@
 import { useState } from "react";
-import useNavigateWithQuery from "../../hooks/useNavigate";
-import { Box, Grid } from "@mui/system";
-import HeaderCard, { NewAssignmentsCard } from "./components/Card";
-import Title from "../../components/Title";
-import SelectComponent from "../../components/SelectComponent";
-import { REVIEWER_REDIRECT } from "../Login/sections/hooks/useLogin";
+import { Box } from "@mui/system";
+import EventMenu from "../../components/EventMenu";
+import TimeLine from "../../components/TimeLine";
+import CameraLayout from "../../components/CameraLayout";
+import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import styled from "@emotion/styled";
+import { Colors, Fonts } from "../../theme";
+import { useCameras } from "./hooks/useCameras";
+import { useTrackers } from "./hooks/useTrackers";
+import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
+import MediaCarousel from "../../components/MediaCarousel";
+import { useMenuItems } from "./hooks/useMenuItems";
+import { useSalesTransactions } from "./hooks/useSalesTransactions";
+import { useDashboardParams } from "./hooks/useDashboardParams";
+import { usePosData } from "./hooks/usePosData";
+import { useMarkerState } from "./hooks/useMarkerState";
 
-const activityIcon = "/assets/activity-other-icon.svg";
+// Move to an own component file now
+const StyledToggleButton = styled(ToggleButton)({
+  color: Colors.mediumGray,
+  flex: 1,
+  fontFamily: Fonts.main,
+  textTransform: "none",
+  fontWeight: "normal",
+  backgroundColor: Colors.lightGray,
+  border: "none",
+  margin: 0,
+  fontSize: "14px",
+  borderRadius: 35,
+  whiteSpace: "nowrap",
+  "&.Mui-selected": {
+    color: Colors.lightBlack,
+    backgroundColor: Colors.white,
+    //fontWeight: "bold",
+  },
+  "&.Mui-selected:hover": {
+    backgroundColor: Colors.white,
+  },
+  "&:not(.Mui-selected)": {
+    backgroundColor: Colors.lightGray,
+  },
+});
 
-const cards = [
-  { title: "New Assignments", current: 6 },
-  { title: "Paused Assignments", current: 2 },
-  { title: "Rejected Assignments", current: 3 },
-  { title: "Open Tickets", current: 2 },
-  { title: "Completed This Month", current: 34 },
-];
+const StyledToggleGroup = styled(ToggleButtonGroup)({
+  padding: 4,
+  backgroundColor: Colors.lightGray,
+  borderRadius: 30,
+  height: "32px",
+  width: "100%",
+  boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
+  "& .MuiToggleButtonGroup-lastButton": {
+    margin: 0,
+  },
+  "& .MuiToggleButtonGroup-firstButton": {
+    margin: 1,
+  },
+  "& .MuiToggleButtonGroup-grouped": {
+    borderRadius: 35,
+  },
+});
 
-const assignments = [
-  {
-    state: "Paused" as const,
-    location: 162,
-    store: 6015,
-    date: "February 24 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Paused" as const,
-    location: 205,
-    store: 9274,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Resolved" as const,
-    location: 187,
-    store: 4829,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 250,
-    store: 8537,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 2958,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 6392,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 162,
-    store: 1047,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 7359,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-];
-
-const rejectedAssignments = [
-  {
-    state: "Rejected" as const,
-    location: 205,
-    store: 6392,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Rejected" as const,
-    location: 162,
-    store: 9274,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Rejected" as const,
-    location: 205,
-    store: 1047,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-];
+const CameraGroups = [{
+  value: "1",
+  title: "All",
+}, {
+  value: "2",
+  title: "POS",
+}]
 
 const Monitor = () => {
-  const navigate = useNavigateWithQuery();
-  const [company, setCompany] = useState("");
-  const [store, setStore] = useState("");
+  const { company, location, date } = useDashboardParams();
+
+  const cameras = useCameras(company, location, date);
+  const trackers = useTrackers();
+  const [cameraGroup, setCameraGroup] = useState("1");
+
+  const {
+    cameraActivities,
+    cameraEventPoints,
+    markerSec,
+    handleRemoveEventPoint,
+    handleActivitySelect,
+    handleMarkerChange,
+    handleUpdateEventPoint,
+  } = useCameraEventPoints();
+
+  const { allMenuItems, handleAddMenuItem } = useMenuItems(
+    trackers,
+    handleActivitySelect,
+  );
+
+  const { snapshot, eventPoints: preloadedEventPoints } =
+    useMonitoring(trackers);
+
+  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+
+  const { transactions } = useSalesTransactions();
+
+  const { posSnapshot, posEventPoints } = usePosData(transactions, snapshot);
+
+  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec } =
+    useMarkerState(cameraGroup, markerSec);
 
   return (
-    <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-      <Grid container spacing={2}>
-        {cards.map((card) => (
-          <Grid key={card.title} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <HeaderCard
-              title={card.title}
-              current={card.current}
-              image={activityIcon}
-            />
-          </Grid>
-        ))}
-      </Grid>
-
-      <Title title="New Assignments">
-        <Box mr={"20px"}>
-          <SelectComponent
-            filters={[{ label: "All Companies", value: "" }]}
-            filter={company}
-            setFilter={setCompany}
-          />
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        overflow: "hidden",
+        gap: 1,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          m: "10px 16px 0 16px",
+        }}
+      >
+        <Box>
+          <StyledToggleGroup
+            value={cameraGroup}
+            exclusive
+            onChange={(_event, newValue) => {
+              if (newValue !== null) setCameraGroup(newValue);
+            }}
+            aria-label="Camera Groups"
+          >
+            {CameraGroups.map(({ value, title }) => (
+              <StyledToggleButton key={value} value={value}>
+                {title}
+              </StyledToggleButton>
+            ))}
+          </StyledToggleGroup>
         </Box>
-        <SelectComponent
-          filters={[{ label: "All Stores", value: "" }]}
-          filter={store}
-          setFilter={setStore}
+
+        <EventMenu
+          contextMenuTitle="Comp. Violations"
+          contextMenuItems={allMenuItems}
+          iconMenu="/assets/plus-1.svg"
+          onAddItem={handleAddMenuItem}
+          cameraEventPoints={allEventPoints}
+          markerSec={activeMarkerSec}
         />
-      </Title>
-      <Grid container spacing={2}>
-        {assignments.map((a, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <NewAssignmentsCard {...a} onClick={() => navigate(REVIEWER_REDIRECT)} />
-          </Grid>
-        ))}
-      </Grid>
-      <Title title="Rejected Assignments"></Title>
-      <Grid container spacing={2}>
-        {rejectedAssignments.map((a, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <NewAssignmentsCard {...a} onClick={() => navigate(REVIEWER_REDIRECT)} />
-          </Grid>
-        ))}
-      </Grid>
+      </Box>
+
+      {/* Camera grid */}
+      <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
+        {cameraGroup === "2" ? (
+          <MediaCarousel
+            company={company}
+            location={location}
+            transactions={transactions}
+            onSlideChange={setPosMarkerSec}
+            onDropMenuItem={(itemId, cameraId, timeSec) => {
+              const item = allMenuItems.find((m) => m.id === itemId);
+              if (!item) return;
+              handleMarkerChange(timeSec);
+              handleActivitySelect(cameraId - 1, item.label);
+            }}
+          />
+        ) : (
+          <CameraLayout
+            count={cameras.length}
+            media="/assets/camera/Cam thumbnail.svg"
+            maxHeight="100%"
+            cameraItemList={() => alert("Camera list clicked")}
+            contextMenuItems={allMenuItems}
+            cameraEventPoints={allEventPoints}
+            markerSec={markerSec}
+            onRemoveEventPoint={handleRemoveEventPoint}
+            cameras={cameras}
+            company={company}
+            location={location}
+            date={date}
+            timestamp={timestamp}
+          />
+        )}
+      </Box>
+
+      {/* Timeline panel */}
+      <Box sx={{ flex: 4, minHeight: 0 }}>
+        <TimeLine
+          selectedTab={cameraGroup}
+          trackers={trackers}
+          snapshot={snapshot}
+          posSnapshot={posSnapshot}
+          posEventPoints={posEventPoints}
+          cameraActivities={cameraActivities}
+          cameraEventPoints={allEventPoints}
+          onMarkerChange={handleMarkerChange}
+          targetMarkerSec={cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined}
+          onTimeChange={setTimestamp}
+          onUpdateEventPoint={handleUpdateEventPoint}
+        />
+      </Box>
     </Box>
   );
 };

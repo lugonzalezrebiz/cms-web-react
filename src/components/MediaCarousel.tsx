@@ -7,7 +7,7 @@ import { Colors, Fonts } from "../theme";
 import {
   useSalesTransactions,
   type SalesTransaction,
-} from "../pages/Dashboard/hooks/useSalesTransactions";
+} from "../pages/Monitor/hooks/useSalesTransactions";
 import { useCameraFrame } from "../hooks/useCameraFrame";
 import { useCarousel } from "../hooks/useCarousel";
 import { useSaveMonitoring } from "./timeline/hooks/useSaveMonitoring";
