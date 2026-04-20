@@ -1,8 +1,8 @@
+import { useState } from "react";
 import { Box } from "@mui/system";
 import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
-import { ToggleButtonTitles } from "../../sections/Header";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 import styled from "@emotion/styled";
@@ -17,6 +17,7 @@ import { useDashboardParams } from "./hooks/useDashboardParams";
 import { usePosData } from "./hooks/usePosData";
 import { useMarkerState } from "./hooks/useMarkerState";
 
+// Move to an own component file now
 const StyledToggleButton = styled(ToggleButton)({
   color: Colors.mediumGray,
   flex: 1,
@@ -60,22 +61,20 @@ const StyledToggleGroup = styled(ToggleButtonGroup)({
   },
 });
 
-const Dashboard = ({
-  selectedTab,
-  drawerOpen,
-  onTabChange,
-}: {
-  selectedTab: string;
-  drawerOpen?: boolean;
-  onTabChange: (value: string) => void;
-}) => {
-  const cameraCount =
-    ToggleButtonTitles.find((t) => t.value === selectedTab)?.cameraCount ?? 4;
+const CameraGroups = [{
+  value: "1",
+  title: "All",
+}, {
+  value: "2",
+  title: "POS",
+}]
 
+const Monitor = () => {
   const { company, location, date } = useDashboardParams();
 
   const cameras = useCameras(company, location, date);
   const trackers = useTrackers();
+  const [cameraGroup, setCameraGroup] = useState("1");
 
   const {
     cameraActivities,
@@ -102,7 +101,7 @@ const Dashboard = ({
   const { posSnapshot, posEventPoints } = usePosData(transactions, snapshot);
 
   const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec } =
-    useMarkerState(selectedTab, markerSec);
+    useMarkerState(cameraGroup, markerSec);
 
   return (
     <Box
@@ -124,14 +123,14 @@ const Dashboard = ({
       >
         <Box>
           <StyledToggleGroup
-            value={selectedTab}
+            value={cameraGroup}
             exclusive
             onChange={(_event, newValue) => {
-              if (newValue !== null) onTabChange(newValue);
+              if (newValue !== null) setCameraGroup(newValue);
             }}
-            aria-label="Time range"
+            aria-label="Camera Groups"
           >
-            {ToggleButtonTitles.map(({ value, title }) => (
+            {CameraGroups.map(({ value, title }) => (
               <StyledToggleButton key={value} value={value}>
                 {title}
               </StyledToggleButton>
@@ -151,7 +150,7 @@ const Dashboard = ({
 
       {/* Camera grid */}
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
-        {selectedTab === "2" ? (
+        {cameraGroup === "2" ? (
           <MediaCarousel
             company={company}
             location={location}
@@ -166,7 +165,7 @@ const Dashboard = ({
           />
         ) : (
           <CameraLayout
-            count={cameras.length || cameraCount}
+            count={cameras.length}
             media="/assets/camera/Cam thumbnail.svg"
             maxHeight="100%"
             cameraItemList={() => alert("Camera list clicked")}
@@ -186,7 +185,7 @@ const Dashboard = ({
       {/* Timeline panel */}
       <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
-          selectedTab={selectedTab}
+          selectedTab={cameraGroup}
           trackers={trackers}
           snapshot={snapshot}
           posSnapshot={posSnapshot}
@@ -194,8 +193,7 @@ const Dashboard = ({
           cameraActivities={cameraActivities}
           cameraEventPoints={allEventPoints}
           onMarkerChange={handleMarkerChange}
-          targetMarkerSec={selectedTab === "2" && posMarkerSec !== null ? posMarkerSec : undefined}
-          drawerOpen={drawerOpen}
+          targetMarkerSec={cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined}
           onTimeChange={setTimestamp}
           onUpdateEventPoint={handleUpdateEventPoint}
         />
@@ -204,4 +202,4 @@ const Dashboard = ({
   );
 };
 
-export default Dashboard;
+export default Monitor;

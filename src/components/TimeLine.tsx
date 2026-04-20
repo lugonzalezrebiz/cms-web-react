@@ -24,7 +24,6 @@ const TimeLine = ({
   selectedTab,
   cameraActivities,
   cameraEventPoints,
-  drawerOpen,
   onTimeChange,
   onMarkerChange,
   trackers = [],
@@ -41,7 +40,6 @@ const TimeLine = ({
     activityLabel: string;
   }[];
   cameraEventPoints?: CameraEventPoint[];
-  drawerOpen?: boolean;
   onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
   trackers?: { id: number; name: string }[];
@@ -106,7 +104,6 @@ const TimeLine = ({
           justifyContent={"start"}
         >
           <Box
-          //onClick={nav.handleOpen}
           >
             <img
               style={{ opacity: 0.5 }}
@@ -121,10 +118,8 @@ const TimeLine = ({
           )}
           <Box
             position={"relative"}
-            // onClick={selectedTab === "2" ? cameraMenu.handleOpen : undefined}
             sx={{
               opacity: selectedTab === "2" ? 1 : 0.5,
-              //   cursor: selectedTab === "2" ? "pointer" : "default",
             }}
           >
             {selectedCameraOption !== "Off" && selectedTab === "2" && (
@@ -145,7 +140,7 @@ const TimeLine = ({
               <Tooltip
                 withoutIcon
                 textAlign="center"
-                position={drawerOpen ? "top" : "right"}
+                position={"right"}
                 detail={
                   <Box>
                     <Box sx={{ color: "#959fa9", fontWeight: 400 }}>
@@ -405,7 +400,6 @@ const TimeLine = ({
         open={nav.open}
         anchorEl={nav.anchorEl}
         onClose={nav.handleClose}
-        drawerOpen={drawerOpen}
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
@@ -414,7 +408,6 @@ const TimeLine = ({
         open={cameraMenu.open}
         anchorEl={cameraMenu.anchorEl}
         onClose={cameraMenu.handleClose}
-        drawerOpen={drawerOpen}
         selectedOption={selectedCameraOption}
         onOptionChange={setSelectedCameraOption}
       />

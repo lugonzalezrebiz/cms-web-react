@@ -3,7 +3,7 @@ import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
 import { Divider } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import useNavigateWithQuery from "../hooks/useNavigate";
 import useAuth from "../hooks/useAuth";
 
 interface Props {
@@ -97,7 +97,7 @@ const LogoutText = styled(MenuRowText)({
 });
 
 const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithQuery();
   const { user, logout } = useAuth();
 
   const initials = user?.name

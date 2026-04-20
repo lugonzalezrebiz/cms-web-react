@@ -77,6 +77,15 @@ export const Colors = {
   silverGrey: "#b3b3b3",
   blushWhite: "#fef7f6",
   softPink: "#fdc3e1",
+  lightLime: "#F1FBD7",
+  vividLime: "#5B751B",
+  leafGreen: "#40B731",
+  mintFoam: "#C4FDBE",
+  goldenAmber: "#D2AC03",
+  creamYellow: "#FEEFAB",
+  royalBlue: "#4285F4",
+  blushRed: "#F02326",
+  palePink: "#F8BCBC",
 };
 
 //Color Palette

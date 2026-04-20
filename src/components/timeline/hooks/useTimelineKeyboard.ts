@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import useNavigateWithQuery from "../../../hooks/useNavigate";
 import type { FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
@@ -60,6 +61,8 @@ export const useTimelineKeyboard = ({
   isPlaying: _isPlaying,
   setIsPlaying,
 }: UseTimelineKeyboardParams) => {
+  const navigate = useNavigateWithQuery();
+
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
 
@@ -170,9 +173,22 @@ export const useTimelineKeyboard = ({
     setGoToTimeOpen,
   ]);
 
+  // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
+  useEffect(() => {
+    const handleBack = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === "ArrowLeft") {
+        e.preventDefault();
+        navigate(-1);
+      }
+    };
+    window.addEventListener("keydown", handleBack);
+    return () => window.removeEventListener("keydown", handleBack);
+  }, [navigate]);
+
   // ── Arrow keys: move marker ──────────────────────────────────────────────
   useEffect(() => {
     const handleArrow = (e: KeyboardEvent) => {
+      if (e.altKey) return;
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;

@@ -38,7 +38,6 @@ interface Props {
   open: boolean;
   anchorEl: HTMLElement | null;
   onClose: () => void;
-  drawerOpen?: boolean;
   selectedOption: string;
   onOptionChange: (option: string) => void;
 }
@@ -47,7 +46,6 @@ const TimelineCameraPopover = ({
   open,
   anchorEl,
   onClose,
-  drawerOpen,
   selectedOption,
   onOptionChange,
 }: Props) => (
@@ -70,7 +68,7 @@ const TimelineCameraPopover = ({
           boxShadow: "0 2px 10px 0 rgba(0, 0, 0, 0.16)",
           borderRadius: "8px",
           marginTop: "-2px",
-          marginLeft: drawerOpen ? "-5px" : "-8px",
+          marginLeft: "-8px",
         },
       },
     }}

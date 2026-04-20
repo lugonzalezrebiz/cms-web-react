@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import useNavigateWithQuery from "../../../../hooks/useNavigate";
 import useAuth from "../../../../hooks/useAuth";
 import { usePost } from "../../../../hooks/useApi";
-
-const DEFAULT_REDIRECT = "/dashboard?company=9001&location=222&date=20260407";
 
 type LoginResponse = { success: boolean; token: string };
 type LoginPayload = { username: string; password: string };
 
 const useLogin = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithQuery();
   const { setToken } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -22,8 +20,13 @@ const useLogin = () => {
     try {
       const data = await mutateAsync({ username, password });
       if (data.success && data.token) {
+        const redirect = "/assignments";
+        if (!redirect) {
+          setError("Unauthorized role.");
+          return;
+        }
         setToken(data.token);
-        navigate(DEFAULT_REDIRECT, { replace: true });
+        navigate(redirect, { replace: true });
       } else {
         setError("Invalid username or password.");
       }

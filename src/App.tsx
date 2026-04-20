@@ -2,21 +2,34 @@ import { useEffect, useState } from "react";
 import RenderPage from "./components/RenderPage";
 import { useMediaQuery } from "@mui/material";
 import { Breakpoints, Colors } from "./theme";
-import Dashboard from "./pages/Dashboard";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login";
 import useAuth from "./hooks/useAuth";
 import type { ReactNode } from "react";
+import AdminForm from "./pages/AdminForm";
+import { REVIEWER_ROLE, ADMIN_ROLE, AGENT_ROLE } from "./config";
+import Assigments from "./pages/Assignments";
+import Monitor from "./pages/Monitor";
 
-function ProtectedDashboard({ children }: { children: ReactNode }) {
-  const { authenticated } = useAuth();
-  if (!authenticated) return <Navigate to="/login" replace />;
+
+function ProtectedRole({
+  roles,
+  children,
+}: {
+  roles: number[];
+  children: ReactNode;
+}) {
+  const { authenticated, user } = useAuth();
+  if (!authenticated) return <Navigate to="/" replace />;
+  if (user && !roles.includes(user.roleID)) {
+    return <Navigate to="/"replace />;
+  }
   return <>{children}</>;
 }
 
 function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedTab, setSelectedTab] = useState("1");
+  const { user } = useAuth();
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const isMobile = useMediaQuery(Breakpoints.lg);
@@ -39,25 +52,45 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route
-        path="/dashboard"
+        path="/monitor"
         element={
-          <ProtectedDashboard>
+          <ProtectedRole roles={[REVIEWER_ROLE, AGENT_ROLE]}>
             <RenderPage
               drawerOpen={drawerOpen}
               toggleDrawer={toggleDrawer}
               isMobile={isMobile}
-              selectedTab={selectedTab}
-              onTabChange={setSelectedTab}
+              allowGoBack
             >
-              <Dashboard
-                onTabChange={setSelectedTab}
-                selectedTab={selectedTab}
-                drawerOpen={drawerOpen}
-              />
+              <Monitor />
             </RenderPage>
-          </ProtectedDashboard>
+          </ProtectedRole>
         }
       />
+      <Route
+        path="/assignments"
+        element={user && user.roleID === ADMIN_ROLE ? (
+          <ProtectedRole roles={[ADMIN_ROLE]}>
+            <RenderPage
+              drawerOpen={drawerOpen}
+              toggleDrawer={toggleDrawer}
+              isMobile={isMobile}
+              >
+                <AdminForm />
+            </RenderPage>
+          </ProtectedRole>
+        ) : (
+          <ProtectedRole roles={[REVIEWER_ROLE, AGENT_ROLE]}>
+            <RenderPage
+              drawerOpen={drawerOpen}
+              toggleDrawer={toggleDrawer}
+              isMobile={isMobile}
+            >
+              <Assigments />
+            </RenderPage>
+          </ProtectedRole>
+        )}
+      />
+      
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -56,7 +56,16 @@ const TextFieldStyled = styled(TextField)({
   },
 });
 const Login = () => {
-  const { username, setUsername, password, setPassword, error, setError, loading, handleLogin } = useLogin();
+  const {
+    username,
+    setUsername,
+    password,
+    setPassword,
+    error,
+    setError,
+    loading,
+    handleLogin,
+  } = useLogin();
 
   return (
     <Box
@@ -71,9 +80,8 @@ const Login = () => {
           <Box display={"flex"} flexDirection={"column"} alignItems={"center"}>
             <img height={72} src="../assets/rebiz-logo-1.svg" alt="Icon" />
             <Box margin={"33px 0 12px 0"}>
-              <img src={""} alt={""} />
+              <SubTitle>PLEASE LOG IN TO YOUR ACCOUNT</SubTitle>
             </Box>
-            <SubTitle>PLEASE LOG IN TO YOUR ACCOUNT</SubTitle>
           </Box>
 
           <form
