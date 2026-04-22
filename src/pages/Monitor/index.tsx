@@ -17,6 +17,7 @@ import { useEventMenu } from "./hooks/useEventMenu";
 import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
+import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { Check } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { Colors } from "../../theme";
@@ -39,7 +40,7 @@ const Monitor = () => {
     markerSec,
     handleRemoveEventPoint,
     handleActivitySelect,
-    handleMarkerChange,
+    handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
   } = useCameraEventPoints();
 
@@ -78,6 +79,13 @@ const Monitor = () => {
     toggleAttended,
     handleDone: handlePosDone,
   } = usePosCarousel(transactions, setPosMarkerSec);
+
+  const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
+    useTimelineMarker({
+      snapshot,
+      onTimeChange: setTimestamp,
+      onMarkerChange: handleCameraMarkerChange,
+    });
 
   const sessionDate = useSessionDate();
   const { handleDone } = useSaveMonitoring({
@@ -218,16 +226,16 @@ const Monitor = () => {
 
       <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
-          selectedTab={cameraGroup}
           snapshot={snapshot}
           cameraEventPoints={allEventPoints}
           onMarkerChange={handleMarkerChange}
+          markerTimeSec={markerTimeSec}
+          showFinalizeButton={showFinalizeButton}
           targetMarkerSec={
             cameraGroup === "2" && posMarkerSec !== null
               ? posMarkerSec
               : undefined
           }
-          onTimeChange={setTimestamp}
           onUpdateEventPoint={handleUpdateEventPoint}
           onDone={handleDone}
           headerLabel="Cameras"

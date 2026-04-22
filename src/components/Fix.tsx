@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Colors } from "../../../theme";
+import { Colors } from "../theme";
 
 const Fix = styled("div")<{ scrolled: boolean }>(({ scrolled }) => ({
   position: "sticky",

@@ -41,7 +41,7 @@ export const useTimelineMarker = ({
     ? toSeconds(snapshot.timeline.times.end)
     : null;
 
-  const isMarkerAtEnd =
+  const showFinalizeButton =
     markerTimeSec !== null &&
     timelineEndSec !== null &&
     markerTimeSec >= timelineEndSec;
@@ -49,6 +49,6 @@ export const useTimelineMarker = ({
   return {
     markerTimeSec,
     handleMarkerChange,
-    isMarkerAtEnd,
+    showFinalizeButton,
   };
 };

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import useNavigateWithQuery from "../../../../hooks/useNavigate";
-import useAuth from "../../../../hooks/useAuth";
-import { usePost } from "../../../../hooks/useApi";
+import useNavigateWithQuery from "../../../hooks/useNavigate";
+import useAuth from "../../../hooks/useAuth";
+import { usePost } from "../../../hooks/useApi";
 
 type LoginResponse = { success: boolean; token: string };
 type LoginPayload = { username: string; password: string };

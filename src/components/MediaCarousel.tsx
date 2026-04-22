@@ -5,12 +5,12 @@ import type { SalesTransaction } from "../pages/Monitor/hooks/useSalesTransactio
 import { useCameraFrame } from "../hooks/useCameraFrame";
 
 // Parses "2026-04-07 08:12:00" → { date: "20260407", time: "08:12:00" }
-function parseTransactionTimestamp(ts: string): { date: string; time: string } {
+const parseTransactionTimestamp = (ts: string): { date: string; time: string } => {
   const [datePart, timePart] = ts.split(" ");
   const date = (datePart ?? "").replace(/-/g, "");
   const time = timePart ?? "00:00:00";
   return { date, time };
-}
+};
 
 interface CarouselSlideProps {
   transaction: SalesTransaction;

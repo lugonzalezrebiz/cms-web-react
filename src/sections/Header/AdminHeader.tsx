@@ -1,14 +1,62 @@
 import type React from "react";
+import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
-import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
-import { Colors, Fonts } from "../../../theme";
-import UserPanel from "../../../components/UserPanel";
-import Divider from "../../../components/Divider";
-import Fix from "../components/Fix";
-import type { PopoverState } from "../hooks/usePopover";
+import { Colors, Fonts } from "../../theme";
+import NotificationMenu, {
+  type Notification,
+} from "../../components/NotificationMenu";
+import UserPanel from "../../components/UserPanel";
+import Divider from "../../components/Divider";
+import Fix from "../../components/Fix";
+import usePopover from "./hooks/usePopover";
+
+const NOTIFICATIONS: Notification[] = [
+  {
+    id: 1,
+    nameEmployee: "James Rodriguez",
+    timeAgo: "2 min ago",
+    activity: "Completed express wash on Bay #3",
+    unread: true,
+  },
+  {
+    id: 2,
+    nameEmployee: "Sarah Mitchell",
+    timeAgo: "8 min ago",
+    activity: "Started full detail service — Station 1",
+    unread: true,
+  },
+  {
+    id: 3,
+    nameEmployee: "Carlos Rivera",
+    timeAgo: "15 min ago",
+    activity: "Vehicle check-in: Sedan • License #4KGT21",
+    unread: true,
+  },
+  {
+    id: 4,
+    nameEmployee: "Tyler Hayes",
+    timeAgo: "32 min ago",
+    activity: "Payment processed — Premium Package $34.99",
+    unread: true,
+  },
+  {
+    id: 5,
+    nameEmployee: "Amanda Brooks",
+    timeAgo: "1 hr ago",
+    activity: "Wash tunnel offline — maintenance required",
+    unread: false,
+  },
+  {
+    id: 6,
+    nameEmployee: "James Rodriguez",
+    timeAgo: "2 hr ago",
+    activity: "Applied tire shine & wax on Bay #1",
+    unread: false,
+  },
+];
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -16,6 +64,7 @@ const StyledContainer = styled("div")({
   alignItems: "center",
   gap: "10px",
   justifyContent: "space-between",
+  minHeight: "42px",
 });
 
 const StyledTitle = styled("p")({
@@ -32,25 +81,28 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const AssignmentsHeader = ({
+const noDrag = {
+  ["WebkitAppRegion" as string]: "no-drag",
+} as React.CSSProperties;
+
+const AdminHeader = ({
   toggleDrawer,
   withIconMenu = true,
-  allowGoBack = false,
-  scrolled,
-  goBack,
-  menuHeader,
-  userPanelHeader,
-  noDrag,
 }: {
   toggleDrawer: () => void;
   withIconMenu?: boolean;
-  allowGoBack?: boolean;
-  scrolled: boolean;
-  goBack: () => void;
-  menuHeader: PopoverState;
-  userPanelHeader: PopoverState;
-  noDrag: React.CSSProperties;
 }) => {
+  const [scrolled, setScrolled] = useState(false);
+  const menuHeader = usePopover();
+  const notificationHeader = usePopover();
+  const userPanelHeader = usePopover();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 0);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
       <Fix scrolled={scrolled}>
@@ -64,16 +116,6 @@ const AssignmentsHeader = ({
               aria-label="menu"
             >
               <MenuIcon />
-            </IconButton>
-          )}
-          {allowGoBack && (
-            <IconButton
-              style={noDrag}
-              sx={{ color: Colors.main }}
-              onClick={goBack}
-              aria-label="go back"
-            >
-              <ArrowBackIosNewIcon fontSize="small" />
             </IconButton>
           )}
 
@@ -92,29 +134,16 @@ const AssignmentsHeader = ({
                 cursor: "pointer",
               }}
             >
-              <Box display={"flex"} alignItems="center" gap={"12px"}>
-                <StyledTitle>Monitoring Dashboad</StyledTitle>
-                <Box
-                  sx={{
-                    bgcolor: Colors.lightLime,
-                    p: "4px 12px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    borderRadius: "20px",
-                    fontFamily: Fonts.main,
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color: Colors.vividLime,
-                  }}
-                >
-                  <img src="./assets/online.svg" alt="" />
-                  <p style={{ margin: "0 0 0 8px" }}>Online</p>
-                </Box>
-              </Box>
+              <StyledTitle>Assignments Form</StyledTitle>
             </Box>
 
             <Box display={"flex"} style={noDrag}>
               <Box>
+                <StyledImg
+                  onClick={notificationHeader.handleOpen}
+                  src="../assets/notification.svg"
+                  alt=""
+                />
                 <StyledImg
                   onClick={userPanelHeader.handleOpen}
                   src="../assets/user-circle.svg"
@@ -143,6 +172,12 @@ const AssignmentsHeader = ({
           </Box>
         </StyledContainer>
 
+        <NotificationMenu
+          anchorEl={notificationHeader.anchorEl}
+          handleClose={notificationHeader.handleClose}
+          open={notificationHeader.open}
+          notifications={NOTIFICATIONS}
+        />
         <UserPanel
           anchorEl={userPanelHeader.anchorEl}
           handleClose={userPanelHeader.handleClose}
@@ -154,4 +189,4 @@ const AssignmentsHeader = ({
   );
 };
 
-export default AssignmentsHeader;
+export default AdminHeader;

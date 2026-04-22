@@ -41,7 +41,7 @@ const EventMenu = ({
   onAdd: () => void;
 }) => {
   return (
-    <>
+    <Box>
       <Box
         onClick={(e) => onOpenMenu(e.currentTarget)}
         sx={{
@@ -247,7 +247,7 @@ const EventMenu = ({
           </IconButton>
         </Box>
       </PopoverMenu>
-    </>
+    </Box>
   );
 };
 

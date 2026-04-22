@@ -55,6 +55,9 @@ export type CameraEventPoint = {
   label: string;
 };
 
+export type ResizingState = { id: number; side: "left" | "right" } | null;
+export type SetResizing = React.Dispatch<React.SetStateAction<ResizingState>>;
+
 export interface TimelineBodyProps {
   snapshot?: TimelineSnapshot;
   posSnapshot?: TimelineSnapshot;

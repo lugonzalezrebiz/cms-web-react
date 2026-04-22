@@ -1,23 +1,33 @@
 import type React from "react";
+import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
-import { Colors, Fonts } from "../../../theme";
-import HeaderInfoMenu from "../../../components/HeaderInfoMenu";
-import KeyboardMenu, { type KeyboardMenuData } from "../../../components/KeyboardMenu";
-import UserPanel from "../../../components/UserPanel";
-import Divider from "../../../components/Divider";
-import Fix from "../components/Fix";
-import type { PopoverState } from "../hooks/usePopover";
-import type { MonitorParams } from "../hooks/useMonitorParams";
+import { Colors, Fonts } from "../../theme";
+import HeaderInfoMenu from "../../components/HeaderInfoMenu";
+import KeyboardMenu, {
+  type KeyboardMenuData,
+} from "../../components/KeyboardMenu";
+import UserPanel from "../../components/UserPanel";
+import Divider from "../../components/Divider";
+import Fix from "../../components/Fix";
+import usePopover from "./hooks/usePopover";
+import useMonitorParams from "./hooks/useMonitorParams";
+import useNavigateWithQuery from "../../hooks/useNavigate";
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
   items: [
-    { keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }], label: "Move back in time" },
-    { keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }], label: "Move forward in time" },
+    {
+      keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }],
+      label: "Move back in time",
+    },
+    {
+      keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }],
+      label: "Move forward in time",
+    },
     {
       keys: [
         { type: "text", label: "Ctrl", fontSize: "14px" },
@@ -39,10 +49,22 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
       ],
       label: "Move to specific time",
     },
-    { keys: [{ type: "text", label: "Home", fontSize: "12px" }], label: "Move to first frame" },
-    { keys: [{ type: "text", label: "Q", fontSize: "16px" }], label: "Employee/Flag Mode" },
-    { keys: [{ type: "text", label: "DEL", fontSize: "12px" }], label: "Delete selected employee" },
-    { keys: [{ type: "img", src: "../assets/plus-1.svg" }], label: "Delete selected employee" },
+    {
+      keys: [{ type: "text", label: "Home", fontSize: "12px" }],
+      label: "Move to first frame",
+    },
+    {
+      keys: [{ type: "text", label: "Q", fontSize: "16px" }],
+      label: "Employee/Flag Mode",
+    },
+    {
+      keys: [{ type: "text", label: "DEL", fontSize: "12px" }],
+      label: "Delete selected employee",
+    },
+    {
+      keys: [{ type: "img", src: "../assets/plus-1.svg" }],
+      label: "Delete selected employee",
+    },
   ],
 };
 
@@ -77,31 +99,34 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
+const noDrag = {
+  ["WebkitAppRegion" as string]: "no-drag",
+} as React.CSSProperties;
+
 const MonitorHeader = ({
   toggleDrawer,
   withIconMenu = true,
   allowGoBack = false,
-  scrolled,
-  goBack,
-  menuHeader,
-  keyboardMenu,
-  userPanelHeader,
-  noDrag,
-  companyLabel,
-  storeLabel,
-  formattedDate,
-  timeRange,
 }: {
   toggleDrawer: () => void;
   withIconMenu?: boolean;
   allowGoBack?: boolean;
-  scrolled: boolean;
-  goBack: () => void;
-  menuHeader: PopoverState;
-  keyboardMenu: PopoverState;
-  userPanelHeader: PopoverState;
-  noDrag: React.CSSProperties;
-} & MonitorParams) => {
+}) => {
+  const [scrolled, setScrolled] = useState(false);
+  const menuHeader = usePopover();
+  const keyboardMenu = usePopover();
+  const userPanelHeader = usePopover();
+  const navigate = useNavigateWithQuery();
+  const goBack = () => navigate(-1);
+  const { companyLabel, storeLabel, formattedDate, timeRange } =
+    useMonitorParams();
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 0);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
       <Fix scrolled={scrolled}>

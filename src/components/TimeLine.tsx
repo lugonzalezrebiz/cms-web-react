@@ -1,7 +1,6 @@
 import { Box } from "@mui/material";
 import TimelineBody from "./timeline/TimelineBody";
 import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
-import { useTimelineMarker } from "./timeline/hooks/useTimelineMarker";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
@@ -11,19 +10,17 @@ import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 
 const TimeLine = ({
-  selectedTab,
   cameraEventPoints,
-  onTimeChange,
   onMarkerChange,
   snapshot,
   targetMarkerSec,
   onUpdateEventPoint,
   onDone,
   headerLabel,
+  markerTimeSec,
+  showFinalizeButton,
 }: {
-  selectedTab?: string;
   cameraEventPoints?: CameraEventPoint[];
-  onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
   snapshot: TimelineSnapshot;
   targetMarkerSec?: number;
@@ -33,27 +30,27 @@ const TimeLine = ({
   ) => void;
   onDone?: () => void;
   headerLabel: string;
+  markerTimeSec: number | null;
+  showFinalizeButton: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
 
-  const { flatRows, selectableRows, timelineStartSec, timelineEndSec, firstActivitySec } =
-    useFlatRows({ data, cameraEventPoints: mergedEventPoints });
-
-  const state = useTimelineBodyState({
-    snapshot,
-    selectedTab,
+  const {
     flatRows,
     selectableRows,
     timelineStartSec,
     timelineEndSec,
     firstActivitySec,
-  });
+  } = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
 
-  const { markerTimeSec, handleMarkerChange, isMarkerAtEnd } = useTimelineMarker({
+  const state = useTimelineBodyState({
     snapshot,
-    onTimeChange,
-    onMarkerChange,
+    flatRows,
+    selectableRows,
+    timelineStartSec,
+    timelineEndSec,
+    firstActivitySec,
   });
 
   useMarkerSync({
@@ -62,7 +59,7 @@ const TimeLine = ({
     timelineStartSec,
     timelineEndSec,
     setMarkerSec: state.setMarkerSec,
-    handleMarkerChange,
+    handleMarkerChange: onMarkerChange ?? (() => {}),
   });
 
   useAutoSelectOnEventPoint({
@@ -70,6 +67,16 @@ const TimeLine = ({
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
   });
+
+  const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
+
+  const handleStepMarker = (delta: number) => {
+    const next = Math.max(
+      timelineStartSec,
+      Math.min(timelineEndSec, state.resolvedMarkerSec + delta),
+    );
+    state.setMarkerSec(next);
+  };
 
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
@@ -102,15 +109,9 @@ const TimeLine = ({
         snapshot={snapshot}
         markerTimeSec={markerTimeSec}
         isPlaying={state.isPlaying}
-        isMarkerAtEnd={isMarkerAtEnd}
-        onStepMarker={(delta) => {
-          const next = Math.max(
-            timelineStartSec,
-            Math.min(timelineEndSec, state.resolvedMarkerSec + delta),
-          );
-          state.setMarkerSec(next);
-        }}
-        onTogglePlay={() => state.setIsPlaying((prev) => !prev)}
+        showFinalizeButton={showFinalizeButton}
+        onStepMarker={handleStepMarker}
+        onTogglePlay={handleTogglePlay}
         onDone={onDone ?? (() => {})}
       />
 

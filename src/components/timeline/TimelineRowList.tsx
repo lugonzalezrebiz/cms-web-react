@@ -2,6 +2,106 @@ import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import type { FlatRow } from "./types";
 
+interface RowItemProps {
+  row: FlatRow;
+  isSelected: boolean;
+  iTrackId: number | null;
+  activeSessionStarts: Record<number, number>;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
+  setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
+}
+
+const RowItem = ({
+  row,
+  isSelected,
+  iTrackId,
+  activeSessionStarts,
+  setITrackId,
+  setSelectedTracks,
+}: RowItemProps) => {
+  const isActivitySubRow = row.kind === "event";
+
+  const isEventWithActiveParent =
+    row.kind === "event" &&
+    row.parentCameraId !== undefined &&
+    iTrackId === row.parentCameraId;
+
+  const isFocused = iTrackId === row.id;
+
+  const isActive = isSelected || isFocused;
+
+  const handleClick =
+    row.kind === "event"
+      ? undefined
+      : () => {
+          setITrackId(row.id);
+          if (activeSessionStarts[row.id] !== undefined) {
+            setSelectedTracks(new Set([row.id]));
+          } else {
+            setSelectedTracks(new Set());
+          }
+        };
+
+  const bgColor = (() => {
+    if (isActivitySubRow)
+      return isActive || isEventWithActiveParent
+        ? Colors.blushWhite
+        : "transparent";
+    if (isActive) return Colors.vividOrange;
+    return "transparent";
+  })();
+
+  const textColor = (() => {
+    if (isActivitySubRow) return Colors.lightBlack;
+    if (isActive) return Colors.white;
+    return Colors.lightBlack;
+  })();
+
+  return (
+    <Box
+      onClick={handleClick}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: isActivitySubRow ? 0 : 1.5,
+        pl: isActivitySubRow ? "50px" : "8px",
+        pr: "8px",
+        py: "6px",
+        cursor: "pointer",
+        fontFamily: Fonts.main,
+        fontSize: 14,
+        height: "32px",
+        lineHeight: 1.43,
+        fontWeight: 400,
+        backgroundColor: bgColor,
+        color: textColor,
+      }}
+    >
+      {!isActivitySubRow && (
+        <Box
+          sx={{
+            width: "20px",
+            height: "20px",
+            borderRadius: "50px",
+            backgroundColor: isActive ? Colors.white : Colors.vividOrange,
+            color: isActive ? Colors.vividOrange : Colors.white,
+            display: "flex",
+            justifyContent: "center",
+            fontSize: "12px",
+            alignItems: "center",
+            fontWeight: 700,
+            fontFamily: Fonts.main,
+            padding: 0,
+          }}
+        >
+          <span style={{ marginTop: "2px" }}>{row.cameraNumber}</span>
+        </Box>
+      )}
+      {row.name}
+    </Box>
+  );
+};
+
 interface TimelineRowListProps {
   flatRows: FlatRow[];
   selectedTracks: Set<number>;
@@ -86,93 +186,17 @@ export const TimelineRowList = ({
           "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {flatRows.map((row) => {
-          const isSelected = selectedTracks.has(row.id);
-          const isActivitySubRow = row.kind === "event";
-
-          const isEventWithActiveParent =
-            row.kind === "event" &&
-            row.parentCameraId !== undefined &&
-            iTrackId === row.parentCameraId;
-
-          const isFocused = iTrackId === row.id;
-
-          const handleClick =
-            row.kind === "event"
-              ? undefined
-              : () => {
-                  setITrackId(row.id);
-                  if (activeSessionStarts[row.id] !== undefined) {
-                    setSelectedTracks(new Set([row.id]));
-                  } else {
-                    setSelectedTracks(new Set());
-                  }
-                };
-
-          const isActive = isSelected || isFocused;
-
-          const bgColor = (() => {
-            if (isActivitySubRow)
-              return isActive || isEventWithActiveParent
-                ? Colors.blushWhite
-                : "transparent";
-            if (isActive) return Colors.vividOrange;
-            return "transparent";
-          })();
-
-          const textColor = (() => {
-            if (isActivitySubRow) return Colors.lightBlack;
-            if (isActive) return Colors.white;
-            return Colors.lightBlack;
-          })();
-
-          return (
-            <Box
-              key={row.id}
-              onClick={handleClick}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: isActivitySubRow ? 0 : 1.5,
-                pl: isActivitySubRow ? "50px" : "8px",
-                pr: "8px",
-                py: "6px",
-                cursor: "pointer",
-                fontFamily: Fonts.main,
-                fontSize: 14,
-                height: "32px",
-                lineHeight: 1.43,
-                fontWeight: 400,
-                backgroundColor: bgColor,
-                color: textColor,
-              }}
-            >
-              {!isActivitySubRow && (
-                <Box
-                  sx={{
-                    width: "20px",
-                    height: "20px",
-                    borderRadius: "50px",
-                    backgroundColor: isActive
-                      ? Colors.white
-                      : Colors.vividOrange,
-                    color: isActive ? Colors.vividOrange : Colors.white,
-                    display: "flex",
-                    justifyContent: "center",
-                    fontSize: "12px",
-                    alignItems: "center",
-                    fontWeight: 700,
-                    fontFamily: Fonts.main,
-                    padding: 0,
-                  }}
-                >
-                  <span style={{ marginTop: "2px" }}>{row.cameraNumber}</span>
-                </Box>
-              )}
-              {row.name}
-            </Box>
-          );
-        })}
+        {flatRows.map((row) => (
+          <RowItem
+            key={row.id}
+            row={row}
+            isSelected={selectedTracks.has(row.id)}
+            iTrackId={iTrackId}
+            activeSessionStarts={activeSessionStarts}
+            setITrackId={setITrackId}
+            setSelectedTracks={setSelectedTracks}
+          />
+        ))}
         {flatRows.filter((r) => r.kind === "camera").length === 0 && (
           <Box
             sx={{
@@ -186,8 +210,7 @@ export const TimelineRowList = ({
               textAlign: "center",
             }}
           >
-            Press <span style={{ color: Colors.vividOrange }}>+</span> on your
-            keyboard to add a new camera
+            Empty
           </Box>
         )}
       </Box>

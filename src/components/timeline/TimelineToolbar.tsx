@@ -9,7 +9,7 @@ interface Props {
   snapshot: TimelineSnapshot;
   markerTimeSec: number | null;
   isPlaying: boolean;
-  isMarkerAtEnd: boolean;
+  showFinalizeButton: boolean;
   onStepMarker: (delta: number) => void;
   onTogglePlay: () => void;
   onDone: () => void;
@@ -19,7 +19,7 @@ const TimelineToolbar = ({
   snapshot,
   markerTimeSec,
   isPlaying,
-  isMarkerAtEnd,
+  showFinalizeButton,
   onStepMarker,
   onTogglePlay,
   onDone,
@@ -192,7 +192,7 @@ const TimelineToolbar = ({
           display={"flex"}
           justifyContent={"flex-end"}
         >
-          {isMarkerAtEnd && (
+          {showFinalizeButton && (
             <Box>
               <Button
                 onClick={onDone}

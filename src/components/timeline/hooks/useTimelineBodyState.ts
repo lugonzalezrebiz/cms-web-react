@@ -3,7 +3,6 @@ import type { FlatRow, TimelineSnapshot } from "../types";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
-  selectedTab?: string;
   flatRows: FlatRow[];
   selectableRows: FlatRow[];
   timelineStartSec: number;
@@ -12,7 +11,6 @@ interface UseTimelineBodyStateParams {
 }
 
 export const useTimelineBodyState = ({
-  selectedTab,
   flatRows,
   timelineStartSec,
   timelineEndSec,
@@ -134,7 +132,7 @@ export const useTimelineBodyState = ({
     setActiveSessionStarts({});
     setShowPunchOut(false);
     if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
-  }, [selectedTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = gridRef.current;

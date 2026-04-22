@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../theme";
-import { useEffect, useState } from "react";
+import { useMarkerDrag } from "./hooks/useMarkerDrag";
 
 interface TimelineMarkerProps {
   currentLeft: number;
@@ -21,42 +21,15 @@ export const TimelineMarker = ({
   timelineEndSec,
   gridRef,
 }: TimelineMarkerProps) => {
-  const [isDraggingMarker, setIsDraggingMarker] = useState(false);
-
-  useEffect(() => {
-    if (!isDraggingMarker) return;
-    const handleMouseMove = (e: MouseEvent) => {
-      const el = gridRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const relX = (e.clientX - rect.left) / rect.width;
-      const newSec = visibleStart + relX * visibleDuration;
-      setMarkerSec(
-        Math.max(timelineStartSec, Math.min(timelineEndSec, newSec)),
-      );
-    };
-    const handleMouseUp = () => setIsDraggingMarker(false);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [
-    isDraggingMarker,
+  const { isDraggingMarker, handleMouseDown } = useMarkerDrag(
+    gridRef,
     visibleStart,
     visibleDuration,
     timelineStartSec,
     timelineEndSec,
-    gridRef,
     setMarkerSec,
-  ]);
+  );
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingMarker(true);
-  };
   return (
     <>
       {/* Vertical line */}
