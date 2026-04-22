@@ -1,10 +1,8 @@
 import { Divider, IconButton, InputBase, Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 import { Box } from "@mui/system";
 import PopoverMenu from "./PopoverMenu";
-import type { CameraEventPoint } from "./timeline/types";
-
 export interface CameraContextMenuItem {
   id: number;
   name: string;
@@ -15,38 +13,37 @@ export interface CameraContextMenuItem {
   onClick: (cameraIndex: number) => void;
 }
 
-const TAG_TOLERANCE_SEC = 300;
-
 const EventMenu = ({
   contextMenuTitle,
   iconMenu,
   contextMenuItems = [],
-  onAddItem,
-  cameraEventPoints = [],
-  markerSec = 0,
+  itemCounts = {},
+  subtitle,
+  object,
+  anchorEl,
+  onOpenMenu,
+  onCloseMenu,
+  input,
+  onInputChange,
+  onAdd,
 }: {
   contextMenuTitle?: string;
   iconMenu?: string;
   contextMenuItems?: CameraContextMenuItem[];
-  onAddItem?: (label: string) => void;
-  cameraEventPoints?: CameraEventPoint[];
-  markerSec?: number;
+  itemCounts?: Record<string, number>;
+  subtitle?: string;
+  object?: string;
+  anchorEl: HTMLElement | null;
+  onOpenMenu: (el: HTMLElement) => void;
+  onCloseMenu: () => void;
+  input: string;
+  onInputChange: (value: string) => void;
+  onAdd: () => void;
 }) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [input, setInput] = useState("");
-
-  const handleAdd = () => {
-    if (!input.trim()) return;
-    onAddItem?.(input.trim());
-    setInput("");
-  };
-
-  const allItems = contextMenuItems;
-
   return (
     <>
       <Box
-        onClick={(e) => setAnchorEl(e.currentTarget)}
+        onClick={(e) => onOpenMenu(e.currentTarget)}
         sx={{
           display: "inline-flex",
           alignItems: "center",
@@ -80,7 +77,7 @@ const EventMenu = ({
       <PopoverMenu
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
-        setAnchorEl={() => setAnchorEl(null)}
+        setAnchorEl={onCloseMenu}
         maxWidth="170px"
       >
         {contextMenuTitle && (
@@ -116,11 +113,11 @@ const EventMenu = ({
             mb: "10px",
           }}
         >
-          Drag an event onto a camera to assign it
+          {subtitle || "Drag an drop"}
         </Typography>
 
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: "8px", mb: "12px" }}>
-          {allItems.map((item) => (
+          {contextMenuItems.map((item) => (
             <Fragment key={item.id}>
               <Box
                 draggable
@@ -128,7 +125,7 @@ const EventMenu = ({
                   e.dataTransfer.setData("eventMenuItemId", String(item.id));
                   e.dataTransfer.setData("eventmenuid", String(item.id));
                   e.dataTransfer.effectAllowed = "copy";
-                  setAnchorEl(null);
+                  onCloseMenu();
                 }}
                 sx={{
                   width: "100%",
@@ -160,41 +157,29 @@ const EventMenu = ({
                 {item.label}
 
                 <Box sx={{ color: Colors.vividOrange }}>
-                  {(() => {
-                    const count = new Set(
-                      cameraEventPoints
-                        .filter(
-                          (ep) =>
-                            ep.label === item.label &&
-                            Math.abs(markerSec - ep.timeSec) <=
-                              TAG_TOLERANCE_SEC,
-                        )
-                        .map((ep) => ep.cameraId),
-                    ).size;
-                    return (
-                      count > 0 && (
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            minWidth: "16px",
-                            height: "16px",
-                            px: "4px",
-                            bgcolor: Colors.transparenvividOrange,
-                            color: Colors.vividOrange,
-                            borderRadius: "8px",
-                            fontSize: 10,
-                            fontFamily: Fonts.main,
-                            lineHeight: 1,
-                            fontWeight: 600,
-                          }}
-                        >
-                          <span>{count} cam</span>
-                        </Box>
-                      )
-                    );
-                  })()}
+                  {(itemCounts[item.label] ?? 0) > 0 && (
+                    <Box
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minWidth: "16px",
+                        height: "16px",
+                        px: "4px",
+                        bgcolor: Colors.transparenvividOrange,
+                        color: Colors.vividOrange,
+                        borderRadius: "8px",
+                        fontSize: 10,
+                        fontFamily: Fonts.main,
+                        lineHeight: 1,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <span>
+                        {itemCounts[item.label]} {object}
+                      </span>
+                    </Box>
+                  )}
                 </Box>
                 {item.shortcut && (
                   <Typography
@@ -237,8 +222,8 @@ const EventMenu = ({
         >
           <InputBase
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onAdd()}
             placeholder="Add option..."
             fullWidth
             sx={{
@@ -250,7 +235,7 @@ const EventMenu = ({
           />
           <IconButton
             size="small"
-            onClick={handleAdd}
+            onClick={onAdd}
             disabled={!input.trim()}
             sx={{ p: "4px", opacity: input.trim() ? 1 : 0.3 }}
           >

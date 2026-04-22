@@ -4,10 +4,10 @@ import { Colors } from "../../theme";
 import type { FlatRow, CameraEventPoint } from "./types";
 
 interface TimelineGridRowsProps {
-  flatRows: FlatRow[];
-  gridRef: React.RefObject<HTMLDivElement | null>;
-  rowsScrollRef: React.RefObject<HTMLDivElement | null>;
-  listBodyRef: React.RefObject<HTMLDivElement | null>;
+  flatRows: FlatRow[]; // The rows to display, with their sessions
+  gridRef: React.RefObject<HTMLDivElement | null>; // Ref to the grid container, for handling zoom and pan
+  rowsScrollRef: React.RefObject<HTMLDivElement | null>; // Ref to the scroll container for the rows, to sync with the left list
+  listBodyRef: React.RefObject<HTMLDivElement | null>; // Ref to the left list body, to sync scroll position
   zoom: number;
   panOffsetSec: number;
   totalSec: number;
@@ -17,7 +17,6 @@ interface TimelineGridRowsProps {
   completedSessions: Record<number, { start: number; end: number }[]>;
   activeSessionStarts: Record<number, number>;
   resolvedMarkerSec: number;
-  isTunnel: boolean;
   visibleStart: number;
   visibleDuration: number;
   hasAnyBars: boolean;
@@ -25,6 +24,7 @@ interface TimelineGridRowsProps {
   setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
   cameraEventPoints?: CameraEventPoint[];
   onUpdateEventPoint?: (
+    // called when resizing an event point
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
@@ -49,7 +49,6 @@ export const TimelineGridRows = ({
   completedSessions,
   activeSessionStarts,
   resolvedMarkerSec,
-  isTunnel,
   visibleStart,
   visibleDuration,
   //hasAnyBars,
@@ -205,63 +204,6 @@ export const TimelineGridRows = ({
             const rowHeight = 44;
             const topOffset = rowIndex * rowHeight;
             const isSelected = selectedTracks.has(row.id);
-
-            // Camera parent row in tunnel mode: aggregate from activity children
-            if (isTunnel && row.kind === "camera") {
-              const childIds = flatRows
-                .filter((r) => r.parentCameraId === row.id)
-                .map((r) => r.id);
-              const allFrozen = childIds.flatMap(
-                (id) => completedSessions[id] ?? [],
-              );
-              const allLive = childIds.flatMap((id) => {
-                const actStart = activeSessionStarts[id];
-                return actStart !== undefined && resolvedMarkerSec > actStart
-                  ? [{ start: actStart, end: resolvedMarkerSec }]
-                  : [];
-              });
-              const camRanges = [...allFrozen, ...allLive];
-
-              return (
-                <Box
-                  key={row.id}
-                  sx={{
-                    position: "absolute",
-                    top: topOffset,
-                    left: 0,
-                    right: 0,
-                    height: rowHeight,
-                    bgcolor: "transparent",
-                  }}
-                >
-                  {camRanges.map((range, i) => {
-                    const isLive = i >= allFrozen.length;
-                    const left =
-                      ((range.start - visibleStart) / visibleDuration) * 100;
-                    const width =
-                      ((range.end - range.start) / visibleDuration) * 100;
-                    return (
-                      <Box
-                        key={i}
-                        sx={{
-                          position: "absolute",
-                          left: `${left}%`,
-                          width: `${width}%`,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          height: 19,
-                          borderRadius: "8px",
-                          background:
-                            isSelected || isLive
-                              ? Colors.softPink
-                              : Colors.lightGrayishBlue,
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-              );
-            }
 
             // Event sub-row (non-tunnel drag-and-drop markers)
             if (row.kind === "event") {
@@ -428,9 +370,7 @@ export const TimelineGridRows = ({
                         height: 19,
                         borderRadius: "8px",
                         background: isSelected
-                          ? isTunnel
-                            ? Colors.palePeach
-                            : Colors.vividOrange
+                          ? Colors.vividOrange
                           : Colors.lightGrayishBlue,
                       }}
                     />
@@ -441,30 +381,6 @@ export const TimelineGridRows = ({
           })}
         </Box>
       </Box>
-
-      {/* Empty state hint */}
-      {/* {!hasAnyBars && !isTunnel && (
-        <Box
-          sx={{
-            width: "217px",
-            height: "52px",
-            fontFamily: Fonts.main,
-            fontSize: 12,
-            color: Colors.dimGray,
-            lineHeight: 1.5,
-            textAlign: "center",
-            position: "absolute",
-            top: "30%",
-            left: "35%",
-            padding: "8px 16px",
-            bgcolor: " rgba(255, 255, 255, 0.6)",
-            borderRadius: "8px",
-          }}
-        >
-          Press <span style={{ color: Colors.vividOrange }}>i</span> on your
-          keyboard to punch-in the selected employee
-        </Box>
-      )} */}
     </Box>
   );
 };

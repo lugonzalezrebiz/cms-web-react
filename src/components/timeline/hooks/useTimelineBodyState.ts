@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { FlatRow, TimelineSnapshot } from "../types";
-import type { NavTab } from "../types";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
-  activeTab: NavTab;
   selectedTab?: string;
-  cameraActivities?: { id: number; cameraIndex: number; activityLabel: string }[];
-  isTunnel: boolean;
   flatRows: FlatRow[];
   selectableRows: FlatRow[];
   timelineStartSec: number;
@@ -16,10 +12,7 @@ interface UseTimelineBodyStateParams {
 }
 
 export const useTimelineBodyState = ({
-  activeTab,
   selectedTab,
-  cameraActivities,
-  isTunnel,
   flatRows,
   timelineStartSec,
   timelineEndSec,
@@ -50,10 +43,6 @@ export const useTimelineBodyState = ({
   const listBodyRef = useRef<HTMLDivElement | null>(null);
   const rowsScrollRef = useRef<HTMLDivElement | null>(null);
   const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const prevCameraActivitiesRef = useRef<
-    { id: number; cameraIndex: number; activityLabel: string }[]
-  >([]);
 
   // Derived layout values
   const visibleDuration = totalSec / zoom;
@@ -98,9 +87,8 @@ export const useTimelineBodyState = ({
     setOpenDialog(true);
   };
 
-  const STEP_SEC = 180;       // 3 min per tick
+  const STEP_SEC = 180;
 
-  // Playback: advance marker by 3 min every second, stop at timeline end
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
@@ -116,7 +104,6 @@ export const useTimelineBodyState = ({
     return () => clearInterval(id);
   }, [isPlaying, timelineStartSec, timelineEndSec]);
 
-  // Keep the marker visible while playing by panning
   useEffect(() => {
     if (!isPlaying || markerSec === null) return;
     if (markerSec < visibleStart || markerSec > visibleEnd) {
@@ -125,7 +112,6 @@ export const useTimelineBodyState = ({
     }
   }, [markerSec, isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Effect 1: reset pan/marker on tab change
   useEffect(() => {
     const vd = totalSec / zoom;
     const maxOffset = totalSec - vd;
@@ -148,9 +134,8 @@ export const useTimelineBodyState = ({
     setActiveSessionStarts({});
     setShowPunchOut(false);
     if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
-  }, [activeTab, selectedTab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Effect 2: prevent passive wheel on grid
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
@@ -161,29 +146,7 @@ export const useTimelineBodyState = ({
     return () => el.removeEventListener("wheel", handleWheel);
   }, []);
 
-  // Effect 3: auto-select new tunnel activity rows
-  useEffect(() => {
-    if (!isTunnel) {
-      prevCameraActivitiesRef.current = cameraActivities ?? [];
-      return;
-    }
-    const prev = prevCameraActivitiesRef.current;
-    const current = cameraActivities ?? [];
-    const prevIds = new Set(prev.map((p) => p.id));
-    const newActivities = current.filter((a) => !prevIds.has(a.id));
-
-    if (newActivities.length > 0) {
-      const lastId = 10000 + newActivities[newActivities.length - 1].id;
-      setITrackId(lastId);
-      setSelectedTracks(new Set());
-      setActiveSessionStarts({});
-      setCompletedSessions({});
-    }
-    prevCameraActivitiesRef.current = current;
-  }, [cameraActivities, isTunnel]);
-
   return {
-    // state
     zoom,
     setZoom,
     panOffsetSec,
@@ -208,12 +171,10 @@ export const useTimelineBodyState = ({
     setShowPunchOut,
     isPlaying,
     setIsPlaying,
-    // refs
     gridRef,
     listBodyRef,
     rowsScrollRef,
     punchOutTimerRef,
-    // derived
     totalSec,
     startSec,
     visibleStart,

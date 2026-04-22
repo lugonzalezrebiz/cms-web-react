@@ -4,9 +4,6 @@ import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
-import { ToggleButton, ToggleButtonGroup } from "@mui/material";
-import styled from "@emotion/styled";
-import { Colors, Fonts } from "../../theme";
 import { useCameras } from "./hooks/useCameras";
 import { useTrackers } from "./hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
@@ -14,60 +11,21 @@ import MediaCarousel from "../../components/MediaCarousel";
 import { useMenuItems } from "./hooks/useMenuItems";
 import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
-import { usePosData } from "./hooks/usePosData";
 import { useMarkerState } from "./hooks/useMarkerState";
+import ToggleButton from "../../components/ToggleButton";
+import { useEventMenu } from "./hooks/useEventMenu";
+import { usePosCarousel } from "./hooks/usePosCarousel";
+import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
+import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
+import { Check } from "@mui/icons-material";
+import { IconButton } from "@mui/material";
+import { Colors } from "../../theme";
+import Button from "../../components/Button";
 
-// Move to an own component file now
-const StyledToggleButton = styled(ToggleButton)({
-  color: Colors.mediumGray,
-  flex: 1,
-  fontFamily: Fonts.main,
-  textTransform: "none",
-  fontWeight: "normal",
-  backgroundColor: Colors.lightGray,
-  border: "none",
-  margin: 0,
-  fontSize: "14px",
-  borderRadius: 35,
-  whiteSpace: "nowrap",
-  "&.Mui-selected": {
-    color: Colors.lightBlack,
-    backgroundColor: Colors.white,
-    //fontWeight: "bold",
-  },
-  "&.Mui-selected:hover": {
-    backgroundColor: Colors.white,
-  },
-  "&:not(.Mui-selected)": {
-    backgroundColor: Colors.lightGray,
-  },
-});
-
-const StyledToggleGroup = styled(ToggleButtonGroup)({
-  padding: 4,
-  backgroundColor: Colors.lightGray,
-  borderRadius: 30,
-  height: "32px",
-  width: "100%",
-  boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
-  "& .MuiToggleButtonGroup-lastButton": {
-    margin: 0,
-  },
-  "& .MuiToggleButtonGroup-firstButton": {
-    margin: 1,
-  },
-  "& .MuiToggleButtonGroup-grouped": {
-    borderRadius: 35,
-  },
-});
-
-const CameraGroups = [{
-  value: "1",
-  title: "All",
-}, {
-  value: "2",
-  title: "POS",
-}]
+const CameraGroups = [
+  { value: "1", title: "All" },
+  { value: "2", title: "POS" },
+];
 
 const Monitor = () => {
   const { company, location, date } = useDashboardParams();
@@ -77,7 +35,6 @@ const Monitor = () => {
   const [cameraGroup, setCameraGroup] = useState("1");
 
   const {
-    cameraActivities,
     cameraEventPoints,
     markerSec,
     handleRemoveEventPoint,
@@ -86,22 +43,48 @@ const Monitor = () => {
     handleUpdateEventPoint,
   } = useCameraEventPoints();
 
-  const { allMenuItems, handleAddMenuItem } = useMenuItems(
-    trackers,
-    handleActivitySelect,
-  );
-
   const { snapshot, eventPoints: preloadedEventPoints } =
     useMonitoring(trackers);
-
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const { transactions } = useSalesTransactions();
+  const { transactions, loading: transactionsLoading } = useSalesTransactions();
 
-  const { posSnapshot, posEventPoints } = usePosData(transactions, snapshot);
+  const {
+    timestamp,
+    setTimestamp,
+    posMarkerSec,
+    setPosMarkerSec,
+    activeMarkerSec,
+  } = useMarkerState(cameraGroup, markerSec);
 
-  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec } =
-    useMarkerState(cameraGroup, markerSec);
+  const { allMenuItems, handleAddMenuItem, itemCounts } = useMenuItems(
+    trackers,
+    handleActivitySelect,
+    allEventPoints,
+    activeMarkerSec,
+  );
+
+  const { anchorEl, setAnchorEl, input, setInput, handleAdd } =
+    useEventMenu(handleAddMenuItem);
+
+  const {
+    current,
+    goTo,
+    prev,
+    next,
+    currentCameraId,
+    currentTimeSec,
+    attended,
+    toggleAttended,
+    handleDone: handlePosDone,
+  } = usePosCarousel(transactions, setPosMarkerSec);
+
+  const sessionDate = useSessionDate();
+  const { handleDone } = useSaveMonitoring({
+    trackers,
+    eventPoints: cameraEventPoints,
+    sessionDate,
+  });
 
   return (
     <Box
@@ -121,48 +104,99 @@ const Monitor = () => {
           m: "10px 16px 0 16px",
         }}
       >
-        <Box>
-          <StyledToggleGroup
-            value={cameraGroup}
-            exclusive
-            onChange={(_event, newValue) => {
-              if (newValue !== null) setCameraGroup(newValue);
-            }}
-            aria-label="Camera Groups"
-          >
-            {CameraGroups.map(({ value, title }) => (
-              <StyledToggleButton key={value} value={value}>
-                {title}
-              </StyledToggleButton>
-            ))}
-          </StyledToggleGroup>
-        </Box>
+        <ToggleButton
+          value={cameraGroup}
+          setValue={setCameraGroup}
+          label="Camera Groups"
+          groups={CameraGroups}
+        />
 
         <EventMenu
           contextMenuTitle="Comp. Violations"
           contextMenuItems={allMenuItems}
           iconMenu="/assets/plus-1.svg"
-          onAddItem={handleAddMenuItem}
-          cameraEventPoints={allEventPoints}
-          markerSec={activeMarkerSec}
+          itemCounts={itemCounts}
+          subtitle="Drag an event onto a camera to assign it"
+          object="cam"
+          anchorEl={anchorEl}
+          onOpenMenu={setAnchorEl}
+          onCloseMenu={() => setAnchorEl(null)}
+          input={input}
+          onInputChange={setInput}
+          onAdd={handleAdd}
         />
       </Box>
 
-      {/* Camera grid */}
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
         {cameraGroup === "2" ? (
-          <MediaCarousel
-            company={company}
-            location={location}
-            transactions={transactions}
-            onSlideChange={setPosMarkerSec}
-            onDropMenuItem={(itemId, cameraId, timeSec) => {
-              const item = allMenuItems.find((m) => m.id === itemId);
-              if (!item) return;
-              handleMarkerChange(timeSec);
-              handleActivitySelect(cameraId - 1, item.label);
-            }}
-          />
+          <Box
+            sx={{ display: "flex", flexDirection: "column", height: "100%" }}
+          >
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <MediaCarousel
+                company={company}
+                location={location}
+                transactions={transactions}
+                loading={transactionsLoading}
+                current={current}
+                prev={prev}
+                next={next}
+                goTo={goTo}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes("eventmenuid"))
+                    e.preventDefault();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const itemId = Number(
+                    e.dataTransfer.getData("eventMenuItemId"),
+                  );
+                  if (!itemId) return;
+                  const item = allMenuItems.find((m) => m.id === itemId);
+                  if (!item) return;
+                  handleMarkerChange(currentTimeSec);
+                  handleActivitySelect(currentCameraId - 1, item.label);
+                }}
+              />
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 0.75,
+                alignItems: "center",
+                justifyContent: "flex-end",
+                px: 2,
+                pb: 1,
+                mr: "20px",
+              }}
+            >
+              <Button
+                color="secondary"
+                selected={attended === "attended"}
+                onClick={() => toggleAttended("attended")}
+                disableRipple={false}
+                sx={{ height: "32px" }}
+              >
+                Attended
+              </Button>
+              <Button
+                color="secondary"
+                selected={attended === "unattended"}
+                onClick={() => toggleAttended("unattended")}
+                disableRipple={false}
+                sx={{ height: "32px" }}
+              >
+                Unattended
+              </Button>
+              {attended !== null && (
+                <Box bgcolor={Colors.vividOrange} borderRadius="6px">
+                  <IconButton onClick={handlePosDone} size="small">
+                    <Check fontSize="small" sx={{ color: Colors.white }} />
+                  </IconButton>
+                </Box>
+              )}
+            </Box>
+          </Box>
         ) : (
           <CameraLayout
             count={cameras.length}
@@ -182,20 +216,21 @@ const Monitor = () => {
         )}
       </Box>
 
-      {/* Timeline panel */}
       <Box sx={{ flex: 4, minHeight: 0 }}>
         <TimeLine
           selectedTab={cameraGroup}
-          trackers={trackers}
           snapshot={snapshot}
-          posSnapshot={posSnapshot}
-          posEventPoints={posEventPoints}
-          cameraActivities={cameraActivities}
           cameraEventPoints={allEventPoints}
           onMarkerChange={handleMarkerChange}
-          targetMarkerSec={cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined}
+          targetMarkerSec={
+            cameraGroup === "2" && posMarkerSec !== null
+              ? posMarkerSec
+              : undefined
+          }
           onTimeChange={setTimestamp}
           onUpdateEventPoint={handleUpdateEventPoint}
+          onDone={handleDone}
+          headerLabel="Cameras"
         />
       </Box>
     </Box>

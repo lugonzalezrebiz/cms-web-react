@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Box, Grid } from "@mui/system";
 import Form from "./sections/Form";
 import TableSection from "./sections/TableSection";
-import { Colors, Fonts } from "../../theme";
+import { Colors } from "../../theme";
 
 const AdminForm = () => {
   const [rows, setRows] = useState<Record<string, string>[]>([]);
@@ -13,21 +13,6 @@ const AdminForm = () => {
 
   return (
     <Box mt={"2%"}>
-      {/* <Box
-        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-      >
-        <p
-          style={{
-            color: Colors.vividOrange,
-            fontWeight: 700,
-            fontSize: "22px",
-            fontFamily: Fonts.main,
-            margin: 0,
-          }}
-        >
-          Admin Form
-        </p>
-      </Box> */}
       <Grid container spacing={2} mt={"25px"}>
         <Grid size={6}>
           <Form onAddRow={handleAddRow} />

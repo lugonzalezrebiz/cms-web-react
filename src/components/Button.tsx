@@ -5,11 +5,12 @@ import theme, { Fonts, Colors } from "../theme";
 interface Props {
   outfit?: boolean;
   square?: boolean;
+  selected?: boolean;
 }
 
 const Button = styled(MuiButton, {
-  shouldForwardProp: (prop) => prop !== "outfit" && prop !== "square",
-})<ButtonProps & Props>(({ color, outfit, disabled, square }) => ({
+  shouldForwardProp: (prop) => prop !== "outfit" && prop !== "square" && prop !== "selected",
+})<ButtonProps & Props>(({ color, outfit, disabled, square, selected }) => ({
   borderRadius: square ? "12px" : "18px",
   fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
   fontSize: "16px",
@@ -28,6 +29,13 @@ const Button = styled(MuiButton, {
         backgroundColor: Colors.white,
         color: Colors.main,
         border: `1px solid ${Colors.main}`,
+      }
+    : {}),
+  ...(selected
+    ? {
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+        border: `1px solid ${theme.palette.primary.main}`,
       }
     : {}),
   ...(disabled

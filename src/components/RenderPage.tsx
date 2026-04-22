@@ -1,10 +1,10 @@
 import { Grid } from "@mui/system";
 import Menu from "../components/Menu";
-import Header from "../sections/Header";
 import Content from "../sections/Content";
 import type { ReactNode } from "react";
 import useAuth from "../hooks/useAuth";
 import { ADMIN_ROLE } from "../config";
+import Header from "../sections/Header";
 
 const RenderPage = ({
   children,
