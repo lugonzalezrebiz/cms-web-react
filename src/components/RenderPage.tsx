@@ -1,6 +1,5 @@
 import { Grid } from "@mui/system";
 import Menu from "../components/Menu";
-import Header from "../sections/Header";
 import Content from "../sections/Content";
 import type { ReactNode } from "react";
 import useAuth from "../hooks/useAuth";
@@ -8,18 +7,16 @@ import { ADMIN_ROLE } from "../config";
 
 const RenderPage = ({
   children,
+  header,
   drawerOpen,
   toggleDrawer,
   isMobile,
-  withIconMenu = true,
-  allowGoBack,
 }: {
   children: ReactNode;
+  header?: ReactNode;
   drawerOpen?: boolean;
   toggleDrawer?: () => void;
   isMobile?: boolean;
-  withIconMenu?: boolean;
-  allowGoBack?: boolean;
 }) => {
   const positionerCondition = "calc(100% - 250px)";
   const { user } = useAuth();
@@ -58,11 +55,7 @@ const RenderPage = ({
         width={drawerOpen ? positionerCondition : "100%"}
         sx={{ display: "flex", flexDirection: "column", height: "100%" }}
       >
-        <Header
-          withIconMenu={drawerOpen ? false : withIconMenu}
-          toggleDrawer={toggleDrawer || (() => {})}
-          allowGoBack={allowGoBack}
-        />
+        {header}
         <Content>{children}</Content>
       </Grid>
     </Grid>

@@ -1,9 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import type { FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
-  isTunnel: boolean;
   selectableRows: FlatRow[];
   iTrackId: number | null;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -30,13 +29,11 @@ interface UseTimelineKeyboardParams {
   setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
   totalSec: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
-  setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
   isPlaying: boolean;
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useTimelineKeyboard = ({
-  isTunnel,
   selectableRows,
   iTrackId,
   setITrackId,
@@ -57,10 +54,10 @@ export const useTimelineKeyboard = ({
   setPanOffsetSec,
   totalSec,
   gridRef,
-  setGoToTimeOpen,
   isPlaying: _isPlaying,
   setIsPlaying,
 }: UseTimelineKeyboardParams) => {
+  const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const navigate = useNavigateWithQuery();
 
   // Track mouse X relative to the grid element
@@ -158,7 +155,6 @@ export const useTimelineKeyboard = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    isTunnel,
     selectableRows,
     iTrackId,
     activeSessionStarts,
@@ -259,4 +255,6 @@ export const useTimelineKeyboard = ({
     window.addEventListener("keydown", handleZoom);
     return () => window.removeEventListener("keydown", handleZoom);
   }, [zoom, panOffsetSec, totalSec, gridRef, setZoom, setPanOffsetSec]);
+
+  return { goToTimeOpen, setGoToTimeOpen };
 };

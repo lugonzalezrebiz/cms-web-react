@@ -18,6 +18,87 @@ interface TimelineTimeRulerProps {
   isInActivityRange: (sec: number) => boolean;
 }
 
+interface ActivityRangeBarProps {
+  timelineStartSec: number;
+  timelineEndSec: number;
+  visibleStart: number;
+  visibleEnd: number;
+  visibleDuration: number;
+}
+
+const ActivityRangeBar = ({
+  timelineStartSec,
+  timelineEndSec,
+  visibleStart,
+  visibleEnd,
+  visibleDuration,
+}: ActivityRangeBarProps) => {
+  const start = Math.max(timelineStartSec, visibleStart);
+  const end = Math.min(timelineEndSec, visibleEnd);
+  if (end <= start) return null;
+  const left = ((start - visibleStart) / visibleDuration) * 100;
+  const width = ((end - start) / visibleDuration) * 100;
+  return (
+    <Box
+      sx={{
+        position: "absolute",
+        left: `${left}%`,
+        width: `${width}%`,
+        top: 0,
+        height: "2px",
+        background: Colors.green,
+        zIndex: 10,
+      }}
+    />
+  );
+};
+
+interface TickLabelsProps {
+  firstTick: number;
+  tickCount: number;
+  tickStepSec: number;
+  visibleStart: number;
+  visibleEnd: number;
+  visibleDuration: number;
+  isInActivityRange: (sec: number) => boolean;
+}
+
+const TickLabels = ({
+  firstTick,
+  tickCount,
+  tickStepSec,
+  visibleStart,
+  visibleEnd,
+  visibleDuration,
+  isInActivityRange,
+}: TickLabelsProps) => {
+  const visibleTicks = Array.from({ length: tickCount }, (_, i) => firstTick + i * tickStepSec).filter(
+    (tickSec) => tickSec >= visibleStart && tickSec <= visibleEnd
+  );
+
+  return (
+    <Box>
+      {visibleTicks.map((tickSec) => (
+        <Box
+          key={tickSec}
+          sx={{
+            position: "absolute",
+            left: `${((tickSec - visibleStart) / visibleDuration) * 100}%`,
+            top: 5,
+            transform: "translateX(-50%)",
+            fontSize: 14,
+            fontFamily: Fonts.main,
+            color: isInActivityRange(tickSec) ? Colors.vividOrange : Colors.mediumGray,
+            fontWeight: 400,
+          }}
+        >
+          {formatSec(tickSec)}
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
 const formatSec = (sec: number): string => {
   const h = Math.floor(sec / 3600) % 24;
   const m = Math.floor((sec % 3600) / 60);
@@ -72,52 +153,24 @@ export const TimelineTimeRuler = ({
       onMouseLeave={() => setIsDragging(false)}
     >
       {/* Activity range bar */}
-      {(() => {
-        const start = Math.max(timelineStartSec, visibleStart);
-        const end = Math.min(timelineEndSec, visibleEnd);
-        if (end <= start) return null;
-        const left = ((start - visibleStart) / visibleDuration) * 100;
-        const width = ((end - start) / visibleDuration) * 100;
-        return (
-          <Box
-            sx={{
-              position: "absolute",
-              left: `${left}%`,
-              width: `${width}%`,
-              top: 0,
-              height: "2px",
-              background: Colors.green,
-              zIndex: 10,
-            }}
-          />
-        );
-      })()}
+      <ActivityRangeBar
+        timelineStartSec={timelineStartSec}
+        timelineEndSec={timelineEndSec}
+        visibleStart={visibleStart}
+        visibleEnd={visibleEnd}
+        visibleDuration={visibleDuration}
+      />
 
       {/* Second-based tick labels */}
-      {Array.from({ length: tickCount }).map((_, i) => {
-        const tickSec = firstTick + i * tickStepSec;
-        if (tickSec < visibleStart || tickSec > visibleEnd) return null;
-        const left = ((tickSec - visibleStart) / visibleDuration) * 100;
-        return (
-          <Box
-            key={tickSec}
-            sx={{
-              position: "absolute",
-              left: `${left}%`,
-              top: 5,
-              transform: "translateX(-50%)",
-              fontSize: 14,
-              fontFamily: Fonts.main,
-              color: isInActivityRange(tickSec)
-                ? Colors.vividOrange
-                : Colors.mediumGray,
-              fontWeight: 400,
-            }}
-          >
-            {formatSec(tickSec)}
-          </Box>
-        );
-      })}
+      <TickLabels
+        firstTick={firstTick}
+        tickCount={tickCount}
+        tickStepSec={tickStepSec}
+        visibleStart={visibleStart}
+        visibleEnd={visibleEnd}
+        visibleDuration={visibleDuration}
+        isInActivityRange={isInActivityRange}
+      />
     </Box>
   );
 };

@@ -1,429 +1,160 @@
 import { Box } from "@mui/material";
-import { Colors, Fonts } from "../theme";
-import { Grid } from "@mui/system";
-import { useRef, useState, useEffect } from "react";
-import TimelineBody, { type TimelineBodyHandle } from "./TimelineBody";
-import Tooltip from "./Tooltip";
-import type {
-  NavTab,
-  CameraEventPoint,
-  TimelineSnapshot,
-} from "./timeline/types";
-import { usePopover } from "./timeline/hooks/usePopover";
-import { useSessionDate } from "./timeline/hooks/useSessionDate";
-import {
-  useTimelineMarker,
-  secToTimeString,
-} from "./timeline/hooks/useTimelineMarker";
-import { useSaveMonitoring } from "./timeline/hooks/useSaveMonitoring";
-import Button from "./Button";
-import TimelineNavPopover from "./timeline/TimelineNavPopover";
-import TimelineCameraPopover from "./timeline/TimelineCameraPopover";
+import TimelineBody from "./timeline/TimelineBody";
+import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
+import TimelineToolbar from "./timeline/TimelineToolbar";
+import { MOCK_SNAPSHOT } from "./timeline/constants";
+import { useFlatRows } from "./timeline/hooks/useFlatRows";
+import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
+import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
+import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
+import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 
 const TimeLine = ({
-  selectedTab,
-  cameraActivities,
   cameraEventPoints,
-  onTimeChange,
   onMarkerChange,
-  trackers = [],
   snapshot,
-  posSnapshot,
-  posEventPoints,
   targetMarkerSec,
   onUpdateEventPoint,
+  onDone,
+  headerLabel,
+  markerTimeSec,
+  showFinalizeButton,
 }: {
-  selectedTab?: string;
-  cameraActivities?: {
-    id: number;
-    cameraIndex: number;
-    activityLabel: string;
-  }[];
   cameraEventPoints?: CameraEventPoint[];
-  onTimeChange?: (timestamp: string) => void;
   onMarkerChange?: (sec: number) => void;
-  trackers?: { id: number; name: string }[];
   snapshot: TimelineSnapshot;
-  posSnapshot?: TimelineSnapshot;
-  posEventPoints?: CameraEventPoint[];
   targetMarkerSec?: number;
   onUpdateEventPoint?: (
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
+  onDone?: () => void;
+  headerLabel: string;
+  markerTimeSec: number | null;
+  showFinalizeButton: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
-  const [activeTab, setActiveTab] = useState<NavTab>("employees");
-  const [selectedCameraOption, setSelectedCameraOption] = useState("Off");
-  const [isPlaying, setIsPlaying] = useState(false);
-  const timelineBodyRef = useRef<TimelineBodyHandle>(null);
+  const data = snapshot || MOCK_SNAPSHOT;
 
-  useEffect(() => {
-    if (targetMarkerSec !== undefined) {
-      timelineBodyRef.current?.setMarker(targetMarkerSec);
-    }
-  }, [targetMarkerSec]);
+  const {
+    flatRows,
+    selectableRows,
+    timelineStartSec,
+    timelineEndSec,
+    firstActivitySec,
+  } = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
 
-  const sessionDate = useSessionDate();
-  const { markerTimeSec, handleMarkerChange, isMarkerAtEnd } =
-    useTimelineMarker({
-      snapshot,
-      onTimeChange,
-      onMarkerChange,
-    });
-  const { handleDone } = useSaveMonitoring({
-    trackers,
-    eventPoints: mergedEventPoints,
-    sessionDate,
+  const state = useTimelineBodyState({
+    snapshot,
+    flatRows,
+    selectableRows,
+    timelineStartSec,
+    timelineEndSec,
+    firstActivitySec,
   });
 
-  const nav = usePopover();
-  const cameraMenu = usePopover();
+  useMarkerSync({
+    targetMarkerSec,
+    resolvedMarkerSec: state.resolvedMarkerSec,
+    timelineStartSec,
+    timelineEndSec,
+    setMarkerSec: state.setMarkerSec,
+    handleMarkerChange: onMarkerChange ?? (() => {}),
+  });
+
+  useAutoSelectOnEventPoint({
+    cameraEventPoints: mergedEventPoints,
+    setITrackId: state.setITrackId,
+    setSelectedTracks: state.setSelectedTracks,
+  });
+
+  const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
+
+  const handleStepMarker = (delta: number) => {
+    const next = Math.max(
+      timelineStartSec,
+      Math.min(timelineEndSec, state.resolvedMarkerSec + delta),
+    );
+    state.setMarkerSec(next);
+  };
+
+  const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
+    selectableRows,
+    iTrackId: state.iTrackId,
+    setITrackId: state.setITrackId,
+    activeSessionStarts: state.activeSessionStarts,
+    setActiveSessionStarts: state.setActiveSessionStarts,
+    markerSec: state.markerSec,
+    timelineStartSec,
+    timelineEndSec,
+    selectedTracks: state.selectedTracks,
+    setSelectedTracks: state.setSelectedTracks,
+    setCompletedSessions: state.setCompletedSessions,
+    setMarkerSec: state.setMarkerSec,
+    setShowPunchOut: state.setShowPunchOut,
+    punchOutTimerRef: state.punchOutTimerRef,
+    isPlaying: state.isPlaying,
+    setIsPlaying: state.setIsPlaying,
+    zoom: state.zoom,
+    setZoom: state.setZoom,
+    panOffsetSec: state.panOffsetSec,
+    setPanOffsetSec: state.setPanOffsetSec,
+    totalSec: state.totalSec,
+    gridRef: state.gridRef,
+  });
 
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Grid
-        container
-        display={"flex"}
-        alignItems={"center"}
-        sx={{
-          background: Colors.white,
-          borderBlockEnd: `1px solid ${Colors.lightGrayishBlue}`,
-          display: "flex",
-          alignItems: "center",
-          fontSize: "14px",
-          padding: "4px 16px 4px 8px",
-          width: "100%",
-        }}
-      >
-        <Grid
-          size={{ md: 1.5, lg: 1.5, xl: 1 }}
-          container
-          spacing={"18px"}
-          alignItems={"center"}
-          justifyContent={"start"}
-        >
-          <Box
-          >
-            <img
-              style={{ opacity: 0.5 }}
-              src="../assets/layers-three-02.svg"
-              alt=""
-            />
-          </Box>
-          {selectedTab !== "2" && (
-            <Box onClick={() => {}}>
-              <img src="../assets/user-plus-01.svg" alt="" />
-            </Box>
-          )}
-          <Box
-            position={"relative"}
-            sx={{
-              opacity: selectedTab === "2" ? 1 : 0.5,
-            }}
-          >
-            {selectedCameraOption !== "Off" && selectedTab === "2" && (
-              <Box
-                sx={{
-                  width: "5px",
-                  height: "5px",
-                  border: `1px solid ${Colors.white}`,
-                  bgcolor: Colors.green,
-                  borderRadius: "100%",
-                  position: "absolute",
-                  right: -1,
-                  top: -1,
-                }}
-              ></Box>
-            )}
-            {selectedCameraOption !== "Off" && selectedTab === "2" ? (
-              <Tooltip
-                withoutIcon
-                textAlign="center"
-                position={"right"}
-                detail={
-                  <Box>
-                    <Box sx={{ color: "#959fa9", fontWeight: 400 }}>
-                      Focused monitoring
-                    </Box>
-                    <Box sx={{ color: Colors.lightBlack, fontWeight: 700 }}>
-                      {selectedCameraOption}
-                    </Box>
-                  </Box>
-                }
-              >
-                <img src="../assets/camera-02.svg" alt="" />
-              </Tooltip>
-            ) : (
-              <img src="../assets/camera-02.svg" alt="" />
-            )}
-          </Box>
-        </Grid>
-
-        <Grid
-          size={{ md: 2.5, lg: 2, xl: 1.5 }}
-          alignItems={"center"}
-          container
-          spacing={"18px"}
-          justifyContent={"start"}
-        >
-          <Box onClick={() => {}}>
-            <img
-              style={{ opacity: 0.5 }}
-              src="../assets/reverse-left.svg"
-              alt=""
-            />
-          </Box>
-          <Box onClick={() => {}}>
-            <img
-              style={{ opacity: 0.5 }}
-              src="../assets/reverse-right.svg"
-              alt=""
-            />
-          </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/trash-02.svg" alt="" />
-          </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/divider.svg" alt="" />
-          </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/link-02.svg" alt="" />
-          </Box>
-        </Grid>
-
-        <Grid
-          size={{ md: 1, lg: 1, xl: 1.5 }}
-          alignItems={"center"}
-          container
-          spacing={"8px"}
-          justifyContent={"flex-start"}
-        >
-          <Box onClick={() => {}} ml={"18px"}>
-            <img src="../assets/punch-in.svg" alt="" />
-          </Box>
-          <Box onClick={() => {}}>
-            <img src="../assets/punch-out.svg" alt="" />
-          </Box>
-        </Grid>
-
-        <Grid
-          size={{ md: 2.5, lg: 3, xl: 4 }}
-          container
-          alignItems={"center"}
-          justifyContent={"center"}
-        >
-          <Box
-            mr={"4px"}
-            onClick={() => timelineBodyRef.current?.stepMarker(-3600)}
-          >
-            <img
-              style={{ cursor: "pointer" }}
-              src="../assets/align-left-01.svg"
-              alt=""
-            />
-          </Box>
-          <Box
-            mr={"8px"}
-            onClick={() => timelineBodyRef.current?.stepMarker(-600)}
-          >
-            <img
-              style={{ cursor: "pointer" }}
-              src="../assets/chevron-left.svg"
-              alt=""
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              background: "#fef7f6",
-              padding: "0px 4px",
-              borderRadius: "50px",
-            }}
-          >
-            <Box mr={"8px"} onClick={() => {}}>
-              <img src="../assets/clock.svg" alt="" />
-            </Box>
-            <Box
-              sx={{
-                textAlign: "center",
-                color: Colors.vividOrange,
-                fontFamily: Fonts.main,
-                lineHeight: 1.43,
-                m: "0 8px 2px 0",
-              }}
-            >
-              {markerTimeSec !== null
-                ? secToTimeString(markerTimeSec)
-                : snapshot.timeline.times.start}
-            </Box>
-            <Box
-              onClick={() => timelineBodyRef.current?.togglePlay()}
-              sx={{ cursor: "pointer" }}
-            >
-              <img
-                src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
-                alt={isPlaying ? "Pause" : "Play"}
-              />
-            </Box>
-          </Box>
-          <Box onClick={() => timelineBodyRef.current?.stepMarker(+600)}>
-            <img
-              style={{ cursor: "pointer" }}
-              src="../assets/chevron-right.svg"
-              alt=""
-            />
-          </Box>
-          <Box onClick={() => timelineBodyRef.current?.stepMarker(+3600)}>
-            <img
-              style={{ cursor: "pointer" }}
-              src="../assets/align-right-01.svg"
-              alt=""
-            />
-          </Box>
-        </Grid>
-
-        <Grid
-          size={{ md: 1.6, lg: 2, xl: 2 }}
-          container
-          alignItems={"center"}
-          padding={"0 8px"}
-        >
-          <Grid
-            size={{ md: 2, lg: 4 }}
-            display={"flex"}
-            justifyContent={"flex-end"}
-          >
-            {isMarkerAtEnd && (
-              <Box>
-                <Button
-                  onClick={handleDone}
-                  sx={{ height: "20px", mr: "36px", mb: "2px" }}
-                >
-                  Finalize
-                </Button>
-              </Box>
-            )}
-            <Box onClick={() => {}}>
-              <img
-                style={{ opacity: 0.5 }}
-                src="../assets/dots-grid.svg"
-                alt=""
-              />
-            </Box>
-          </Grid>
-
-          <Grid
-            size={{ md: 10, lg: 8 }}
-            display={"flex"}
-            justifyContent={"flex-end"}
-          >
-            <Box
-              sx={{
-                width: "87px",
-                height: "7px",
-                display: "flex",
-                justifyContent: "center",
-                borderRadius: "8px",
-                bgcolor: "#fef7f6",
-                mb: "4px",
-              }}
-            >
-              <Box
-                sx={{
-                  width: "13px",
-                  height: "7px",
-                  borderRadius: "6px",
-                  bgcolor: Colors.vividOrange,
-                }}
-              ></Box>
-            </Box>
-          </Grid>
-        </Grid>
-
-        <Grid
-          size={{ xs: 12, sm: 12, md: 2.9, lg: 2.5, xl: 2 }}
-          container
-          display={"flex"}
-          alignItems={"center"}
-          justifyContent={"space-between"}
-          padding={"0 8px"}
-        >
-          <Grid display={"flex"} justifyContent={"flex-end"} size={4}>
-            <Box onClick={() => {}}>
-              <img
-                style={{ opacity: 0.5 }}
-                src="../assets/search-sm.svg"
-                alt=""
-              />
-            </Box>
-          </Grid>
-          <Grid
-            size={8}
-            justifyContent={"flex-end"}
-            container
-            alignItems={"center"}
-          >
-            <Box
-              sx={{
-                width: "87px",
-                height: "7px",
-                display: "flex",
-                justifyContent: "center",
-                borderRadius: "8px",
-                bgcolor: "#fef7f6",
-                mb: "4px",
-              }}
-            >
-              <Box
-                sx={{
-                  width: "13px",
-                  height: "7px",
-                  borderRadius: "6px",
-                  bgcolor: Colors.vividOrange,
-                }}
-              ></Box>
-            </Box>
-            <Box ml={"18px"} onClick={() => {}}>
-              <img
-                style={{ opacity: 0.5 }}
-                src="../assets/expand-06.svg"
-                alt=""
-              />
-            </Box>
-          </Grid>
-        </Grid>
-      </Grid>
-
-      <TimelineNavPopover
-        open={nav.open}
-        anchorEl={nav.anchorEl}
-        onClose={nav.handleClose}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-
-      <TimelineCameraPopover
-        open={cameraMenu.open}
-        anchorEl={cameraMenu.anchorEl}
-        onClose={cameraMenu.handleClose}
-        selectedOption={selectedCameraOption}
-        onOptionChange={setSelectedCameraOption}
+      <TimelineToolbar
+        snapshot={snapshot}
+        markerTimeSec={markerTimeSec}
+        isPlaying={state.isPlaying}
+        showFinalizeButton={showFinalizeButton}
+        onStepMarker={handleStepMarker}
+        onTogglePlay={handleTogglePlay}
+        onDone={onDone ?? (() => {})}
       />
 
       <TimelineBody
-        ref={timelineBodyRef}
-        snapshot={snapshot}
-        posSnapshot={posSnapshot}
-        posEventPoints={posEventPoints}
-        activeTab={activeTab}
-        selectedTab={selectedTab}
-        cameraActivities={cameraActivities}
+        flatRows={flatRows}
+        headerLabel={headerLabel}
+        openDialog={state.openDialog}
+        dialogOnClose={state.handleOnCloseDialog}
+        onOpenDialog={state.handleOnOpenDialog}
+        selectedTracks={state.selectedTracks}
+        activeSessionStarts={state.activeSessionStarts}
+        listBodyRef={state.listBodyRef}
+        rowsScrollRef={state.rowsScrollRef}
+        iTrackId={state.iTrackId}
+        setITrackId={state.setITrackId}
+        setSelectedTracks={state.setSelectedTracks}
+        zoom={state.zoom}
+        isDragging={state.isDragging}
+        panOffsetSec={state.panOffsetSec}
+        setIsDragging={state.setIsDragging}
+        setDragStartX={state.setDragStartX}
+        setDragStartOffset={state.setDragStartOffset}
+        handleMouseMove={state.handleMouseMove}
+        timelineStartSec={timelineStartSec}
+        timelineEndSec={timelineEndSec}
+        visibleStart={state.visibleStart}
+        visibleDuration={state.visibleDuration}
+        startSec={state.startSec}
+        tickStepSec={state.tickStepSec}
+        isInActivityRange={state.isInActivityRange}
+        gridRef={state.gridRef}
+        totalSec={state.totalSec}
+        completedSessions={state.completedSessions}
+        resolvedMarkerSec={state.resolvedMarkerSec}
+        hasAnyBars={state.hasAnyBars}
+        setZoom={state.setZoom}
+        setPanOffsetSec={state.setPanOffsetSec}
         cameraEventPoints={mergedEventPoints}
-        onMarkerChange={handleMarkerChange}
-        onPlayingChange={setIsPlaying}
         onUpdateEventPoint={onUpdateEventPoint}
+        currentLeft={state.currentLeft}
+        setMarkerSec={state.setMarkerSec}
+        goToTimeOpen={goToTimeOpen}
+        setGoToTimeOpen={setGoToTimeOpen}
       />
     </Box>
   );

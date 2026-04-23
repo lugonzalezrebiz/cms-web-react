@@ -28,7 +28,6 @@ const CalendarComponent = ({
   size,
   disabled = false,
 }: Props) => {
-  //console.log(minDate?.format());
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 

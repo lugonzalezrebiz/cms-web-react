@@ -3,13 +3,7 @@ import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
 
-interface Props {
-  open: boolean;
-  anchorEl: HTMLElement | null;
-  handleClose: () => void;
-}
-
-interface Notification {
+export interface Notification {
   id: number;
   nameEmployee: string;
   timeAgo: string;
@@ -17,50 +11,12 @@ interface Notification {
   unread: boolean;
 }
 
-const NOTIFICATIONS_MOCK: Notification[] = [
-  {
-    id: 1,
-    nameEmployee: "James Rodriguez",
-    timeAgo: "2 min ago",
-    activity: "Completed express wash on Bay #3",
-    unread: true,
-  },
-  {
-    id: 2,
-    nameEmployee: "Sarah Mitchell",
-    timeAgo: "8 min ago",
-    activity: "Started full detail service — Station 1",
-    unread: true,
-  },
-  {
-    id: 3,
-    nameEmployee: "Carlos Rivera",
-    timeAgo: "15 min ago",
-    activity: "Vehicle check-in: Sedan • License #4KGT21",
-    unread: true,
-  },
-  {
-    id: 4,
-    nameEmployee: "Tyler Hayes",
-    timeAgo: "32 min ago",
-    activity: "Payment processed — Premium Package $34.99",
-    unread: true,
-  },
-  {
-    id: 5,
-    nameEmployee: "Amanda Brooks",
-    timeAgo: "1 hr ago",
-    activity: "Wash tunnel offline — maintenance required",
-    unread: false,
-  },
-  {
-    id: 6,
-    nameEmployee: "James Rodriguez",
-    timeAgo: "2 hr ago",
-    activity: "Applied tire shine & wax on Bay #1",
-    unread: false,
-  },
-];
+interface Props {
+  open: boolean;
+  anchorEl: HTMLElement | null;
+  handleClose: () => void;
+  notifications: Notification[];
+}
 
 const TitleRow = styled(Box)({
   display: "flex",
@@ -156,8 +112,8 @@ const UnreadDot = styled(Box)({
   marginTop: "5px",
 });
 
-const NotificationMenu = ({ anchorEl, open, handleClose }: Props) => {
-  const unreadCount = NOTIFICATIONS_MOCK.filter((n) => n.unread).length;
+const NotificationMenu = ({ anchorEl, open, handleClose, notifications }: Props) => {
+  const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
     <PopoverMenu
@@ -199,7 +155,7 @@ const NotificationMenu = ({ anchorEl, open, handleClose }: Props) => {
         </TitleRow>
 
         <ScrollArea>
-          {NOTIFICATIONS_MOCK.map((notif) => {
+          {notifications.map((notif) => {
             return (
               <NotifRow key={notif.id} unread={notif.unread}>
                 <InfoCol>

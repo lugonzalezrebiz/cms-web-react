@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useExpandedCamera } from "../hooks/useExpandedCamera";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
@@ -6,6 +6,7 @@ import { type CameraContextMenuItem } from "./EventMenu";
 import Tooltip from "./Tooltip";
 import { useCameraFrame } from "../hooks/useCameraFrame";
 import type { CameraEventPoint } from "./timeline/types";
+import { useState } from "react";
 
 const TAG_TOLERANCE_SEC = 300;
 
@@ -27,7 +28,7 @@ interface CameraItemProps {
   onRemoveTag: (tagId: number) => void;
 }
 
-function CameraItem({
+const CameraItem = ({
   index,
   media,
   cameraItemList,
@@ -42,7 +43,7 @@ function CameraItem({
   date,
   timestamp,
   onRemoveTag,
-}: CameraItemProps) {
+}: CameraItemProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const useRealImages =
@@ -277,7 +278,7 @@ interface CameraLayoutProps {
   onRemoveEventPoint?: (id: number) => void;
 }
 
-function getRowDistribution(count: number): number[] {
+const getRowDistribution = (count: number): number[] => {
   const n = Math.min(count, 16);
   if (n === 0) return [];
 
@@ -292,9 +293,98 @@ function getRowDistribution(count: number): number[] {
   }
 
   return rows;
-}
+};
 
 const GAP = 8;
+
+interface SharedCameraItemProps {
+  media: string;
+  cameraItemList: () => void;
+  expandCamera: (index: number) => void;
+  onRemoveTag: (tagId: number) => void;
+  getTagsForCamera: (index: number) => CameraContextMenuItem[];
+  onDrop: (cameraIndex: number, itemId: number) => void;
+  cameras?: CameraInfo[];
+  company?: number;
+  location?: number;
+  date?: string;
+  timestamp?: string;
+}
+
+const CameraCell = ({
+  camIndex,
+  maxCols,
+  media,
+  cameraItemList,
+  expandCamera,
+  onRemoveTag,
+  getTagsForCamera,
+  onDrop,
+  cameras,
+  company,
+  location,
+  date,
+  timestamp,
+}: SharedCameraItemProps & { camIndex: number; maxCols: number }) => {
+  return (
+    <Box
+      sx={{
+        flex: "0 0 auto",
+        width: `calc(${100 / maxCols}% - ${(GAP * (maxCols - 1)) / maxCols}px)`,
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+    >
+      <CameraItem
+        index={camIndex}
+        media={media}
+        cameraItemList={cameraItemList}
+        expandCamera={expandCamera}
+        tags={getTagsForCamera(camIndex)}
+        onDrop={(itemId) => onDrop(camIndex, Number(itemId))}
+        onRemoveTag={onRemoveTag}
+        cameraId={cameras?.[camIndex]?.id}
+        cameraName={cameras?.[camIndex]?.name}
+        company={company}
+        location={location}
+        date={date}
+        timestamp={timestamp}
+      />
+    </Box>
+  );
+};
+
+const CameraRow = ({
+  startIdx,
+  rowCount,
+  maxCols,
+  ...shared
+}: SharedCameraItemProps & {
+  startIdx: number;
+  rowCount: number;
+  maxCols: number;
+}) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        gap: `${GAP}px`,
+        justifyContent: "center",
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+    >
+      {Array.from({ length: rowCount }, (_, colIndex) => (
+        <CameraCell
+          key={colIndex}
+          camIndex={startIdx + colIndex}
+          maxCols={maxCols}
+          {...shared}
+        />
+      ))}
+    </Box>
+  );
+};
 
 const CameraLayout = ({
   count,
@@ -311,26 +401,13 @@ const CameraLayout = ({
   markerSec = 0,
   onRemoveEventPoint,
 }: CameraLayoutProps) => {
-  const [expandedCamera, setExpandedCamera] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (expandedCamera === null) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setExpandedCamera(null);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [expandedCamera]);
+  const { expandedCamera, handleExpandCamera } = useExpandedCamera();
 
   const safeCount = Math.min(count, 16);
   if (safeCount === 0) return null;
 
   const totalHeight =
     typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
-
-  const handleExpandCamera = (index: number) => {
-    setExpandedCamera((prev) => (prev === index ? null : index));
-  };
 
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
     cameraEventPoints
@@ -352,16 +429,23 @@ const CameraLayout = ({
     item.onClick(cameraIndex);
   };
 
+  const sharedProps: SharedCameraItemProps = {
+    media,
+    cameraItemList,
+    expandCamera: handleExpandCamera,
+    onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
+    getTagsForCamera,
+    onDrop: handleDrop,
+    cameras,
+    company,
+    location,
+    date,
+    timestamp,
+  };
+
   if (expandedCamera !== null) {
     return (
-      <Box
-        sx={{
-          width: "97%",
-          height: totalHeight,
-          overflow: "hidden",
-          m: "auto",
-        }}
-      >
+      <Box sx={{ width: "97%", height: totalHeight, overflow: "hidden", m: "auto" }}>
         <CameraItem
           index={expandedCamera}
           media={media}
@@ -385,8 +469,9 @@ const CameraLayout = ({
   const rowDistribution = getRowDistribution(safeCount);
   const numRows = rowDistribution.length;
   const maxCols = rowDistribution[0];
-
-  let idx = 0;
+  const rowStarts = rowDistribution.map((_, i) =>
+    rowDistribution.slice(0, i).reduce((sum, n) => sum + n, 0),
+  );
 
   return (
     <Box
@@ -400,56 +485,15 @@ const CameraLayout = ({
         m: "auto",
       }}
     >
-      {rowDistribution.map((rowCount, rowIndex) => {
-        const startIdx = idx;
-        idx += rowCount;
-
-        return (
-          <Box
-            key={rowIndex}
-            sx={{
-              display: "flex",
-              gap: `${GAP}px`,
-              justifyContent: "center",
-              minHeight: 0,
-              overflow: "hidden",
-            }}
-          >
-            {Array.from({ length: rowCount }, (_, colIndex) => {
-              const camIndex = startIdx + colIndex;
-              return (
-                <Box
-                  key={colIndex}
-                  sx={{
-                    flex: "0 0 auto",
-                    width: `calc(${100 / maxCols}% - ${
-                      (GAP * (maxCols - 1)) / maxCols
-                    }px)`,
-                    minHeight: 0,
-                    overflow: "hidden",
-                  }}
-                >
-                  <CameraItem
-                    index={camIndex}
-                    media={media}
-                    cameraItemList={cameraItemList}
-                    expandCamera={handleExpandCamera}
-                    tags={getTagsForCamera(camIndex)}
-                    onDrop={(itemId) => handleDrop(camIndex, Number(itemId))}
-                    onRemoveTag={(tagId) => onRemoveEventPoint?.(tagId)}
-                    cameraId={cameras?.[camIndex]?.id}
-                    cameraName={cameras?.[camIndex]?.name}
-                    company={company}
-                    location={location}
-                    date={date}
-                    timestamp={timestamp}
-                  />
-                </Box>
-              );
-            })}
-          </Box>
-        );
-      })}
+      {rowDistribution.map((rowCount, rowIndex) => (
+        <CameraRow
+          key={rowIndex}
+          startIdx={rowStarts[rowIndex]}
+          rowCount={rowCount}
+          maxCols={maxCols}
+          {...sharedProps}
+        />
+      ))}
     </Box>
   );
 };

@@ -83,10 +83,7 @@ const TimelineCameraPopover = ({
         return (
           <MenuCameraContainer
             key={option}
-            onClick={() => {
-              onOptionChange(option);
-              onClose();
-            }}
+            onClick={() => onOptionChange(option)}
             sx={{
               cursor: "pointer",
               backgroundColor: isSelected ? Colors.vividOrange : "transparent",

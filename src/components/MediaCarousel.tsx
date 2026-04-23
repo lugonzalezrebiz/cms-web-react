@@ -1,45 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
 import { Box, IconButton, Typography, CircularProgress } from "@mui/material";
-import { ChevronLeft, ChevronRight, Check } from "@mui/icons-material";
-import styled from "@emotion/styled";
-import MuiButton from "@mui/material/Button";
-import { Colors, Fonts } from "../theme";
-import {
-  useSalesTransactions,
-  type SalesTransaction,
-} from "../pages/Monitor/hooks/useSalesTransactions";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { Colors } from "../theme";
+import type { SalesTransaction } from "../pages/Monitor/hooks/useSalesTransactions";
 import { useCameraFrame } from "../hooks/useCameraFrame";
-import { useCarousel } from "../hooks/useCarousel";
-import { useSaveMonitoring } from "./timeline/hooks/useSaveMonitoring";
-
-type AttendedValue = "attended" | "unattended";
-
-const AttendanceButton = styled(MuiButton, {
-  shouldForwardProp: (prop) => prop !== "selected",
-})<{ selected?: boolean }>(({ selected }) => ({
-  borderRadius: "18px",
-  fontFamily: Fonts.secondary,
-  fontSize: "14px",
-  fontWeight: "600",
-  textTransform: "none",
-  boxShadow: "none",
-  padding: "4px 16px",
-  border: `1px solid ${Colors.main}`,
-  backgroundColor: selected ? Colors.main : Colors.white,
-  color: selected ? Colors.white : Colors.main,
-  "&:hover": {
-    backgroundColor: selected ? Colors.orangeHover : Colors.secondary,
-    boxShadow: "none",
-  },
-}));
 
 // Parses "2026-04-07 08:12:00" → { date: "20260407", time: "08:12:00" }
-function parseTransactionTimestamp(ts: string): { date: string; time: string } {
+const parseTransactionTimestamp = (ts: string): { date: string; time: string } => {
   const [datePart, timePart] = ts.split(" ");
   const date = (datePart ?? "").replace(/-/g, "");
   const time = timePart ?? "00:00:00";
   return { date, time };
-}
+};
 
 interface CarouselSlideProps {
   transaction: SalesTransaction;
@@ -85,7 +56,6 @@ const CarouselSlide = ({
           pointerEvents: "none",
         }}
       />
-      {/* Slide info badge */}
       {visible && (
         <Box
           sx={{
@@ -113,82 +83,31 @@ const CarouselSlide = ({
 interface MediaCarouselProps {
   company: number;
   location: number;
-  transactions?: SalesTransaction[];
+  transactions: SalesTransaction[];
+  loading: boolean;
   title?: string;
-  onSlideChange?: (markerSec: number) => void;
-  onDropMenuItem?: (itemId: number, cameraId: number, timeSec: number) => void;
+  current: number;
+  prev: () => void;
+  next: () => void;
+  goTo: (i: number) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
 }
 
 const MediaCarousel = ({
   company,
   location,
-  transactions: transactionsProp,
+  transactions,
+  loading,
   title = "",
-  onSlideChange,
-  onDropMenuItem,
+  current,
+  prev,
+  next,
+  goTo,
+  onDragOver,
+  onDrop,
 }: MediaCarouselProps) => {
-  const { transactions: fetched, loading } = useSalesTransactions();
-  const transactions = transactionsProp ?? fetched;
-  const [attended, setAttended] = useState<AttendedValue | null>(null);
-
-  const toggleAttended = (value: AttendedValue) =>
-    setAttended((prev) => (prev === value ? null : value));
-
   const count = transactions.length;
-
-  const toMarkerSec = (tx: SalesTransaction) => {
-    const [, time] = tx.timestamp.split(" ");
-    const [h, m, s] = (time ?? "00:00:00").split(":").map(Number);
-    return h * 3600 + m * 60 + (s ?? 0);
-  };
-
-  const { current, goTo, prev, next } = useCarousel(count, (index) => {
-    const tx = transactions[index];
-    if (tx) onSlideChange?.(toMarkerSec(tx));
-  });
-
-  const currentTx = transactions[current];
-  const sessionDate = currentTx?.timestamp.split(" ")[0] ?? "";
-  const eventPoints = useMemo(() => {
-    if (!currentTx) return [];
-    const timeSec = toMarkerSec(currentTx);
-    return [
-      {
-        id: 8 * 10000 + currentTx.terminal.id,
-        cameraId: currentTx.terminal.id,
-        timeSec,
-        startSec: timeSec,
-        endSec: timeSec,
-        label: "Pay Station Attendance",
-      },
-    ];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTx]);
-
-  const { handleDone } = useSaveMonitoring({
-    trackers: [{ id: 8, name: "Pay Station Attendance", attended: attended === "attended" }],
-    eventPoints,
-    sessionDate,
-  });
-
-  // Sync marker on initial load (and when transactions first arrive)
-  useEffect(() => {
-    const tx = transactions[current];
-    if (tx) onSlideChange?.(toMarkerSec(tx));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions.length]);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes("eventmenuid")) e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const itemId = Number(e.dataTransfer.getData("eventMenuItemId"));
-    const tx = transactions[current];
-    if (!itemId || !tx) return;
-    onDropMenuItem?.(itemId, tx.terminal.id, toMarkerSec(tx));
-  };
 
   return (
     <Box
@@ -215,8 +134,8 @@ const MediaCarousel = ({
         {title}
       </Typography>
       <Box
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         sx={{
           position: "relative",
           width: "100%",
@@ -238,7 +157,6 @@ const MediaCarousel = ({
           </Typography>
         ) : (
           <>
-            {/* Slides */}
             <Box
               sx={{
                 display: "flex",
@@ -259,7 +177,6 @@ const MediaCarousel = ({
               ))}
             </Box>
 
-            {/* Prev button */}
             <IconButton
               onClick={prev}
               size="small"
@@ -274,7 +191,6 @@ const MediaCarousel = ({
               <ChevronLeft fontSize="small" />
             </IconButton>
 
-            {/* Next button */}
             <IconButton
               onClick={next}
               size="small"
@@ -289,7 +205,6 @@ const MediaCarousel = ({
               <ChevronRight fontSize="small" />
             </IconButton>
 
-            {/* Slide counter */}
             <Box
               sx={{
                 position: "absolute",
@@ -308,7 +223,6 @@ const MediaCarousel = ({
           </>
         )}
       </Box>
-      {/* Bottom bar: dots + attendance buttons */}
       <Box
         sx={{
           display: "flex",
@@ -317,7 +231,6 @@ const MediaCarousel = ({
           gap: 1,
         }}
       >
-        {/* Dot indicators */}
         {count > 0 && (
           <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", flex: 1 }}>
             {transactions.map((_, i) => (
@@ -337,39 +250,6 @@ const MediaCarousel = ({
             ))}
           </Box>
         )}
-
-        {/* Attendance toggle buttons */}
-        <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
-          <AttendanceButton
-            selected={attended === "attended"}
-            onClick={() => toggleAttended("attended")}
-            disableRipple={false}
-          >
-            Attended
-          </AttendanceButton>
-          <AttendanceButton
-            selected={attended === "unattended"}
-            onClick={() => toggleAttended("unattended")}
-            disableRipple={false}
-          >
-            Unattended
-          </AttendanceButton>
-
-          {/* Confirm button — only visible when an option is selected */}
-          {attended !== null && (
-            <Box bgcolor={Colors.vividOrange} borderRadius={"6px"}>
-              <IconButton
-                onClick={handleDone}
-                size="small"
-                sx={{
-                  color: Colors.main,
-                }}
-              >
-                <Check fontSize="small" sx={{ color: Colors.white }} />
-              </IconButton>
-            </Box>
-          )}
-        </Box>
       </Box>
     </Box>
   );

@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
 import { Box } from "@mui/system";
-import { Colors } from "../../theme";
 import type { FlatRow, CameraEventPoint } from "./types";
+import { useEventPointResize } from "./hooks/useEventPointResize";
+import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
+import { EventRow } from "./rows/EventRow";
+import { SessionRow } from "./rows/SessionRow";
+import { GridLines } from "./rows/GridLines";
+
+const ROW_HEIGHT = 44;
 
 interface TimelineGridRowsProps {
   flatRows: FlatRow[];
@@ -17,7 +22,6 @@ interface TimelineGridRowsProps {
   completedSessions: Record<number, { start: number; end: number }[]>;
   activeSessionStarts: Record<number, number>;
   resolvedMarkerSec: number;
-  isTunnel: boolean;
   visibleStart: number;
   visibleDuration: number;
   hasAnyBars: boolean;
@@ -29,11 +33,6 @@ interface TimelineGridRowsProps {
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
 }
-
-const toSeconds = (time: string) => {
-  const [h, m, s] = time.split(":").map(Number);
-  return h * 3600 + m * 60 + s;
-};
 
 export const TimelineGridRows = ({
   flatRows,
@@ -49,7 +48,6 @@ export const TimelineGridRows = ({
   completedSessions,
   activeSessionStarts,
   resolvedMarkerSec,
-  isTunnel,
   visibleStart,
   visibleDuration,
   //hasAnyBars,
@@ -60,132 +58,35 @@ export const TimelineGridRows = ({
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
-  const [resizing, setResizing] = useState<{
-    id: number;
-    side: "left" | "right";
-  } | null>(null);
-
-  useEffect(() => {
-    if (!resizing) return;
-    const handleMouseMove = (e: MouseEvent) => {
-      const el = gridRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const relX = (e.clientX - rect.left) / rect.width;
-      const newSec = Math.max(
-        0,
-        Math.min(totalSec, visibleStart + relX * visibleDuration),
-      );
-      onUpdateEventPoint?.(
-        resizing.id,
-        resizing.side === "left" ? { startSec: newSec } : { endSec: newSec },
-      );
-    };
-    const handleMouseUp = () => setResizing(null);
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [
-    resizing,
+  const setResizing = useEventPointResize({
+    gridRef,
     visibleStart,
     visibleDuration,
     totalSec,
-    gridRef,
     onUpdateEventPoint,
-  ]); // only depends on resizing — values are read from refs
+  });
 
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-
-        const rect = el.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const width = rect.width;
-
-        const oldZoom = zoom;
-        const newZoom = Math.min(
-          4,
-          Math.max(1, oldZoom + (e.deltaY > 0 ? -0.2 : 0.2)),
-        );
-
-        if (newZoom === oldZoom) return;
-
-        const oldVisibleDuration = totalSec / oldZoom;
-        const newVisibleDuration = totalSec / newZoom;
-        const cursorTime = panOffsetSec + (mouseX / width) * oldVisibleDuration;
-        let newOffset = cursorTime - (mouseX / width) * newVisibleDuration;
-        const maxOffset = totalSec - newVisibleDuration;
-        newOffset = Math.max(0, Math.min(maxOffset, newOffset));
-
-        setZoom(newZoom);
-        setPanOffsetSec(newOffset);
-      } else {
-        if (listBodyRef.current) {
-          listBodyRef.current.scrollTop += e.deltaY;
-          if (rowsScrollRef.current) {
-            rowsScrollRef.current.scrollTop = listBodyRef.current.scrollTop;
-          }
-        }
-        if (e.deltaX !== 0) {
-          const vd = totalSec / zoom;
-          const maxOffset = totalSec - vd;
-          setPanOffsetSec((prev) =>
-            Math.max(0, Math.min(maxOffset, prev + e.deltaX * 5)),
-          );
-        }
-      }
-    };
-
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
-  }, [
+  useWheelZoomPan({
+    gridRef,
+    rowsScrollRef,
+    listBodyRef,
     zoom,
     panOffsetSec,
     totalSec,
     setZoom,
     setPanOffsetSec,
-    gridRef,
-    listBodyRef,
-    rowsScrollRef,
-  ]);
+  });
 
   return (
-    <Box
-      ref={gridRef}
-      sx={{
-        flex: 1,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Vertical grid lines */}
-      {Array.from({ length: Math.floor(totalSec / tickStepSec) + 1 }).map(
-        (_, i) => {
-          const tickTime = startSec + i * tickStepSec;
-          if (tickTime < visibleStart || tickTime > visibleEnd) return null;
-          const left = ((tickTime - visibleStart) / visibleDuration) * 100;
-          return (
-            <Box
-              key={tickTime}
-              sx={{
-                position: "absolute",
-                left: `${left}%`,
-                top: 0,
-                bottom: 0,
-                width: "1px",
-                background: Colors.paleGray,
-              }}
-            />
-          );
-        },
-      )}
+    <Box ref={gridRef} sx={{ flex: 1, position: "relative", overflow: "hidden" }}>
+      <GridLines
+        totalSec={totalSec}
+        tickStepSec={tickStepSec}
+        startSec={startSec}
+        visibleStart={visibleStart}
+        visibleEnd={visibleEnd}
+        visibleDuration={visibleDuration}
+      />
 
       {/* Rows — scroll-synced with left list */}
       <Box
@@ -200,271 +101,35 @@ export const TimelineGridRows = ({
           pointerEvents: "none",
         }}
       >
-        <Box sx={{ position: "relative", height: flatRows.length * 44 }}>
-          {flatRows.map((row, rowIndex) => {
-            const rowHeight = 44;
-            const topOffset = rowIndex * rowHeight;
-            const isSelected = selectedTracks.has(row.id);
-
-            // Camera parent row in tunnel mode: aggregate from activity children
-            if (isTunnel && row.kind === "camera") {
-              const childIds = flatRows
-                .filter((r) => r.parentCameraId === row.id)
-                .map((r) => r.id);
-              const allFrozen = childIds.flatMap(
-                (id) => completedSessions[id] ?? [],
-              );
-              const allLive = childIds.flatMap((id) => {
-                const actStart = activeSessionStarts[id];
-                return actStart !== undefined && resolvedMarkerSec > actStart
-                  ? [{ start: actStart, end: resolvedMarkerSec }]
-                  : [];
-              });
-              const camRanges = [...allFrozen, ...allLive];
-
-              return (
-                <Box
-                  key={row.id}
-                  sx={{
-                    position: "absolute",
-                    top: topOffset,
-                    left: 0,
-                    right: 0,
-                    height: rowHeight,
-                    bgcolor: "transparent",
-                  }}
-                >
-                  {camRanges.map((range, i) => {
-                    const isLive = i >= allFrozen.length;
-                    const left =
-                      ((range.start - visibleStart) / visibleDuration) * 100;
-                    const width =
-                      ((range.end - range.start) / visibleDuration) * 100;
-                    return (
-                      <Box
-                        key={i}
-                        sx={{
-                          position: "absolute",
-                          left: `${left}%`,
-                          width: `${width}%`,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          height: 19,
-                          borderRadius: "8px",
-                          background:
-                            isSelected || isLive
-                              ? Colors.softPink
-                              : Colors.lightGrayishBlue,
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-              );
-            }
-
-            // Event sub-row (non-tunnel drag-and-drop markers)
-            if (row.kind === "event") {
-              return (
-                <Box
-                  key={row.id}
-                  sx={{
-                    position: "absolute",
-                    top: topOffset,
-                    left: 0,
-                    right: 0,
-                    height: rowHeight,
-                    pointerEvents: "none",
-                  }}
-                >
-                  {cameraEventPoints
-                    .filter(
-                      (ep) =>
-                        ep.cameraId === row.parentCameraId &&
-                        ep.label === row.name,
-                    )
-                    .map((ep) => {
-                      const barStart = Math.max(ep.startSec, visibleStart);
-                      const barEnd = Math.min(ep.endSec, visibleEnd);
-                      if (barStart >= barEnd) return null;
-                      const leftPct =
-                        ((ep.startSec - visibleStart) / visibleDuration) * 100;
-                      const widthPct =
-                        ((ep.endSec - ep.startSec) / visibleDuration) * 100;
-                      const dotLeftPct =
-                        ((ep.timeSec - ep.startSec) /
-                          (ep.endSec - ep.startSec)) *
-                        100;
-                      return (
-                        <Box
-                          key={ep.id}
-                          sx={{
-                            position: "absolute",
-                            left: `${leftPct}%`,
-                            width: `${widthPct}%`,
-                            top: "50%",
-                            transform: "translate(-50%)",
-                            borderRadius: "8px",
-                            background: `${Colors.green}33`,
-                            border: `2px solid ${Colors.green}`,
-                            height: 15,
-                            zIndex: 2,
-                            pointerEvents: "auto",
-                          }}
-                        >
-                          {/* Left resize handle */}
-                          <Box
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setResizing({ id: ep.id, side: "left" });
-                            }}
-                            sx={{
-                              position: "absolute",
-                              left: 0,
-                              top: 0,
-                              bottom: 0,
-                              width: 8,
-                              cursor: "ew-resize",
-                              bgcolor: Colors.green,
-                              borderRadius: "6px 0 0 6px",
-                            }}
-                          />
-                          {/* Dot at timeSec */}
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              left: `${dotLeftPct}%`,
-                              top: "50%",
-                              transform: "translate(-50%, -50%)",
-                              width: 7,
-                              height: 7,
-                              borderRadius: "50%",
-                              bgcolor: Colors.green,
-                              pointerEvents: "none",
-                            }}
-                          />
-                          {/* Right resize handle */}
-                          <Box
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setResizing({ id: ep.id, side: "right" });
-                            }}
-                            sx={{
-                              position: "absolute",
-                              right: 0,
-                              top: 0,
-                              bottom: 0,
-                              width: 8,
-                              cursor: "ew-resize",
-                              bgcolor: Colors.green,
-                              borderRadius: "0 6px 6px 0",
-                            }}
-                          />
-                        </Box>
-                      );
-                    })}
-                </Box>
-              );
-            }
-
-            // Normal selectable row
-            const snapshotRanges = (() => {
-              const ranges: { start: number; end: number }[] = [];
-              let currentIn: number | null = null;
-              for (const s of row.sessions) {
-                if (s.type === "in") currentIn = toSeconds(s.timestamp);
-                if (s.type === "out" && currentIn !== null) {
-                  ranges.push({
-                    start: currentIn,
-                    end: toSeconds(s.timestamp),
-                  });
-                  currentIn = null;
-                }
-              }
-              return ranges;
-            })();
-            const frozen = [
-              ...snapshotRanges,
-              ...(completedSessions[row.id] ?? []),
-            ];
-            const sessionStart = activeSessionStarts[row.id];
-            const isBuilding = sessionStart !== undefined;
-            const liveBar =
-              isBuilding && resolvedMarkerSec > sessionStart
-                ? { start: sessionStart, end: resolvedMarkerSec }
-                : null;
-            const allRanges = liveBar ? [...frozen, liveBar] : frozen;
-
-            return (
-              <Box
+        <Box sx={{ position: "relative", height: flatRows.length * ROW_HEIGHT }}>
+          {flatRows.map((row, rowIndex) =>
+            row.kind === "event" ? (
+              <EventRow
                 key={row.id}
-                sx={{
-                  position: "absolute",
-                  top: topOffset,
-                  left: 0,
-                  right: 0,
-                  height: rowHeight,
-                  bgcolor: isSelected
-                    ? "rgba(255, 166, 0, 0.04)"
-                    : "transparent",
-                }}
-              >
-                {allRanges.map((range, i) => {
-                  const left =
-                    ((range.start - visibleStart) / visibleDuration) * 100;
-                  const width =
-                    ((range.end - range.start) / visibleDuration) * 100;
-                  return (
-                    <Box
-                      key={i}
-                      sx={{
-                        position: "absolute",
-                        left: `${left}%`,
-                        width: `${width}%`,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        height: 19,
-                        borderRadius: "8px",
-                        background: isSelected
-                          ? isTunnel
-                            ? Colors.palePeach
-                            : Colors.vividOrange
-                          : Colors.lightGrayishBlue,
-                      }}
-                    />
-                  );
-                })}
-              </Box>
-            );
-          })}
+                row={row}
+                rowIndex={rowIndex}
+                cameraEventPoints={cameraEventPoints}
+                visibleStart={visibleStart}
+                visibleEnd={visibleEnd}
+                visibleDuration={visibleDuration}
+                setResizing={setResizing}
+              />
+            ) : (
+              <SessionRow
+                key={row.id}
+                row={row}
+                rowIndex={rowIndex}
+                isSelected={selectedTracks.has(row.id)}
+                completedSessions={completedSessions}
+                activeSessionStarts={activeSessionStarts}
+                resolvedMarkerSec={resolvedMarkerSec}
+                visibleStart={visibleStart}
+                visibleDuration={visibleDuration}
+              />
+            ),
+          )}
         </Box>
       </Box>
-
-      {/* Empty state hint */}
-      {/* {!hasAnyBars && !isTunnel && (
-        <Box
-          sx={{
-            width: "217px",
-            height: "52px",
-            fontFamily: Fonts.main,
-            fontSize: 12,
-            color: Colors.dimGray,
-            lineHeight: 1.5,
-            textAlign: "center",
-            position: "absolute",
-            top: "30%",
-            left: "35%",
-            padding: "8px 16px",
-            bgcolor: " rgba(255, 255, 255, 0.6)",
-            borderRadius: "8px",
-          }}
-        >
-          Press <span style={{ color: Colors.vividOrange }}>i</span> on your
-          keyboard to punch-in the selected employee
-        </Box>
-      )} */}
     </Box>
   );
 };
