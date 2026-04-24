@@ -15,45 +15,57 @@ import usePopover from "./hooks/usePopover";
 const NOTIFICATIONS: Notification[] = [
   {
     id: 1,
-    nameEmployee: "James Rodriguez",
+    title: "New Assignment",
     timeAgo: "2 min ago",
-    activity: "Completed express wash on Bay #3",
+    date: "February 25 - 2026",
     unread: true,
+    location: "162",
+    store: "6015",
   },
   {
     id: 2,
-    nameEmployee: "Sarah Mitchell",
+    title: "Ticket Resolved",
     timeAgo: "8 min ago",
-    activity: "Started full detail service — Station 1",
+    date: "February 25 - 2026",
     unread: true,
+    location: "166",
+    store: "1243",
   },
   {
     id: 3,
-    nameEmployee: "Carlos Rivera",
+    title: "New Assignment",
     timeAgo: "15 min ago",
-    activity: "Vehicle check-in: Sedan • License #4KGT21",
+    date: "February 22 - 2026",
     unread: true,
+    location: "162",
+    store: "456",
   },
   {
     id: 4,
-    nameEmployee: "Tyler Hayes",
+    title: "Monitoring Rejected",
     timeAgo: "32 min ago",
-    activity: "Payment processed — Premium Package $34.99",
+    date: "February 21 - 2026",
     unread: true,
+    location: "162",
+    store: "456",
   },
   {
     id: 5,
-    nameEmployee: "Amanda Brooks",
+    title: "New Assignment",
     timeAgo: "1 hr ago",
-    activity: "Wash tunnel offline — maintenance required",
+    date: "February 25 - 2026",
     unread: false,
+    location: "162",
+    store: "456",
   },
   {
     id: 6,
-    nameEmployee: "James Rodriguez",
+    title: "Ticket Resolved",
     timeAgo: "2 hr ago",
-    activity: "Applied tire shine & wax on Bay #1",
+    date: "February 25 - 2026",
     unread: false,
+    location: "162",
+    store: "456",
   },
 ];
 
@@ -104,7 +116,8 @@ const AdminHeader = ({
         <StyledContainer>
           {withIconMenu && (
             <IconButton
-              edge="start"              sx={{ color: Colors.main }}
+              edge="start"
+              sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
             >
@@ -119,7 +132,8 @@ const AdminHeader = ({
             width={"100%"}
           >
             <Box
-              onClick={menuHeader.handleOpen}              sx={{
+              onClick={menuHeader.handleOpen}
+              sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
                 cursor: "pointer",
