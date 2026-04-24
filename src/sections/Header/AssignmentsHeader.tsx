@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -11,6 +10,66 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useNavigateWithQuery from "../../hooks/useNavigate";
+import NotificationMenu, {
+  type Notification,
+} from "../../components/NotificationMenu";
+
+const NOTIFICATIONS: Notification[] = [
+  {
+    id: 1,
+    title: "New Assignment",
+    timeAgo: "2 min ago",
+    date: "February 25 - 2026",
+    unread: true,
+    location: "162",
+    store: "6015",
+  },
+  {
+    id: 2,
+    title: "Ticket Resolved",
+    timeAgo: "8 min ago",
+    date: "February 25 - 2026",
+    unread: true,
+    location: "166",
+    store: "1243",
+  },
+  {
+    id: 3,
+    title: "New Assignment",
+    timeAgo: "15 min ago",
+    date: "February 22 - 2026",
+    unread: true,
+    location: "162",
+    store: "456",
+  },
+  {
+    id: 4,
+    title: "Monitoring Rejected",
+    timeAgo: "32 min ago",
+    date: "February 21 - 2026",
+    unread: true,
+    location: "162",
+    store: "456",
+  },
+  {
+    id: 5,
+    title: "New Assignment",
+    timeAgo: "1 hr ago",
+    date: "February 25 - 2026",
+    unread: false,
+    location: "162",
+    store: "456",
+  },
+  {
+    id: 6,
+    title: "Ticket Resolved",
+    timeAgo: "2 hr ago",
+    date: "February 25 - 2026",
+    unread: false,
+    location: "162",
+    store: "456",
+  },
+];
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -35,10 +94,6 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const noDrag = {
-  ["WebkitAppRegion" as string]: "no-drag",
-} as React.CSSProperties;
-
 const AssignmentsHeader = ({
   toggleDrawer,
   withIconMenu = true,
@@ -51,6 +106,7 @@ const AssignmentsHeader = ({
   const [scrolled, setScrolled] = useState(false);
   const menuHeader = usePopover();
   const userPanelHeader = usePopover();
+  const notificationHeader = usePopover();
   const navigate = useNavigateWithQuery();
   const goBack = () => navigate(-1);
 
@@ -67,7 +123,6 @@ const AssignmentsHeader = ({
           {withIconMenu && (
             <IconButton
               edge="start"
-              style={noDrag}
               sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
@@ -77,7 +132,6 @@ const AssignmentsHeader = ({
           )}
           {allowGoBack && (
             <IconButton
-              style={noDrag}
               sx={{ color: Colors.main }}
               onClick={goBack}
               aria-label="go back"
@@ -94,7 +148,6 @@ const AssignmentsHeader = ({
           >
             <Box
               onClick={menuHeader.handleOpen}
-              style={noDrag}
               sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
@@ -122,35 +175,27 @@ const AssignmentsHeader = ({
               </Box>
             </Box>
 
-            <Box display={"flex"} style={noDrag}>
-              <Box>
-                <StyledImg
-                  onClick={userPanelHeader.handleOpen}
-                  src="../assets/user-circle.svg"
-                  alt=""
-                />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg
-                  src="../assets/minus.svg"
-                  alt=""
-                  onClick={() => window.api?.minimize()}
-                />
-                <StyledImg
-                  style={{ marginBottom: "2px" }}
-                  src="../assets/expand-03.svg"
-                  alt=""
-                  onClick={() => window.api?.maximize()}
-                />
-                <StyledImg
-                  src="../assets/x-close.svg"
-                  alt=""
-                  onClick={() => window.api?.close()}
-                />
-              </Box>
+            <Box display={"flex"}>
+              <StyledImg
+                onClick={notificationHeader.handleOpen}
+                src="../assets/notification.svg"
+                alt=""
+              />
+              <StyledImg
+                onClick={userPanelHeader.handleOpen}
+                src="../assets/user-circle.svg"
+                alt=""
+              />
             </Box>
           </Box>
         </StyledContainer>
+
+        <NotificationMenu
+          anchorEl={notificationHeader.anchorEl}
+          handleClose={notificationHeader.handleClose}
+          open={notificationHeader.open}
+          notifications={NOTIFICATIONS}
+        />
 
         <UserPanel
           anchorEl={userPanelHeader.anchorEl}

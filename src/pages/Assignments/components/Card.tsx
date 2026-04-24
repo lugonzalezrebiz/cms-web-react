@@ -1,3 +1,4 @@
+import type React from "react";
 import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
 import { Box } from "@mui/material";
@@ -116,6 +117,7 @@ interface AssignmentCardProps {
   date?: string;
   comments?: number;
   onClick?: () => void;
+  openMenu?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 const AssignmentSubText = styled("p")({
@@ -149,6 +151,7 @@ export const NewAssignmentsCard = ({
   date,
   comments,
   onClick,
+  openMenu,
 }: AssignmentCardProps) => {
   return (
     <Card
@@ -180,9 +183,19 @@ export const NewAssignmentsCard = ({
           {state}
         </Box>
         <img
-          style={{ position: "absolute", right: "16px" }}
+          style={{
+            position: "absolute",
+            right: "16px",
+            cursor: "pointer",
+            padding: "4px",
+          }}
           src="./assets/dots-vertical.svg"
           alt=""
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            openMenu?.(e);
+          }}
         />
       </Box>
       <Box display={"flex"}>

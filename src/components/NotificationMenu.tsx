@@ -5,10 +5,12 @@ import styled from "@emotion/styled";
 
 export interface Notification {
   id: number;
-  nameEmployee: string;
+  title: string;
   timeAgo: string;
-  activity: string;
+  date: string;
   unread: boolean;
+  location?: string;
+  store?: string;
 }
 
 interface Props {
@@ -55,7 +57,15 @@ const NotifRow = styled(Box)<{ unread?: boolean }>(({ unread }) => ({
   alignItems: "flex-start",
   gap: "10px",
   padding: "10px 6px",
-  borderRadius: "10px",
+  borderRadius: 0,
+  "&:first-child": {
+    borderTopLeftRadius: "8px",
+    borderTopRightRadius: "8px",
+  },
+  "&:last-child": {
+    borderBottomLeftRadius: "8px",
+    borderBottomRightRadius: "8px",
+  },
   background: unread ? Colors.blushWhite : "transparent",
   cursor: "pointer",
   transition: "background 0.15s",
@@ -109,10 +119,24 @@ const UnreadDot = styled(Box)({
   minWidth: "7px",
   borderRadius: "50%",
   background: Colors.vividOrange,
-  marginTop: "5px",
+  marginTop: "35px",
+  marginRight: "6px",
 });
 
-const NotificationMenu = ({ anchorEl, open, handleClose, notifications }: Props) => {
+const AssignmentSubText = styled("p")({
+  fontFamily: Fonts.main,
+  fontSize: "14px",
+  fontWeight: 400,
+  color: Colors.lightBlack,
+  lineHeight: 1.43,
+});
+
+const NotificationMenu = ({
+  anchorEl,
+  open,
+  handleClose,
+  notifications,
+}: Props) => {
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
@@ -159,10 +183,26 @@ const NotificationMenu = ({ anchorEl, open, handleClose, notifications }: Props)
             return (
               <NotifRow key={notif.id} unread={notif.unread}>
                 <InfoCol>
-                  <NameText>{notif.nameEmployee}</NameText>
-                  <ActivityText title={notif.activity}>
-                    {notif.activity}
-                  </ActivityText>
+                  <NameText>{notif.title}</NameText>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <img
+                      style={{ margin: "0 6px 0 0" }}
+                      src="./assets/building-07.svg"
+                      alt=""
+                    />
+                    <AssignmentSubText style={{ margin: "0 18px 0 0" }}>
+                      {notif.location}
+                    </AssignmentSubText>
+                    <img
+                      style={{ margin: "0 6px 0 0" }}
+                      src="./assets/building-02.svg"
+                      alt=""
+                    />
+                    <AssignmentSubText style={{ margin: 0 }}>
+                      {notif.store}
+                    </AssignmentSubText>
+                  </Box>
+                  <ActivityText title={notif.date}>{notif.date}</ActivityText>
                   <TimeText>{notif.timeAgo}</TimeText>
                 </InfoCol>
                 {notif.unread && <UnreadDot />}

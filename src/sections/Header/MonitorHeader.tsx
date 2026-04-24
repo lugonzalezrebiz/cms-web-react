@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -99,10 +98,6 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const noDrag = {
-  ["WebkitAppRegion" as string]: "no-drag",
-} as React.CSSProperties;
-
 const MonitorHeader = ({
   toggleDrawer,
   withIconMenu = true,
@@ -134,8 +129,7 @@ const MonitorHeader = ({
           {withIconMenu && (
             <IconButton
               edge="start"
-              style={noDrag}
-              sx={{ color: Colors.main }}
+                           sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
             >
@@ -144,8 +138,7 @@ const MonitorHeader = ({
           )}
           {allowGoBack && (
             <IconButton
-              style={noDrag}
-              sx={{ color: Colors.main }}
+                           sx={{ color: Colors.main }}
               onClick={goBack}
               aria-label="go back"
             >
@@ -161,8 +154,7 @@ const MonitorHeader = ({
           >
             <Box
               onClick={menuHeader.handleOpen}
-              style={noDrag}
-              sx={{
+                           sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
                 cursor: "pointer",
@@ -176,37 +168,17 @@ const MonitorHeader = ({
               </StyledSubTitle>
             </Box>
 
-            <Box display={"flex"} style={noDrag}>
-              <Box>
-                <StyledImg
-                  onClick={keyboardMenu.handleOpen}
-                  src="../assets/keyboard-02.svg"
-                  alt=""
-                />
-                <StyledImg
-                  onClick={userPanelHeader.handleOpen}
-                  src="../assets/user-circle.svg"
-                  alt=""
-                />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg
-                  src="../assets/minus.svg"
-                  alt=""
-                  onClick={() => window.api?.minimize()}
-                />
-                <StyledImg
-                  style={{ marginBottom: "2px" }}
-                  src="../assets/expand-03.svg"
-                  alt=""
-                  onClick={() => window.api?.maximize()}
-                />
-                <StyledImg
-                  src="../assets/x-close.svg"
-                  alt=""
-                  onClick={() => window.api?.close()}
-                />
-              </Box>
+            <Box display={"flex"}>
+              <StyledImg
+                onClick={keyboardMenu.handleOpen}
+                src="../assets/keyboard-02.svg"
+                alt=""
+              />
+              <StyledImg
+                onClick={userPanelHeader.handleOpen}
+                src="../assets/user-circle.svg"
+                alt=""
+              />
             </Box>
           </Box>
         </StyledContainer>

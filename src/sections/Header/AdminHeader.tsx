@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -81,10 +80,6 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const noDrag = {
-  ["WebkitAppRegion" as string]: "no-drag",
-} as React.CSSProperties;
-
 const AdminHeader = ({
   toggleDrawer,
   withIconMenu = true,
@@ -109,9 +104,7 @@ const AdminHeader = ({
         <StyledContainer>
           {withIconMenu && (
             <IconButton
-              edge="start"
-              style={noDrag}
-              sx={{ color: Colors.main }}
+              edge="start"              sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
             >
@@ -126,9 +119,7 @@ const AdminHeader = ({
             width={"100%"}
           >
             <Box
-              onClick={menuHeader.handleOpen}
-              style={noDrag}
-              sx={{
+              onClick={menuHeader.handleOpen}              sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
                 cursor: "pointer",
@@ -137,37 +128,17 @@ const AdminHeader = ({
               <StyledTitle>Assignments Form</StyledTitle>
             </Box>
 
-            <Box display={"flex"} style={noDrag}>
-              <Box>
-                <StyledImg
-                  onClick={notificationHeader.handleOpen}
-                  src="../assets/notification.svg"
-                  alt=""
-                />
-                <StyledImg
-                  onClick={userPanelHeader.handleOpen}
-                  src="../assets/user-circle.svg"
-                  alt=""
-                />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg
-                  src="../assets/minus.svg"
-                  alt=""
-                  onClick={() => window.api?.minimize()}
-                />
-                <StyledImg
-                  style={{ marginBottom: "2px" }}
-                  src="../assets/expand-03.svg"
-                  alt=""
-                  onClick={() => window.api?.maximize()}
-                />
-                <StyledImg
-                  src="../assets/x-close.svg"
-                  alt=""
-                  onClick={() => window.api?.close()}
-                />
-              </Box>
+            <Box display={"flex"}>
+              <StyledImg
+                onClick={notificationHeader.handleOpen}
+                src="../assets/notification.svg"
+                alt=""
+              />
+              <StyledImg
+                onClick={userPanelHeader.handleOpen}
+                src="../assets/user-circle.svg"
+                alt=""
+              />
             </Box>
           </Box>
         </StyledContainer>
