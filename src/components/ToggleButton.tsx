@@ -1,10 +1,25 @@
+import { useState } from "react";
 import styled from "@emotion/styled";
 import {
   ToggleButton as MuiToggleButton,
   ToggleButtonGroup,
+  Menu,
+  MenuItem,
 } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { Colors, Fonts } from "../theme";
 import { Box } from "@mui/system";
+
+interface GroupOption {
+  value: string;
+  title: string;
+}
+
+interface GroupItem {
+  value: string;
+  title: string;
+  options?: GroupOption[];
+}
 
 const StyledToggleGroup = styled(ToggleButtonGroup)({
   padding: 4,
@@ -39,7 +54,6 @@ const StyledToggleButton = styled(MuiToggleButton)({
   "&.Mui-selected": {
     color: Colors.lightBlack,
     backgroundColor: Colors.white,
-    //fontWeight: "bold",
   },
   "&.Mui-selected:hover": {
     backgroundColor: Colors.white,
@@ -54,12 +68,34 @@ const ToggleButton = ({
   setValue,
   label,
   groups,
+  selectValue,
+  setSelectValue,
 }: {
   value: string;
   setValue: (value: string) => void;
   label: string;
-  groups: { value: string; title: string }[];
+  groups: GroupItem[];
+  selectValue?: string;
+  setSelectValue?: (value: string) => void;
 }) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [activeGroupValue, setActiveGroupValue] = useState<string | null>(null);
+
+  const handleOptionsClick = (
+    groupValue: string,
+    event: React.MouseEvent<HTMLElement>,
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setActiveGroupValue(groupValue);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+    setActiveGroupValue(null);
+  };
+
+  const activeGroup = groups.find((g) => g.value === activeGroupValue);
+
   return (
     <Box>
       <StyledToggleGroup
@@ -69,14 +105,81 @@ const ToggleButton = ({
           if (newValue !== null) setValue(newValue);
         }}
         aria-label={label}
-        //aria-label="Camera Groups"
       >
-        {groups.map(({ value, title }) => (
-          <StyledToggleButton key={value} value={value}>
-            {title}
-          </StyledToggleButton>
-        ))}
+        {groups.map((group) => {
+          const selectedOption = group.options?.find(
+            (o) => o.value === selectValue,
+          );
+          return (
+            <StyledToggleButton
+              key={group.value}
+              value={group.value}
+              onClick={
+                group.options
+                  ? (e) => handleOptionsClick(group.value, e)
+                  : undefined
+              }
+            >
+              {selectedOption ? selectedOption.title : group.title}
+              {group.options && (
+                <KeyboardArrowDownIcon sx={{ fontSize: 14, ml: 0.3 }} />
+              )}
+            </StyledToggleButton>
+          );
+        })}
       </StyledToggleGroup>
+
+      <Menu
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        transformOrigin={{ vertical: "top", horizontal: "center" }}
+        marginThreshold={0}
+        slotProps={{
+          paper: {
+            sx: {
+              maxHeight: "50%",
+              width: "193px",
+              borderRadius: "4px",
+              bgcolor: Colors.white,
+              border: `1px solid ${Colors.paleSteal}`,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              mt: "2px",
+            },
+          },
+        }}
+      >
+        {activeGroup?.options?.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={selectValue === option.value}
+            onClick={() => {
+              setSelectValue?.(option.value);
+              handleClose();
+            }}
+            sx={{
+              fontFamily: Fonts.main,
+              fontSize: "16px",
+              fontWeight: 400,
+              color: Colors.dimGray,
+              lineHeight: "24px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              "&.Mui-selected": {
+                color: Colors.white,
+                backgroundColor: Colors.vividOrange,
+              },
+              "&.Mui-selected:hover": {
+                backgroundColor: Colors.transparenvividOrange,
+              },
+            }}
+          >
+            {option.title}
+          </MenuItem>
+        ))}
+      </Menu>
     </Box>
   );
 };

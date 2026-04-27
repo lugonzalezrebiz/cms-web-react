@@ -3,10 +3,20 @@ import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
 
+export type StateAssignment = "Paused" | "New" | "Resolved" | "Rejected";
+
+const stateColors: Record<StateAssignment, { border: string; bg: string; color: string }> = {
+  New: { border: Colors.leafGreen, bg: Colors.mintFoam, color: Colors.leafGreen },
+  Paused: { border: Colors.goldenAmber, bg: Colors.creamYellow, color: Colors.goldenAmber },
+  Resolved: { border: Colors.royalBlue, bg: Colors.lightSkyBlue, color: Colors.royalBlue },
+  Rejected: { border: Colors.blushRed, bg: Colors.palePink, color: Colors.blushRed },
+};
+
 interface Props {
   open: boolean;
   anchorEl: HTMLElement | null;
   handleClose: () => void;
+  state?: StateAssignment;
 }
 
 const MenuHeaderContainer = styled(Box)({
@@ -66,34 +76,16 @@ const HEADER_INFO_MOCK = {
   },
   date: "Mar 19, 2025",
   items: [
-    {
-      activity: "Open",
-      complement: "09:00 (MST)",
-    },
-    {
-      activity: "Close",
-      complement: "19:00 (MST)",
-    },
-    {
-      activity: "Open at",
-      complement: "08:00",
-    },
-    {
-      activity: "DVR",
-      complement: "08:00",
-    },
-    {
-      activity: "Diff",
-      complement: "0",
-    },
-    {
-      activity: "Interval",
-      complement: "Events",
-    },
+    { activity: "Open", complement: "09:00 (MST)" },
+    { activity: "Close", complement: "19:00 (MST)" },
+    { activity: "Open at", complement: "08:00" },
+    { activity: "DVR", complement: "08:00" },
+    { activity: "Diff", complement: "0" },
+    { activity: "Interval", complement: "Events" },
   ],
 };
 
-const HeaderInfoMenu = ({ anchorEl, open, handleClose }: Props) => {
+const HeaderInfoMenu = ({ anchorEl, open, handleClose, state }: Props) => {
   return (
     <PopoverMenu
       anchorEl={anchorEl}
@@ -101,14 +93,30 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose }: Props) => {
       setAnchorEl={handleClose}
       maxWidth="284px"
     >
-      <Box
-        sx={{
-          width: "100%",
-          height: "100%",
-        }}
-      >
+      <Box sx={{ width: "100%", height: "100%" }}>
         <Box sx={{ borderBottom: `1px solid ${Colors.silverGrey}` }}>
-          <TitleHeaderMenu>{HEADER_INFO_MOCK.title}</TitleHeaderMenu>
+          <Box sx={{ display: "flex", alignItems: "center", mb: "4px" }}>
+            <TitleHeaderMenu>{HEADER_INFO_MOCK.title}</TitleHeaderMenu>
+            {state && (
+              <Box
+                sx={{
+                  p: "4px 16px",
+                  border: `1px solid ${stateColors[state].border}`,
+                  borderRadius: "20px",
+                  bgcolor: stateColors[state].bg,
+                  color: stateColors[state].color,
+                  fontFamily: Fonts.main,
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  ml: "7px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {state}
+              </Box>
+            )}
+          </Box>
           <SubTitleHeaderMenu>
             Store: {HEADER_INFO_MOCK.subTitle.store}{" "}
             <span style={{ margin: "0 5px" }}> - </span> User:{" "}
@@ -116,7 +124,7 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose }: Props) => {
           </SubTitleHeaderMenu>
         </Box>
         {HEADER_INFO_MOCK.items.map((item, index) => (
-          <MenuHeaderContainer sx={{ mt: index === 0 ? "8px" : undefined }}>
+          <MenuHeaderContainer key={index} sx={{ mt: index === 0 ? "8px" : undefined }}>
             <TextHeaderMenu>{item.activity}</TextHeaderMenu>
             <SubTextHeaderMenu>{item.complement}</SubTextHeaderMenu>
           </MenuHeaderContainer>

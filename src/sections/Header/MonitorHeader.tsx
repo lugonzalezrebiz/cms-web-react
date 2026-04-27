@@ -19,6 +19,14 @@ import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 
+const TRACKER_OPTIONS = [
+  { value: "estop", title: "E-Stop Activation" },
+  { value: "collision", title: "Collision In Tunnel" },
+  { value: "human", title: "Human in Tunnel" },
+  { value: "slip", title: "Slip & Fall" },
+  { value: "paystation", title: "Paystation Attendance" },
+];
+
 const CAMERA_GROUPS = [
   { value: "1", title: "All" },
   { value: "2", title: "POS" },
@@ -26,7 +34,7 @@ const CAMERA_GROUPS = [
   { value: "4", title: "Offices" },
   { value: "5", title: "Drying Station" },
   { value: "6", title: "Parking Lot" },
-  { value: "7", title: "Tracker" },
+  { value: "7", title: "Tracker", options: TRACKER_OPTIONS },
 ];
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
@@ -76,6 +84,33 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
     {
       keys: [{ type: "img", src: "../assets/plus-1.svg" }],
       label: "Delete selected employee",
+    },
+    {
+      keys: [{ type: "text", label: "i", fontSize: "16px" }],
+      label: "Employee push-in",
+    },
+    {
+      keys: [{ type: "text", label: "o", fontSize: "16px" }],
+      label: "Employee push-in",
+    },
+    {
+      keys: [{ type: "text", label: "K", fontSize: "16px" }],
+      label: "Split punk session",
+    },
+    {
+      keys: [
+        { type: "text", label: "Ctrl", fontSize: "14px" },
+        { type: "img", src: "../assets/mouse.svg" },
+      ],
+      label: "Delete session",
+    },
+    {
+      keys: [{ type: "text", label: "\\", fontSize: "16px" }],
+      label: "Ai Assist on/off",
+    },
+    {
+      keys: [{ type: "text", label: "|", fontSize: "16px" }],
+      label: "Decrease Ai threshold",
     },
   ],
 };
@@ -137,6 +172,7 @@ const MonitorHeader = ({
 
   const { handleDone, showFinalizeButton } = useMonitorState();
   const { cameraGroup, setCameraGroup } = useCameraGroup();
+  const [trackerOption, setTrackerOption] = useState("");
 
   return (
     <>
@@ -190,6 +226,8 @@ const MonitorHeader = ({
                 setValue={setCameraGroup}
                 label="Camera Groups"
                 groups={CAMERA_GROUPS}
+                selectValue={trackerOption}
+                setSelectValue={setTrackerOption}
               />
             </Box>
 
@@ -218,6 +256,7 @@ const MonitorHeader = ({
           anchorEl={menuHeader.anchorEl}
           handleClose={menuHeader.handleClose}
           open={menuHeader.open}
+          state="New"
         />
 
         <KeyboardMenu

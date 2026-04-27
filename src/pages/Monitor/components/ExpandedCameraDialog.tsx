@@ -49,7 +49,13 @@ export const ExpandedCameraDialog = ({
   onRemoveTag,
 }: ExpandedCameraDialogProps) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="90%" align="flex-start">
+    <Dialog
+      padding="0"
+      open={open}
+      onClose={onClose}
+      maxWidth="90%"
+      align="flex-start"
+    >
       {open && (
         <Box>
           <Title smallText marginBottom="20px" title={cameraName + 1}>
