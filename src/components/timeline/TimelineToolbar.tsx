@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Box } from "@mui/material";
 import { Grid } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import { secToTimeString } from "./hooks/useTimelineMarker";
-import type { TimelineSnapshot } from "./types";
+import type { NavTab, TimelineSnapshot } from "./types";
+import TimelineNavPopover from "./TimelineNavPopover";
+import { usePopover } from "./hooks/usePopover";
 
 interface Props {
   snapshot: TimelineSnapshot;
@@ -21,6 +24,9 @@ const TimelineToolbar = ({
   onTogglePlay,
   onPopOut,
 }: Props) => {
+  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
+  const navPopover = usePopover();
+
   return (
     <Grid
       container
@@ -43,12 +49,16 @@ const TimelineToolbar = ({
         alignItems={"center"}
         justifyContent={"start"}
       >
-        <Box>
-          <img
-            style={{ opacity: 0.5 }}
-            src="../assets/layers-three-02.svg"
-            alt=""
-          />
+        <TimelineNavPopover
+          open={navPopover.open}
+          anchorEl={navPopover.anchorEl}
+          onClose={navPopover.handleClose}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
+          <img src="../assets/layers-three-02.svg" alt="" />
         </Box>
         <Box onClick={() => {}}>
           <img src="../assets/user-plus-01.svg" alt="" />

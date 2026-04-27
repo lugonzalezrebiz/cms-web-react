@@ -81,6 +81,7 @@ const TimelineDialog = ({ openDialog = false, dialogOnClose }: Props) => {
 
   return (
     <Dialog
+      bgColor={Colors.softWhite}
       open={openDialog}
       onClose={dialogOnClose || (() => {})}
       footer={

@@ -8,6 +8,7 @@ import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
+import TimelineDialog from "./timeline/TimelineDialog";
 
 const TimeLine = ({
   cameraEventPoints,
@@ -152,6 +153,10 @@ const TimeLine = ({
         setMarkerSec={state.setMarkerSec}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
+      />
+      <TimelineDialog
+        dialogOnClose={state.handleOnCloseDialog}
+        openDialog={state.openDialog}
       />
     </Box>
   );

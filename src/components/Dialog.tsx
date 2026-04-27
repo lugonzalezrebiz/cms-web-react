@@ -14,19 +14,21 @@ export interface DialogComponentProps {
   maxWidth?: string;
   padding?: string;
   align?: "flex-start" | "center";
+  bgColor?: string;
 }
 
 const DialogStyled = styled(DialogComponent, {
-  shouldForwardProp: (prop) => prop !== "customWidth" && prop !== "align",
-})<{ customWidth?: string; align?: "flex-start" | "center" }>(
-  ({ customWidth, align = "center" }) => ({
+  shouldForwardProp: (prop) =>
+    prop !== "customWidth" && prop !== "align" && prop !== "bgColor",
+})<{ customWidth?: string; align?: "flex-start" | "center"; bgColor?: string }>(
+  ({ customWidth, align = "center", bgColor = Colors.white }) => ({
     "& .MuiDialog-container": {
       alignItems: align,
     },
     "& .MuiDialog-paper": {
       width: "100%",
       maxWidth: customWidth || "895px",
-      backgroundColor: Colors.white,
+      backgroundColor: bgColor,
       padding: "0px",
       borderRadius: "16px",
     },
@@ -41,6 +43,7 @@ const Dialog = ({
   maxWidth,
   padding,
   align,
+  bgColor,
 }: DialogComponentProps) => {
   return (
     <>
@@ -50,6 +53,7 @@ const Dialog = ({
         maxWidth={false}
         customWidth={maxWidth}
         align={align}
+        bgColor={bgColor}
       >
         <DialogContent sx={{ padding: padding }}>{children}</DialogContent>
         {footer && (
