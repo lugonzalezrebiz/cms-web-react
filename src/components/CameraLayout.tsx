@@ -257,7 +257,7 @@ const CameraItem = ({
       </Box>
     </Box>
   );
-}
+};
 
 export type CameraInfo = { id: number; name: string };
 

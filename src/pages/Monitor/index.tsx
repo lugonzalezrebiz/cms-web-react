@@ -13,22 +13,19 @@ import { useMenuItems } from "./hooks/useMenuItems";
 import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
-import ToggleButton from "../../components/ToggleButton";
 import { useEventMenu } from "./hooks/useEventMenu";
 import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
-import { useRegisterMonitorActions } from "../../contexts/MonitorContext";
+import {
+  useRegisterMonitorActions,
+  useCameraGroup,
+} from "../../contexts/MonitorContext";
 import { Check } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { Colors } from "../../theme";
 import Button from "../../components/Button";
-
-const CameraGroups = [
-  { value: "1", title: "All" },
-  { value: "2", title: "POS" },
-];
 
 const Monitor = () => {
   const { company, location, date } = useDashboardParams();
@@ -60,7 +57,7 @@ const Monitor = () => {
 
   const cameras = useCameras(company, location, date);
   const trackers = useTrackers();
-  const [cameraGroup, setCameraGroup] = useState("1");
+  const { cameraGroup, setCameraGroup } = useCameraGroup();
 
   const {
     cameraEventPoints,
@@ -158,13 +155,6 @@ const Monitor = () => {
           m: "10px 16px 0 16px",
         }}
       >
-        <ToggleButton
-          value={cameraGroup}
-          setValue={setCameraGroup}
-          label="Camera Groups"
-          groups={CameraGroups}
-        />
-
         <EventMenu
           contextMenuTitle="Comp. Violations"
           contextMenuItems={allMenuItems}

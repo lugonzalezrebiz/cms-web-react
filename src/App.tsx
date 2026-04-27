@@ -67,7 +67,7 @@ function App() {
                 header={
                   <MonitorHeader
                     toggleDrawer={toggleDrawer}
-                    withIconMenu={!drawerOpen}
+                    withIconMenu={false}
                     allowGoBack
                   />
                 }
@@ -90,7 +90,7 @@ function App() {
                 header={
                   <AdminHeader
                     toggleDrawer={toggleDrawer}
-                    withIconMenu={!drawerOpen}
+                    withIconMenu={false}
                   />
                 }
               >
@@ -106,7 +106,7 @@ function App() {
                 header={
                   <AssignmentsHeader
                     toggleDrawer={toggleDrawer}
-                    withIconMenu={!drawerOpen}
+                    withIconMenu={false}
                   />
                 }
               >

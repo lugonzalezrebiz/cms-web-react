@@ -15,8 +15,19 @@ import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery from "../../hooks/useNavigate";
-import { useMonitorState } from "../../contexts/MonitorContext";
+import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
 import Button from "../../components/Button";
+import ToggleButton from "../../components/ToggleButton";
+
+const CAMERA_GROUPS = [
+  { value: "1", title: "All" },
+  { value: "2", title: "POS" },
+  { value: "3", title: "Tunner" },
+  { value: "4", title: "Offices" },
+  { value: "5", title: "Drying Station" },
+  { value: "6", title: "Parking Lot" },
+  { value: "7", title: "Tracker" },
+];
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
@@ -125,6 +136,7 @@ const MonitorHeader = ({
   }, []);
 
   const { handleDone, showFinalizeButton } = useMonitorState();
+  const { cameraGroup, setCameraGroup } = useCameraGroup();
 
   return (
     <>
@@ -172,7 +184,16 @@ const MonitorHeader = ({
               </StyledSubTitle>
             </Box>
 
-            <Box display={"flex"}>
+            <Box mr={"80px"}>
+              <ToggleButton
+                value={cameraGroup}
+                setValue={setCameraGroup}
+                label="Camera Groups"
+                groups={CAMERA_GROUPS}
+              />
+            </Box>
+
+            <Box display={"flex"} alignItems="center" gap={1}>
               <StyledImg
                 onClick={keyboardMenu.handleOpen}
                 src="../assets/keyboard-02.svg"
@@ -183,13 +204,12 @@ const MonitorHeader = ({
                 src="../assets/user-circle.svg"
                 alt=""
               />
-              {showFinalizeButton && (
-                <Box>
-                  <Button onClick={handleDone} sx={{}}>
-                    Done
-                  </Button>
-                </Box>
-              )}
+
+              <Box>
+                <Button onClick={handleDone} disabled={!showFinalizeButton}>
+                  Done
+                </Button>
+              </Box>
             </Box>
           </Box>
         </StyledContainer>
