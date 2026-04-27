@@ -13,11 +13,15 @@ export interface DialogComponentProps {
   footer?: React.ReactNode;
   maxWidth?: string;
   padding?: string;
+  align?: "flex-start" | "center";
 }
 
 const DialogStyled = styled(DialogComponent, {
-  shouldForwardProp: (prop) => prop !== "customWidth",
-})<{ customWidth?: string }>(({ customWidth }) => ({
+  shouldForwardProp: (prop) => prop !== "customWidth" && prop !== "align",
+})<{ customWidth?: string; align?: "flex-start" | "center" }>(({ customWidth, align = "center" }) => ({
+  "& .MuiDialog-container": {
+    alignItems: align,
+  },
   "& .MuiDialog-paper": {
     width: "100%",
     maxWidth: customWidth || "895px",
@@ -34,21 +38,27 @@ const Dialog = ({
   footer,
   maxWidth,
   padding,
+  align,
 }: DialogComponentProps) => {
   return (
-    <DialogStyled
-      open={open}
-      onClose={onClose}
-      maxWidth={false}
-      customWidth={maxWidth}
-    >
-      <DialogContent>{children}</DialogContent>
-      {footer && (
-        <DialogActions sx={{ mr: "26px", p: padding ? padding : "0 0 6px 0" }}>
-          {footer}
-        </DialogActions>
-      )}
-    </DialogStyled>
+    <>
+      <DialogStyled
+        open={open}
+        onClose={onClose}
+        maxWidth={false}
+        customWidth={maxWidth}
+        align={align}
+      >
+        <DialogContent sx={{ p: 0 }}>{children}</DialogContent>
+        {footer && (
+          <DialogActions
+            sx={{ mr: "26px", p: padding ? padding : "0 0 6px 0" }}
+          >
+            {footer}
+          </DialogActions>
+        )}
+      </DialogStyled>
+    </>
   );
 };
 

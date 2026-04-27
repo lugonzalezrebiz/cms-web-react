@@ -1,4 +1,3 @@
-import { useExpandedCamera } from "../hooks/useExpandedCamera";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
@@ -8,7 +7,7 @@ import { useCameraFrame } from "../hooks/useCameraFrame";
 import type { CameraEventPoint } from "./timeline/types";
 import { useState } from "react";
 
-const TAG_TOLERANCE_SEC = 300;
+export const TAG_TOLERANCE_SEC = 300;
 
 interface CameraItemProps {
   index: number;
@@ -26,9 +25,10 @@ interface CameraItemProps {
   date?: string;
   timestamp?: string;
   onRemoveTag: (tagId: number) => void;
+  cameraLabel?: boolean;
 }
 
-const CameraItem = ({
+export const CameraItem = ({
   index,
   media,
   cameraItemList,
@@ -43,6 +43,7 @@ const CameraItem = ({
   date,
   timestamp,
   onRemoveTag,
+  cameraLabel = true,
 }: CameraItemProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -118,39 +119,41 @@ const CameraItem = ({
       />
 
       {/* Top-left: camera label */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 8,
-          left: 8,
-          height: "22px",
-          display: "flex",
-          alignItems: "center",
-          borderRadius: "4px",
-          bgcolor: Colors.semiTransparentBlackTwo,
-        }}
-      >
-        <Typography
-          variant="caption"
+      {cameraLabel && (
+        <Box
           sx={{
-            padding: "2px 0px 2px 4px",
-            color: Colors.white,
-            borderRadius: 0.5,
-            fontSize: 12,
-            mr: "9px",
-            fontFamily: Fonts.main,
-            lineHeight: 1.5,
+            position: "absolute",
+            top: 8,
+            left: 8,
+            height: "22px",
+            display: "flex",
+            alignItems: "center",
+            borderRadius: "4px",
+            bgcolor: Colors.semiTransparentBlackTwo,
           }}
         >
-          Camera {index + 1}
-        </Typography>
-        <img
-          style={{ padding: "0 4px 0 0", cursor: "pointer" }}
-          src="../assets/chevron-down.svg"
-          onClick={cameraItemList}
-          alt=""
-        />
-      </Box>
+          <Typography
+            variant="caption"
+            sx={{
+              padding: "2px 0px 2px 4px",
+              color: Colors.white,
+              borderRadius: 0.5,
+              fontSize: 12,
+              mr: "9px",
+              fontFamily: Fonts.main,
+              lineHeight: 1.5,
+            }}
+          >
+            Camera {index + 1}
+          </Typography>
+          <img
+            style={{ padding: "0 4px 0 0", cursor: "pointer" }}
+            src="../assets/chevron-down.svg"
+            onClick={cameraItemList}
+            alt=""
+          />
+        </Box>
+      )}
 
       {/* Bottom-left: tags (max 2 visible, +N overflow) */}
       {tags.length > 0 && (
@@ -249,7 +252,8 @@ const CameraItem = ({
         <img
           style={{ cursor: "pointer" }}
           src={
-            isExpanded ? "../assets/expand-06.svg" : "../assets/expand-03.svg"
+            !isExpanded ? "../assets/expand-03.svg" : " "
+            //: "../assets/expand-03.svg"
           }
           alt=""
           onClick={() => expandCamera(index)}
@@ -276,6 +280,8 @@ interface CameraLayoutProps {
   cameraEventPoints?: CameraEventPoint[];
   markerSec?: number;
   onRemoveEventPoint?: (id: number) => void;
+  expandedCamera: number | null;
+  onExpandCamera: (index: number) => void;
 }
 
 const getRowDistribution = (count: number): number[] => {
@@ -400,9 +406,8 @@ const CameraLayout = ({
   cameraEventPoints = [],
   markerSec = 0,
   onRemoveEventPoint,
+  onExpandCamera: handleExpandCamera,
 }: CameraLayoutProps) => {
-  const { expandedCamera, handleExpandCamera } = useExpandedCamera();
-
   const safeCount = Math.min(count, 16);
   if (safeCount === 0) return null;
 
@@ -442,29 +447,6 @@ const CameraLayout = ({
     date,
     timestamp,
   };
-
-  if (expandedCamera !== null) {
-    return (
-      <Box sx={{ width: "97%", height: totalHeight, overflow: "hidden", m: "auto" }}>
-        <CameraItem
-          index={expandedCamera}
-          media={media}
-          cameraItemList={cameraItemList}
-          expandCamera={handleExpandCamera}
-          isExpanded
-          tags={getTagsForCamera(expandedCamera)}
-          onDrop={(itemId) => handleDrop(expandedCamera, Number(itemId))}
-          cameraId={cameras?.[expandedCamera]?.id}
-          cameraName={cameras?.[expandedCamera]?.name}
-          company={company}
-          location={location}
-          date={date}
-          timestamp={timestamp}
-          onRemoveTag={(tagId) => onRemoveEventPoint?.(tagId)}
-        />
-      </Box>
-    );
-  }
 
   const rowDistribution = getRowDistribution(safeCount);
   const numRows = rowDistribution.length;

@@ -9,9 +9,10 @@ interface Props {
 }
 
 const Button = styled(MuiButton, {
-  shouldForwardProp: (prop) => prop !== "outfit" && prop !== "square" && prop !== "selected",
+  shouldForwardProp: (prop) =>
+    prop !== "outfit" && prop !== "square" && prop !== "selected",
 })<ButtonProps & Props>(({ color, outfit, disabled, square, selected }) => ({
-  borderRadius: square ? "12px" : "18px",
+  borderRadius: square ? "0px" : "18px",
   fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
   fontSize: "16px",
   fontWeight: "600",
