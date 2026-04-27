@@ -2,27 +2,24 @@ import { Box } from "@mui/material";
 import { Grid } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import { secToTimeString } from "./hooks/useTimelineMarker";
-import Button from "../Button";
 import type { TimelineSnapshot } from "./types";
 
 interface Props {
   snapshot: TimelineSnapshot;
   markerTimeSec: number | null;
   isPlaying: boolean;
-  showFinalizeButton: boolean;
   onStepMarker: (delta: number) => void;
   onTogglePlay: () => void;
-  onDone: () => void;
+  onPopOut?: () => void;
 }
 
 const TimelineToolbar = ({
   snapshot,
   markerTimeSec,
   isPlaying,
-  showFinalizeButton,
   onStepMarker,
   onTogglePlay,
-  onDone,
+  onPopOut,
 }: Props) => {
   return (
     <Grid
@@ -192,16 +189,6 @@ const TimelineToolbar = ({
           display={"flex"}
           justifyContent={"flex-end"}
         >
-          {showFinalizeButton && (
-            <Box>
-              <Button
-                onClick={onDone}
-                sx={{ height: "20px", mr: "36px", mb: "2px" }}
-              >
-                Finalize
-              </Button>
-            </Box>
-          )}
           <Box onClick={() => {}}>
             <img
               style={{ opacity: 0.5 }}
@@ -282,7 +269,11 @@ const TimelineToolbar = ({
               }}
             />
           </Box>
-          <Box ml={"18px"} onClick={() => {}}>
+          <Box
+            ml={"18px"}
+            onClick={onPopOut}
+            sx={{ cursor: onPopOut ? "pointer" : "default" }}
+          >
             <img
               style={{ opacity: 0.5 }}
               src="../assets/expand-06.svg"

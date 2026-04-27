@@ -15,10 +15,9 @@ const TimeLine = ({
   snapshot,
   targetMarkerSec,
   onUpdateEventPoint,
-  onDone,
+  onPopOut,
   headerLabel,
   markerTimeSec,
-  showFinalizeButton,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -28,10 +27,9 @@ const TimeLine = ({
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
-  onDone?: () => void;
+  onPopOut?: () => void;
   headerLabel: string;
   markerTimeSec: number | null;
-  showFinalizeButton: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -109,10 +107,9 @@ const TimeLine = ({
         snapshot={snapshot}
         markerTimeSec={markerTimeSec}
         isPlaying={state.isPlaying}
-        showFinalizeButton={showFinalizeButton}
         onStepMarker={handleStepMarker}
         onTogglePlay={handleTogglePlay}
-        onDone={onDone ?? (() => {})}
+        onPopOut={onPopOut}
       />
 
       <TimelineBody

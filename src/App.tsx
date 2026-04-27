@@ -10,9 +10,11 @@ import AdminForm from "./pages/AdminForm";
 import { REVIEWER_ROLE, ADMIN_ROLE, AGENT_ROLE } from "./config";
 import Assigments from "./pages/Assignments";
 import Monitor from "./pages/Monitor";
+import MonitorTimeline from "./pages/MonitorTimeline";
 import MonitorHeader from "./sections/Header/MonitorHeader";
 import AdminHeader from "./sections/Header/AdminHeader";
 import AssignmentsHeader from "./sections/Header/AssignmentsHeader";
+import { MonitorProvider } from "./contexts/MonitorContext";
 
 function ProtectedRole({
   roles,
@@ -57,20 +59,22 @@ function App() {
         path="/monitor"
         element={
           <ProtectedRole roles={[REVIEWER_ROLE, AGENT_ROLE]}>
-            <RenderPage
-              drawerOpen={drawerOpen}
-              toggleDrawer={toggleDrawer}
-              isMobile={isMobile}
-              header={
-                <MonitorHeader
-                  toggleDrawer={toggleDrawer}
-                  withIconMenu={!drawerOpen}
-                  allowGoBack
-                />
-              }
-            >
-              <Monitor />
-            </RenderPage>
+            <MonitorProvider>
+              <RenderPage
+                drawerOpen={drawerOpen}
+                toggleDrawer={toggleDrawer}
+                isMobile={isMobile}
+                header={
+                  <MonitorHeader
+                    toggleDrawer={toggleDrawer}
+                    withIconMenu={!drawerOpen}
+                    allowGoBack
+                  />
+                }
+              >
+                <Monitor />
+              </RenderPage>
+            </MonitorProvider>
           </ProtectedRole>
         }
       />
@@ -113,6 +117,14 @@ function App() {
         }
       />
 
+      <Route
+        path="/monitor/timeline"
+        element={
+          <ProtectedRole roles={[REVIEWER_ROLE, AGENT_ROLE]}>
+            <MonitorTimeline />
+          </ProtectedRole>
+        }
+      />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

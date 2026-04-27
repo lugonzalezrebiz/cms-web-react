@@ -15,6 +15,8 @@ import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery from "../../hooks/useNavigate";
+import { useMonitorState } from "../../contexts/MonitorContext";
+import Button from "../../components/Button";
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
@@ -122,6 +124,8 @@ const MonitorHeader = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const { handleDone, showFinalizeButton } = useMonitorState();
+
   return (
     <>
       <Fix scrolled={scrolled}>
@@ -129,7 +133,7 @@ const MonitorHeader = ({
           {withIconMenu && (
             <IconButton
               edge="start"
-                           sx={{ color: Colors.main }}
+              sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
             >
@@ -138,7 +142,7 @@ const MonitorHeader = ({
           )}
           {allowGoBack && (
             <IconButton
-                           sx={{ color: Colors.main }}
+              sx={{ color: Colors.main }}
               onClick={goBack}
               aria-label="go back"
             >
@@ -154,7 +158,7 @@ const MonitorHeader = ({
           >
             <Box
               onClick={menuHeader.handleOpen}
-                           sx={{
+              sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
                 cursor: "pointer",
@@ -179,6 +183,13 @@ const MonitorHeader = ({
                 src="../assets/user-circle.svg"
                 alt=""
               />
+              {showFinalizeButton && (
+                <Box>
+                  <Button onClick={handleDone} sx={{}}>
+                    Done
+                  </Button>
+                </Box>
+              )}
             </Box>
           </Box>
         </StyledContainer>

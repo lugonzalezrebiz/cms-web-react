@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Box } from "@mui/system";
 import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
@@ -18,6 +19,7 @@ import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
+import { useRegisterMonitorActions } from "../../contexts/MonitorContext";
 import { Check } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import { Colors } from "../../theme";
@@ -30,6 +32,31 @@ const CameraGroups = [
 
 const Monitor = () => {
   const { company, location, date } = useDashboardParams();
+  const [searchParams] = useSearchParams();
+  const [timelinePopped, setTimelinePopped] = useState(false);
+  const popoutRef = useRef<Window | null>(null);
+
+  const handlePopOut = useCallback(() => {
+    if (popoutRef.current && !popoutRef.current.closed) {
+      popoutRef.current.focus();
+      return;
+    }
+    const win = window.open(
+      `/monitor/timeline?${searchParams.toString()}`,
+      "timeline-popout",
+      "width=1400,height=500,resizable=yes",
+    );
+    if (!win) return;
+    popoutRef.current = win;
+    setTimelinePopped(true);
+    const interval = setInterval(() => {
+      if (win.closed) {
+        clearInterval(interval);
+        setTimelinePopped(false);
+        popoutRef.current = null;
+      }
+    }, 500);
+  }, [searchParams]);
 
   const cameras = useCameras(company, location, date);
   const trackers = useTrackers();
@@ -87,12 +114,31 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
+  const handleMarkerChangeRef = useRef(handleMarkerChange);
+  useEffect(() => {
+    handleMarkerChangeRef.current = handleMarkerChange;
+  });
+
+  useEffect(() => {
+    if (!timelinePopped) return;
+    const channel = new BroadcastChannel("timeline-sync");
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "marker") {
+        handleMarkerChangeRef.current(e.data.sec as number);
+      }
+    };
+    channel.addEventListener("message", handler);
+    return () => channel.close();
+  }, [timelinePopped]);
+
   const sessionDate = useSessionDate();
   const { handleDone } = useSaveMonitoring({
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
   });
+
+  useRegisterMonitorActions(handleDone, showFinalizeButton);
 
   return (
     <Box
@@ -224,23 +270,24 @@ const Monitor = () => {
         )}
       </Box>
 
-      <Box sx={{ flex: 4, minHeight: 0 }}>
-        <TimeLine
-          snapshot={snapshot}
-          cameraEventPoints={allEventPoints}
-          onMarkerChange={handleMarkerChange}
-          markerTimeSec={markerTimeSec}
-          showFinalizeButton={showFinalizeButton}
-          targetMarkerSec={
-            cameraGroup === "2" && posMarkerSec !== null
-              ? posMarkerSec
-              : undefined
-          }
-          onUpdateEventPoint={handleUpdateEventPoint}
-          onDone={handleDone}
-          headerLabel="Cameras"
-        />
-      </Box>
+      {!timelinePopped && (
+        <Box sx={{ flex: 4, minHeight: 0 }}>
+          <TimeLine
+            snapshot={snapshot}
+            cameraEventPoints={allEventPoints}
+            onMarkerChange={handleMarkerChange}
+            markerTimeSec={markerTimeSec}
+            targetMarkerSec={
+              cameraGroup === "2" && posMarkerSec !== null
+                ? posMarkerSec
+                : undefined
+            }
+            onUpdateEventPoint={handleUpdateEventPoint}
+            onPopOut={handlePopOut}
+            headerLabel="Cameras"
+          />
+        </Box>
+      )}
     </Box>
   );
 };
