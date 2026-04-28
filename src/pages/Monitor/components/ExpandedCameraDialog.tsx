@@ -2,18 +2,17 @@ import { Box } from "@mui/system";
 import Dialog from "../../../components/Dialog";
 import { CameraItem } from "../../../components/CameraLayout";
 import Button from "../../../components/Button";
-import type { CameraContextMenuItem } from "../../../components/EventMenu";
 import Title from "../../../components/Title";
+import type { CameraContextMenuItem } from "../../../components/CameraOverlayMenu";
 
 export interface ExpandedCameraDialogProps {
   open: boolean;
   onClose: () => void;
   cameraIndex: number;
   media: string;
-  cameraItemList: () => void;
   expandCamera: (index: number) => void;
   tags: CameraContextMenuItem[];
-  onDrop: (itemId: string) => void;
+  contextMenuItems: CameraContextMenuItem[];
   cameraId?: number;
   cameraName?: string;
   company?: number;
@@ -23,23 +22,14 @@ export interface ExpandedCameraDialogProps {
   onRemoveTag: (tagId: number) => void;
 }
 
-const buttonText = [
-  "E-Stop Activation",
-  "Unattended Pay Station",
-  "Human in Operation Tunnel",
-  "Collision In Tunnel",
-  "Collision In Tunnel",
-];
-
 export const ExpandedCameraDialog = ({
   open,
   onClose,
   cameraIndex,
   media,
-  cameraItemList,
   expandCamera,
   tags,
-  onDrop,
+  contextMenuItems,
   cameraId,
   cameraName = "camera",
   company,
@@ -58,7 +48,11 @@ export const ExpandedCameraDialog = ({
     >
       {open && (
         <Box>
-          <Title smallText marginBottom="20px" title={cameraName + 1}>
+          <Title
+            smallText
+            marginBottom="20px"
+            title={`Camera ${Number(cameraIndex) + 1}`}
+          >
             <Box sx={{ cursor: "pointer", marginRight: "16px" }}>
               <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
             </Box>
@@ -67,11 +61,10 @@ export const ExpandedCameraDialog = ({
             <CameraItem
               index={cameraIndex}
               media={media}
-              cameraItemList={cameraItemList}
               expandCamera={expandCamera}
               isExpanded
               tags={tags}
-              onDrop={onDrop}
+              contextMenuItems={contextMenuItems}
               cameraId={cameraId}
               cameraName={cameraName}
               company={company}
@@ -82,10 +75,18 @@ export const ExpandedCameraDialog = ({
               cameraLabel={false}
             />
           </Box>
-          <Box sx={{ display: "flex", justifyContent: "space-between", m: 2 }}>
-            {buttonText.map((text, index) => (
-              <Button key={index} square color="secondary" sx={{ mr: 1 }}>
-                {text}
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", p: "16px" }}
+          >
+            {contextMenuItems.map((item) => (
+              <Button
+                key={item.id}
+                square
+                color="secondary"
+                sx={{ mr: 1 }}
+                onClick={() => item.onClick(cameraIndex)}
+              >
+                {item.name}
               </Button>
             ))}
           </Box>

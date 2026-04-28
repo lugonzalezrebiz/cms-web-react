@@ -42,75 +42,59 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   items: [
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }],
-      label: "Move back in time",
+      label: "Move marker back 3 min",
     },
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }],
-      label: "Move forward in time",
+      label: "Move marker forward 3 min",
     },
     {
       keys: [
         { type: "text", label: "Ctrl", fontSize: "14px" },
         { type: "img", src: "../assets/arrow-narrow-left.svg" },
       ],
-      label: "Back to person",
+      label: "Previous event point",
     },
     {
       keys: [
         { type: "text", label: "Ctrl", fontSize: "14px" },
         { type: "img", src: "../assets/arrow-narrow-right.svg" },
       ],
-      label: "Forward to person",
+      label: "Next event point",
+    },
+    {
+      keys: [
+        { type: "text", label: "Alt", fontSize: "12px" },
+        { type: "img", src: "../assets/arrow-narrow-left.svg" },
+      ],
+      label: "Go back",
     },
     {
       keys: [
         { type: "text", label: "Shift", fontSize: "12px" },
         { type: "text", label: "G", fontSize: "16px" },
       ],
-      label: "Move to specific time",
+      label: "Go to specific time",
     },
     {
-      keys: [{ type: "text", label: "Home", fontSize: "12px" }],
-      label: "Move to first frame",
-    },
-    {
-      keys: [{ type: "text", label: "Q", fontSize: "16px" }],
-      label: "Employee/Flag Mode",
+      keys: [{ type: "text", label: "H", fontSize: "16px" }],
+      label: "Move to start",
     },
     {
       keys: [{ type: "text", label: "DEL", fontSize: "12px" }],
-      label: "Delete selected employee",
+      label: "Delete event point under marker",
     },
     {
-      keys: [{ type: "img", src: "../assets/plus-1.svg" }],
-      label: "Delete selected employee",
+      keys: [{ type: "text", label: "Space", fontSize: "12px" }],
+      label: "Play / Pause",
     },
     {
-      keys: [{ type: "text", label: "i", fontSize: "16px" }],
-      label: "Employee push-in",
+      keys: [{ type: "text", label: "+", fontSize: "16px" }],
+      label: "Zoom in",
     },
     {
-      keys: [{ type: "text", label: "o", fontSize: "16px" }],
-      label: "Employee push-in",
-    },
-    {
-      keys: [{ type: "text", label: "K", fontSize: "16px" }],
-      label: "Split punk session",
-    },
-    {
-      keys: [
-        { type: "text", label: "Ctrl", fontSize: "14px" },
-        { type: "img", src: "../assets/mouse.svg" },
-      ],
-      label: "Delete session",
-    },
-    {
-      keys: [{ type: "text", label: "\\", fontSize: "16px" }],
-      label: "Ai Assist on/off",
-    },
-    {
-      keys: [{ type: "text", label: "|", fontSize: "16px" }],
-      label: "Decrease Ai threshold",
+      keys: [{ type: "text", label: "-", fontSize: "16px" }],
+      label: "Zoom out",
     },
   ],
 };

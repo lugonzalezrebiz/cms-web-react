@@ -14,6 +14,16 @@ interface Props {
   onStepMarker: (delta: number) => void;
   onTogglePlay: () => void;
   onPopOut?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onDeleteEventPoint?: () => void;
+  canDelete?: boolean;
+  onGoPrevEventPoint?: () => void;
+  onGoNextEventPoint?: () => void;
+  hasPrevEventPoint?: boolean;
+  hasNextEventPoint?: boolean;
 }
 
 const TimelineToolbar = ({
@@ -23,6 +33,16 @@ const TimelineToolbar = ({
   onStepMarker,
   onTogglePlay,
   onPopOut,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  onDeleteEventPoint,
+  canDelete = false,
+  onGoPrevEventPoint,
+  onGoNextEventPoint,
+  hasPrevEventPoint = false,
+  hasNextEventPoint = false,
 }: Props) => {
   const [activeTab, setActiveTab] = useState<NavTab>("compliances");
   const navPopover = usePopover();
@@ -80,29 +100,43 @@ const TimelineToolbar = ({
         spacing={"18px"}
         justifyContent={"start"}
       >
-        <Box onClick={() => {}}>
+        <Box
+          onClick={canUndo ? onUndo : undefined}
+          sx={{ cursor: canUndo ? "pointer" : "default" }}
+        >
           <img
-            style={{ opacity: 0.5 }}
+            style={{ opacity: canUndo ? 1 : 0.5 }}
             src="../assets/reverse-left.svg"
             alt="Undo"
           />
         </Box>
-        <Box onClick={() => {}}>
+        <Box
+          onClick={canRedo ? onRedo : undefined}
+          sx={{ cursor: canRedo ? "pointer" : "default" }}
+        >
           <img
-            style={{ opacity: 0.5 }}
+            style={{ opacity: canRedo ? 1 : 0.5 }}
             src="../assets/reverse-right.svg"
             alt="Redo"
           />
         </Box>
-        <Box onClick={() => {}}>
-          <img src="../assets/trash-02.svg" alt="Delete" />
+        <Box
+          onClick={canDelete ? onDeleteEventPoint : undefined}
+          sx={{ cursor: canDelete ? "pointer" : "default" }}
+        >
+          <img
+            style={{ opacity: canDelete ? 1 : 0.5 }}
+            src="../assets/trash-02.svg"
+            alt="Delete"
+          />
         </Box>
+        {/*
         <Box onClick={() => {}}>
           <img src="../assets/divider.svg" alt="Divider" />
         </Box>
-        <Box onClick={() => {}}>
+         <Box onClick={() => {}}>
           <img src="../assets/link-02.svg" alt="Link" />
-        </Box>
+        </Box> */}
       </Grid>
 
       <Grid
@@ -112,12 +146,12 @@ const TimelineToolbar = ({
         spacing={"8px"}
         justifyContent={"flex-start"}
       >
-        <Box onClick={() => {}} ml={"18px"}>
+        {/* <Box onClick={() => {}} ml={"18px"}>
           <img src="../assets/punch-in.svg" alt="Punch in" />
         </Box>
         <Box onClick={() => {}}>
           <img src="../assets/punch-out.svg" alt="Punch out" />
-        </Box>
+        </Box> */}
       </Grid>
 
       <Grid
@@ -126,11 +160,15 @@ const TimelineToolbar = ({
         alignItems={"center"}
         justifyContent={"center"}
       >
-        <Box mr={"4px"} onClick={() => onStepMarker(-3600)}>
+        <Box
+          mr={"4px"}
+          onClick={hasPrevEventPoint ? onGoPrevEventPoint : undefined}
+          sx={{ cursor: hasPrevEventPoint ? "pointer" : "default" }}
+        >
           <img
-            style={{ cursor: "pointer" }}
+            style={{ opacity: hasPrevEventPoint ? 1 : 0.5 }}
             src="../assets/align-left-01.svg"
-            alt="Skip to start"
+            alt="Previous event point"
           />
         </Box>
         <Box mr={"8px"} onClick={() => onStepMarker(-600)}>
@@ -179,11 +217,14 @@ const TimelineToolbar = ({
             alt="Step forward"
           />
         </Box>
-        <Box onClick={() => onStepMarker(+3600)}>
+        <Box
+          onClick={hasNextEventPoint ? onGoNextEventPoint : undefined}
+          sx={{ cursor: hasNextEventPoint ? "pointer" : "default" }}
+        >
           <img
-            style={{ cursor: "pointer" }}
+            style={{ opacity: hasNextEventPoint ? 1 : 0.5 }}
             src="../assets/align-right-01.svg"
-            alt="Skip to end"
+            alt="Next event point"
           />
         </Box>
       </Grid>

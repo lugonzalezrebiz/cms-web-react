@@ -19,6 +19,11 @@ const TimeLine = ({
   onPopOut,
   headerLabel,
   markerTimeSec,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onRemoveEventPoint,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -31,6 +36,11 @@ const TimeLine = ({
   onPopOut?: () => void;
   headerLabel: string;
   markerTimeSec: number | null;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onRemoveEventPoint?: (id: number) => void;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -77,6 +87,28 @@ const TimeLine = ({
     state.setMarkerSec(next);
   };
 
+  const sortedEventPoints = [...mergedEventPoints].sort((a, b) => a.timeSec - b.timeSec);
+  const prevEventPoint = [...sortedEventPoints].reverse().find((ep) => ep.timeSec < state.resolvedMarkerSec);
+  const nextEventPoint = sortedEventPoints.find((ep) => ep.timeSec > state.resolvedMarkerSec);
+
+  const handleGoToPrevEventPoint = () => {
+    if (prevEventPoint) state.setMarkerSec(prevEventPoint.timeSec);
+  };
+  const handleGoToNextEventPoint = () => {
+    if (nextEventPoint) state.setMarkerSec(nextEventPoint.timeSec);
+  };
+
+  const eventPointUnderMarker = mergedEventPoints.find(
+    (ep) =>
+      ep.cameraId === state.iTrackId &&
+      state.resolvedMarkerSec >= ep.startSec &&
+      state.resolvedMarkerSec <= ep.endSec,
+  );
+
+  const handleDeleteEventPoint = () => {
+    if (eventPointUnderMarker) onRemoveEventPoint?.(eventPointUnderMarker.id);
+  };
+
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
@@ -100,6 +132,8 @@ const TimeLine = ({
     setPanOffsetSec: state.setPanOffsetSec,
     totalSec: state.totalSec,
     gridRef: state.gridRef,
+    cameraEventPoints: mergedEventPoints,
+    onDeleteEventPoint: handleDeleteEventPoint,
   });
 
   return (
@@ -111,6 +145,16 @@ const TimeLine = ({
         onStepMarker={handleStepMarker}
         onTogglePlay={handleTogglePlay}
         onPopOut={onPopOut}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onDeleteEventPoint={handleDeleteEventPoint}
+        canDelete={eventPointUnderMarker !== undefined}
+        onGoPrevEventPoint={handleGoToPrevEventPoint}
+        onGoNextEventPoint={handleGoToNextEventPoint}
+        hasPrevEventPoint={prevEventPoint !== undefined}
+        hasNextEventPoint={nextEventPoint !== undefined}
       />
 
       <TimelineBody

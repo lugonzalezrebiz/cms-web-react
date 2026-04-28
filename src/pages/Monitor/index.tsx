@@ -1,5 +1,4 @@
 import { Box } from "@mui/system";
-import EventMenu from "../../components/EventMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
@@ -11,7 +10,6 @@ import { useMenuItems } from "./hooks/useMenuItems";
 import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
-import { useEventMenu } from "./hooks/useEventMenu";
 import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
@@ -39,6 +37,10 @@ const Monitor = () => {
     handleActivitySelect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
   } = useCameraEventPoints();
 
   const { snapshot, eventPoints: preloadedEventPoints } = useMonitoring(trackers);
@@ -46,18 +48,10 @@ const Monitor = () => {
 
   const { transactions, loading: transactionsLoading } = useSalesTransactions();
 
-  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec } =
+  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec } =
     useMarkerState(cameraGroup, markerSec);
 
-  const { allMenuItems, handleAddMenuItem, itemCounts } = useMenuItems(
-    trackers,
-    handleActivitySelect,
-    allEventPoints,
-    activeMarkerSec,
-  );
-
-  const { anchorEl, setAnchorEl, input, setInput, handleAdd } =
-    useEventMenu(handleAddMenuItem);
+  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } =
     usePosCarousel(transactions, setPosMarkerSec);
@@ -90,13 +84,12 @@ const Monitor = () => {
     onUpdateEventPoint: handleUpdateEventPoint,
     onPopOut: handlePopOut,
     headerLabel: "Cameras",
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    canUndo,
+    canRedo,
+    onRemoveEventPoint: handleRemoveEventPoint,
   } as const;
-
-  const handleExpandedCameraDrop = (itemId: string) => {
-    if (expandedCamera === null) return;
-    const item = allMenuItems.find((m) => m.id === Number(itemId));
-    if (item) item.onClick(expandedCamera);
-  };
 
   const expandedCameraTags =
     expandedCamera !== null
@@ -119,30 +112,6 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          m: "10px 16px 0 16px",
-        }}
-      >
-        <EventMenu
-          contextMenuTitle="Comp. Violations"
-          contextMenuItems={allMenuItems}
-          iconMenu="/assets/plus-1.svg"
-          itemCounts={itemCounts}
-          subtitle="Drag an event onto a camera to assign it"
-          object="cam"
-          anchorEl={anchorEl}
-          onOpenMenu={setAnchorEl}
-          onCloseMenu={() => setAnchorEl(null)}
-          input={input}
-          onInputChange={setInput}
-          onAdd={handleAdd}
-        />
-      </Box>
-
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
         {cameraGroup === "2" ? (
           <PosCarouselSection
@@ -168,7 +137,6 @@ const Monitor = () => {
             count={cameras.length}
             media="/assets/camera/Cam thumbnail.svg"
             maxHeight="100%"
-            cameraItemList={() => alert("Camera list clicked")}
             contextMenuItems={allMenuItems}
             cameraEventPoints={allEventPoints}
             markerSec={markerSec}
@@ -210,10 +178,9 @@ const Monitor = () => {
         onClose={() => expandedCamera !== null && handleExpandCamera(expandedCamera)}
         cameraIndex={expandedCamera ?? 0}
         media="/assets/camera/Cam thumbnail.svg"
-        cameraItemList={() => alert("Camera list clicked")}
         expandCamera={handleExpandCamera}
         tags={expandedCameraTags}
-        onDrop={handleExpandedCameraDrop}
+        contextMenuItems={allMenuItems}
         cameraId={cameras[expandedCamera ?? 0]?.id}
         cameraName={cameras[expandedCamera ?? 0]?.name}
         company={company}

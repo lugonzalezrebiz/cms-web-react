@@ -1,22 +1,25 @@
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
-import { type CameraContextMenuItem } from "./EventMenu";
 import Tooltip from "./Tooltip";
 import { useCameraFrame } from "../hooks/useCameraFrame";
 import type { CameraEventPoint } from "./timeline/types";
-import { useState } from "react";
+import CameraOverlayMenu, {
+  type CameraContextMenuItem,
+} from "./CameraOverlayMenu";
+import { usePopover } from "../hooks/usePopover";
 
 export const TAG_TOLERANCE_SEC = 300;
 
 interface CameraItemProps {
   index: number;
   media: string;
-  cameraItemList: () => void;
   expandCamera: (index: number) => void;
   isExpanded?: boolean;
   tags: CameraContextMenuItem[];
-  onDrop: (itemId: string) => void;
+  contextMenuItems: CameraContextMenuItem[];
+  onRemoveTag: (tagId: number) => void;
+  cameraLabel?: boolean;
   // Real image props — when provided, loads from DVR via dvr:// protocol
   cameraId?: number;
   cameraName?: string;
@@ -24,18 +27,15 @@ interface CameraItemProps {
   location?: number;
   date?: string;
   timestamp?: string;
-  onRemoveTag: (tagId: number) => void;
-  cameraLabel?: boolean;
 }
 
 export const CameraItem = ({
   index,
   media,
-  cameraItemList,
   expandCamera,
   isExpanded = false,
   tags,
-  onDrop,
+  contextMenuItems,
   cameraId,
   cameraName,
   company,
@@ -45,7 +45,7 @@ export const CameraItem = ({
   onRemoveTag,
   cameraLabel = true,
 }: CameraItemProps) => {
-  const [isDragOver, setIsDragOver] = useState(false);
+  const { open: showMenu, handleOpen, handleClose: closeMenu } = usePopover();
 
   const useRealImages =
     cameraId !== undefined &&
@@ -70,18 +70,6 @@ export const CameraItem = ({
 
   return (
     <Box
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "copy";
-        setIsDragOver(true);
-      }}
-      onDragLeave={() => setIsDragOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setIsDragOver(false);
-        const itemId = e.dataTransfer.getData("eventMenuItemId");
-        if (itemId) onDrop(itemId);
-      }}
       sx={{
         width: "100%",
         height: "100%",
@@ -89,23 +77,8 @@ export const CameraItem = ({
         bgcolor: Colors.blushWhite,
         overflow: "hidden",
         borderRadius: 1,
-        outline: isDragOver ? `2px solid ${Colors.main}` : "none",
-        transition: "outline 0.1s ease",
       }}
     >
-      {/* Drag-over overlay */}
-      {isDragOver && (
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            bgcolor: `${Colors.main}22`,
-            zIndex: 2,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
       <img
         src={imageSrc || media}
         alt={cameraName ?? `Camera ${index + 1}`}
@@ -149,7 +122,7 @@ export const CameraItem = ({
           <img
             style={{ padding: "0 4px 0 0", cursor: "pointer" }}
             src="../assets/chevron-down.svg"
-            onClick={cameraItemList}
+            onClick={handleOpen}
             alt="Show camera options"
           />
         </Box>
@@ -251,14 +224,19 @@ export const CameraItem = ({
       <Box sx={{ position: "absolute", bottom: 10, right: 13, zIndex: 1 }}>
         <img
           style={{ cursor: "pointer" }}
-          src={
-            !isExpanded ? "../assets/expand-03.svg" : " "
-            //: "../assets/expand-03.svg"
-          }
-          alt="Expand camera"
+          src={!isExpanded ? "../assets/expand-03.svg" : " "}
+          alt={!isExpanded ? "Expand camera" : ""}
           onClick={() => expandCamera(index)}
         />
       </Box>
+
+      <CameraOverlayMenu
+        open={showMenu}
+        onClose={closeMenu}
+        items={contextMenuItems}
+        cameraIndex={index}
+        title="Select a Compliance Violations"
+      />
     </Box>
   );
 };
@@ -268,10 +246,8 @@ export type CameraInfo = { id: number; name: string };
 interface CameraLayoutProps {
   count: number;
   media: string;
-  cameraItemList: () => void;
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
-  // Real image props — pass these to load DVR footage via dvr:// protocol
   cameras?: CameraInfo[];
   company?: number;
   location?: number;
@@ -305,11 +281,10 @@ const GAP = 8;
 
 interface SharedCameraItemProps {
   media: string;
-  cameraItemList: () => void;
   expandCamera: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
   getTagsForCamera: (index: number) => CameraContextMenuItem[];
-  onDrop: (cameraIndex: number, itemId: number) => void;
+  contextMenuItems: CameraContextMenuItem[];
   cameras?: CameraInfo[];
   company?: number;
   location?: number;
@@ -321,11 +296,10 @@ const CameraCell = ({
   camIndex,
   maxCols,
   media,
-  cameraItemList,
   expandCamera,
   onRemoveTag,
   getTagsForCamera,
-  onDrop,
+  contextMenuItems,
   cameras,
   company,
   location,
@@ -344,10 +318,9 @@ const CameraCell = ({
       <CameraItem
         index={camIndex}
         media={media}
-        cameraItemList={cameraItemList}
         expandCamera={expandCamera}
         tags={getTagsForCamera(camIndex)}
-        onDrop={(itemId) => onDrop(camIndex, Number(itemId))}
+        contextMenuItems={contextMenuItems}
         onRemoveTag={onRemoveTag}
         cameraId={cameras?.[camIndex]?.id}
         cameraName={cameras?.[camIndex]?.name}
@@ -396,7 +369,6 @@ const CameraLayout = ({
   count,
   media,
   maxHeight = 350,
-  cameraItemList,
   contextMenuItems = [],
   cameras,
   company,
@@ -428,19 +400,12 @@ const CameraLayout = ({
         onClick: () => {},
       }));
 
-  const handleDrop = (cameraIndex: number, itemId: number) => {
-    const item = contextMenuItems.find((i) => i.id === itemId);
-    if (!item) return;
-    item.onClick(cameraIndex);
-  };
-
   const sharedProps: SharedCameraItemProps = {
     media,
-    cameraItemList,
     expandCamera: handleExpandCamera,
     onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
     getTagsForCamera,
-    onDrop: handleDrop,
+    contextMenuItems,
     cameras,
     company,
     location,

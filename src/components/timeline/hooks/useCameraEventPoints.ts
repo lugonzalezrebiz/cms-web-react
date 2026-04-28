@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { CameraEventPoint } from "../types";
 
 export const useCameraEventPoints = () => {
@@ -10,14 +10,40 @@ export const useCameraEventPoints = () => {
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
+  const historyRef = useRef<CameraEventPoint[][]>([]);
+  const futureRef = useRef<CameraEventPoint[][]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const lastUpdateTimeRef = useRef<number>(0);
+  const currentPointsRef = useRef<CameraEventPoint[]>([]);
+
+  const pushHistory = (snapshot: CameraEventPoint[]) => {
+    historyRef.current = [...historyRef.current, snapshot];
+    futureRef.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
+  };
+
   const handleRemoveEventPoint = (id: number) => {
-    setCameraEventPoints((prev) => prev.filter((ep) => ep.id !== id));
+    pushHistory(currentPointsRef.current);
+    setCameraEventPoints((prev) => {
+      const next = prev.filter((ep) => ep.id !== id);
+      currentPointsRef.current = next;
+      return next;
+    });
   };
 
   const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
-    setCameraEventPoints((prev) =>
-      prev.map((ep) => (ep.id === id ? { ...ep, ...update } : ep)),
-    );
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current > 500) {
+      pushHistory(currentPointsRef.current);
+    }
+    lastUpdateTimeRef.current = now;
+    setCameraEventPoints((prev) => {
+      const next = prev.map((ep) => (ep.id === id ? { ...ep, ...update } : ep));
+      currentPointsRef.current = next;
+      return next;
+    });
   };
 
   const handleActivitySelect = (
@@ -45,10 +71,13 @@ export const useCameraEventPoints = () => {
           Math.abs(timeSec - ep.timeSec) <= 300,
       );
       if (duplicate) return prev;
-      return [
+      pushHistory(prev);
+      const next = [
         ...prev,
         { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel },
       ];
+      currentPointsRef.current = next;
+      return next;
     });
   };
 
@@ -56,6 +85,28 @@ export const useCameraEventPoints = () => {
     markerSecRef.current = sec;
     setMarkerSec(sec);
   };
+
+  const handleUndo = useCallback(() => {
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
+    futureRef.current = [currentPointsRef.current, ...futureRef.current];
+    historyRef.current = historyRef.current.slice(0, -1);
+    currentPointsRef.current = prev;
+    setCameraEventPoints(prev);
+    setCanUndo(historyRef.current.length > 0);
+    setCanRedo(true);
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    if (futureRef.current.length === 0) return;
+    const next = futureRef.current[0];
+    historyRef.current = [...historyRef.current, currentPointsRef.current];
+    futureRef.current = futureRef.current.slice(1);
+    currentPointsRef.current = next;
+    setCameraEventPoints(next);
+    setCanUndo(true);
+    setCanRedo(futureRef.current.length > 0);
+  }, []);
 
   return {
     cameraActivities,
@@ -65,5 +116,9 @@ export const useCameraEventPoints = () => {
     handleActivitySelect,
     handleMarkerChange,
     handleUpdateEventPoint,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
   };
 };
