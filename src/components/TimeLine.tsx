@@ -4,6 +4,7 @@ import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
+import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
@@ -24,6 +25,8 @@ const TimeLine = ({
   canUndo,
   canRedo,
   onRemoveEventPoint,
+  viewMode = "camera",
+  menuItems = [],
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -41,17 +44,20 @@ const TimeLine = ({
   canUndo?: boolean;
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
+  viewMode?: "camera" | "activity";
+  menuItems?: { id: number; name: string }[];
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
 
-  const {
-    flatRows,
-    selectableRows,
-    timelineStartSec,
-    timelineEndSec,
-    firstActivitySec,
-  } = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
+  const cameraRowsData = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
+  const activityRowsData = useActivityRows({ menuItems, cameraEventPoints: mergedEventPoints });
+
+  const isActivityMode = viewMode === "activity";
+  const flatRows = isActivityMode ? activityRowsData.flatRows : cameraRowsData.flatRows;
+  const selectableRows = isActivityMode ? activityRowsData.selectableRows : cameraRowsData.selectableRows;
+  const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
+
 
   const state = useTimelineBodyState({
     snapshot,
@@ -87,9 +93,15 @@ const TimeLine = ({
     state.setMarkerSec(next);
   };
 
-  const sortedEventPoints = [...mergedEventPoints].sort((a, b) => a.timeSec - b.timeSec);
-  const prevEventPoint = [...sortedEventPoints].reverse().find((ep) => ep.timeSec < state.resolvedMarkerSec);
-  const nextEventPoint = sortedEventPoints.find((ep) => ep.timeSec > state.resolvedMarkerSec);
+  const sortedEventPoints = [...mergedEventPoints].sort(
+    (a, b) => a.timeSec - b.timeSec,
+  );
+  const prevEventPoint = [...sortedEventPoints]
+    .reverse()
+    .find((ep) => ep.timeSec < state.resolvedMarkerSec);
+  const nextEventPoint = sortedEventPoints.find(
+    (ep) => ep.timeSec > state.resolvedMarkerSec,
+  );
 
   const handleGoToPrevEventPoint = () => {
     if (prevEventPoint) state.setMarkerSec(prevEventPoint.timeSec);
@@ -98,11 +110,18 @@ const TimeLine = ({
     if (nextEventPoint) state.setMarkerSec(nextEventPoint.timeSec);
   };
 
-  const eventPointUnderMarker = mergedEventPoints.find(
-    (ep) =>
-      ep.cameraId === state.iTrackId &&
-      state.resolvedMarkerSec >= ep.startSec &&
-      state.resolvedMarkerSec <= ep.endSec,
+  const selectedActivityLabel = isActivityMode
+    ? menuItems.find((m) => m.id === state.iTrackId)?.name
+    : undefined;
+
+  const eventPointUnderMarker = mergedEventPoints.find((ep) =>
+    isActivityMode
+      ? ep.label === selectedActivityLabel &&
+        state.resolvedMarkerSec >= ep.startSec &&
+        state.resolvedMarkerSec <= ep.endSec
+      : ep.cameraId === state.iTrackId &&
+        state.resolvedMarkerSec >= ep.startSec &&
+        state.resolvedMarkerSec <= ep.endSec,
   );
 
   const handleDeleteEventPoint = () => {

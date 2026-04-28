@@ -43,7 +43,8 @@ const Monitor = () => {
     canRedo,
   } = useCameraEventPoints();
 
-  const { snapshot, eventPoints: preloadedEventPoints } = useMonitoring(trackers);
+  const { snapshot, eventPoints: preloadedEventPoints } =
+    useMonitoring(trackers);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
   const { transactions, loading: transactionsLoading } = useSalesTransactions();
@@ -53,8 +54,17 @@ const Monitor = () => {
 
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
-  const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } =
-    usePosCarousel(transactions, setPosMarkerSec);
+  const {
+    current,
+    goTo,
+    prev,
+    next,
+    currentCameraId,
+    currentTimeSec,
+    attended,
+    toggleAttended,
+    handleDone: handlePosDone,
+  } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
     useTimelineMarker({
@@ -63,7 +73,8 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
-  const { timelinePopped, handlePopOut } = useTimelinePopout(handleMarkerChange);
+  const { timelinePopped, handlePopOut } =
+    useTimelinePopout(handleMarkerChange);
 
   const sessionDate = useSessionDate();
   const { handleDone } = useSaveMonitoring({
@@ -83,12 +94,14 @@ const Monitor = () => {
       cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
     onUpdateEventPoint: handleUpdateEventPoint,
     onPopOut: handlePopOut,
-    headerLabel: "Cameras",
+    headerLabel: "Compliance Violations",
     onUndo: handleUndo,
     onRedo: handleRedo,
     canUndo,
     canRedo,
     onRemoveEventPoint: handleRemoveEventPoint,
+    viewMode: "activity" as const,
+    menuItems: allMenuItems,
   } as const;
 
   const expandedCameraTags =
@@ -99,7 +112,12 @@ const Monitor = () => {
               ep.cameraId === 1 + expandedCamera &&
               Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
           )
-          .map((ep) => ({ id: ep.id, name: ep.label, label: ep.label, onClick: () => {} }))
+          .map((ep) => ({
+            id: ep.id,
+            name: ep.label,
+            label: ep.label,
+            onClick: () => {},
+          }))
       : [];
 
   return (
@@ -175,7 +193,9 @@ const Monitor = () => {
 
       <ExpandedCameraDialog
         open={expandedCamera !== null}
-        onClose={() => expandedCamera !== null && handleExpandCamera(expandedCamera)}
+        onClose={() =>
+          expandedCamera !== null && handleExpandCamera(expandedCamera)
+        }
         cameraIndex={expandedCamera ?? 0}
         media="/assets/camera/Cam thumbnail.svg"
         expandCamera={handleExpandCamera}

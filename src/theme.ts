@@ -87,6 +87,7 @@ export const Colors = {
   blushRed: "#F02326",
   palePink: "#F8BCBC",
   softWhite: "#ffffffde",
+  semiTransparentGray: "#ededed4c",
 };
 
 //Color Palette

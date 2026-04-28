@@ -63,30 +63,30 @@ const EventPointBar = ({
         left: `${leftPct}%`,
         width: `${widthPct}%`,
         top: "50%",
-        transform: "translate(-50%)",
+        transform: "translateY(-50%)",
         borderRadius: "8px",
-        background: `${Colors.green}33`,
-        border: `2px solid ${Colors.green}`,
+        background: `${Colors.lightOrange}33`,
+        border: `2px solid ${Colors.lightOrange}`,
         height: 15,
         zIndex: 2,
         pointerEvents: "auto",
       }}
     >
-      <ResizeHandle epId={ep.id} side="left" setResizing={setResizing} />
+      {/* <ResizeHandle epId={ep.id} side="left" setResizing={setResizing} /> */}
       <Box
         sx={{
           position: "absolute",
           left: `${dotLeftPct}%`,
           top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          bgcolor: Colors.green,
+          transform: "translate(-50%, -50%) rotate(45deg)",
+          width: 17,
+          height: 17,
+          bgcolor: Colors.lightOrange,
+          outline: `1px solid ${Colors.white}`,
           pointerEvents: "none",
         }}
       />
-      <ResizeHandle epId={ep.id} side="right" setResizing={setResizing} />
+      {/* <ResizeHandle epId={ep.id} side="right" setResizing={setResizing} /> */}
     </Box>
   );
 };
@@ -110,6 +110,13 @@ export const EventRow = ({
   visibleDuration,
   setResizing,
 }: EventRowProps) => {
+  const points =
+    row.kind === "activity"
+      ? cameraEventPoints.filter((ep) => ep.label === row.name)
+      : cameraEventPoints.filter(
+          (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
+        );
+
   return (
     <Box
       sx={{
@@ -121,20 +128,16 @@ export const EventRow = ({
         pointerEvents: "none",
       }}
     >
-      {cameraEventPoints
-        .filter(
-          (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
-        )
-        .map((ep) => (
-          <EventPointBar
-            key={ep.id}
-            ep={ep}
-            visibleStart={visibleStart}
-            visibleEnd={visibleEnd}
-            visibleDuration={visibleDuration}
-            setResizing={setResizing}
-          />
-        ))}
+      {points.map((ep) => (
+        <EventPointBar
+          key={ep.id}
+          ep={ep}
+          visibleStart={visibleStart}
+          visibleEnd={visibleEnd}
+          visibleDuration={visibleDuration}
+          setResizing={setResizing}
+        />
+      ))}
     </Box>
   );
 };

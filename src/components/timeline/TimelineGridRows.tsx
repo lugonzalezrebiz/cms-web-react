@@ -1,4 +1,5 @@
 import { Box } from "@mui/system";
+import { Colors } from "../../theme";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
@@ -32,6 +33,7 @@ interface TimelineGridRowsProps {
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
+  iTrackId?: number | null;
 }
 
 export const TimelineGridRows = ({
@@ -55,6 +57,7 @@ export const TimelineGridRows = ({
   setPanOffsetSec,
   cameraEventPoints = [],
   onUpdateEventPoint,
+  iTrackId,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -78,7 +81,10 @@ export const TimelineGridRows = ({
   });
 
   return (
-    <Box ref={gridRef} sx={{ flex: 1, position: "relative", overflow: "hidden" }}>
+    <Box
+      ref={gridRef}
+      sx={{ flex: 1, position: "relative", overflow: "hidden" }}
+    >
       <GridLines
         totalSec={totalSec}
         tickStepSec={tickStepSec}
@@ -101,9 +107,28 @@ export const TimelineGridRows = ({
           pointerEvents: "none",
         }}
       >
-        <Box sx={{ position: "relative", height: flatRows.length * ROW_HEIGHT }}>
+        <Box
+          sx={{ position: "relative", height: flatRows.length * ROW_HEIGHT }}
+        >
           {flatRows.map((row, rowIndex) =>
-            row.kind === "event" ? (
+            iTrackId === row.id ? (
+              <Box
+                key={`highlight-${row.id}`}
+                sx={{
+                  position: "absolute",
+                  top: rowIndex * ROW_HEIGHT,
+                  left: 0,
+                  right: 0,
+                  height: ROW_HEIGHT,
+                  bgcolor: `${Colors.semiTransparentGray}`,
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
+              />
+            ) : null,
+          )}
+          {flatRows.map((row, rowIndex) =>
+            row.kind === "event" || row.kind === "activity" ? (
               <EventRow
                 key={row.id}
                 row={row}

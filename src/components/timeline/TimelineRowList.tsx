@@ -19,7 +19,8 @@ const RowItem = ({
   setITrackId,
   setSelectedTracks,
 }: RowItemProps) => {
-  const isActivitySubRow = row.kind === "event";
+  const isEventSubRow = row.kind === "event";
+  const isActivityRow = row.kind === "activity";
 
   const isEventWithActiveParent =
     row.kind === "event" &&
@@ -30,20 +31,19 @@ const RowItem = ({
 
   const isActive = isSelected || isFocused;
 
-  const handleClick =
-    row.kind === "event"
-      ? undefined
-      : () => {
-          setITrackId(row.id);
-          if (activeSessionStarts[row.id] !== undefined) {
-            setSelectedTracks(new Set([row.id]));
-          } else {
-            setSelectedTracks(new Set());
-          }
-        };
+  const handleClick = isEventSubRow
+    ? undefined
+    : () => {
+        setITrackId(row.id);
+        if (activeSessionStarts[row.id] !== undefined) {
+          setSelectedTracks(new Set([row.id]));
+        } else {
+          setSelectedTracks(new Set());
+        }
+      };
 
   const bgColor = (() => {
-    if (isActivitySubRow)
+    if (isEventSubRow)
       return isActive || isEventWithActiveParent
         ? Colors.blushWhite
         : "transparent";
@@ -52,7 +52,7 @@ const RowItem = ({
   })();
 
   const textColor = (() => {
-    if (isActivitySubRow) return Colors.lightBlack;
+    if (isEventSubRow) return Colors.lightBlack;
     if (isActive) return Colors.white;
     return Colors.lightBlack;
   })();
@@ -63,8 +63,8 @@ const RowItem = ({
       sx={{
         display: "flex",
         alignItems: "center",
-        gap: isActivitySubRow ? 0 : 1.5,
-        pl: isActivitySubRow ? "50px" : "8px",
+        gap: isEventSubRow ? 0 : 1.5,
+        pl: isEventSubRow ? "50px" : "8px",
         pr: "8px",
         py: "6px",
         cursor: "pointer",
@@ -77,7 +77,7 @@ const RowItem = ({
         color: textColor,
       }}
     >
-      {!isActivitySubRow && (
+      {!isEventSubRow && !isActivityRow && (
         <Box
           sx={{
             width: "20px",
@@ -149,7 +149,8 @@ export const TimelineRowList = ({
           justifyContent: "space-between",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
           height: "28px",
-          width: "133px",
+          width: "100%",
+          maxWidth: "175px",
           padding: "0 4px 0 8px",
         }}
       >
@@ -197,7 +198,7 @@ export const TimelineRowList = ({
             setSelectedTracks={setSelectedTracks}
           />
         ))}
-        {flatRows.filter((r) => r.kind === "camera").length === 0 && (
+        {flatRows.filter((r) => r.kind !== "event").length === 0 && (
           <Box
             sx={{
               width: "129px",

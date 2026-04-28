@@ -167,6 +167,7 @@ const TimelineBody = ({
           setPanOffsetSec={setPanOffsetSec}
           cameraEventPoints={cameraEventPoints}
           onUpdateEventPoint={onUpdateEventPoint}
+          iTrackId={iTrackId}
         />
 
         <TimelineMarker

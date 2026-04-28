@@ -7,6 +7,7 @@ import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMa
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTrackers } from "../Monitor/hooks/useTrackers";
+import { useMenuItems } from "../Monitor/hooks/useMenuItems";
 
 const MonitorTimeline = () => {
   const trackers = useTrackers();
@@ -16,15 +17,17 @@ const MonitorTimeline = () => {
     cameraEventPoints,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
+    handleActivitySelect,
   } = useCameraEventPoints();
 
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
-    useTimelineMarker({
-      snapshot,
-      onMarkerChange: handleCameraMarkerChange,
-    });
+  const { markerTimeSec, handleMarkerChange } = useTimelineMarker({
+    snapshot,
+    onMarkerChange: handleCameraMarkerChange,
+  });
+
+  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   const channelRef = useRef<BroadcastChannel | null>(null);
 
@@ -42,7 +45,7 @@ const MonitorTimeline = () => {
   }, [markerTimeSec]);
 
   const sessionDate = useSessionDate();
-  const { handleDone } = useSaveMonitoring({
+  useSaveMonitoring({
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
@@ -55,10 +58,10 @@ const MonitorTimeline = () => {
         cameraEventPoints={allEventPoints}
         onMarkerChange={handleMarkerChange}
         markerTimeSec={markerTimeSec}
-        showFinalizeButton={showFinalizeButton}
         onUpdateEventPoint={handleUpdateEventPoint}
-        onDone={handleDone}
-        headerLabel="Cameras"
+        headerLabel="Activities"
+        viewMode="activity"
+        menuItems={allMenuItems}
       />
     </Box>
   );
