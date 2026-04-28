@@ -4,33 +4,33 @@ import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
 const ROW_HEIGHT = 44;
 
-interface ResizeHandleProps {
-  epId: number;
-  side: "left" | "right";
-  setResizing: SetResizing;
-}
+// interface ResizeHandleProps {
+//   epId: number;
+//   side: "left" | "right";
+//   setResizing: SetResizing;
+// }
 
-const ResizeHandle = ({ epId, side, setResizing }: ResizeHandleProps) => {
-  return (
-    <Box
-      onMouseDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setResizing({ id: epId, side });
-      }}
-      sx={{
-        position: "absolute",
-        [side]: 0,
-        top: 0,
-        bottom: 0,
-        width: 8,
-        cursor: "ew-resize",
-        bgcolor: Colors.green,
-        borderRadius: side === "left" ? "6px 0 0 6px" : "0 6px 6px 0",
-      }}
-    />
-  );
-};
+// const ResizeHandle = ({ epId, side, setResizing }: ResizeHandleProps) => {
+//   return (
+//     <Box
+//       onMouseDown={(e) => {
+//         e.preventDefault();
+//         e.stopPropagation();
+//         setResizing({ id: epId, side });
+//       }}
+//       sx={{
+//         position: "absolute",
+//         [side]: 0,
+//         top: 0,
+//         bottom: 0,
+//         width: 8,
+//         cursor: "ew-resize",
+//         bgcolor: Colors.green,
+//         borderRadius: side === "left" ? "6px 0 0 6px" : "0 6px 6px 0",
+//       }}
+//     />
+//   );
+// };
 
 interface EventPointBarProps {
   ep: CameraEventPoint;
@@ -45,7 +45,7 @@ const EventPointBar = ({
   visibleStart,
   visibleEnd,
   visibleDuration,
-  setResizing,
+  //setResizing,
 }: EventPointBarProps) => {
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);

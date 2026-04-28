@@ -23,7 +23,7 @@ function createWindow() {
         height: 800,
         frame: true,
         show: false,
-        icon: path.join(__dirname, "../../public/assets/rebiz-icon-1.png"),
+        icon: APP_ICON,
         webPreferences: {
             preload: path.join(__dirname, "../preload/index.cjs"),
         },
@@ -95,6 +95,12 @@ function createWindow() {
     }
 }
 
+const APP_ICON = path.join(__dirname, "../../public/assets/rebiz-icon-1.png");
+
+app.on("browser-window-created", (_, win) => {
+    win.setIcon(APP_ICON);
+});
+
 app.whenReady().then(() => {
     //Menu.setApplicationMenu(null);
 
@@ -113,7 +119,7 @@ app.whenReady().then(() => {
     });
 
     if (process.platform === "darwin") {
-        app.dock?.setIcon(path.join(__dirname, "../../public/assets/rebiz-icon-1.png"));
+        app.dock?.setIcon(APP_ICON);
     }
 
     createWindow();
