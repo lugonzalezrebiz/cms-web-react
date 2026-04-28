@@ -60,7 +60,7 @@ export const ExpandedCameraDialog = ({
         <Box>
           <Title smallText marginBottom="20px" title={cameraName + 1}>
             <Box sx={{ cursor: "pointer", marginRight: "16px" }}>
-              <img onClick={onClose} src="./assets/x-close.svg" alt="" />
+              <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
             </Box>
           </Title>
           <Box height="35vh" position="relative">

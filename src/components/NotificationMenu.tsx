@@ -188,7 +188,7 @@ const NotificationMenu = ({
                     <img
                       style={{ margin: "0 6px 0 0" }}
                       src="./assets/building-07.svg"
-                      alt=""
+                      alt="Location"
                     />
                     <AssignmentSubText style={{ margin: "0 18px 0 0" }}>
                       {notif.location}
@@ -196,7 +196,7 @@ const NotificationMenu = ({
                     <img
                       style={{ margin: "0 6px 0 0" }}
                       src="./assets/building-02.svg"
-                      alt=""
+                      alt="Store"
                     />
                     <AssignmentSubText style={{ margin: 0 }}>
                       {notif.store}

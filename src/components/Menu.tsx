@@ -197,11 +197,11 @@ const Menu = ({
             }}
             onClick={() => {}}
             src="../assets/rebiz-logo-1.svg"
-            alt=""
+            alt="Rebiz logo"
           />
           <img
             src="../assets/Icon.svg"
-            alt=""
+            alt="Toggle menu"
             style={{
               cursor: "pointer",
               transform: open ? "rotate(180deg)" : "rotate(0deg)",

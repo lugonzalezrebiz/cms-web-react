@@ -190,7 +190,7 @@ export const NewAssignmentsCard = ({
             padding: "4px",
           }}
           src="./assets/dots-vertical.svg"
-          alt=""
+          alt="More options"
           onClick={(e) => {
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
@@ -202,7 +202,7 @@ export const NewAssignmentsCard = ({
         <img
           style={{ margin: "0 6px 0 0" }}
           src="./assets/building-07.svg"
-          alt=""
+          alt="Location"
         />
         <AssignmentSubText style={{ margin: "0 16px 0 0" }}>
           {location}
@@ -210,7 +210,7 @@ export const NewAssignmentsCard = ({
         <img
           style={{ margin: "0 6px 0 0" }}
           src="./assets/building-02.svg"
-          alt=""
+          alt="Store"
         />
         <AssignmentSubText style={{ margin: 0 }}>{store}</AssignmentSubText>
       </Box>
@@ -219,7 +219,7 @@ export const NewAssignmentsCard = ({
         <Divider marginBottom="10px" />
       </Box>
       <Box display={"flex"} alignItems={"center"}>
-        <img src="./assets/message-text-square-01.svg" alt="" />
+        <img src="./assets/message-text-square-01.svg" alt="Comments" />
         <AssignmentComments>
           <span style={{ color: Colors.vividOrange }}>{comments}</span> Comments
         </AssignmentComments>

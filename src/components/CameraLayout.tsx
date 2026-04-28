@@ -150,7 +150,7 @@ export const CameraItem = ({
             style={{ padding: "0 4px 0 0", cursor: "pointer" }}
             src="../assets/chevron-down.svg"
             onClick={cameraItemList}
-            alt=""
+            alt="Show camera options"
           />
         </Box>
       )}
@@ -255,7 +255,7 @@ export const CameraItem = ({
             !isExpanded ? "../assets/expand-03.svg" : " "
             //: "../assets/expand-03.svg"
           }
-          alt=""
+          alt="Expand camera"
           onClick={() => expandCamera(index)}
         />
       </Box>

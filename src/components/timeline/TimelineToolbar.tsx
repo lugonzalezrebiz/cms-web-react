@@ -58,10 +58,10 @@ const TimelineToolbar = ({
         />
 
         <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
-          <img src="../assets/layers-three-02.svg" alt="" />
+          <img src="../assets/layers-three-02.svg" alt="Layers" />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/user-plus-01.svg" alt="" />
+          <img src="../assets/user-plus-01.svg" alt="Add user" />
         </Box>
         <Box
           position={"relative"}
@@ -69,7 +69,7 @@ const TimelineToolbar = ({
             opacity: 0.5,
           }}
         >
-          <img src="../assets/camera-02.svg" alt="" />
+          <img src="../assets/camera-02.svg" alt="Camera" />
         </Box>
       </Grid>
 
@@ -84,24 +84,24 @@ const TimelineToolbar = ({
           <img
             style={{ opacity: 0.5 }}
             src="../assets/reverse-left.svg"
-            alt=""
+            alt="Undo"
           />
         </Box>
         <Box onClick={() => {}}>
           <img
             style={{ opacity: 0.5 }}
             src="../assets/reverse-right.svg"
-            alt=""
+            alt="Redo"
           />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/trash-02.svg" alt="" />
+          <img src="../assets/trash-02.svg" alt="Delete" />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/divider.svg" alt="" />
+          <img src="../assets/divider.svg" alt="Divider" />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/link-02.svg" alt="" />
+          <img src="../assets/link-02.svg" alt="Link" />
         </Box>
       </Grid>
 
@@ -113,10 +113,10 @@ const TimelineToolbar = ({
         justifyContent={"flex-start"}
       >
         <Box onClick={() => {}} ml={"18px"}>
-          <img src="../assets/punch-in.svg" alt="" />
+          <img src="../assets/punch-in.svg" alt="Punch in" />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/punch-out.svg" alt="" />
+          <img src="../assets/punch-out.svg" alt="Punch out" />
         </Box>
       </Grid>
 
@@ -130,14 +130,14 @@ const TimelineToolbar = ({
           <img
             style={{ cursor: "pointer" }}
             src="../assets/align-left-01.svg"
-            alt=""
+            alt="Skip to start"
           />
         </Box>
         <Box mr={"8px"} onClick={() => onStepMarker(-600)}>
           <img
             style={{ cursor: "pointer" }}
             src="../assets/chevron-left.svg"
-            alt=""
+            alt="Step backward"
           />
         </Box>
         <Box
@@ -150,7 +150,7 @@ const TimelineToolbar = ({
           }}
         >
           <Box mr={"8px"} onClick={() => {}}>
-            <img src="../assets/clock.svg" alt="" />
+            <img src="../assets/clock.svg" alt="Clock" />
           </Box>
           <Box
             sx={{
@@ -176,14 +176,14 @@ const TimelineToolbar = ({
           <img
             style={{ cursor: "pointer" }}
             src="../assets/chevron-right.svg"
-            alt=""
+            alt="Step forward"
           />
         </Box>
         <Box onClick={() => onStepMarker(+3600)}>
           <img
             style={{ cursor: "pointer" }}
             src="../assets/align-right-01.svg"
-            alt=""
+            alt="Skip to end"
           />
         </Box>
       </Grid>
@@ -203,7 +203,7 @@ const TimelineToolbar = ({
             <img
               style={{ opacity: 0.5 }}
               src="../assets/dots-grid.svg"
-              alt=""
+              alt="Grid options"
             />
           </Box>
         </Grid>
@@ -249,7 +249,7 @@ const TimelineToolbar = ({
             <img
               style={{ opacity: 0.5 }}
               src="../assets/search-sm.svg"
-              alt=""
+              alt="Search"
             />
           </Box>
         </Grid>
@@ -287,7 +287,7 @@ const TimelineToolbar = ({
             <img
               style={{ opacity: 0.5 }}
               src="../assets/expand-06.svg"
-              alt=""
+              alt="Expand"
             />
           </Box>
         </Grid>

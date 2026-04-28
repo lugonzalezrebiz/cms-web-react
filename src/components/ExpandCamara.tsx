@@ -30,7 +30,7 @@ const ExpandCamara = ({ expandedCamera, onClose }: Props) => {
           zIndex: 1,
         }}
       >
-        <img src="../assets/x-close.svg" alt="" />
+        <img src="../assets/x-close.svg" alt="Close" />
       </IconButton>
       <Box
         sx={{

@@ -167,7 +167,7 @@ export const TimelineRowList = ({
           {headerLabel}
         </p>
         <Box sx={{ cursor: "pointer" }} onClick={onOpenDialog}>
-          <img src="../assets/plus-1.svg" alt="" />
+          <img src="../assets/plus-1.svg" alt="Add row" />
         </Box>
       </Box>
 

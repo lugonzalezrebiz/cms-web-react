@@ -169,7 +169,7 @@ const AssignmentsHeader = ({
                     color: Colors.vividLime,
                   }}
                 >
-                  <img src="./assets/online.svg" alt="" />
+                  <img src="./assets/online.svg" alt="Online status" />
                   <p style={{ margin: "0 0 0 8px" }}>Online</p>
                 </Box>
               </Box>

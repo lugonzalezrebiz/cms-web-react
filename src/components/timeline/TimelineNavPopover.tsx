@@ -92,7 +92,7 @@ const TimelineNavPopover = ({
                 },
               }}
             >
-              <img src={`../assets/${iconClass}.svg`} alt="" />
+              <img src={`../assets/${iconClass}.svg`} alt={label} />
               <span>{label}</span>
             </Box>
           </Box>

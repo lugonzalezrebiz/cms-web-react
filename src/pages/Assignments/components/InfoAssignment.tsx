@@ -130,7 +130,7 @@ const InfoAssignment = ({
           onClick={handleCloseDialog}
           sx={{ position: "absolute", top: 0, right: 0, cursor: "pointer" }}
         >
-          <img src="./assets/x-close.svg" alt="" />
+          <img src="./assets/x-close.svg" alt="Close" />
         </Box>
         {selectedAssignment && (
           <>
@@ -138,7 +138,7 @@ const InfoAssignment = ({
               <img
                 style={{ margin: "0 6px 0 0" }}
                 src="./assets/building-07.svg"
-                alt=""
+                alt="Location"
               />
               <AssignmentSubText style={{ margin: "0 18px 0 0" }}>
                 {selectedAssignment.location}
@@ -146,7 +146,7 @@ const InfoAssignment = ({
               <img
                 style={{ margin: "0 6px 0 0" }}
                 src="./assets/building-02.svg"
-                alt=""
+                alt="Store"
               />
               <AssignmentSubText style={{ margin: 0 }}>
                 {selectedAssignment.store}
