@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
+import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
 const ROW_HEIGHT = 44;
@@ -38,6 +39,8 @@ interface EventPointBarProps {
   visibleEnd: number;
   visibleDuration: number;
   setResizing: SetResizing;
+  isSelected: boolean;
+  onSelect: () => void;
 }
 
 const EventPointBar = ({
@@ -46,6 +49,8 @@ const EventPointBar = ({
   visibleEnd,
   visibleDuration,
   //setResizing,
+  isSelected,
+  onSelect,
 }: EventPointBarProps) => {
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);
@@ -53,41 +58,50 @@ const EventPointBar = ({
 
   const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100;
   const widthPct = ((ep.endSec - ep.startSec) / visibleDuration) * 100;
-  const dotLeftPct =
-    ((ep.timeSec - ep.startSec) / (ep.endSec - ep.startSec)) * 100;
+  const dotAbsolutePct = ((ep.timeSec - visibleStart) / visibleDuration) * 100;
 
   return (
-    <Box
-      sx={{
-        position: "absolute",
-        left: `${leftPct}%`,
-        width: `${widthPct}%`,
-        top: "50%",
-        transform: "translateY(-50%)",
-        borderRadius: "8px",
-        background: `${Colors.lightOrange}33`,
-        border: `2px solid ${Colors.lightOrange}`,
-        height: 15,
-        zIndex: 2,
-        pointerEvents: "auto",
-      }}
-    >
-      {/* <ResizeHandle epId={ep.id} side="left" setResizing={setResizing} /> */}
+    <>
+      {/* Bar */}
       <Box
+        onClick={onSelect}
         sx={{
           position: "absolute",
-          left: `${dotLeftPct}%`,
+          left: `${leftPct}%`,
+          width: `${widthPct}%`,
+          top: "50%",
+          transform: "translateY(-50%)",
+          borderRadius: "8px",
+          background: isSelected ? `${Colors.vividOrange}44` : `${Colors.lightOrange}33`,
+          border: `2px solid ${isSelected ? Colors.vividOrange : Colors.lightOrange}`,
+          boxShadow: isSelected ? `0 0 8px 2px ${Colors.vividOrange}80` : "none",
+          height: 15,
+          zIndex: isSelected ? 3 : 2,
+          pointerEvents: "auto",
+          cursor: "pointer",
+          transition: "box-shadow 0.15s, border-color 0.15s, background 0.15s",
+        }}
+      />
+      {/* Diamond — positioned in the row coordinate system (same as TimelineMarker) to avoid border-box offset */}
+      <Box
+        onClick={onSelect}
+        sx={{
+          position: "absolute",
+          left: `${dotAbsolutePct}%`,
           top: "50%",
           transform: "translate(-50%, -50%) rotate(45deg)",
           width: 17,
           height: 17,
-          bgcolor: Colors.lightOrange,
-          outline: `1px solid ${Colors.white}`,
-          pointerEvents: "none",
+          bgcolor: isSelected ? Colors.vividOrange : Colors.lightOrange,
+          outline: isSelected ? `1.5px solid ${Colors.white}` : `1px solid ${Colors.white}`,
+          boxShadow: isSelected ? `0 0 6px 2px ${Colors.vividOrange}99` : "none",
+          zIndex: isSelected ? 4 : 3,
+          cursor: "pointer",
+          pointerEvents: "auto",
+          transition: "box-shadow 0.15s",
         }}
       />
-      {/* <ResizeHandle epId={ep.id} side="right" setResizing={setResizing} /> */}
-    </Box>
+    </>
   );
 };
 
@@ -99,6 +113,10 @@ export interface EventRowProps {
   visibleEnd: number;
   visibleDuration: number;
   setResizing: SetResizing;
+  setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedEventPointId: number | null;
+  setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 export const EventRow = ({
@@ -109,6 +127,10 @@ export const EventRow = ({
   visibleEnd,
   visibleDuration,
   setResizing,
+  setMarkerSec,
+  setITrackId,
+  selectedEventPointId,
+  setSelectedEventPointId,
 }: EventRowProps) => {
   const points =
     row.kind === "activity"
@@ -136,6 +158,12 @@ export const EventRow = ({
           visibleEnd={visibleEnd}
           visibleDuration={visibleDuration}
           setResizing={setResizing}
+          isSelected={selectedEventPointId === ep.id}
+          onSelect={() => {
+            setMarkerSec(ep.timeSec);
+            setSelectedEventPointId(ep.id);
+            setITrackId(row.id);
+          }}
         />
       ))}
     </Box>

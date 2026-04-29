@@ -125,7 +125,11 @@ const TimeLine = ({
   );
 
   const handleDeleteEventPoint = () => {
-    if (eventPointUnderMarker) onRemoveEventPoint?.(eventPointUnderMarker.id);
+    const targetId = state.selectedEventPointId ?? eventPointUnderMarker?.id;
+    if (targetId !== undefined) {
+      onRemoveEventPoint?.(targetId);
+      state.setSelectedEventPointId(null);
+    }
   };
 
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
@@ -169,7 +173,7 @@ const TimeLine = ({
         canUndo={canUndo}
         canRedo={canRedo}
         onDeleteEventPoint={handleDeleteEventPoint}
-        canDelete={eventPointUnderMarker !== undefined}
+        canDelete={state.selectedEventPointId !== null || eventPointUnderMarker !== undefined}
         onGoPrevEventPoint={handleGoToPrevEventPoint}
         onGoNextEventPoint={handleGoToNextEventPoint}
         hasPrevEventPoint={prevEventPoint !== undefined}
@@ -214,6 +218,8 @@ const TimeLine = ({
         onUpdateEventPoint={onUpdateEventPoint}
         currentLeft={state.currentLeft}
         setMarkerSec={state.setMarkerSec}
+        selectedEventPointId={state.selectedEventPointId}
+        setSelectedEventPointId={state.setSelectedEventPointId}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
       />

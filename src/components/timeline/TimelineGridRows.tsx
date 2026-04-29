@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../theme";
+import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
@@ -34,6 +35,10 @@ interface TimelineGridRowsProps {
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
   iTrackId?: number | null;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
+  setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedEventPointId: number | null;
+  setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 export const TimelineGridRows = ({
@@ -58,6 +63,10 @@ export const TimelineGridRows = ({
   cameraEventPoints = [],
   onUpdateEventPoint,
   iTrackId,
+  setITrackId,
+  setMarkerSec,
+  selectedEventPointId,
+  setSelectedEventPointId,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -138,6 +147,10 @@ export const TimelineGridRows = ({
                 visibleEnd={visibleEnd}
                 visibleDuration={visibleDuration}
                 setResizing={setResizing}
+                setMarkerSec={setMarkerSec}
+                setITrackId={setITrackId}
+                selectedEventPointId={selectedEventPointId}
+                setSelectedEventPointId={setSelectedEventPointId}
               />
             ) : (
               <SessionRow

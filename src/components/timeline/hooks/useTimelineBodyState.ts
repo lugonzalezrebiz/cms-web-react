@@ -27,6 +27,7 @@ export const useTimelineBodyState = ({
   const [dragStartX, setDragStartX] = useState<number | null>(null);
   const [dragStartOffset, setDragStartOffset] = useState(0);
   const [markerSec, setMarkerSec] = useState<number | null>(null);
+  const [selectedEventPointId, setSelectedEventPointId] = useState<number | null>(null);
   const [completedSessions, setCompletedSessions] = useState<
     Record<number, { start: number; end: number }[]>
   >({});
@@ -161,6 +162,8 @@ export const useTimelineBodyState = ({
     setDragStartOffset,
     markerSec,
     setMarkerSec,
+    selectedEventPointId,
+    setSelectedEventPointId,
     completedSessions,
     setCompletedSessions,
     activeSessionStarts,
