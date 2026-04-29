@@ -4,7 +4,7 @@ import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useCameras } from "./hooks/useCameras";
-import { useTrackers } from "./hooks/useTrackers";
+import { useTrackersByCameraMap } from "./hooks/useTrackersByCameraMap";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
 import { useMenuItems } from "./hooks/useMenuItems";
 import { useSalesTransactions } from "./hooks/useSalesTransactions";
@@ -26,7 +26,7 @@ const Monitor = () => {
   const { company, location, date } = useDashboardParams();
 
   const cameras = useCameras(company, location, date);
-  const trackers = useTrackers();
+  const { trackers } = useTrackersByCameraMap(cameras);
   const { cameraGroup } = useCameraGroup();
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
 

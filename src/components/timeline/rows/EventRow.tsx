@@ -72,14 +72,16 @@ const EventPointBar = ({
           top: "50%",
           transform: "translateY(-50%)",
           borderRadius: "8px",
-          background: isSelected ? `${Colors.vividOrange}44` : `${Colors.lightOrange}33`,
-          border: `2px solid ${isSelected ? Colors.vividOrange : Colors.lightOrange}`,
-          boxShadow: isSelected ? `0 0 8px 2px ${Colors.vividOrange}80` : "none",
+          background: "transparent",
+          //border: `2px solid ${isSelected ? Colors.vividOrange : Colors.lightOrange}`,
+          boxShadow: isSelected
+            ? `0 0 8px 2px ${Colors.vividOrange}80`
+            : "none",
           height: 15,
           zIndex: isSelected ? 3 : 2,
           pointerEvents: "auto",
           cursor: "pointer",
-          transition: "box-shadow 0.15s, border-color 0.15s, background 0.15s",
+          transition: "box-shadow 0.15s, border-color 0.15s",
         }}
       />
       {/* Diamond — positioned in the row coordinate system (same as TimelineMarker) to avoid border-box offset */}
@@ -90,11 +92,15 @@ const EventPointBar = ({
           left: `${dotAbsolutePct}%`,
           top: "50%",
           transform: "translate(-50%, -50%) rotate(45deg)",
-          width: 17,
-          height: 17,
+          width: 14,
+          height: 14,
           bgcolor: isSelected ? Colors.vividOrange : Colors.lightOrange,
-          outline: isSelected ? `1.5px solid ${Colors.white}` : `1px solid ${Colors.white}`,
-          boxShadow: isSelected ? `0 0 6px 2px ${Colors.vividOrange}99` : "none",
+          outline: isSelected
+            ? `1.5px solid ${Colors.white}`
+            : `1px solid ${Colors.white}`,
+          boxShadow: isSelected
+            ? `0 0 6px 2px ${Colors.vividOrange}99`
+            : "none",
           zIndex: isSelected ? 4 : 3,
           cursor: "pointer",
           pointerEvents: "auto",

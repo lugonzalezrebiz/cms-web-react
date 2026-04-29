@@ -75,15 +75,21 @@ export const ExpandedCameraDialog = ({
               cameraLabel={false}
             />
           </Box>
-          <Box
-            sx={{ display: "flex", justifyContent: "space-between", p: "16px" }}
-          >
+          <Box sx={{ display: "flex", gap: 1, p: "16px" }}>
             {contextMenuItems.map((item) => (
               <Button
                 key={item.id}
                 square
                 color="secondary"
-                sx={{ mr: 1 }}
+                fontSize="14px"
+                sx={{
+                  flex: 1,
+                  height: "50px",
+                  overflow: "hidden",
+                  //whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  //justifyContent: "left",
+                }}
                 onClick={() => item.onClick(cameraIndex)}
               >
                 {item.name}

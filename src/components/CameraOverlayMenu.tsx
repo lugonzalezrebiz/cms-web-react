@@ -40,6 +40,7 @@ const CameraOverlayMenu = ({
         flexDirection: "column",
         alignItems: "center",
         margin: "0 8px",
+        overflow: "hidden",
       }}
     >
       <Box
@@ -82,6 +83,12 @@ const CameraOverlayMenu = ({
           gridTemplateColumns: "1fr 1fr",
           gap: "4px",
           width: "100%",
+          overflowY: "auto",
+          flex: 1,
+          alignContent: "start",
+          pb: "4px",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
         {items.map((item) => (
