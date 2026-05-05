@@ -65,7 +65,7 @@ const Monitor = () => {
     { id: -1, name: "Event", label: "Event", onClick: (idx: number) => handleActivitySelect(idx, "Event") },
   ], [fetchedTrackers, handleActivitySelect]);
 
-  const { snapshot, eventPoints: preloadedEventPoints } =
+  const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } =
     useMonitoring(trackers);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
@@ -129,6 +129,7 @@ const Monitor = () => {
       label: `Item ${i + 1}`,
       onClick: (index: number) => handleActivitySelect(index, `Item ${i + 1}`),
     })),
+    rangeSessions,
   } as const;
 
   const expandedCameraTags =

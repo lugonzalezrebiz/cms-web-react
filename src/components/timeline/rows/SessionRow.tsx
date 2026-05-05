@@ -34,7 +34,7 @@ const SessionBar = ({
         transform: "translateY(-50%)",
         height: 19,
         borderRadius: "8px",
-        background: isSelected ? Colors.vividOrange : Colors.lightGrayishBlue,
+        background: Colors.vividOrange,
       }}
     />
   );

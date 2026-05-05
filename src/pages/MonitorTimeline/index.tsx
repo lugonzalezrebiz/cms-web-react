@@ -11,7 +11,7 @@ import { useMenuItems } from "../Monitor/hooks/useMenuItems";
 
 const MonitorTimeline = () => {
   const trackers = useTrackers();
-  const { snapshot, eventPoints: preloadedEventPoints } = useMonitoring(trackers);
+  const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } = useMonitoring(trackers);
 
   const {
     cameraEventPoints,
@@ -62,6 +62,7 @@ const MonitorTimeline = () => {
         headerLabel="Activities"
         viewMode="activity"
         menuItems={allMenuItems}
+        rangeSessions={rangeSessions}
       />
     </Box>
   );

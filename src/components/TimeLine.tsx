@@ -27,6 +27,7 @@ const TimeLine = ({
   onRemoveEventPoint,
   viewMode = "camera",
   menuItems = [],
+  rangeSessions,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -46,12 +47,13 @@ const TimeLine = ({
   onRemoveEventPoint?: (id: number) => void;
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string }[];
+  rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
 
   const cameraRowsData = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
-  const activityRowsData = useActivityRows({ menuItems, cameraEventPoints: mergedEventPoints });
+  const activityRowsData = useActivityRows({ menuItems, cameraEventPoints: mergedEventPoints, rangeSessions });
 
   const isActivityMode = viewMode === "activity";
   const flatRows = isActivityMode ? activityRowsData.flatRows : cameraRowsData.flatRows;

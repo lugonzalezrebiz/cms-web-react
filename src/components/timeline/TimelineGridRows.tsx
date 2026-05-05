@@ -137,22 +137,7 @@ export const TimelineGridRows = ({
             ) : null,
           )}
           {flatRows.map((row, rowIndex) =>
-            row.kind === "event" || row.kind === "activity" ? (
-              <EventRow
-                key={row.id}
-                row={row}
-                rowIndex={rowIndex}
-                cameraEventPoints={cameraEventPoints}
-                visibleStart={visibleStart}
-                visibleEnd={visibleEnd}
-                visibleDuration={visibleDuration}
-                setResizing={setResizing}
-                setMarkerSec={setMarkerSec}
-                setITrackId={setITrackId}
-                selectedEventPointId={selectedEventPointId}
-                setSelectedEventPointId={setSelectedEventPointId}
-              />
-            ) : (
+            row.kind === "camera" ? (
               <SessionRow
                 key={row.id}
                 row={row}
@@ -164,6 +149,34 @@ export const TimelineGridRows = ({
                 visibleStart={visibleStart}
                 visibleDuration={visibleDuration}
               />
+            ) : (
+              <Box key={row.id} sx={{ position: "absolute", top: 0, left: 0, right: 0 }}>
+                {row.kind === "activity" && row.sessions.length > 0 && (
+                  <SessionRow
+                    row={row}
+                    rowIndex={rowIndex}
+                    isSelected={selectedTracks.has(row.id)}
+                    completedSessions={completedSessions}
+                    activeSessionStarts={activeSessionStarts}
+                    resolvedMarkerSec={resolvedMarkerSec}
+                    visibleStart={visibleStart}
+                    visibleDuration={visibleDuration}
+                  />
+                )}
+                <EventRow
+                  row={row}
+                  rowIndex={rowIndex}
+                  cameraEventPoints={cameraEventPoints}
+                  visibleStart={visibleStart}
+                  visibleEnd={visibleEnd}
+                  visibleDuration={visibleDuration}
+                  setResizing={setResizing}
+                  setMarkerSec={setMarkerSec}
+                  setITrackId={setITrackId}
+                  selectedEventPointId={selectedEventPointId}
+                  setSelectedEventPointId={setSelectedEventPointId}
+                />
+              </Box>
             ),
           )}
         </Box>
