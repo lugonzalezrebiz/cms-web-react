@@ -2,11 +2,11 @@ import type { CameraContextMenuItem } from "../../../components/CameraOverlayMen
 
 const STATIC_ITEMS = [
   "Event",
-  "E-Stop Activation",
-  "Unattended Pay Station",
-  "Collision In Tunnel",
-  "Human in Tunnel",
-  "Slip & Fall"
+  // "E-Stop Activation",
+  // "Unattended Pay Station",
+  // "Collision In Tunnel",
+  // "Human in Tunnel",
+  // "Slip & Fall"
 ];
 
 export const useMenuItems = (

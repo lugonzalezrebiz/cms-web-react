@@ -5,6 +5,7 @@ import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useCameras } from "./hooks/useCameras";
 import { useTrackersByCameraMap } from "./hooks/useTrackersByCameraMap";
+import { useTrackerCameras } from "./hooks/useTrackerCameras";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
 import { useMenuItems } from "./hooks/useMenuItems";
 import { useSalesTransactions } from "./hooks/useSalesTransactions";
@@ -25,9 +26,11 @@ import { PosCarouselSection } from "./components/PosCarouselSection";
 const Monitor = () => {
   const { company, location, date } = useDashboardParams();
 
-  const cameras = useCameras(company, location, date);
+  const { cameraGroup, trackerOption } = useCameraGroup();
+  const allCameras = useCameras(company, location, date);
+  const trackerCameras = useTrackerCameras(trackerOption);
+  const cameras = cameraGroup === "7" && trackerOption ? trackerCameras : allCameras;
   const { trackers } = useTrackersByCameraMap(cameras);
-  const { cameraGroup } = useCameraGroup();
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
 
   const {

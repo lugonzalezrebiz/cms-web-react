@@ -4,70 +4,12 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
-import NotificationMenu, {
-  type Notification,
-} from "../../components/NotificationMenu";
+import NotificationMenu from "../../components/NotificationMenu";
 import UserPanel from "../../components/UserPanel";
 import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
-
-const NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    title: "New Assignment",
-    timeAgo: "2 min ago",
-    date: "February 25 - 2026",
-    unread: true,
-    location: "162",
-    store: "6015",
-  },
-  {
-    id: 2,
-    title: "Ticket Resolved",
-    timeAgo: "8 min ago",
-    date: "February 25 - 2026",
-    unread: true,
-    location: "166",
-    store: "1243",
-  },
-  {
-    id: 3,
-    title: "New Assignment",
-    timeAgo: "15 min ago",
-    date: "February 22 - 2026",
-    unread: true,
-    location: "162",
-    store: "456",
-  },
-  {
-    id: 4,
-    title: "Monitoring Rejected",
-    timeAgo: "32 min ago",
-    date: "February 21 - 2026",
-    unread: true,
-    location: "162",
-    store: "456",
-  },
-  {
-    id: 5,
-    title: "New Assignment",
-    timeAgo: "1 hr ago",
-    date: "February 25 - 2026",
-    unread: false,
-    location: "162",
-    store: "456",
-  },
-  {
-    id: 6,
-    title: "Ticket Resolved",
-    timeAgo: "2 hr ago",
-    date: "February 25 - 2026",
-    unread: false,
-    location: "162",
-    store: "456",
-  },
-];
+import { useNotifications } from "../../hooks/useNotifications";
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -103,6 +45,7 @@ const AdminHeader = ({
   const menuHeader = usePopover();
   const notificationHeader = usePopover();
   const userPanelHeader = usePopover();
+  const { notifications } = useNotifications();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -161,7 +104,7 @@ const AdminHeader = ({
           anchorEl={notificationHeader.anchorEl}
           handleClose={notificationHeader.handleClose}
           open={notificationHeader.open}
-          notifications={NOTIFICATIONS}
+          notifications={notifications}
         />
         <UserPanel
           anchorEl={userPanelHeader.anchorEl}

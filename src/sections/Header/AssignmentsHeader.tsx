@@ -10,66 +10,8 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useNavigateWithQuery from "../../hooks/useNavigate";
-import NotificationMenu, {
-  type Notification,
-} from "../../components/NotificationMenu";
-
-const NOTIFICATIONS: Notification[] = [
-  {
-    id: 1,
-    title: "New Assignment",
-    timeAgo: "2 min ago",
-    date: "February 25 - 2026",
-    unread: true,
-    location: "162",
-    store: "6015",
-  },
-  {
-    id: 2,
-    title: "Ticket Resolved",
-    timeAgo: "8 min ago",
-    date: "February 25 - 2026",
-    unread: true,
-    location: "166",
-    store: "1243",
-  },
-  {
-    id: 3,
-    title: "New Assignment",
-    timeAgo: "15 min ago",
-    date: "February 22 - 2026",
-    unread: true,
-    location: "162",
-    store: "456",
-  },
-  {
-    id: 4,
-    title: "Monitoring Rejected",
-    timeAgo: "32 min ago",
-    date: "February 21 - 2026",
-    unread: true,
-    location: "162",
-    store: "456",
-  },
-  {
-    id: 5,
-    title: "New Assignment",
-    timeAgo: "1 hr ago",
-    date: "February 25 - 2026",
-    unread: false,
-    location: "162",
-    store: "456",
-  },
-  {
-    id: 6,
-    title: "Ticket Resolved",
-    timeAgo: "2 hr ago",
-    date: "February 25 - 2026",
-    unread: false,
-    location: "162",
-    store: "456",
-  },
-];
+import NotificationMenu from "../../components/NotificationMenu";
+import { useNotifications } from "../../hooks/useNotifications";
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -108,6 +50,7 @@ const AssignmentsHeader = ({
   const userPanelHeader = usePopover();
   const notificationHeader = usePopover();
   const navigate = useNavigateWithQuery();
+  const { notifications } = useNotifications();
   const goBack = () => navigate(-1);
 
   useEffect(() => {
@@ -194,7 +137,7 @@ const AssignmentsHeader = ({
           anchorEl={notificationHeader.anchorEl}
           handleClose={notificationHeader.handleClose}
           open={notificationHeader.open}
-          notifications={NOTIFICATIONS}
+          notifications={notifications}
         />
 
         <UserPanel

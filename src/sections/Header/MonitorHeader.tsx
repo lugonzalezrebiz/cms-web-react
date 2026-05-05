@@ -18,23 +18,15 @@ import useNavigateWithQuery from "../../hooks/useNavigate";
 import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
+import { TRACKER_OPTIONS } from "./hooks/useTrackerOptions";
 
-const TRACKER_OPTIONS = [
-  { value: "estop", title: "E-Stop Activation" },
-  { value: "collision", title: "Collision In Tunnel" },
-  { value: "human", title: "Human in Tunnel" },
-  { value: "slip", title: "Slip & Fall" },
-  { value: "paystation", title: "Paystation Attendance" },
-];
-
-const CAMERA_GROUPS = [
+const CAMERA_GROUPS_BASE = [
   { value: "1", title: "All" },
   { value: "2", title: "POS" },
   { value: "3", title: "Tunner" },
   { value: "4", title: "Offices" },
   { value: "5", title: "Drying Station" },
   { value: "6", title: "Parking Lot" },
-  { value: "7", title: "Tracker", options: TRACKER_OPTIONS },
 ];
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
@@ -155,8 +147,12 @@ const MonitorHeader = ({
   }, []);
 
   const { handleDone, showFinalizeButton } = useMonitorState();
-  const { cameraGroup, setCameraGroup } = useCameraGroup();
-  const [trackerOption, setTrackerOption] = useState("");
+  const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
+    useCameraGroup();
+  const cameraGroups = [
+    ...CAMERA_GROUPS_BASE,
+    { value: "7", title: "Tracker", options: TRACKER_OPTIONS },
+  ];
 
   return (
     <>
@@ -209,7 +205,7 @@ const MonitorHeader = ({
                 value={cameraGroup}
                 setValue={setCameraGroup}
                 label="Camera Groups"
-                groups={CAMERA_GROUPS}
+                groups={cameraGroups}
                 selectValue={trackerOption}
                 setSelectValue={setTrackerOption}
               />

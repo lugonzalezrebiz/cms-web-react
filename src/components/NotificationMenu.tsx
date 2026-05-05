@@ -1,7 +1,9 @@
+import { useEffect, useRef } from "react";
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
+import { usePostCallback } from "../hooks/useApi";
 
 export interface Notification {
   id: number;
@@ -9,8 +11,8 @@ export interface Notification {
   timeAgo: string;
   date: string;
   unread: boolean;
-  location?: string;
-  store?: string;
+  // location?: string;
+  // store?: string;
 }
 
 interface Props {
@@ -138,6 +140,21 @@ const NotificationMenu = ({
   notifications,
 }: Props) => {
   const unreadCount = notifications.filter((n) => n.unread).length;
+  const post = usePostCallback({ invalidateKey: ["notification/all"] });
+  const notificationsRef = useRef(notifications);
+  notificationsRef.current = notifications;
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      notificationsRef.current
+        .filter((n) => n.unread)
+        .forEach(({ id }) => {
+          post(`notification/${id}/read`).catch(() => {});
+        });
+    }, 20_000);
+    return () => clearTimeout(timer);
+  }, [open, post]);
 
   return (
     <PopoverMenu
@@ -184,7 +201,7 @@ const NotificationMenu = ({
               <NotifRow key={notif.id} unread={notif.unread}>
                 <InfoCol>
                   <NameText>{notif.title}</NameText>
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                  {/* <Box sx={{ display: "flex", alignItems: "center" }}>
                     <img
                       style={{ margin: "0 6px 0 0" }}
                       src="./assets/building-07.svg"
@@ -201,7 +218,7 @@ const NotificationMenu = ({
                     <AssignmentSubText style={{ margin: 0 }}>
                       {notif.store}
                     </AssignmentSubText>
-                  </Box>
+                  </Box> */}
                   <ActivityText title={notif.date}>{notif.date}</ActivityText>
                   <TimeText>{notif.timeAgo}</TimeText>
                 </InfoCol>

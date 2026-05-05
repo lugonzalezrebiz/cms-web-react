@@ -265,19 +265,27 @@ interface CameraLayoutProps {
 }
 
 const getRowDistribution = (count: number): number[] => {
-  const n = Math.min(count, 16);
-  if (n === 0) return [];
+  if (count === 0) return [];
 
+  if (count % 5 === 0) {
+    const rows: number[] = [];
+    let remaining = count;
+    while (remaining > 0) {
+      rows.push(5);
+      remaining -= 5;
+    }
+    return rows;
+  }
+
+  const n = Math.min(count, 16);
   const numRows = n <= 2 ? 1 : n <= 8 ? 2 : n <= 12 ? 3 : 4;
   const rows: number[] = [];
   let remaining = n;
-
   for (let i = 0; i < numRows; i++) {
     const rowCount = Math.ceil(remaining / (numRows - i));
     rows.push(rowCount);
     remaining -= rowCount;
   }
-
   return rows;
 };
 
@@ -384,7 +392,7 @@ const CameraLayout = ({
   onRemoveEventPoint,
   onExpandCamera: handleExpandCamera,
 }: CameraLayoutProps) => {
-  const safeCount = Math.min(count, 16);
+  const safeCount = count % 5 === 0 ? count : Math.min(count, 16);
   if (safeCount === 0) return null;
 
   const totalHeight =

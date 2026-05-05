@@ -15,7 +15,9 @@ const MonitorSetterContext = createContext<(s: MonitorState) => void>(() => {});
 const CameraGroupContext = createContext<{
   cameraGroup: string;
   setCameraGroup: (v: string) => void;
-}>({ cameraGroup: "1", setCameraGroup: () => {} });
+  trackerOption: string;
+  setTrackerOption: (v: string) => void;
+}>({ cameraGroup: "1", setCameraGroup: () => {}, trackerOption: "", setTrackerOption: () => {} });
 
 export function MonitorProvider({ children }: { children: ReactNode }) {
   const [state, setStateInternal] = useState<MonitorState>({
@@ -25,11 +27,12 @@ export function MonitorProvider({ children }: { children: ReactNode }) {
 
   const setState = useCallback((s: MonitorState) => setStateInternal(s), []);
   const [cameraGroup, setCameraGroup] = useState("1");
+  const [trackerOption, setTrackerOption] = useState("");
 
   return (
     <MonitorSetterContext.Provider value={setState}>
       <MonitorStateContext.Provider value={state}>
-        <CameraGroupContext.Provider value={{ cameraGroup, setCameraGroup }}>
+        <CameraGroupContext.Provider value={{ cameraGroup, setCameraGroup, trackerOption, setTrackerOption }}>
           {children}
         </CameraGroupContext.Provider>
       </MonitorStateContext.Provider>
