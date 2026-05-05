@@ -19,15 +19,16 @@ import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import { TRACKER_OPTIONS } from "./hooks/useTrackerOptions";
+import useCameraGroups from "../../hooks/useCameraGroups";
 
-const CAMERA_GROUPS_BASE = [
-  { value: "1", title: "All" },
-  { value: "2", title: "POS" },
-  { value: "3", title: "Tunner" },
-  { value: "4", title: "Offices" },
-  { value: "5", title: "Drying Station" },
-  { value: "6", title: "Parking Lot" },
-];
+// const CAMERA_GROUPS_BASE = [
+//   { value: "1", title: "All" },
+//   { value: "2", title: "POS" },
+//   { value: "3", title: "Tunner" },
+//   { value: "4", title: "Offices" },
+//   { value: "5", title: "Drying Station" },
+//   { value: "6", title: "Parking Lot" },
+// ];
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
@@ -149,9 +150,10 @@ const MonitorHeader = ({
   const { handleDone, showFinalizeButton } = useMonitorState();
   const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
     useCameraGroup();
+  const { cameraGroups: cameraGroupsBase } = useCameraGroups();
   const cameraGroups = [
-    ...CAMERA_GROUPS_BASE,
-    { value: "7", title: "Tracker", options: TRACKER_OPTIONS },
+    ...cameraGroupsBase,
+    { value: String(cameraGroupsBase.length + 1), title: "Tracker", options: TRACKER_OPTIONS },
   ];
 
   return (
