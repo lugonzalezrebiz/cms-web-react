@@ -18,6 +18,7 @@ interface CameraItemProps {
   isExpanded?: boolean;
   tags: CameraContextMenuItem[];
   contextMenuItems: CameraContextMenuItem[];
+  onMenuOpen?: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
   cameraLabel?: boolean;
   // Real image props — when provided, loads from DVR via dvr:// protocol
@@ -36,6 +37,7 @@ export const CameraItem = ({
   isExpanded = false,
   tags,
   contextMenuItems,
+  onMenuOpen,
   cameraId,
   cameraName,
   company,
@@ -46,6 +48,11 @@ export const CameraItem = ({
   cameraLabel = true,
 }: CameraItemProps) => {
   const { open: showMenu, handleOpen, handleClose: closeMenu } = usePopover();
+
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
+    handleOpen(e);
+    onMenuOpen?.(index);
+  };
 
   const useRealImages =
     cameraId !== undefined &&
@@ -72,7 +79,7 @@ export const CameraItem = ({
     <Box
       onContextMenu={(e) => {
         e.preventDefault();
-        handleOpen(e);
+        handleMenuOpen(e);
       }}
       sx={{
         width: "100%",
@@ -126,7 +133,7 @@ export const CameraItem = ({
           <img
             style={{ padding: "0 4px 0 0", cursor: "pointer" }}
             src="../assets/chevron-down.svg"
-            onClick={handleOpen}
+            onClick={handleMenuOpen}
             alt="Show camera options"
           />
         </Box>
@@ -252,6 +259,7 @@ interface CameraLayoutProps {
   media: string;
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
+  onMenuOpen?: (index: number) => void;
   cameras?: CameraInfo[];
   company?: number;
   location?: number;
@@ -267,24 +275,25 @@ interface CameraLayoutProps {
 const getRowDistribution = (count: number): number[] => {
   if (count === 0) return [];
 
-  if (count % 5 === 0) {
+  if (count <= 16) {
+    const numRows = count <= 2 ? 1 : count <= 8 ? 2 : count <= 12 ? 3 : 4;
     const rows: number[] = [];
     let remaining = count;
-    while (remaining > 0) {
-      rows.push(5);
-      remaining -= 5;
+    for (let i = 0; i < numRows; i++) {
+      const rowCount = Math.ceil(remaining / (numRows - i));
+      rows.push(rowCount);
+      remaining -= rowCount;
     }
     return rows;
   }
 
-  const n = Math.min(count, 16);
-  const numRows = n <= 2 ? 1 : n <= 8 ? 2 : n <= 12 ? 3 : 4;
+  // >16: fixed 4 columns, scroll handles overflow
   const rows: number[] = [];
-  let remaining = n;
-  for (let i = 0; i < numRows; i++) {
-    const rowCount = Math.ceil(remaining / (numRows - i));
-    rows.push(rowCount);
-    remaining -= rowCount;
+  let remaining = count;
+  while (remaining > 0) {
+    const n = Math.min(remaining, 4);
+    rows.push(n);
+    remaining -= n;
   }
   return rows;
 };
@@ -297,6 +306,7 @@ interface SharedCameraItemProps {
   onRemoveTag: (tagId: number) => void;
   getTagsForCamera: (index: number) => CameraContextMenuItem[];
   contextMenuItems: CameraContextMenuItem[];
+  onMenuOpen?: (index: number) => void;
   cameras?: CameraInfo[];
   company?: number;
   location?: number;
@@ -312,6 +322,7 @@ const CameraCell = ({
   onRemoveTag,
   getTagsForCamera,
   contextMenuItems,
+  onMenuOpen,
   cameras,
   company,
   location,
@@ -323,6 +334,7 @@ const CameraCell = ({
       sx={{
         flex: "0 0 auto",
         width: `calc(${100 / maxCols}% - ${(GAP * (maxCols - 1)) / maxCols}px)`,
+        height: "100%",
         minHeight: 0,
         overflow: "hidden",
       }}
@@ -333,6 +345,7 @@ const CameraCell = ({
         expandCamera={expandCamera}
         tags={getTagsForCamera(camIndex)}
         contextMenuItems={contextMenuItems}
+        onMenuOpen={onMenuOpen}
         onRemoveTag={onRemoveTag}
         cameraId={cameras?.[camIndex]?.id}
         cameraName={cameras?.[camIndex]?.name}
@@ -349,11 +362,13 @@ const CameraRow = ({
   startIdx,
   rowCount,
   maxCols,
+  rowHeight,
   ...shared
 }: SharedCameraItemProps & {
   startIdx: number;
   rowCount: number;
   maxCols: number;
+  rowHeight?: string;
 }) => {
   return (
     <Box
@@ -363,6 +378,10 @@ const CameraRow = ({
         justifyContent: "center",
         minHeight: 0,
         overflow: "hidden",
+        ...(rowHeight !== undefined && {
+          height: rowHeight,
+          flexShrink: 0,
+        }),
       }}
     >
       {Array.from({ length: rowCount }, (_, colIndex) => (
@@ -382,6 +401,7 @@ const CameraLayout = ({
   media,
   maxHeight = 350,
   contextMenuItems = [],
+  onMenuOpen,
   cameras,
   company,
   location,
@@ -392,11 +412,17 @@ const CameraLayout = ({
   onRemoveEventPoint,
   onExpandCamera: handleExpandCamera,
 }: CameraLayoutProps) => {
-  const safeCount = count % 5 === 0 ? count : Math.min(count, 16);
-  if (safeCount === 0) return null;
+  if (count === 0) return null;
 
+  const scrollable = count > 16;
   const totalHeight =
     typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
+  // Each row fills exactly 1/4 of the container (same size as the 16-camera grid rows).
+  // Using calc(100%) so the 4 visible rows + 3 gaps fill the container perfectly,
+  // and row 5+ start beyond the fold and are revealed by scroll.
+  const rowHeight = scrollable
+    ? `calc((100% - ${GAP * 3}px) / 4)`
+    : undefined;
 
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
     cameraEventPoints
@@ -418,6 +444,7 @@ const CameraLayout = ({
     onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
     getTagsForCamera,
     contextMenuItems,
+    onMenuOpen,
     cameras,
     company,
     location,
@@ -425,12 +452,39 @@ const CameraLayout = ({
     timestamp,
   };
 
-  const rowDistribution = getRowDistribution(safeCount);
+  const rowDistribution = getRowDistribution(count);
   const numRows = rowDistribution.length;
-  const maxCols = rowDistribution[0];
+  const maxCols = Math.max(...rowDistribution);
   const rowStarts = rowDistribution.map((_, i) =>
     rowDistribution.slice(0, i).reduce((sum, n) => sum + n, 0),
   );
+
+  if (scrollable) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: `${GAP}px`,
+          width: "97%",
+          height: totalHeight,
+          overflowY: "auto",
+          m: "auto",
+        }}
+      >
+        {rowDistribution.map((rowCount, rowIndex) => (
+          <CameraRow
+            key={rowIndex}
+            startIdx={rowStarts[rowIndex]}
+            rowCount={rowCount}
+            maxCols={maxCols}
+            rowHeight={rowHeight}
+            {...sharedProps}
+          />
+        ))}
+      </Box>
+    );
+  }
 
   return (
     <Box

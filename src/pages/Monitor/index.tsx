@@ -1,10 +1,12 @@
 import { Box } from "@mui/system";
+import { useState, useMemo } from "react";
+import { useTrackersByCamera } from "../../hooks/useTrackersByCamera";
+import type { CameraContextMenuItem } from "../../components/CameraOverlayMenu";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useCameras } from "./hooks/useCameras";
-import { useTrackersByCameraMap } from "./hooks/useTrackersByCameraMap";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
 import { useMenuItems } from "./hooks/useMenuItems";
@@ -30,7 +32,9 @@ const Monitor = () => {
   const allCameras = useCameras(company, location, date);
   const trackerCameras = useTrackerCameras(trackerOption);
   const cameras = cameraGroup === "7" && trackerOption ? trackerCameras : allCameras;
-  const { trackers } = useTrackersByCameraMap(cameras);
+  const trackers = Array.from({ length: 15 }, (_, i) => ({ id: i + 1, name: `Item ${i + 1}` }));
+  const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
+
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
 
   const {
@@ -45,6 +49,21 @@ const Monitor = () => {
     canUndo,
     canRedo,
   } = useCameraEventPoints();
+
+  const fetchedTrackers = useTrackersByCamera(
+    company, location,
+    (openMenuCamera ?? 0) + 1,
+    openMenuCamera !== null,
+  );
+  const cameraMenuItems = useMemo<CameraContextMenuItem[]>(() => [
+    ...fetchedTrackers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      label: t.name,
+      onClick: (idx: number) => handleActivitySelect(idx, t.name),
+    })),
+    { id: -1, name: "Event", label: "Event", onClick: (idx: number) => handleActivitySelect(idx, "Event") },
+  ], [fetchedTrackers, handleActivitySelect]);
 
   const { snapshot, eventPoints: preloadedEventPoints } =
     useMonitoring(trackers);
@@ -104,7 +123,12 @@ const Monitor = () => {
     canRedo,
     onRemoveEventPoint: handleRemoveEventPoint,
     viewMode: "activity" as const,
-    menuItems: allMenuItems,
+    menuItems: Array.from({ length: 15 }, (_, i) => ({
+      id: i + 1,
+      name: `Item ${i + 1}`,
+      label: `Item ${i + 1}`,
+      onClick: (index: number) => handleActivitySelect(index, `Item ${i + 1}`),
+    })),
   } as const;
 
   const expandedCameraTags =
@@ -158,7 +182,8 @@ const Monitor = () => {
             count={cameras.length}
             media="/assets/camera/Cam thumbnail.svg"
             maxHeight="100%"
-            contextMenuItems={allMenuItems}
+            contextMenuItems={cameraMenuItems}
+            onMenuOpen={setOpenMenuCamera}
             cameraEventPoints={allEventPoints}
             markerSec={markerSec}
             onRemoveEventPoint={handleRemoveEventPoint}

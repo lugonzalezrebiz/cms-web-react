@@ -44,7 +44,7 @@ export function useNotifications() {
     id: n.id,
     title: n.message,
     date: dayjs(n.date).format("MMMM D - YYYY"),
-    unread: !(n.read ?? false),
+    unread: n.type === "GENERAL" ? false : !(n.read ?? false),
     timeAgo: timeAgo(n.date),
     // location: undefined,
     // store: undefined,

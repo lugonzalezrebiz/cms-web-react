@@ -152,7 +152,7 @@ const NotificationMenu = ({
         .forEach(({ id }) => {
           post(`notification/${id}/read`).catch(() => {});
         });
-    }, 20_000);
+    }, 5_000);
     return () => clearTimeout(timer);
   }, [open, post]);
 
