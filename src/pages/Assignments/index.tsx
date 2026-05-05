@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useNavigateWithQuery from "../../hooks/useNavigate";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
@@ -8,6 +8,8 @@ import { usePopover } from "../../components/timeline/hooks/usePopover";
 import DropDownMenu from "../../components/DropDownMenu";
 import type { Assignment } from "./components/InfoAssignment";
 import InfoAssignment from "./components/InfoAssignment";
+import useCompanies from "../../hooks/useCompanies";
+import useAssignments from "../../hooks/useAssignments";
 
 const REVIEWER_REDIRECT = "/monitor?company=9001&location=222&date=20260407";
 const activityIcon = "/assets/activity-other-icon.svg";
@@ -24,312 +26,312 @@ const cards = [
   { title: "Completed This Month", current: 34 },
 ];
 
-const assignments = [
-  {
-    state: "Paused" as const,
-    location: 162,
-    store: 6015,
-    date: "February 24 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "Paused" as const,
-    location: 205,
-    store: 9274,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "Resolved" as const,
-    location: 187,
-    store: 4829,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "New" as const,
-    location: 250,
-    store: 8537,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 2958,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 6392,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "New" as const,
-    location: 162,
-    store: 1047,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 7359,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-];
+// const _assignments = [
+//   {
+//     state: "Paused" as const,
+//     location: 162,
+//     store: 6015,
+//     date: "February 24 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "Paused" as const,
+//     location: 205,
+//     store: 9274,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "Resolved" as const,
+//     location: 187,
+//     store: 4829,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "New" as const,
+//     location: 250,
+//     store: 8537,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "New" as const,
+//     location: 205,
+//     store: 2958,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "New" as const,
+//     location: 205,
+//     store: 6392,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "New" as const,
+//     location: 162,
+//     store: 1047,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+//   {
+//     state: "New" as const,
+//     location: 205,
+//     store: 7359,
+//     date: "February 25 - 2026",
+//     comments: 0,
+//     items: [
+//       { activity: "Date", complement: "Mar 19, 2025" },
+//       {
+//         activity: "Open",
+//         complement: "09:00 (MST)",
+//       },
+//       {
+//         activity: "Close",
+//         complement: "19:00 (MST)",
+//       },
+//       {
+//         activity: "Open at",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "DVR",
+//         complement: "08:00",
+//       },
+//       {
+//         activity: "Diff",
+//         complement: "0",
+//       },
+//       {
+//         activity: "Interval",
+//         complement: "Events",
+//       },
+//     ],
+//     commentsTex: [
+//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
+//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
+//     ],
+//   },
+// ];
 
 const rejectedAssignments = [
   {
@@ -452,6 +454,21 @@ const Monitor = () => {
   const navigate = useNavigateWithQuery();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
+  const { companyFilters, getStoreFilters } = useCompanies();
+  const { assignments } = useAssignments(company ? Number(company) : null, store ? Number(store) : null);
+
+  const handleSetCompany = (value: string) => {
+    setCompany(value);
+    setStore("");
+  };
+
+  useEffect(() => {
+    if (company === "" && companyFilters.length > 1) {
+      setCompany(companyFilters[1].value);
+    }
+  }, [companyFilters]);
+
+
   const cardMenu = usePopover();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] =
@@ -483,13 +500,13 @@ const Monitor = () => {
       <Title title="New Assignments">
         <Box mr={"20px"}>
           <SelectComponent
-            filters={[{ label: "All Companies", value: "" }]}
+            filters={companyFilters}
             filter={company}
-            setFilter={setCompany}
+            setFilter={handleSetCompany}
           />
         </Box>
         <SelectComponent
-          filters={[{ label: "All Stores", value: "" }]}
+          filters={getStoreFilters(company)}
           filter={store}
           setFilter={setStore}
         />
@@ -541,3 +558,13 @@ const Monitor = () => {
 };
 
 export default Monitor;
+
+//  {assignments.map((a, i) => (
+//           <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+//             <NewAssignmentsCard
+//               {...a}
+//               onClick={() => navigate(REVIEWER_REDIRECT)}
+//               openMenu={(e) => {
+//                 setSelectedAssignment(a);
+//                 cardMenu.handleOpen(e);
+//               }}
