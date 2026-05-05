@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
+import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
 import { Colors, Fonts } from "../theme";
 import Tooltip from "./Tooltip";
 import { useCameraFrame } from "../hooks/useCameraFrame";
@@ -412,7 +413,36 @@ const CameraLayout = ({
   onRemoveEventPoint,
   onExpandCamera: handleExpandCamera,
 }: CameraLayoutProps) => {
-  if (count === 0) return null;
+  if (count === 0) {
+    return (
+      <Box
+        sx={{
+          width: "97%",
+          height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
+          m: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: Colors.blushWhite,
+          borderRadius: 1,
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <VideocamOffOutlinedIcon sx={{ fontSize: 40, color: Colors.dimGray, opacity: 0.4 }} />
+        <Typography
+          sx={{
+            color: Colors.dimGray,
+            fontFamily: Fonts.main,
+            fontSize: 14,
+            opacity: 0.6,
+          }}
+        >
+          No cameras available
+        </Typography>
+      </Box>
+    );
+  }
 
   const scrollable = count > 16;
   const totalHeight =
@@ -420,9 +450,7 @@ const CameraLayout = ({
   // Each row fills exactly 1/4 of the container (same size as the 16-camera grid rows).
   // Using calc(100%) so the 4 visible rows + 3 gaps fill the container perfectly,
   // and row 5+ start beyond the fold and are revealed by scroll.
-  const rowHeight = scrollable
-    ? `calc((100% - ${GAP * 3}px) / 4)`
-    : undefined;
+  const rowHeight = scrollable ? `calc((100% - ${GAP * 3}px) / 4)` : undefined;
 
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
     cameraEventPoints
