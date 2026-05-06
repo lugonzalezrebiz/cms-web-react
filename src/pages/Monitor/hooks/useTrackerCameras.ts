@@ -7,16 +7,15 @@ type CameraSearchResponse = {
   cameras: Array<{ id: number; name: string; group: { id: number; name: string } }>;
 };
 
-export function useTrackerCameras(trackerOption: string): CameraInfo[] {
+export function useTrackerCameras(groupID: number, trackerID: number): CameraInfo[] {
   const { company, location } = useDashboardParams();
-  const trackerID = trackerOption ? Number(trackerOption) : null;
-  const enabled = !!company && !!location && !!trackerID;
+  const enabled = !!company && !!location;
 
   const { data } = usePostQuery<CameraSearchResponse>(
     "camera/search",
-    { companyID: company, locationID: location, trackerID },
+    { companyID: company, locationID: location, groupID, trackerID },
     {
-      queryKey: ["camera/search", company, location, trackerID],
+      queryKey: ["camera/search", company, location, groupID, trackerID],
       enabled,
       staleTime: 5 * 60 * 1000,
     },

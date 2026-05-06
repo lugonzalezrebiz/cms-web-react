@@ -6,8 +6,8 @@ import TimeLine from "../../components/TimeLine";
 import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
-import { useCameras } from "./hooks/useCameras";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
+import useTrackers from "../../hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
 import { useMenuItems } from "./hooks/useMenuItems";
 import { useSalesTransactions } from "./hooks/useSalesTransactions";
@@ -23,16 +23,17 @@ import {
   useCameraGroup,
 } from "../../contexts/MonitorContext";
 import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
-import { PosCarouselSection } from "./components/PosCarouselSection";
 
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
   const { cameraGroup, trackerOption } = useCameraGroup();
-  const allCameras = useCameras(company, location, date);
-  const trackerCameras = useTrackerCameras(trackerOption);
-  const cameras = cameraGroup === "7" && trackerOption ? trackerCameras : allCameras;
-  const trackers = Array.from({ length: 15 }, (_, i) => ({ id: i + 1, name: `Item ${i + 1}` }));
+  const isTrackerTab = cameraGroup === "tracker";
+  const groupID =
+    cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
+  const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
+  const cameras = useTrackerCameras(groupID, trackerID);
+  const { trackers } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
@@ -51,25 +52,38 @@ const Monitor = () => {
   } = useCameraEventPoints();
 
   const fetchedTrackers = useTrackersByCamera(
-    company, location,
+    company,
+    location,
     (openMenuCamera ?? 0) + 1,
     openMenuCamera !== null,
   );
-  const cameraMenuItems = useMemo<CameraContextMenuItem[]>(() => [
-    ...fetchedTrackers.map((t) => ({
-      id: t.id,
-      name: t.name,
-      label: t.name,
-      onClick: (idx: number) => handleActivitySelect(idx, t.name),
-    })),
-    { id: -1, name: "Event", label: "Event", onClick: (idx: number) => handleActivitySelect(idx, "Event") },
-  ], [fetchedTrackers, handleActivitySelect]);
+  const cameraMenuItems = useMemo<CameraContextMenuItem[]>(
+    () => [
+      ...fetchedTrackers.map((t) => ({
+        id: t.id,
+        name: t.name,
+        label: t.name,
+        onClick: (idx: number) => handleActivitySelect(idx, t.name),
+      })),
+      {
+        id: -1,
+        name: "Event",
+        label: "Event",
+        onClick: (idx: number) => handleActivitySelect(idx, "Event"),
+      },
+    ],
+    [fetchedTrackers, handleActivitySelect],
+  );
 
-  const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } =
-    useMonitoring(trackers, monitoringID);
+  const {
+    snapshot,
+    eventPoints: preloadedEventPoints,
+    rangeSessions,
+  } = useMonitoring(trackers, monitoringID);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const { transactions, loading: transactionsLoading } = useSalesTransactions(monitoringID);
+  const { transactions, loading: transactionsLoading } =
+    useSalesTransactions(monitoringID);
 
   const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec } =
     useMarkerState(cameraGroup, markerSec);
@@ -124,11 +138,11 @@ const Monitor = () => {
     canRedo,
     onRemoveEventPoint: handleRemoveEventPoint,
     viewMode: "activity" as const,
-    menuItems: Array.from({ length: 15 }, (_, i) => ({
-      id: i + 1,
-      name: `Item ${i + 1}`,
-      label: `Item ${i + 1}`,
-      onClick: (index: number) => handleActivitySelect(index, `Item ${i + 1}`),
+    menuItems: trackers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      label: t.name,
+      onClick: (index: number) => handleActivitySelect(index, t.name),
     })),
     rangeSessions,
   } as const;
@@ -160,44 +174,23 @@ const Monitor = () => {
       }}
     >
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
-        {cameraGroup === "2" ? (
-          <PosCarouselSection
-            company={company}
-            location={location}
-            transactions={transactions}
-            loading={transactionsLoading}
-            current={current}
-            prev={prev}
-            next={next}
-            goTo={goTo}
-            currentTimeSec={currentTimeSec}
-            currentCameraId={currentCameraId}
-            allMenuItems={allMenuItems}
-            onMarkerChange={handleMarkerChange}
-            onActivitySelect={handleActivitySelect}
-            attended={attended}
-            onToggleAttended={toggleAttended}
-            onDone={handlePosDone}
-          />
-        ) : (
-          <CameraLayout
-            count={cameras.length}
-            media="/assets/camera/Cam thumbnail.svg"
-            maxHeight="100%"
-            contextMenuItems={cameraMenuItems}
-            onMenuOpen={setOpenMenuCamera}
-            cameraEventPoints={allEventPoints}
-            markerSec={markerSec}
-            onRemoveEventPoint={handleRemoveEventPoint}
-            cameras={cameras}
-            company={company}
-            location={location}
-            date={date}
-            timestamp={timestamp}
-            expandedCamera={expandedCamera}
-            onExpandCamera={handleExpandCamera}
-          />
-        )}
+        <CameraLayout
+          count={cameras.length}
+          media="/assets/camera/Cam thumbnail.svg"
+          maxHeight="100%"
+          contextMenuItems={cameraMenuItems}
+          onMenuOpen={setOpenMenuCamera}
+          cameraEventPoints={allEventPoints}
+          markerSec={markerSec}
+          onRemoveEventPoint={handleRemoveEventPoint}
+          cameras={cameras}
+          company={company}
+          location={location}
+          date={date}
+          timestamp={timestamp}
+          expandedCamera={expandedCamera}
+          onExpandCamera={handleExpandCamera}
+        />
       </Box>
 
       {!timelinePopped && (

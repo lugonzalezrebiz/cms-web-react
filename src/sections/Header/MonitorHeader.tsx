@@ -18,7 +18,7 @@ import useNavigateWithQuery from "../../hooks/useNavigate";
 import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
-import { TRACKER_OPTIONS } from "./hooks/useTrackerOptions";
+import useTrackerOptions from "./hooks/useTrackerOptions";
 import useCameraGroups from "../../hooks/useCameraGroups";
 
 // const CAMERA_GROUPS_BASE = [
@@ -151,9 +151,15 @@ const MonitorHeader = ({
   const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
     useCameraGroup();
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
+  const { trackerOptions } = useTrackerOptions();
   const cameraGroups = [
+    { value: "0", title: "All" },
     ...cameraGroupsBase,
-    { value: String(cameraGroupsBase.length + 1), title: "Tracker", options: TRACKER_OPTIONS },
+    {
+      value: "tracker",
+      title: "Tracker",
+      options: trackerOptions,
+    },
   ];
 
   return (

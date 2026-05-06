@@ -61,10 +61,10 @@ function toTimeStr(datetime: string): string {
   return datetime.split(" ")[1] ?? "00:00:00";
 }
 
-function buildEventPoints(events: ApiEvent[]): CameraEventPoint[] {
+function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>): CameraEventPoint[] {
   const points: CameraEventPoint[] = [];
   for (const event of events) {
-    const label = `Item ${event.trackerId}`;
+    const label = trackerMap.get(event.trackerId) ?? "";
     for (const entry of event.entries) {
       if (entry.type === "POINT") {
         const timeSec = toSec(entry.timestamp);
@@ -128,15 +128,15 @@ export function useMonitoring(_trackers: { id: number; name: string }[], monitor
     };
   }, [monitoring, baseSnapshot]);
 
-  const eventPoints = useMemo(
-    () => buildEventPoints(monitoring?.events ?? []),
-    [monitoring],
-  );
+  const eventPoints = useMemo(() => {
+    const trackerMap = new Map((monitoring?.trackers ?? []).map((t) => [t.id, t.name]));
+    return buildEventPoints(monitoring?.events ?? [], trackerMap);
+  }, [monitoring]);
 
   const rangeSessions = useMemo(() => {
     const sessions = buildRangeSessions(monitoring?.events ?? []);
     // TODO: remove mock
-    sessions[1] = [
+    sessions[10] = [
       { type: "in", timestamp: "08:00:10" },
       { type: "out", timestamp: "23:00:00" },
     ];

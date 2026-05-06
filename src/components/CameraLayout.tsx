@@ -68,7 +68,7 @@ export const CameraItem = ({
           company: company!,
           location: location!,
           date: date!,
-          camera: cameraId!,
+          camera: cameraId! - 1,
           timestamp: timestamp!,
         }
       : { company: 0, location: 0, date: "", camera: 0, timestamp: "" },
@@ -129,7 +129,7 @@ export const CameraItem = ({
               lineHeight: 1.5,
             }}
           >
-            Camera {index + 1}
+            Camera {cameraId ?? index + 1}
           </Typography>
           <img
             style={{ padding: "0 4px 0 0", cursor: "pointer" }}
@@ -452,11 +452,13 @@ const CameraLayout = ({
   // and row 5+ start beyond the fold and are revealed by scroll.
   const rowHeight = scrollable ? `calc((100% - ${GAP * 3}px) / 4)` : undefined;
 
+  const sortedCameras = cameras ? [...cameras].sort((a, b) => a.id - b.id) : undefined;
+
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
     cameraEventPoints
       .filter(
         (ep) =>
-          ep.cameraId === 1 + cameraIndex &&
+          ep.cameraId === (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1) &&
           Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
       )
       .map((ep) => ({
@@ -473,7 +475,7 @@ const CameraLayout = ({
     getTagsForCamera,
     contextMenuItems,
     onMenuOpen,
-    cameras,
+    cameras: sortedCameras,
     company,
     location,
     date,
