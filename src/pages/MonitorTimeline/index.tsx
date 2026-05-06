@@ -7,13 +7,13 @@ import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraE
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
-import { useTrackers } from "../Monitor/hooks/useTrackers";
+import useTrackers from "../../hooks/useTrackers";
 import { useMenuItems } from "../Monitor/hooks/useMenuItems";
 
 const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
   const monitoringID = searchParams.get("monitoringID") ?? "";
-  const trackers = useTrackers(monitoringID);
+  const { trackers } = useTrackers();
   const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } = useMonitoring(trackers, monitoringID);
 
   const {
@@ -21,6 +21,11 @@ const MonitorTimeline = () => {
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
     handleActivitySelect,
+    handleRemoveEventPoint,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
   } = useCameraEventPoints();
 
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
@@ -33,18 +38,32 @@ const MonitorTimeline = () => {
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const suppressBroadcastRef = useRef(false);
+  const handleMarkerChangeRef = useRef(handleMarkerChange);
+  useEffect(() => { handleMarkerChangeRef.current = handleMarkerChange; }, [handleMarkerChange]);
 
   useEffect(() => {
-    channelRef.current = new BroadcastChannel("timeline-sync");
+    const channel = new BroadcastChannel("timeline-sync");
+    channelRef.current = channel;
+    channel.addEventListener("message", (e: MessageEvent) => {
+      if (e.data?.type === "marker" && e.data?.source === "monitor") {
+        suppressBroadcastRef.current = true;
+        handleMarkerChangeRef.current(e.data.sec as number);
+      }
+    });
     return () => {
-      channelRef.current?.close();
+      channel.close();
       channelRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     if (markerTimeSec === null || !channelRef.current) return;
-    channelRef.current.postMessage({ type: "marker", sec: markerTimeSec });
+    if (suppressBroadcastRef.current) {
+      suppressBroadcastRef.current = false;
+      return;
+    }
+    channelRef.current.postMessage({ type: "marker", sec: markerTimeSec, source: "popout" });
   }, [markerTimeSec]);
 
   const sessionDate = useSessionDate();
@@ -63,6 +82,11 @@ const MonitorTimeline = () => {
         onMarkerChange={handleMarkerChange}
         markerTimeSec={markerTimeSec}
         onUpdateEventPoint={handleUpdateEventPoint}
+        onRemoveEventPoint={handleRemoveEventPoint}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
         headerLabel="Activities"
         viewMode="activity"
         menuItems={allMenuItems}

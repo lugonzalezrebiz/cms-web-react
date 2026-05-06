@@ -3,14 +3,43 @@ import { useSearchParams } from "react-router-dom";
 
 export function useTimelinePopout(
   onMarkerChange: (sec: number) => void,
+  markerTimeSec: number | null,
 ) {
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
   const popoutRef = useRef<Window | null>(null);
+  const channelRef = useRef<BroadcastChannel | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
+  const suppressSendRef = useRef(false);
+
+  useEffect(() => { onMarkerChangeRef.current = onMarkerChange; });
+
   useEffect(() => {
-    onMarkerChangeRef.current = onMarkerChange;
-  });
+    if (!timelinePopped) return;
+    const channel = new BroadcastChannel("timeline-sync");
+    channelRef.current = channel;
+
+    channel.addEventListener("message", (e: MessageEvent) => {
+      if (e.data?.type === "marker" && e.data?.source === "popout") {
+        suppressSendRef.current = true;
+        onMarkerChangeRef.current(e.data.sec as number);
+      }
+    });
+
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
+  }, [timelinePopped]);
+
+  useEffect(() => {
+    if (!timelinePopped || markerTimeSec === null) return;
+    if (suppressSendRef.current) {
+      suppressSendRef.current = false;
+      return;
+    }
+    channelRef.current?.postMessage({ type: "marker", sec: markerTimeSec, source: "monitor" });
+  }, [markerTimeSec, timelinePopped]);
 
   const handlePopOut = useCallback(() => {
     if (popoutRef.current && !popoutRef.current.closed) {
@@ -33,18 +62,6 @@ export function useTimelinePopout(
       }
     }, 500);
   }, [searchParams]);
-
-  useEffect(() => {
-    if (!timelinePopped) return;
-    const channel = new BroadcastChannel("timeline-sync");
-    const handler = (e: MessageEvent) => {
-      if (e.data?.type === "marker") {
-        onMarkerChangeRef.current(e.data.sec as number);
-      }
-    };
-    channel.addEventListener("message", handler);
-    return () => channel.close();
-  }, [timelinePopped]);
 
   return { timelinePopped, handlePopOut };
 }

@@ -73,8 +73,10 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>): 
           cameraId: event.cameraId,
           timeSec,
           startSec: Math.max(0, timeSec - 120),
-          endSec: timeSec + 120,
+          endSec: timeSec,
           label,
+          reviewed: entry.reviewed,
+          value: entry.value,
         });
       }
     }

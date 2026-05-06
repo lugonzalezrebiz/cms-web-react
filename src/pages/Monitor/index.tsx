@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTrackersByCamera } from "../../hooks/useTrackersByCamera";
 import type { CameraContextMenuItem } from "../../components/CameraOverlayMenu";
 import TimeLine from "../../components/TimeLine";
@@ -82,8 +82,10 @@ const Monitor = () => {
   } = useMonitoring(trackers, monitoringID);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const { transactions, loading: transactionsLoading } =
-    useSalesTransactions(monitoringID);
+  const {
+    transactions,
+    //  , loading: transactionsLoading
+  } = useSalesTransactions(monitoringID);
 
   const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec } =
     useMarkerState(cameraGroup, markerSec);
@@ -91,15 +93,15 @@ const Monitor = () => {
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   const {
-    current,
-    goTo,
-    prev,
-    next,
-    currentCameraId,
-    currentTimeSec,
-    attended,
-    toggleAttended,
-    handleDone: handlePosDone,
+    // current,
+    // goTo,
+    // prev,
+    // next,
+    // currentCameraId,
+    // currentTimeSec,
+    // attended,
+    // toggleAttended,
+    // handleDone: handlePosDone,
   } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
@@ -110,7 +112,7 @@ const Monitor = () => {
     });
 
   const { timelinePopped, handlePopOut } =
-    useTimelinePopout(handleMarkerChange);
+    useTimelinePopout(handleMarkerChange, markerTimeSec);
 
   const sessionDate = useSessionDate();
   const { handleDone } = useSaveMonitoring({
@@ -121,6 +123,17 @@ const Monitor = () => {
   });
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);
+
+  const handleDoneRef = useRef(handleDone);
+  useEffect(() => {
+    handleDoneRef.current = handleDone;
+  }, [handleDone]);
+  useEffect(
+    () => () => {
+      handleDoneRef.current();
+    },
+    [],
+  );
 
   const timelineProps = {
     snapshot,
@@ -153,7 +166,8 @@ const Monitor = () => {
           .filter(
             (ep) =>
               ep.cameraId === 1 + expandedCamera &&
-              markerSec >= ep.startSec && markerSec <= ep.endSec,
+              markerSec >= ep.startSec &&
+              markerSec <= ep.endSec,
           )
           .map((ep) => ({
             id: ep.id,

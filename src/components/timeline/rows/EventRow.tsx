@@ -63,17 +63,20 @@ const EventPointBar = ({
   const dotAbsolutePct = ((ep.timeSec - visibleStart) / visibleDuration) * 100;
   const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
 
+  const activeColor = ep.reviewed ? Colors.vividOrange : Colors.blue;
+  const idleColor = ep.reviewed ? Colors.lightOrange : Colors.lightSkyBlue;
+
   const diamondSx = (selected: boolean) => ({
     position: "absolute" as const,
     top: "50%",
     transform: "translate(-50%, -50%) rotate(45deg)",
     width: 14,
     height: 14,
-    bgcolor: selected ? Colors.vividOrange : Colors.lightOrange,
+    bgcolor: selected ? activeColor : idleColor,
     outline: selected
       ? `1.5px solid ${Colors.white}`
       : `1px solid ${Colors.white}`,
-    boxShadow: selected ? `0 0 6px 2px ${Colors.vividOrange}99` : "none",
+    boxShadow: selected ? `0 0 6px 2px ${activeColor}99` : "none",
     zIndex: selected ? 4 : 3,
     pointerEvents: "auto" as const,
     transition: "box-shadow 0.15s",
@@ -91,11 +94,9 @@ const EventPointBar = ({
           top: "50%",
           transform: "translateY(-50%)",
           borderRadius: "8px",
-          bgcolor: isSelected
-            ? `${Colors.vividOrange}99`
-            : `${Colors.vividOrange}`,
+          bgcolor: isSelected ? `${activeColor}99` : `${activeColor}55`,
           boxShadow: isSelected
-            ? `0 0 8px 2px ${Colors.lightOrange}99`
+            ? `0 0 8px 2px ${idleColor}99`
             : "none",
           height: 15,
           zIndex: isSelected ? 3 : 2,

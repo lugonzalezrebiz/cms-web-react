@@ -1,43 +1,70 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { usePost } from "../../../hooks/useApi";
 import useAuth from "../../../hooks/useAuth";
 import { REVIEWER_ROLE } from "../../../config";
 import { secToTimeString } from "./useTimelineMarker";
 import type { CameraEventPoint } from "../types";
 
-interface SaveTransaction {
-  sales_timestamp: string;
-  attended: boolean;
-  reviewed?: boolean;
-  review_date?: string;
+interface PointEntry {
+  type: "POINT";
+  timestamp: string;
+  value: boolean;
+  zoneId: number | null;
+  reviewed: boolean;
+  reviewDate: string | null;
+  review_disagree: boolean;
+  processed: boolean;
+  processDate: string | null;
 }
 
-interface SaveEntry {
-  tracker_id: number;
-  monitoring_id: string;
-  camera_id: number;
-  zone_id: null;
-  transactions: SaveTransaction[];
+interface RangeEntry {
+  type: "RANGE";
+  start: string;
+  end: string;
+  zoneId: number | null;
+  reviewed: boolean;
+  review_disagree: boolean;
+  processed: boolean;
+  processDate: string | null;
+}
+
+interface SaveEventGroup {
+  trackerId: number;
+  cameraId: number;
+  entries: (PointEntry | RangeEntry)[];
+}
+
+interface SavePayload {
+  events: SaveEventGroup[];
 }
 
 interface SaveResponse {
   success: boolean;
 }
 
+export interface RangeEvent {
+  trackerId: number;
+  cameraId: number;
+  startSec: number;
+  endSec: number;
+}
+
 export const useSaveMonitoring = ({
   trackers,
   eventPoints,
+  rangeEvents = [],
   sessionDate,
   monitoringID,
 }: {
   trackers: { id: number; name: string; attended?: boolean }[];
   eventPoints: CameraEventPoint[];
+  rangeEvents?: RangeEvent[];
   sessionDate: string;
   monitoringID: string;
 }) => {
   const { user } = useAuth();
-  const { mutate } = usePost<SaveResponse, SaveEntry[]>(
-    `monitoring/${monitoringID}/save`,
+  const { mutate } = usePost<SaveResponse, SavePayload>(
+    `monitoring/${monitoringID}/save2`,
     {
       onSuccess: (data) => {
         if (data.success) alert("Monitoring saved successfully.");
@@ -45,54 +72,75 @@ export const useSaveMonitoring = ({
     },
   );
 
-  const handleDone = useCallback(() => {
+  const buildPayload = useCallback((): SavePayload => {
     const labelToTrackerId: Record<string, number> = Object.fromEntries(
       trackers.map((t) => [t.name, t.id]),
     );
-    const trackerAttended: Record<number, boolean> = Object.fromEntries(
-      trackers.map((t) => [t.id, t.attended ?? false]),
-    );
+    const isReviewer = user?.roleID === REVIEWER_ROLE;
+    const now = new Date().toISOString();
+    const grouped = new Map<string, SaveEventGroup>();
 
-    const grouped = new Map<
-      string,
-      { trackerId: number; cameraId: number; timestamps: string[]; attended: boolean }
-    >();
-
-    for (const ep of eventPoints) {
-      const trackerId = labelToTrackerId[ep.label] ?? Math.floor(ep.id / 10000);
-      const key = `${trackerId}-${ep.cameraId}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          trackerId,
-          cameraId: ep.cameraId,
-          timestamps: [],
-          attended: trackerAttended[trackerId] ?? false,
-        });
-      }
-      grouped.get(key)!.timestamps.push(secToTimeString(ep.timeSec));
-    }
-
-    const reviewerPayload = {
-      reviewed: true,
-      review_date: new Date().toISOString(),
+    const getGroup = (trackerId: number, cameraId: number): SaveEventGroup => {
+      const key = `${trackerId}-${cameraId}`;
+      if (!grouped.has(key)) grouped.set(key, { trackerId, cameraId, entries: [] });
+      return grouped.get(key)!;
     };
 
-    const payload: SaveEntry[] = Array.from(grouped.values()).map(
-      ({ trackerId, cameraId, timestamps, attended }) => ({
-        tracker_id: trackerId,
-        monitoring_id: monitoringID,
-        camera_id: cameraId,
-        zone_id: null,
-        transactions: timestamps.map((t) => ({
-          sales_timestamp: `${sessionDate} ${t}`,
-          attended,
-          ...(user?.roleID === REVIEWER_ROLE ? reviewerPayload : {}),
-        })),
-      }),
-    );
+    for (const ep of eventPoints) {
+      const trackerId = labelToTrackerId[ep.label] ?? 0;
+      const group = getGroup(trackerId, ep.cameraId);
+      const reviewed = isReviewer ? true : ep.reviewed;
+      const reviewDate = isReviewer ? now : null;
 
-    mutate(payload);
-  }, [trackers, eventPoints, sessionDate, user, mutate]);
+      if (ep.endSec > ep.timeSec) {
+        group.entries.push({
+          type: "RANGE",
+          start: `${sessionDate} ${secToTimeString(ep.timeSec)}`,
+          end: `${sessionDate} ${secToTimeString(ep.endSec)}`,
+          zoneId: null,
+          reviewed,
+          review_disagree: false,
+          processed: false,
+          processDate: null,
+        });
+      } else {
+        group.entries.push({
+          type: "POINT",
+          timestamp: `${sessionDate} ${secToTimeString(ep.timeSec)}`,
+          value: ep.value,
+          zoneId: null,
+          reviewed,
+          reviewDate,
+          review_disagree: false,
+          processed: false,
+          processDate: null,
+        });
+      }
+    }
+
+    for (const re of rangeEvents) {
+      const group = getGroup(re.trackerId, re.cameraId);
+      group.entries.push({
+        type: "RANGE",
+        start: `${sessionDate} ${secToTimeString(re.startSec)}`,
+        end: `${sessionDate} ${secToTimeString(re.endSec)}`,
+        zoneId: null,
+        reviewed: isReviewer,
+        review_disagree: false,
+        processed: false,
+        processDate: null,
+      });
+    }
+
+    return { events: Array.from(grouped.values()) };
+  }, [trackers, eventPoints, rangeEvents, sessionDate, user]);
+
+  const buildPayloadRef = useRef(buildPayload);
+  useEffect(() => { buildPayloadRef.current = buildPayload; }, [buildPayload]);
+
+  const handleDone = useCallback(() => {
+    mutate(buildPayloadRef.current());
+  }, [mutate]);
 
   return { handleDone };
 };

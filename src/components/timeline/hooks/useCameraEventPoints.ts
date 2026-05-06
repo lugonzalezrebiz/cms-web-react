@@ -74,7 +74,7 @@ export const useCameraEventPoints = () => {
       pushHistory(prev);
       const next = [
         ...prev,
-        { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel },
+        { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel, reviewed: true, value: true },
       ];
       currentPointsRef.current = next;
       return next;

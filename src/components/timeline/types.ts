@@ -53,6 +53,8 @@ export type CameraEventPoint = {
   startSec: number;
   endSec: number;
   label: string;
+  reviewed: boolean;
+  value: boolean;
 };
 
 export type ResizingState = { id: number; side: "left" | "right" } | null;
