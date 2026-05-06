@@ -1,5 +1,16 @@
 import dayjs from "dayjs";
 import { usePostQuery } from "./useApi";
+import type { stateAssignments } from "../pages/Assignments/components/Card";
+
+const VALID_STATES: stateAssignments[] = [
+  "Ready", "Assigned", "Started", "Paused", "Resumed", "Completed", "Error", "Reported",
+];
+
+const parseStatusName = (statusName: string): stateAssignments => {
+  const last = statusName.split(".").pop() ?? "";
+  const capitalized = (last.charAt(0).toUpperCase() + last.slice(1)) as stateAssignments;
+  return VALID_STATES.includes(capitalized) ? capitalized : "Ready";
+};
 
 interface AssignmentDetails {
   open: string | null;
@@ -50,10 +61,11 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
   const formatTime = (time: string | null) => (time ? time.slice(0, 5) : "-");
 
   const assignments = (data?.data ?? []).map((a) => ({
-    state: "New" as const,
+    state: parseStatusName(a.statusName),
     location: a.companyID,
     store: a.locationID,
     date: dayjs(a.date).format("MMMM DD - YYYY"),
+    rawDate: dayjs(a.date).format("YYYYMMDD"),
     comments: a.details.comments ? 1 : 0,
     monitoringID: a.monitoringID,
     items: [

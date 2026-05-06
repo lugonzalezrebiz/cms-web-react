@@ -2,6 +2,7 @@ import { Box } from "@mui/system";
 import Dialog from "../../../components/Dialog";
 import { Colors, Fonts } from "../../../theme";
 import styled from "@emotion/styled";
+import { type stateAssignments, stateColors } from "./Card";
 
 export type Assignment = {
   state: stateAssignments;
@@ -19,33 +20,6 @@ interface InfoAssignmentProps {
   selectedAssignment: Assignment | null;
 }
 
-type stateAssignments = "Paused" | "New" | "Resolved" | "Rejected";
-
-const stateColors: Record<
-  stateAssignments,
-  { border: string; bg: string; color: string }
-> = {
-  New: {
-    border: Colors.leafGreen,
-    bg: Colors.mintFoam,
-    color: Colors.leafGreen,
-  },
-  Paused: {
-    border: Colors.goldenAmber,
-    bg: Colors.creamYellow,
-    color: Colors.goldenAmber,
-  },
-  Resolved: {
-    border: Colors.royalBlue,
-    bg: Colors.lightSkyBlue,
-    color: Colors.royalBlue,
-  },
-  Rejected: {
-    border: Colors.blushRed,
-    bg: Colors.palePink,
-    color: Colors.blushRed,
-  },
-};
 
 const AssignmentSubText = styled("p")({
   fontFamily: Fonts.main,

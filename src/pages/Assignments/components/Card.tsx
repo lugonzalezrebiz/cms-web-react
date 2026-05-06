@@ -82,13 +82,26 @@ const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
   );
 };
 
-type stateAssignments = "Paused" | "New" | "Resolved" | "Rejected";
+export type stateAssignments =
+  | "Ready"
+  | "Assigned"
+  | "Started"
+  | "Paused"
+  | "Resumed"
+  | "Completed"
+  | "Error"
+  | "Reported";
 
-const stateColors: Record<
+export const stateColors: Record<
   stateAssignments,
   { border: string; bg: string; color: string }
 > = {
-  New: {
+  Ready: {
+    border: Colors.leafGreen,
+    bg: Colors.mintFoam,
+    color: Colors.leafGreen,
+  },
+  Completed: {
     border: Colors.leafGreen,
     bg: Colors.mintFoam,
     color: Colors.leafGreen,
@@ -98,12 +111,27 @@ const stateColors: Record<
     bg: Colors.creamYellow,
     color: Colors.goldenAmber,
   },
-  Resolved: {
+  Started: {
+    border: Colors.goldenAmber,
+    bg: Colors.creamYellow,
+    color: Colors.goldenAmber,
+  },
+  Resumed: {
+    border: Colors.goldenAmber,
+    bg: Colors.creamYellow,
+    color: Colors.goldenAmber,
+  },
+  Assigned: {
     border: Colors.royalBlue,
     bg: Colors.lightSkyBlue,
     color: Colors.royalBlue,
   },
-  Rejected: {
+  Reported: {
+    border: Colors.royalBlue,
+    bg: Colors.lightSkyBlue,
+    color: Colors.royalBlue,
+  },
+  Error: {
     border: Colors.blushRed,
     bg: Colors.palePink,
     color: Colors.blushRed,

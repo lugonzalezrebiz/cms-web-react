@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Box } from "@mui/system";
 import TimeLine from "../../components/TimeLine";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
@@ -10,8 +11,10 @@ import { useTrackers } from "../Monitor/hooks/useTrackers";
 import { useMenuItems } from "../Monitor/hooks/useMenuItems";
 
 const MonitorTimeline = () => {
-  const trackers = useTrackers();
-  const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } = useMonitoring(trackers);
+  const [searchParams] = useSearchParams();
+  const monitoringID = searchParams.get("monitoringID") ?? "";
+  const trackers = useTrackers(monitoringID);
+  const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } = useMonitoring(trackers, monitoringID);
 
   const {
     cameraEventPoints,
@@ -49,6 +52,7 @@ const MonitorTimeline = () => {
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
+    monitoringID,
   });
 
   return (

@@ -1,5 +1,4 @@
 import { useGet } from "../../../hooks/useApi";
-import { MONITORING_ID } from "../../../config";
 
 interface Terminal {
   id: number;
@@ -27,9 +26,11 @@ interface SalesResponse {
   transactions: SalesTransaction[];
 }
 
-export function useSalesTransactions() {
+export function useSalesTransactions(monitoringID: string) {
   const { data, isPending: loading, error } = useGet<SalesResponse>(
-    `sales/${MONITORING_ID}/list`,
+    `sales/${monitoringID}/list`,
+    {},
+    { enabled: !!monitoringID },
   );
 
   return {

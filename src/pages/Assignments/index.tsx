@@ -10,444 +10,15 @@ import type { Assignment } from "./components/InfoAssignment";
 import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
+import { USE_STATIC_IDS, MONITORING_ID } from "../../config";
 
-const REVIEWER_REDIRECT = "/monitor?company=9001&location=222&date=20260407";
+const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20260407&monitoringID=${MONITORING_ID}`;
+const buildRedirect = (companyID: number, locationID: number, rawDate: string, monitoringID: string) =>
+  `/monitor?company=${companyID}&location=${locationID}&date=${rawDate}&monitoringID=${monitoringID}`;
 const activityIcon = "/assets/activity-other-icon.svg";
 
 const dropdownOptions = (onOpen: () => void) => [
   { label: "See detail information", onClick: onOpen },
-];
-
-const cards = [
-  { title: "New Assignments", current: 6 },
-  { title: "Paused Assignments", current: 2 },
-  { title: "Rejected Assignments", current: 3 },
-  { title: "Open Tickets", current: 2 },
-  { title: "Completed This Month", current: 34 },
-];
-
-// const _assignments = [
-//   {
-//     state: "Paused" as const,
-//     location: 162,
-//     store: 6015,
-//     date: "February 24 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "Paused" as const,
-//     location: 205,
-//     store: 9274,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "Resolved" as const,
-//     location: 187,
-//     store: 4829,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "New" as const,
-//     location: 250,
-//     store: 8537,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "New" as const,
-//     location: 205,
-//     store: 2958,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "New" as const,
-//     location: 205,
-//     store: 6392,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "New" as const,
-//     location: 162,
-//     store: 1047,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-//   {
-//     state: "New" as const,
-//     location: 205,
-//     store: 7359,
-//     date: "February 25 - 2026",
-//     comments: 0,
-//     items: [
-//       { activity: "Date", complement: "Mar 19, 2025" },
-//       {
-//         activity: "Open",
-//         complement: "09:00 (MST)",
-//       },
-//       {
-//         activity: "Close",
-//         complement: "19:00 (MST)",
-//       },
-//       {
-//         activity: "Open at",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "DVR",
-//         complement: "08:00",
-//       },
-//       {
-//         activity: "Diff",
-//         complement: "0",
-//       },
-//       {
-//         activity: "Interval",
-//         complement: "Events",
-//       },
-//     ],
-//     commentsTex: [
-//       "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-//       "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-//     ],
-//   },
-// ];
-
-const rejectedAssignments = [
-  {
-    state: "Rejected" as const,
-    location: 205,
-    store: 6392,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "Rejected" as const,
-    location: 162,
-    store: 9274,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
-  {
-    state: "Rejected" as const,
-    location: 205,
-    store: 1047,
-    date: "February 25 - 2026",
-    comments: 0,
-    items: [
-      { activity: "Date", complement: "Mar 19, 2025" },
-      {
-        activity: "Open",
-        complement: "09:00 (MST)",
-      },
-      {
-        activity: "Close",
-        complement: "19:00 (MST)",
-      },
-      {
-        activity: "Open at",
-        complement: "08:00",
-      },
-      {
-        activity: "DVR",
-        complement: "08:00",
-      },
-      {
-        activity: "Diff",
-        complement: "0",
-      },
-      {
-        activity: "Interval",
-        complement: "Events",
-      },
-    ],
-    commentsTex: [
-      "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-      "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-    ],
-  },
 ];
 
 const Monitor = () => {
@@ -455,7 +26,24 @@ const Monitor = () => {
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
-  const { assignments } = useAssignments(company ? Number(company) : null, store ? Number(store) : null);
+  const { assignments } = useAssignments(
+    company ? Number(company) : null,
+    store ? Number(store) : null,
+  );
+
+  const cards = [
+    { title: "Assignments", current: assignments.length },
+    {
+      title: "Paused Assignments",
+      current: assignments.filter((a) => a.state === "Paused").length,
+    },
+    {
+      title: "Rejected Assignments",
+      current: assignments.filter((a) => a.state === "Error").length,
+    },
+    { title: "Open Tickets", current: 0 },
+    { title: "Completed This Month", current: 0 },
+  ];
 
   const handleSetCompany = (value: string) => {
     setCompany(value);
@@ -467,7 +55,6 @@ const Monitor = () => {
       setCompany(companyFilters[1].value);
     }
   }, [companyFilters]);
-
 
   const cardMenu = usePopover();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -497,7 +84,7 @@ const Monitor = () => {
         ))}
       </Grid>
 
-      <Title title="New Assignments">
+      <Title title="Assignments">
         <Box mr={"20px"}>
           <SelectComponent
             filters={companyFilters}
@@ -512,33 +99,37 @@ const Monitor = () => {
         />
       </Title>
       <Grid container spacing={2}>
-        {assignments.map((a, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <NewAssignmentsCard
-              {...a}
-              onClick={() => navigate(REVIEWER_REDIRECT)}
-              openMenu={(e) => {
-                setSelectedAssignment(a);
-                cardMenu.handleOpen(e);
-              }}
-            />
-          </Grid>
-        ))}
+        {assignments
+          .filter((a) => a.state !== "Error")
+          .map((a, i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+              <NewAssignmentsCard
+                {...a}
+                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                openMenu={(e) => {
+                  setSelectedAssignment(a);
+                  cardMenu.handleOpen(e);
+                }}
+              />
+            </Grid>
+          ))}
       </Grid>
       <Title title="Rejected Assignments"></Title>
       <Grid container spacing={2}>
-        {rejectedAssignments.map((a, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <NewAssignmentsCard
-              {...a}
-              onClick={() => navigate(REVIEWER_REDIRECT)}
-              openMenu={(e) => {
-                setSelectedAssignment(a);
-                cardMenu.handleOpen(e);
-              }}
-            />
-          </Grid>
-        ))}
+        {assignments
+          .filter((a) => a.state === "Error")
+          .map((a, i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+              <NewAssignmentsCard
+                {...a}
+                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                openMenu={(e) => {
+                  setSelectedAssignment(a);
+                  cardMenu.handleOpen(e);
+                }}
+              />
+            </Grid>
+          ))}
       </Grid>
 
       <DropDownMenu
@@ -558,13 +149,3 @@ const Monitor = () => {
 };
 
 export default Monitor;
-
-//  {assignments.map((a, i) => (
-//           <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-//             <NewAssignmentsCard
-//               {...a}
-//               onClick={() => navigate(REVIEWER_REDIRECT)}
-//               openMenu={(e) => {
-//                 setSelectedAssignment(a);
-//                 cardMenu.handleOpen(e);
-//               }}

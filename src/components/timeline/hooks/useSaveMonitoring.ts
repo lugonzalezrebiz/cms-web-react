@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { usePost } from "../../../hooks/useApi";
 import useAuth from "../../../hooks/useAuth";
-import { MONITORING_ID, REVIEWER_ROLE } from "../../../config";
+import { REVIEWER_ROLE } from "../../../config";
 import { secToTimeString } from "./useTimelineMarker";
 import type { CameraEventPoint } from "../types";
 
@@ -28,14 +28,16 @@ export const useSaveMonitoring = ({
   trackers,
   eventPoints,
   sessionDate,
+  monitoringID,
 }: {
   trackers: { id: number; name: string; attended?: boolean }[];
   eventPoints: CameraEventPoint[];
   sessionDate: string;
+  monitoringID: string;
 }) => {
   const { user } = useAuth();
   const { mutate } = usePost<SaveResponse, SaveEntry[]>(
-    `monitoring/${MONITORING_ID}/save`,
+    `monitoring/${monitoringID}/save`,
     {
       onSuccess: (data) => {
         if (data.success) alert("Monitoring saved successfully.");
@@ -78,7 +80,7 @@ export const useSaveMonitoring = ({
     const payload: SaveEntry[] = Array.from(grouped.values()).map(
       ({ trackerId, cameraId, timestamps, attended }) => ({
         tracker_id: trackerId,
-        monitoring_id: MONITORING_ID,
+        monitoring_id: monitoringID,
         camera_id: cameraId,
         zone_id: null,
         transactions: timestamps.map((t) => ({

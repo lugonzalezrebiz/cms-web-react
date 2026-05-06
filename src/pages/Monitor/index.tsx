@@ -26,7 +26,7 @@ import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 import { PosCarouselSection } from "./components/PosCarouselSection";
 
 const Monitor = () => {
-  const { company, location, date } = useDashboardParams();
+  const { company, location, date, monitoringID } = useDashboardParams();
 
   const { cameraGroup, trackerOption } = useCameraGroup();
   const allCameras = useCameras(company, location, date);
@@ -66,10 +66,10 @@ const Monitor = () => {
   ], [fetchedTrackers, handleActivitySelect]);
 
   const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } =
-    useMonitoring(trackers);
+    useMonitoring(trackers, monitoringID);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const { transactions, loading: transactionsLoading } = useSalesTransactions();
+  const { transactions, loading: transactionsLoading } = useSalesTransactions(monitoringID);
 
   const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec } =
     useMarkerState(cameraGroup, markerSec);
@@ -103,6 +103,7 @@ const Monitor = () => {
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
+    monitoringID,
   });
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);

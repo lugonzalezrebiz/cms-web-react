@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import type { TimelineSnapshot, CameraEventPoint } from "../types";
 import { MOCK_SNAPSHOT } from "../constants";
 import { useGet } from "../../../hooks/useApi";
-import { MONITORING_ID } from "../../../config";
 
 interface ApiTracker {
   id: number;
@@ -97,7 +96,7 @@ function buildRangeSessions(events: ApiEvent[]): RangeSessions {
   return sessions;
 }
 
-export function useMonitoring(_trackers: { id: number; name: string }[]): {
+export function useMonitoring(_trackers: { id: number; name: string }[], monitoringID: string): {
   snapshot: TimelineSnapshot;
   eventPoints: CameraEventPoint[];
   rangeSessions: RangeSessions;
@@ -107,7 +106,7 @@ export function useMonitoring(_trackers: { id: number; name: string }[]): {
   const [baseSnapshot] = useState<TimelineSnapshot>(MOCK_SNAPSHOT);
 
   const { data, isPending: loading, error: queryError } = useGet<MonitoringResponse>(
-    `monitoring/${MONITORING_ID}/load2`,
+    `monitoring/${monitoringID}/load2`,
   );
 
   const monitoring = data?.success ? data.monitoring : null;
