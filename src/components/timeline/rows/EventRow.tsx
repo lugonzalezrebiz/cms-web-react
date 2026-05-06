@@ -41,6 +41,7 @@ interface EventPointBarProps {
   setResizing: SetResizing;
   isSelected: boolean;
   onSelect: () => void;
+  onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
 const EventPointBar = ({
@@ -51,6 +52,7 @@ const EventPointBar = ({
   //setResizing,
   isSelected,
   onSelect,
+  onExtendStart,
 }: EventPointBarProps) => {
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);
@@ -59,6 +61,23 @@ const EventPointBar = ({
   const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100;
   const widthPct = ((ep.endSec - ep.startSec) / visibleDuration) * 100;
   const dotAbsolutePct = ((ep.timeSec - visibleStart) / visibleDuration) * 100;
+  const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
+
+  const diamondSx = (selected: boolean) => ({
+    position: "absolute" as const,
+    top: "50%",
+    transform: "translate(-50%, -50%) rotate(45deg)",
+    width: 14,
+    height: 14,
+    bgcolor: selected ? Colors.vividOrange : Colors.lightOrange,
+    outline: selected
+      ? `1.5px solid ${Colors.white}`
+      : `1px solid ${Colors.white}`,
+    boxShadow: selected ? `0 0 6px 2px ${Colors.vividOrange}99` : "none",
+    zIndex: selected ? 4 : 3,
+    pointerEvents: "auto" as const,
+    transition: "box-shadow 0.15s",
+  });
 
   return (
     <>
@@ -72,41 +91,33 @@ const EventPointBar = ({
           top: "50%",
           transform: "translateY(-50%)",
           borderRadius: "8px",
-          background: "transparent",
-          //border: `2px solid ${isSelected ? Colors.vividOrange : Colors.lightOrange}`,
+          bgcolor: isSelected
+            ? `${Colors.vividOrange}99`
+            : `${Colors.vividOrange}`,
           boxShadow: isSelected
-            ? `0 0 8px 2px ${Colors.vividOrange}80`
+            ? `0 0 8px 2px ${Colors.lightOrange}99`
             : "none",
           height: 15,
           zIndex: isSelected ? 3 : 2,
           pointerEvents: "auto",
           cursor: "pointer",
-          transition: "box-shadow 0.15s, border-color 0.15s",
+          transition: "box-shadow 0.15s, background-color 0.15s",
         }}
       />
-      {/* Diamond — positioned in the row coordinate system (same as TimelineMarker) to avoid border-box offset */}
+      {/* Origin diamond at timeSec — drag handle when no extension yet */}
       <Box
         onClick={onSelect}
-        sx={{
-          position: "absolute",
-          left: `${dotAbsolutePct}%`,
-          top: "50%",
-          transform: "translate(-50%, -50%) rotate(45deg)",
-          width: 14,
-          height: 14,
-          bgcolor: isSelected ? Colors.vividOrange : Colors.lightOrange,
-          outline: isSelected
-            ? `1.5px solid ${Colors.white}`
-            : `1px solid ${Colors.white}`,
-          boxShadow: isSelected
-            ? `0 0 6px 2px ${Colors.vividOrange}99`
-            : "none",
-          zIndex: isSelected ? 4 : 3,
-          cursor: "pointer",
-          pointerEvents: "auto",
-          transition: "box-shadow 0.15s",
-        }}
+        onMouseDown={ep.endSec <= ep.timeSec ? (e) => onExtendStart(ep.id, e, ep.timeSec) : undefined}
+        sx={{ ...diamondSx(isSelected), left: `${dotAbsolutePct}%`, cursor: ep.endSec <= ep.timeSec ? "ew-resize" : "pointer" }}
       />
+      {/* End diamond at endSec — visible and draggable only when bar has been extended */}
+      {ep.endSec > ep.timeSec && (
+        <Box
+          onClick={onSelect}
+          onMouseDown={(e) => onExtendStart(ep.id, e, ep.timeSec)}
+          sx={{ ...diamondSx(isSelected), left: `${endPct}%`, cursor: "ew-resize" }}
+        />
+      )}
     </>
   );
 };
@@ -123,6 +134,7 @@ export interface EventRowProps {
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
 export const EventRow = ({
@@ -137,6 +149,7 @@ export const EventRow = ({
   setITrackId,
   selectedEventPointId,
   setSelectedEventPointId,
+  onExtendStart,
 }: EventRowProps) => {
   const points =
     row.kind === "activity"
@@ -170,6 +183,7 @@ export const EventRow = ({
             setSelectedEventPointId(ep.id);
             setITrackId(row.id);
           }}
+          onExtendStart={onExtendStart}
         />
       ))}
     </Box>

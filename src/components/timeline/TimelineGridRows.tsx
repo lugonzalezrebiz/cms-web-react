@@ -4,6 +4,9 @@ import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
+import { useDragCreateSession } from "./hooks/useDragCreateSession";
+import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
+import type { DragSession } from "./hooks/useDragCreateSession";
 import { EventRow } from "./rows/EventRow";
 import { SessionRow } from "./rows/SessionRow";
 import { GridLines } from "./rows/GridLines";
@@ -39,7 +42,66 @@ interface TimelineGridRowsProps {
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  onCreateSession: (rowId: number, start: number, end: number) => void;
 }
+
+const DragPreview = ({
+  dragging,
+  flatRows,
+  visibleStart,
+  visibleDuration,
+}: {
+  dragging: DragSession;
+  flatRows: FlatRow[];
+  visibleStart: number;
+  visibleDuration: number;
+}) => {
+  const rowIndex = flatRows.findIndex((r) => r.id === dragging.rowId);
+  if (rowIndex === -1) return null;
+  const start = Math.min(dragging.startSec, dragging.endSec);
+  const end = Math.max(dragging.startSec, dragging.endSec);
+  const leftPct = ((start - visibleStart) / visibleDuration) * 100;
+  const widthPct = ((end - start) / visibleDuration) * 100;
+  const topCenter = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2;
+  const diamond = (pct: number, key: string) => (
+    <Box
+      key={key}
+      sx={{
+        position: "absolute",
+        left: `${pct}%`,
+        top: topCenter,
+        transform: "translate(-50%, -50%) rotate(45deg)",
+        width: 14,
+        height: 14,
+        bgcolor: Colors.vividOrange,
+        outline: `1px solid ${Colors.white}`,
+        opacity: 0.85,
+        pointerEvents: "none",
+        zIndex: 11,
+      }}
+    />
+  );
+  return (
+    <>
+      <Box
+        sx={{
+          position: "absolute",
+          left: `${leftPct}%`,
+          width: `${Math.max(widthPct, 0)}%`,
+          top: topCenter - 9,
+          height: 19,
+          borderRadius: "8px",
+          bgcolor: Colors.vividOrange,
+          opacity: 0.45,
+          pointerEvents: "none",
+          zIndex: 10,
+        }}
+      />
+      {diamond(leftPct, "start")}
+      {diamond(leftPct + widthPct, "end")}
+    </>
+  );
+};
 
 export const TimelineGridRows = ({
   flatRows,
@@ -67,6 +129,7 @@ export const TimelineGridRows = ({
   setMarkerSec,
   selectedEventPointId,
   setSelectedEventPointId,
+  onCreateSession,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -89,10 +152,28 @@ export const TimelineGridRows = ({
     setPanOffsetSec,
   });
 
+  const { startExtend } = useDragExtendEventPoint({
+    gridRef,
+    visibleStart,
+    visibleDuration,
+    totalSec,
+    onUpdateEventPoint,
+  });
+
+  const { dragging, onMouseDown } = useDragCreateSession({
+    gridRef,
+    rowsScrollRef,
+    visibleStart,
+    visibleDuration,
+    flatRows,
+    onCommit: onCreateSession,
+  });
+
   return (
     <Box
       ref={gridRef}
-      sx={{ flex: 1, position: "relative", overflow: "hidden" }}
+      sx={{ flex: 1, position: "relative", overflow: "hidden", cursor: dragging ? "ew-resize" : "default" }}
+      onMouseDown={onMouseDown}
     >
       <GridLines
         totalSec={totalSec}
@@ -151,18 +232,16 @@ export const TimelineGridRows = ({
               />
             ) : (
               <Box key={row.id} sx={{ position: "absolute", top: 0, left: 0, right: 0 }}>
-                {row.kind === "activity" && row.sessions.length > 0 && (
-                  <SessionRow
-                    row={row}
-                    rowIndex={rowIndex}
-                    isSelected={selectedTracks.has(row.id)}
-                    completedSessions={completedSessions}
-                    activeSessionStarts={activeSessionStarts}
-                    resolvedMarkerSec={resolvedMarkerSec}
-                    visibleStart={visibleStart}
-                    visibleDuration={visibleDuration}
-                  />
-                )}
+                <SessionRow
+                  row={row}
+                  rowIndex={rowIndex}
+                  isSelected={selectedTracks.has(row.id)}
+                  completedSessions={completedSessions}
+                  activeSessionStarts={activeSessionStarts}
+                  resolvedMarkerSec={resolvedMarkerSec}
+                  visibleStart={visibleStart}
+                  visibleDuration={visibleDuration}
+                />
                 <EventRow
                   row={row}
                   rowIndex={rowIndex}
@@ -175,9 +254,19 @@ export const TimelineGridRows = ({
                   setITrackId={setITrackId}
                   selectedEventPointId={selectedEventPointId}
                   setSelectedEventPointId={setSelectedEventPointId}
+                  onExtendStart={startExtend}
                 />
               </Box>
             ),
+          )}
+
+          {dragging && (
+            <DragPreview
+              dragging={dragging}
+              flatRows={flatRows}
+              visibleStart={visibleStart}
+              visibleDuration={visibleDuration}
+            />
           )}
         </Box>
       </Box>

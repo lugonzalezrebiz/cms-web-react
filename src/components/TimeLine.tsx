@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useCallback } from "react";
 import TimelineBody from "./timeline/TimelineBody";
 import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
@@ -84,6 +85,16 @@ const TimeLine = ({
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
   });
+
+  const onCreateSession = useCallback(
+    (rowId: number, start: number, end: number) => {
+      state.setCompletedSessions((prev) => ({
+        ...prev,
+        [rowId]: [...(prev[rowId] ?? []), { start, end }],
+      }));
+    },
+    [state.setCompletedSessions],
+  );
 
   const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
 
@@ -224,6 +235,7 @@ const TimeLine = ({
         setSelectedEventPointId={state.setSelectedEventPointId}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
+        onCreateSession={onCreateSession}
       />
       <TimelineDialog
         dialogOnClose={state.handleOnCloseDialog}

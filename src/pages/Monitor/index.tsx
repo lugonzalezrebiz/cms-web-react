@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { useTrackersByCamera } from "../../hooks/useTrackersByCamera";
 import type { CameraContextMenuItem } from "../../components/CameraOverlayMenu";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
+import CameraLayout from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
@@ -153,7 +153,7 @@ const Monitor = () => {
           .filter(
             (ep) =>
               ep.cameraId === 1 + expandedCamera &&
-              Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
+              markerSec >= ep.startSec && markerSec <= ep.endSec,
           )
           .map((ep) => ({
             id: ep.id,

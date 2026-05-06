@@ -62,7 +62,7 @@ export const useCameraEventPoints = () => {
     const cameraId = 1 + cameraIndex;
     const timeSec = markerSecRef.current;
     const startSec = Math.max(0, timeSec - 120);
-    const endSec = timeSec + 120;
+    const endSec = timeSec;
     setCameraEventPoints((prev) => {
       const duplicate = prev.some(
         (ep) =>

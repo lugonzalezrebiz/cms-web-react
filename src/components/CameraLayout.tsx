@@ -459,7 +459,7 @@ const CameraLayout = ({
       .filter(
         (ep) =>
           ep.cameraId === (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1) &&
-          Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
+          markerSec >= ep.startSec && markerSec <= ep.endSec,
       )
       .map((ep) => ({
         id: ep.id,
