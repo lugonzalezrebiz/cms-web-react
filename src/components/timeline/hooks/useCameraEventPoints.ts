@@ -30,6 +30,36 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const lastUpdateTimeRef = useRef<number>(0);
   const currentPointsRef = useRef<CameraEventPoint[]>(readFromStorage(monitoringID));
 
+  const syncChannelRef = useRef<BroadcastChannel | null>(null);
+  const suppressSyncRef = useRef(false);
+
+  // Cross-window event point sync
+  useEffect(() => {
+    const channel = new BroadcastChannel("camera-event-points-sync");
+    syncChannelRef.current = channel;
+    channel.addEventListener("message", (e: MessageEvent) => {
+      if (e.data?.type === "sync" && e.data?.monitoringID === monitoringID) {
+        const incoming = e.data.points as CameraEventPoint[];
+        suppressSyncRef.current = true;
+        currentPointsRef.current = incoming;
+        setCameraEventPoints(incoming);
+      }
+    });
+    return () => {
+      channel.close();
+      syncChannelRef.current = null;
+    };
+  }, [monitoringID]);
+
+  // Broadcast local changes to other windows
+  useEffect(() => {
+    if (suppressSyncRef.current) {
+      suppressSyncRef.current = false;
+      return;
+    }
+    syncChannelRef.current?.postMessage({ type: "sync", monitoringID, points: cameraEventPoints });
+  }, [cameraEventPoints, monitoringID]);
+
   // Persist every change to sessionStorage
   useEffect(() => {
     try {

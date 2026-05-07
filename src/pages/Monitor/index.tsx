@@ -29,7 +29,9 @@ const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
   const { assignments } = useAssignments(company, location);
-  const currentAssignment = assignments.find((a) => a.monitoringID === monitoringID);
+  const currentAssignment = assignments.find(
+    (a) => a.monitoringID === monitoringID,
+  );
   const timeStart = currentAssignment?.open ?? null;
   const timeEnd = currentAssignment?.close ?? null;
 
@@ -219,7 +221,7 @@ const Monitor = () => {
             zIndex: 2000,
           }}
         >
-          <TimeLine {...timelineProps} />
+          {!timelinePopped && <TimeLine {...timelineProps} />}
         </Box>
       )}
 
