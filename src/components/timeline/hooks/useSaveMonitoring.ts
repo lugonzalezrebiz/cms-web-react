@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { usePost } from "../../../hooks/useApi";
 import useAuth from "../../../hooks/useAuth";
-import { REVIEWER_ROLE } from "../../../config";
+import { REVIEWER_ROLE, URL_API } from "../../../config";
 import { secToTimeString } from "./useTimelineMarker";
 import type { CameraEventPoint } from "../types";
 
@@ -62,7 +62,7 @@ export const useSaveMonitoring = ({
   sessionDate: string;
   monitoringID: string;
 }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { mutate } = usePost<SaveResponse, SavePayload>(
     `monitoring/${monitoringID}/save2`,
     {
@@ -137,6 +137,32 @@ export const useSaveMonitoring = ({
 
   const buildPayloadRef = useRef(buildPayload);
   useEffect(() => { buildPayloadRef.current = buildPayload; }, [buildPayload]);
+
+  useEffect(() => {
+    const onBeforeUnload = () => {
+      const payload = buildPayloadRef.current();
+      fetch(`${URL_API}monitoring/${monitoringID}/save2`, {
+        method: "POST",
+        keepalive: true,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      sessionStorage.setItem("monitoringSavedOnReload", monitoringID);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [monitoringID, token]);
+
+  useEffect(() => {
+    const savedID = sessionStorage.getItem("monitoringSavedOnReload");
+    if (savedID === monitoringID) {
+      sessionStorage.removeItem("monitoringSavedOnReload");
+      alert("Monitoring saved successfully.");
+    }
+  }, [monitoringID]);
 
   const handleDone = useCallback(() => {
     mutate(buildPayloadRef.current());

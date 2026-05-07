@@ -1,12 +1,25 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CameraEventPoint } from "../types";
 
-export const useCameraEventPoints = () => {
+const storageKey = (id: string) => `cameraEventPoints_${id}`;
+
+const readFromStorage = (id: string): CameraEventPoint[] => {
+  try {
+    const raw = sessionStorage.getItem(storageKey(id));
+    return raw ? (JSON.parse(raw) as CameraEventPoint[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const useCameraEventPoints = (monitoringID: string) => {
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
+  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>(
+    () => readFromStorage(monitoringID),
+  );
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
@@ -15,7 +28,30 @@ export const useCameraEventPoints = () => {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
-  const currentPointsRef = useRef<CameraEventPoint[]>([]);
+  const currentPointsRef = useRef<CameraEventPoint[]>(readFromStorage(monitoringID));
+
+  // Persist every change to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(storageKey(monitoringID), JSON.stringify(cameraEventPoints));
+    } catch { /* ignore */ }
+  }, [cameraEventPoints, monitoringID]);
+
+  // Clear sessionStorage on real navigation (not on browser reload)
+  useEffect(() => {
+    const isReloading = { current: false };
+    const onBeforeUnload = () => { isReloading.current = true; };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    let active = false;
+    const id = setTimeout(() => { active = true; }, 0);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      if (active && !isReloading.current) {
+        sessionStorage.removeItem(storageKey(monitoringID));
+      }
+    };
+  }, [monitoringID]);
 
   const pushHistory = (snapshot: CameraEventPoint[]) => {
     historyRef.current = [...historyRef.current, snapshot];

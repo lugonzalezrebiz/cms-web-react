@@ -10,10 +10,10 @@ import { useTrackerCameras } from "./hooks/useTrackerCameras";
 import useTrackers from "../../hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
 import { useMenuItems } from "./hooks/useMenuItems";
-import { useSalesTransactions } from "./hooks/useSalesTransactions";
+// import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
-import { usePosCarousel } from "./hooks/usePosCarousel";
+// import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
@@ -49,7 +49,7 @@ const Monitor = () => {
     handleRedo,
     canUndo,
     canRedo,
-  } = useCameraEventPoints();
+  } = useCameraEventPoints(monitoringID);
 
   const fetchedTrackers = useTrackersByCamera(
     company,
@@ -65,12 +65,6 @@ const Monitor = () => {
         label: t.name,
         onClick: (idx: number) => handleActivitySelect(idx, t.name),
       })),
-      {
-        id: -1,
-        name: "Event",
-        label: "Event",
-        onClick: (idx: number) => handleActivitySelect(idx, "Event"),
-      },
     ],
     [fetchedTrackers, handleActivitySelect],
   );
@@ -82,27 +76,16 @@ const Monitor = () => {
   } = useMonitoring(trackers, monitoringID);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
-  const {
-    transactions,
-    //  , loading: transactionsLoading
-  } = useSalesTransactions(monitoringID);
+  // const { transactions } = useSalesTransactions(monitoringID);
 
-  const { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec } =
-    useMarkerState(cameraGroup, markerSec);
+  const { timestamp, setTimestamp, posMarkerSec } = useMarkerState(
+    cameraGroup,
+    markerSec,
+  );
 
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
-  const {
-    // current,
-    // goTo,
-    // prev,
-    // next,
-    // currentCameraId,
-    // currentTimeSec,
-    // attended,
-    // toggleAttended,
-    // handleDone: handlePosDone,
-  } = usePosCarousel(transactions, setPosMarkerSec);
+  // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
     useTimelineMarker({
@@ -111,8 +94,10 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
-  const { timelinePopped, handlePopOut } =
-    useTimelinePopout(handleMarkerChange, markerTimeSec);
+  const { timelinePopped, handlePopOut } = useTimelinePopout(
+    handleMarkerChange,
+    markerTimeSec,
+  );
 
   const sessionDate = useSessionDate();
   const { handleDone } = useSaveMonitoring({
@@ -128,12 +113,16 @@ const Monitor = () => {
   useEffect(() => {
     handleDoneRef.current = handleDone;
   }, [handleDone]);
-  useEffect(
-    () => () => {
-      handleDoneRef.current();
-    },
-    [],
-  );
+  useEffect(() => {
+    let active = false;
+    const id = setTimeout(() => {
+      active = true;
+    }, 0);
+    return () => {
+      clearTimeout(id);
+      if (active) handleDoneRef.current();
+    };
+  }, []);
 
   const timelineProps = {
     snapshot,

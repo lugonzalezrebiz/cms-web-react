@@ -78,8 +78,7 @@ export const CameraItem = ({
 
   return (
     <Box
-      onContextMenu={(e) => {
-        e.preventDefault();
+      onClick={(e) => {
         handleMenuOpen(e);
       }}
       sx={{
@@ -134,7 +133,7 @@ export const CameraItem = ({
           <img
             style={{ padding: "0 4px 0 0", cursor: "pointer" }}
             src="../assets/chevron-down.svg"
-            onClick={handleMenuOpen}
+            onClick={() => {}}
             alt="Show camera options"
           />
         </Box>
@@ -276,8 +275,8 @@ interface CameraLayoutProps {
 const getRowDistribution = (count: number): number[] => {
   if (count === 0) return [];
 
-  if (count <= 16) {
-    const numRows = count <= 2 ? 1 : count <= 8 ? 2 : count <= 12 ? 3 : 4;
+  if (count <= 12) {
+    const numRows = count <= 2 ? 1 : count <= 8 ? 2 : 3;
     const rows: number[] = [];
     let remaining = count;
     for (let i = 0; i < numRows; i++) {
@@ -288,7 +287,7 @@ const getRowDistribution = (count: number): number[] => {
     return rows;
   }
 
-  // >16: fixed 4 columns, scroll handles overflow
+  // >12: fixed 4 columns, scroll handles overflow
   const rows: number[] = [];
   let remaining = count;
   while (remaining > 0) {
@@ -429,7 +428,9 @@ const CameraLayout = ({
           gap: 1,
         }}
       >
-        <VideocamOffOutlinedIcon sx={{ fontSize: 40, color: Colors.dimGray, opacity: 0.4 }} />
+        <VideocamOffOutlinedIcon
+          sx={{ fontSize: 40, color: Colors.dimGray, opacity: 0.4 }}
+        />
         <Typography
           sx={{
             color: Colors.dimGray,
@@ -444,22 +445,26 @@ const CameraLayout = ({
     );
   }
 
-  const scrollable = count > 16;
+  const scrollable = count > 12;
   const totalHeight =
     typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
-  // Each row fills exactly 1/4 of the container (same size as the 16-camera grid rows).
-  // Using calc(100%) so the 4 visible rows + 3 gaps fill the container perfectly,
-  // and row 5+ start beyond the fold and are revealed by scroll.
-  const rowHeight = scrollable ? `calc((100% - ${GAP * 3}px) / 4)` : undefined;
+  // Each row fills exactly 1/3 of the container (same size as the 12-camera grid rows).
+  // Using calc(100%) so the 3 visible rows + 2 gaps fill the container perfectly,
+  // and row 4+ start beyond the fold and are revealed by scroll.
+  const rowHeight = scrollable ? `calc((100% - ${GAP * 2}px) / 3)` : undefined;
 
-  const sortedCameras = cameras ? [...cameras].sort((a, b) => a.id - b.id) : undefined;
+  const sortedCameras = cameras
+    ? [...cameras].sort((a, b) => a.id - b.id)
+    : undefined;
 
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
     cameraEventPoints
       .filter(
         (ep) =>
-          ep.cameraId === (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1) &&
-          markerSec >= ep.startSec && markerSec <= ep.endSec,
+          ep.cameraId ===
+            (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1) &&
+          markerSec >= ep.startSec &&
+          markerSec <= ep.endSec,
       )
       .map((ep) => ({
         id: ep.id,

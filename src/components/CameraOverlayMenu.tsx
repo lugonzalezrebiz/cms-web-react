@@ -41,6 +41,7 @@ const CameraOverlayMenu = ({
         alignItems: "center",
         margin: "0 8px",
         overflow: "hidden",
+        containerType: "size",
       }}
     >
       <Box
@@ -86,6 +87,9 @@ const CameraOverlayMenu = ({
           overflowY: "auto",
           flex: 1,
           alignContent: "start",
+          "@container (min-height: 150px)": {
+            alignContent: "center",
+          },
           pb: "4px",
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" },
