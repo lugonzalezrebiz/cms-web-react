@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import useNavigateWithQuery from "../../hooks/useNavigate";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
 import Title from "../../components/Title";
@@ -11,6 +10,7 @@ import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { USE_STATIC_IDS, MONITORING_ID } from "../../config";
+import useStartReview from "../../hooks/useStartReview";
 
 const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20260407&monitoringID=${MONITORING_ID}`;
 const buildRedirect = (companyID: number, locationID: number, rawDate: string, monitoringID: string) =>
@@ -22,7 +22,7 @@ const dropdownOptions = (onOpen: () => void) => [
 ];
 
 const Monitor = () => {
-  const navigate = useNavigateWithQuery();
+  const startReview = useStartReview();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
@@ -105,7 +105,7 @@ const Monitor = () => {
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <NewAssignmentsCard
                 {...a}
-                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                onClick={() => startReview(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID), USE_STATIC_IDS ? MONITORING_ID : a.monitoringID)}
                 openMenu={(e) => {
                   setSelectedAssignment(a);
                   cardMenu.handleOpen(e);
@@ -122,7 +122,7 @@ const Monitor = () => {
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <NewAssignmentsCard
                 {...a}
-                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                onClick={() => startReview(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID), USE_STATIC_IDS ? MONITORING_ID : a.monitoringID)}
                 openMenu={(e) => {
                   setSelectedAssignment(a);
                   cardMenu.handleOpen(e);
