@@ -100,7 +100,12 @@ function buildRangeSessions(events: ApiEvent[]): RangeSessions {
   return sessions;
 }
 
-export function useMonitoring(_trackers: { id: number; name: string }[], monitoringID: string): {
+export function useMonitoring(
+  _trackers: { id: number; name: string }[],
+  monitoringID: string,
+  timeStart?: string | null,
+  timeEnd?: string | null,
+): {
   snapshot: TimelineSnapshot;
   eventPoints: CameraEventPoint[];
   rangeSessions: RangeSessions;
@@ -117,11 +122,17 @@ export function useMonitoring(_trackers: { id: number; name: string }[], monitor
   const error = queryError ? queryError.message : null;
 
   const snapshot = useMemo<TimelineSnapshot>(() => {
-    if (!monitoring) return baseSnapshot;
+    const times = {
+      ...baseSnapshot.timeline.times,
+      start: timeStart ?? baseSnapshot.timeline.times.start,
+      end: timeEnd ?? baseSnapshot.timeline.times.end,
+    };
+    if (!monitoring) return { ...baseSnapshot, timeline: { ...baseSnapshot.timeline, times } };
     return {
       ...baseSnapshot,
       timeline: {
         ...baseSnapshot.timeline,
+        times,
         tracks: monitoring.cameras.map((cam) => ({
           id: cam.id,
           name: cam.name,
@@ -130,7 +141,7 @@ export function useMonitoring(_trackers: { id: number; name: string }[], monitor
         })),
       },
     };
-  }, [monitoring, baseSnapshot]);
+  }, [monitoring, baseSnapshot, timeStart, timeEnd]);
 
   const eventPoints = useMemo(() => {
     const trackerMap = new Map((monitoring?.trackers ?? []).map((t) => [t.id, t.name]));

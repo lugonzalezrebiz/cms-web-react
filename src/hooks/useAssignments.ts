@@ -69,6 +69,8 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
     rawDate: dayjs(a.date).format("YYYYMMDD"),
     comments: a.details.comments ? 1 : 0,
     monitoringID: a.monitoringID,
+    open: a.details.open,
+    close: a.details.close,
     items: [
       { activity: "Date", complement: dayjs(a.date).format("MMM DD, YYYY") },
       { activity: "Open", complement: formatTime(a.details.open) },

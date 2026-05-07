@@ -2,6 +2,7 @@ import { Box } from "@mui/system";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTrackersByCamera } from "../../hooks/useTrackersByCamera";
 import type { CameraContextMenuItem } from "../../components/CameraOverlayMenu";
+import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
@@ -26,6 +27,11 @@ import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
+
+  const { assignments } = useAssignments(company, location);
+  const currentAssignment = assignments.find((a) => a.monitoringID === monitoringID);
+  const timeStart = currentAssignment?.open ?? null;
+  const timeEnd = currentAssignment?.close ?? null;
 
   const { cameraGroup, trackerOption } = useCameraGroup();
   const isTrackerTab = cameraGroup === "tracker";
@@ -73,7 +79,7 @@ const Monitor = () => {
     snapshot,
     eventPoints: preloadedEventPoints,
     rangeSessions,
-  } = useMonitoring(trackers, monitoringID);
+  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
 
   // const { transactions } = useSalesTransactions(monitoringID);

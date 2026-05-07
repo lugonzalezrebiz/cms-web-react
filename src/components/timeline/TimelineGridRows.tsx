@@ -172,7 +172,12 @@ export const TimelineGridRows = ({
   return (
     <Box
       ref={gridRef}
-      sx={{ flex: 1, position: "relative", overflow: "hidden", cursor: dragging ? "ew-resize" : "default" }}
+      sx={{
+        flex: 1,
+        position: "relative",
+        overflow: "hidden",
+        cursor: dragging ? "ew-resize" : "default",
+      }}
       onMouseDown={onMouseDown}
     >
       <GridLines
@@ -231,7 +236,10 @@ export const TimelineGridRows = ({
                 visibleDuration={visibleDuration}
               />
             ) : (
-              <Box key={row.id} sx={{ position: "absolute", top: 0, left: 0, right: 0 }}>
+              <Box
+                key={row.id}
+                sx={{ position: "absolute", top: 0, left: 0, right: 0 }}
+              >
                 <SessionRow
                   row={row}
                   rowIndex={rowIndex}
