@@ -63,7 +63,7 @@ const Monitor = () => {
         id: t.id,
         name: t.name,
         label: t.name,
-        onClick: (idx: number) => handleActivitySelect(idx, t.name),
+        onClick: (idx: number) => handleActivitySelect(idx, t.name, t.mode),
       })),
     ],
     [fetchedTrackers, handleActivitySelect],
@@ -144,7 +144,7 @@ const Monitor = () => {
       id: t.id,
       name: t.name,
       label: t.name,
-      onClick: (index: number) => handleActivitySelect(index, t.name),
+      onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
     })),
     rangeSessions,
   } as const;

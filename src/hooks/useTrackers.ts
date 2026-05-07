@@ -4,6 +4,7 @@ import { usePostQuery } from "./useApi";
 interface Tracker {
   id: number;
   name: string;
+  mode: "POINT" | "RANGE";
 }
 
 interface TrackersResponse {

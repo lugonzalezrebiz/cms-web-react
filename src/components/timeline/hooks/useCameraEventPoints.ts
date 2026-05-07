@@ -85,6 +85,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const handleActivitySelect = (
     cameraIndex: number,
     activityLabel: string,
+    mode: "POINT" | "RANGE" = "POINT",
   ): void => {
     setCameraActivities((prev) => {
       const alreadyExists = prev.some(
@@ -110,7 +111,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
       pushHistory(prev);
       const next = [
         ...prev,
-        { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel, reviewed: true, value: true },
+        { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel, reviewed: true, value: true, mode },
       ];
       currentPointsRef.current = next;
       return next;

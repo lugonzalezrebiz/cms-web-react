@@ -1,6 +1,6 @@
 import { usePostQuery } from "./useApi";
 
-type Tracker = { id: number; name: string };
+type Tracker = { id: number; name: string; mode: "POINT" | "RANGE" };
 
 type TrackerSearchResponse = {
   success: boolean;

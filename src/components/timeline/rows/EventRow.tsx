@@ -105,14 +105,14 @@ const EventPointBar = ({
           transition: "box-shadow 0.15s, background-color 0.15s",
         }}
       />
-      {/* Origin diamond at timeSec — drag handle when no extension yet */}
+      {/* Origin diamond at timeSec — drag handle when no extension yet (RANGE only) */}
       <Box
         onClick={onSelect}
-        onMouseDown={ep.endSec <= ep.timeSec ? (e) => onExtendStart(ep.id, e, ep.timeSec) : undefined}
-        sx={{ ...diamondSx(isSelected), left: `${dotAbsolutePct}%`, cursor: ep.endSec <= ep.timeSec ? "ew-resize" : "pointer" }}
+        onMouseDown={ep.mode === "RANGE" && ep.endSec <= ep.timeSec ? (e) => onExtendStart(ep.id, e, ep.timeSec) : undefined}
+        sx={{ ...diamondSx(isSelected), left: `${dotAbsolutePct}%`, cursor: ep.mode === "RANGE" && ep.endSec <= ep.timeSec ? "ew-resize" : "pointer" }}
       />
-      {/* End diamond at endSec — visible and draggable only when bar has been extended */}
-      {ep.endSec > ep.timeSec && (
+      {/* End diamond at endSec — visible and draggable only when RANGE bar has been extended */}
+      {ep.mode === "RANGE" && ep.endSec > ep.timeSec && (
         <Box
           onClick={onSelect}
           onMouseDown={(e) => onExtendStart(ep.id, e, ep.timeSec)}

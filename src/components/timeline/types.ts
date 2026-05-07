@@ -55,6 +55,7 @@ export type CameraEventPoint = {
   label: string;
   reviewed: boolean;
   value: boolean;
+  mode: "POINT" | "RANGE";
 };
 
 export type ResizingState = { id: number; side: "left" | "right" } | null;

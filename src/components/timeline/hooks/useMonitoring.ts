@@ -61,10 +61,11 @@ function toTimeStr(datetime: string): string {
   return datetime.split(" ")[1] ?? "00:00:00";
 }
 
-function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>): CameraEventPoint[] {
+function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, modeMap: Map<number, "POINT" | "RANGE">): CameraEventPoint[] {
   const points: CameraEventPoint[] = [];
   for (const event of events) {
     const label = trackerMap.get(event.trackerId) ?? "";
+    const mode = modeMap.get(event.trackerId) ?? "POINT";
     for (const entry of event.entries) {
       if (entry.type === "POINT") {
         const timeSec = toSec(entry.timestamp);
@@ -77,6 +78,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>): 
           label,
           reviewed: entry.reviewed,
           value: entry.value,
+          mode,
         });
       }
     }
@@ -132,7 +134,8 @@ export function useMonitoring(_trackers: { id: number; name: string }[], monitor
 
   const eventPoints = useMemo(() => {
     const trackerMap = new Map((monitoring?.trackers ?? []).map((t) => [t.id, t.name]));
-    return buildEventPoints(monitoring?.events ?? [], trackerMap);
+    const modeMap = new Map((monitoring?.trackers ?? []).map((t) => [t.id, t.mode]));
+    return buildEventPoints(monitoring?.events ?? [], trackerMap, modeMap);
   }, [monitoring]);
 
   const rangeSessions = useMemo(() => {
