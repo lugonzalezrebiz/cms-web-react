@@ -252,7 +252,7 @@ export const useTimelineKeyboard = ({
       const mouseX = Math.max(0, Math.min(mouseXRef.current, width));
 
       const oldZoom = zoom;
-      const newZoom = Math.min(4, Math.max(1, oldZoom + (e.key === "+" ? 0.2 : -0.2)));
+      const newZoom = Math.min(8, Math.max(1, oldZoom + (e.key === "+" ? 0.2 : -0.2)));
       if (newZoom === oldZoom) return;
 
       const oldVisibleDuration = totalSec / oldZoom;

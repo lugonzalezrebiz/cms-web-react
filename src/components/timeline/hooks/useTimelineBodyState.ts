@@ -19,7 +19,7 @@ export const useTimelineBodyState = ({
   const totalSec = 24 * 3600;
   const startSec = 0;
 
-  const [zoom, setZoom] = useState(1.5);
+  const [zoom, setZoom] = useState(4);
   const [panOffsetSec, setPanOffsetSec] = useState(0);
   const [selectedTracks, setSelectedTracks] = useState<Set<number>>(new Set());
   const [iTrackId, setITrackId] = useState<number | null>(null);

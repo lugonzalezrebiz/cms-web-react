@@ -33,7 +33,7 @@ export const useWheelZoomPan = ({
         const width = rect.width;
 
         const oldZoom = zoom;
-        const newZoom = Math.min(4, Math.max(1, oldZoom + (e.deltaY > 0 ? -0.2 : 0.2)));
+        const newZoom = Math.min(8, Math.max(1, oldZoom + (e.deltaY > 0 ? -0.2 : 0.2)));
         if (newZoom === oldZoom) return;
 
         const oldVisibleDuration = totalSec / oldZoom;
