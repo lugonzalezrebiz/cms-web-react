@@ -5,34 +5,6 @@ import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
 const ROW_HEIGHT = 44;
 
-// interface ResizeHandleProps {
-//   epId: number;
-//   side: "left" | "right";
-//   setResizing: SetResizing;
-// }
-
-// const ResizeHandle = ({ epId, side, setResizing }: ResizeHandleProps) => {
-//   return (
-//     <Box
-//       onMouseDown={(e) => {
-//         e.preventDefault();
-//         e.stopPropagation();
-//         setResizing({ id: epId, side });
-//       }}
-//       sx={{
-//         position: "absolute",
-//         [side]: 0,
-//         top: 0,
-//         bottom: 0,
-//         width: 8,
-//         cursor: "ew-resize",
-//         bgcolor: Colors.green,
-//         borderRadius: side === "left" ? "6px 0 0 6px" : "0 6px 6px 0",
-//       }}
-//     />
-//   );
-// };
-
 interface EventPointBarProps {
   ep: CameraEventPoint;
   visibleStart: number;
@@ -58,7 +30,7 @@ const EventPointBar = ({
   const barEnd = Math.min(ep.endSec, visibleEnd);
   if (barStart >= barEnd) return null;
 
-  const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100;
+  const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100 + 0.5;
   const widthPct = ((ep.endSec - ep.startSec) / visibleDuration) * 100;
   const dotAbsolutePct = ((ep.timeSec - visibleStart) / visibleDuration) * 100;
   const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
@@ -95,9 +67,7 @@ const EventPointBar = ({
           transform: "translateY(-50%)",
           borderRadius: "8px",
           bgcolor: isSelected ? `${activeColor}99` : `${activeColor}55`,
-          boxShadow: isSelected
-            ? `0 0 8px 2px ${idleColor}99`
-            : "none",
+          boxShadow: isSelected ? `0 0 8px 2px ${idleColor}99` : "none",
           height: 15,
           zIndex: isSelected ? 3 : 2,
           pointerEvents: "auto",
@@ -108,15 +78,30 @@ const EventPointBar = ({
       {/* Origin diamond at timeSec — drag handle when no extension yet (RANGE only) */}
       <Box
         onClick={onSelect}
-        onMouseDown={ep.mode === "RANGE" && ep.endSec <= ep.timeSec ? (e) => onExtendStart(ep.id, e, ep.timeSec) : undefined}
-        sx={{ ...diamondSx(isSelected), left: `${dotAbsolutePct}%`, cursor: ep.mode === "RANGE" && ep.endSec <= ep.timeSec ? "ew-resize" : "pointer" }}
+        onMouseDown={
+          ep.mode === "RANGE" && ep.endSec <= ep.timeSec
+            ? (e) => onExtendStart(ep.id, e, ep.timeSec)
+            : undefined
+        }
+        sx={{
+          ...diamondSx(isSelected),
+          left: `${dotAbsolutePct}%`,
+          cursor:
+            ep.mode === "RANGE" && ep.endSec <= ep.timeSec
+              ? "ew-resize"
+              : "pointer",
+        }}
       />
       {/* End diamond at endSec — visible and draggable only when RANGE bar has been extended */}
       {ep.mode === "RANGE" && ep.endSec > ep.timeSec && (
         <Box
           onClick={onSelect}
           onMouseDown={(e) => onExtendStart(ep.id, e, ep.timeSec)}
-          sx={{ ...diamondSx(isSelected), left: `${endPct}%`, cursor: "ew-resize" }}
+          sx={{
+            ...diamondSx(isSelected),
+            left: `${endPct}%`,
+            cursor: "ew-resize",
+          }}
         />
       )}
     </>
