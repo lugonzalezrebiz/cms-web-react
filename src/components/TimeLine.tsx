@@ -10,7 +10,6 @@ import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
-import TimelineDialog from "./timeline/TimelineDialog";
 
 const TimeLine = ({
   cameraEventPoints,
@@ -53,14 +52,24 @@ const TimeLine = ({
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
 
-  const cameraRowsData = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
-  const activityRowsData = useActivityRows({ menuItems, cameraEventPoints: mergedEventPoints, rangeSessions });
+  const cameraRowsData = useFlatRows({
+    data,
+    cameraEventPoints: mergedEventPoints,
+  });
+  const activityRowsData = useActivityRows({
+    menuItems,
+    cameraEventPoints: mergedEventPoints,
+    rangeSessions,
+  });
 
   const isActivityMode = viewMode === "activity";
-  const flatRows = isActivityMode ? activityRowsData.flatRows : cameraRowsData.flatRows;
-  const selectableRows = isActivityMode ? activityRowsData.selectableRows : cameraRowsData.selectableRows;
+  const flatRows = isActivityMode
+    ? activityRowsData.flatRows
+    : cameraRowsData.flatRows;
+  const selectableRows = isActivityMode
+    ? activityRowsData.selectableRows
+    : cameraRowsData.selectableRows;
   const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
-
 
   const state = useTimelineBodyState({
     snapshot,
@@ -186,7 +195,10 @@ const TimeLine = ({
         canUndo={canUndo}
         canRedo={canRedo}
         onDeleteEventPoint={handleDeleteEventPoint}
-        canDelete={state.selectedEventPointId !== null || eventPointUnderMarker !== undefined}
+        canDelete={
+          state.selectedEventPointId !== null ||
+          eventPointUnderMarker !== undefined
+        }
         onGoPrevEventPoint={handleGoToPrevEventPoint}
         onGoNextEventPoint={handleGoToNextEventPoint}
         hasPrevEventPoint={prevEventPoint !== undefined}
@@ -196,7 +208,10 @@ const TimeLine = ({
       <TimelineBody
         flatRows={flatRows}
         headerLabel={headerLabel}
-        openDialog={state.openDialog}
+        openDialog={
+          //  state.openDialog
+          false
+        }
         dialogOnClose={state.handleOnCloseDialog}
         onOpenDialog={state.handleOnOpenDialog}
         selectedTracks={state.selectedTracks}
@@ -237,10 +252,10 @@ const TimeLine = ({
         setGoToTimeOpen={setGoToTimeOpen}
         onCreateSession={onCreateSession}
       />
-      <TimelineDialog
+      {/* <TimelineDialog
         dialogOnClose={state.handleOnCloseDialog}
         openDialog={state.openDialog}
-      />
+      /> */}
     </Box>
   );
 };

@@ -140,7 +140,7 @@ const ToggleButton = ({
           paper: {
             sx: {
               maxHeight: "50%",
-              width: "193px",
+              //width: "193px",
               borderRadius: "4px",
               bgcolor: Colors.white,
               border: `1px solid ${Colors.paleSteal}`,

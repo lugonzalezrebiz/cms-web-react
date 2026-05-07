@@ -2,62 +2,25 @@ import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
+import {
+  type stateAssignments,
+  stateColors,
+} from "../pages/Assignments/components/Card";
 
-export type StateAssignment = "Paused" | "New" | "Resolved" | "Rejected";
+export interface HeaderInfo {
+  title: string;
+  state: stateAssignments;
+  subTitle: { store: string; user: string };
+  items: { activity: string; complement: string }[];
+  commentsTex: string[];
+}
 
 interface Props {
   open: boolean;
   anchorEl: HTMLElement | null;
   handleClose: () => void;
-  state?: StateAssignment;
+  info?: HeaderInfo;
 }
-
-const HEADER_INFO_MOCK = {
-  title: "February 25 - 2026",
-  state: "New" as StateAssignment,
-  subTitle: {
-    store: "7437 (0079)",
-    user: "605",
-  },
-  items: [
-    { activity: "Open", complement: "09:00 (MST)" },
-    { activity: "Close", complement: "19:00 (MST)" },
-    { activity: "Open at", complement: "08:00" },
-    { activity: "DVR", complement: "08:00" },
-    { activity: "Diff", complement: "0" },
-    { activity: "Interval", complement: "Events" },
-  ],
-  commentsTex: [
-    "This comment is vey important, please be aware that the light whent out at 10:35 am untill 11:23 am",
-    "Remember the key to our craft is to embrace lifelong learning and adapt to new challenges with unwavering enthusiasm.",
-  ],
-};
-
-const stateColors: Record<
-  StateAssignment,
-  { border: string; bg: string; color: string }
-> = {
-  New: {
-    border: Colors.leafGreen,
-    bg: Colors.mintFoam,
-    color: Colors.leafGreen,
-  },
-  Paused: {
-    border: Colors.goldenAmber,
-    bg: Colors.creamYellow,
-    color: Colors.goldenAmber,
-  },
-  Resolved: {
-    border: Colors.royalBlue,
-    bg: Colors.lightSkyBlue,
-    color: Colors.royalBlue,
-  },
-  Rejected: {
-    border: Colors.blushRed,
-    bg: Colors.palePink,
-    color: Colors.blushRed,
-  },
-};
 
 const TitleHeaderMenu = styled("p")({
   margin: 0,
@@ -126,8 +89,9 @@ const Comments = styled("p")({
   fontWeight: 400,
 });
 
-const HeaderInfoMenu = ({ anchorEl, open, handleClose, state }: Props) => {
-  const activeState = state ?? HEADER_INFO_MOCK.state;
+const HeaderInfoMenu = ({ anchorEl, open, handleClose, info }: Props) => {
+  if (!info) return null;
+  const activeState = info.state;
 
   return (
     <PopoverMenu
@@ -140,7 +104,7 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose, state }: Props) => {
       <Box sx={{ width: "100%" }}>
         <Box sx={{ pb: "8px", borderBottom: `1px solid ${Colors.silverGrey}` }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <TitleHeaderMenu>{HEADER_INFO_MOCK.title}</TitleHeaderMenu>
+            <TitleHeaderMenu>{info.title}</TitleHeaderMenu>
             <Box
               sx={{
                 p: "4px 16px",
@@ -160,12 +124,12 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose, state }: Props) => {
             </Box>
           </Box>
           <SubTitleHeaderMenu>
-            Store: {HEADER_INFO_MOCK.subTitle.store}
+            Store: {info.subTitle.store}
             <span style={{ margin: "0 5px" }}>-</span>
-            User: {HEADER_INFO_MOCK.subTitle.user}
+            User: {info.subTitle.user}
           </SubTitleHeaderMenu>
         </Box>
-        {HEADER_INFO_MOCK.items.map((item, index) => (
+        {info.items.map((item, index) => (
           <MenuHeaderContainer
             key={index}
             sx={{ mt: index === 0 ? "8px" : undefined }}
@@ -176,7 +140,7 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose, state }: Props) => {
         ))}
         <TextComments>
           <span style={{ marginRight: "8px" }}>
-            {HEADER_INFO_MOCK.commentsTex.length}
+            {info.commentsTex.length}
           </span>
           Comments:
         </TextComments>
@@ -193,7 +157,7 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose, state }: Props) => {
             padding: 0,
           }}
         >
-          {HEADER_INFO_MOCK.commentsTex.map((comment, index) => (
+          {info.commentsTex.map((comment, index) => (
             <li key={index}>
               <Comments style={{ margin: "8px 0 8px 8px" }}>{comment}</Comments>
             </li>

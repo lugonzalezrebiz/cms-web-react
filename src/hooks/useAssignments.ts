@@ -64,6 +64,7 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
     state: parseStatusName(a.statusName),
     location: a.companyID,
     store: a.locationID,
+    userID: a.userID,
     date: dayjs(a.date).format("MMMM DD - YYYY"),
     rawDate: dayjs(a.date).format("YYYYMMDD"),
     comments: a.details.comments ? 1 : 0,

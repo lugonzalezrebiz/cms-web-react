@@ -5,7 +5,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
-import HeaderInfoMenu from "../../components/HeaderInfoMenu";
+import HeaderInfoMenu, {
+  type HeaderInfo,
+} from "../../components/HeaderInfoMenu";
+import useAssignments from "../../hooks/useAssignments";
 import KeyboardMenu, {
   type KeyboardMenuData,
 } from "../../components/KeyboardMenu";
@@ -20,15 +23,6 @@ import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import useTrackerOptions from "./hooks/useTrackerOptions";
 import useCameraGroups from "../../hooks/useCameraGroups";
-
-// const CAMERA_GROUPS_BASE = [
-//   { value: "1", title: "All" },
-//   { value: "2", title: "POS" },
-//   { value: "3", title: "Tunner" },
-//   { value: "4", title: "Offices" },
-//   { value: "5", title: "Drying Station" },
-//   { value: "6", title: "Parking Lot" },
-// ];
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
@@ -138,8 +132,22 @@ const MonitorHeader = ({
   const userPanelHeader = usePopover();
   const navigate = useNavigateWithQuery();
   const goBack = () => navigate(-1);
-  const { companyLabel, storeLabel, formattedDate, timeRange } =
+  const { companyLabel, storeLabel, formattedDate, timeRange, companyID, locationID, monitoringID } =
     useMonitorParams();
+  const { assignments } = useAssignments(companyID, locationID);
+  const assignment = assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const headerInfo: HeaderInfo | undefined = assignment
+    ? {
+        title: assignment.date,
+        state: assignment.state,
+        subTitle: {
+          store: `${assignment.store} (${assignment.location})`,
+          user: String(assignment.userID),
+        },
+        items: assignment.items,
+        commentsTex: assignment.commentsTex,
+      }
+    : undefined;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -244,7 +252,7 @@ const MonitorHeader = ({
           anchorEl={menuHeader.anchorEl}
           handleClose={menuHeader.handleClose}
           open={menuHeader.open}
-          state="New"
+          info={headerInfo}
         />
 
         <KeyboardMenu

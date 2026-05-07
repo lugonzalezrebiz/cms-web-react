@@ -147,10 +147,9 @@ export const TimelineRowList = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
           height: "28px",
-          width: "100%",
-          maxWidth: "175px",
+          width: "90%",
+          //maxWidth: "175px",
           padding: "0 4px 0 8px",
         }}
       >
@@ -167,7 +166,7 @@ export const TimelineRowList = ({
         >
           {headerLabel}
         </p>
-        <Box sx={{ cursor: "pointer" }} onClick={onOpenDialog}>
+        <Box sx={{ cursor: "pointer", ml: "3px" }} onClick={onOpenDialog}>
           <img src="../assets/plus-1.svg" alt="Add row" />
         </Box>
       </Box>
@@ -185,6 +184,7 @@ export const TimelineRowList = ({
           overflowY: "auto",
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" },
+          borderTop: `1px solid ${Colors.lightGrayishBlue}`,
         }}
       >
         {flatRows.map((row) => (
