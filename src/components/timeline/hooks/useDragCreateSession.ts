@@ -4,6 +4,7 @@ import type { FlatRow } from "../types";
 
 const ROW_HEIGHT = 44;
 const MIN_DRAG_SEC = 5;
+const MIN_DRAG_PX = 5;
 
 export interface DragSession {
   rowId: number;
@@ -28,6 +29,7 @@ export const useDragCreateSession = ({
 }) => {
   const [dragging, setDragging] = useState<DragSession | null>(null);
   const draggingRef = useRef<DragSession | null>(null);
+  const pendingRef = useRef<{ rowId: number; startSec: number; startX: number } | null>(null);
   const visibleStartRef = useRef(visibleStart);
   const visibleDurationRef = useRef(visibleDuration);
   const onCommitRef = useRef(onCommit);
@@ -51,47 +53,53 @@ export const useDragCreateSession = ({
     return flatRows[rowIndex] ?? null;
   }, [gridRef, rowsScrollRef, flatRows]);
 
-  useEffect(() => {
-    if (!dragging) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const sec = secFromX(e.clientX);
-      if (sec === null) return;
-      const updated = { ...draggingRef.current!, endSec: sec };
-      draggingRef.current = updated;
-      setDragging(updated);
-    };
-
-    const handleMouseUp = () => {
-      const prev = draggingRef.current;
-      draggingRef.current = null;
-      setDragging(null);
-      if (!prev) return;
-      const start = Math.min(prev.startSec, prev.endSec);
-      const end = Math.max(prev.startSec, prev.endSec);
-      if (end - start >= MIN_DRAG_SEC) {
-        onCommitRef.current(prev.rowId, start, end);
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [dragging, secFromX]);
-
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
       const sec = secFromX(e.clientX);
       const row = rowFromY(e.clientY);
       if (sec === null || row === null) return;
-      const session = { rowId: row.id, startSec: sec, endSec: sec };
-      draggingRef.current = session;
-      setDragging(session);
+
+      pendingRef.current = { rowId: row.id, startSec: sec, startX: e.clientX };
       e.preventDefault();
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const pending = pendingRef.current;
+        if (pending !== null) {
+          if (Math.abs(moveEvent.clientX - pending.startX) < MIN_DRAG_PX) return;
+          const endSec = secFromX(moveEvent.clientX) ?? pending.startSec;
+          const session = { rowId: pending.rowId, startSec: pending.startSec, endSec };
+          pendingRef.current = null;
+          draggingRef.current = session;
+          setDragging(session);
+          return;
+        }
+        if (draggingRef.current !== null) {
+          const endSec = secFromX(moveEvent.clientX);
+          if (endSec === null) return;
+          const updated = { ...draggingRef.current, endSec };
+          draggingRef.current = updated;
+          setDragging(updated);
+        }
+      };
+
+      const handleMouseUp = () => {
+        pendingRef.current = null;
+        const prev = draggingRef.current;
+        draggingRef.current = null;
+        setDragging(null);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        if (!prev) return;
+        const start = Math.min(prev.startSec, prev.endSec);
+        const end = Math.max(prev.startSec, prev.endSec);
+        if (end - start >= MIN_DRAG_SEC) {
+          onCommitRef.current(prev.rowId, start, end);
+        }
+      };
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     },
     [secFromX, rowFromY],
   );
