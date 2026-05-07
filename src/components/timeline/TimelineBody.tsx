@@ -53,7 +53,6 @@ export interface TimelineBodyViewProps {
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   goToTimeOpen: boolean;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  onCreateSession: (rowId: number, start: number, end: number) => void;
 }
 
 const TimelineBody = ({
@@ -98,7 +97,6 @@ const TimelineBody = ({
   setSelectedEventPointId,
   goToTimeOpen,
   setGoToTimeOpen,
-  onCreateSession,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -178,7 +176,6 @@ const TimelineBody = ({
           setMarkerSec={setMarkerSec}
           selectedEventPointId={selectedEventPointId}
           setSelectedEventPointId={setSelectedEventPointId}
-          onCreateSession={onCreateSession}
         />
 
         <TimelineMarker
