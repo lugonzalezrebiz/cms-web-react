@@ -34,7 +34,7 @@ const EventPointBar = ({
     ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd;
   if (!hasBar && !dotAbsoluteInView) return null;
 
-  const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100 + 0.5;
+  const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100 + 0.28;
   const widthPct = ((ep.endSec - ep.startSec) / visibleDuration) * 100;
   const dotAbsolutePct = ((ep.timeSec - visibleStart) / visibleDuration) * 100;
   const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
@@ -71,7 +71,12 @@ const EventPointBar = ({
             top: "50%",
             transform: "translateY(-50%)",
             borderRadius: "8px",
-            bgcolor: isSelected ? `${activeColor}99` : `${activeColor}55`,
+            bgcolor:
+              widthPct <= 1.3
+                ? "transparent"
+                : isSelected
+                  ? `${activeColor}99`
+                  : `${activeColor}55`,
             boxShadow: isSelected ? `0 0 8px 2px ${idleColor}99` : "none",
             height: 15,
             zIndex: isSelected ? 3 : 2,
