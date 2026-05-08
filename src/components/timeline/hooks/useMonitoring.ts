@@ -80,6 +80,20 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           value: entry.value,
           mode,
         });
+      } else if (entry.type === "RANGE") {
+        const timeSec = toSec(entry.start);
+        const endSec = toSec(entry.end);
+        points.push({
+          id: points.length,
+          cameraId: event.cameraId,
+          timeSec,
+          startSec: timeSec,
+          endSec,
+          label,
+          reviewed: entry.reviewed,
+          value: true,
+          mode: "RANGE",
+        });
       }
     }
   }

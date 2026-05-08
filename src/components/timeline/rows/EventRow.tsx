@@ -28,7 +28,11 @@ const EventPointBar = ({
 }: EventPointBarProps) => {
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);
-  if (barStart >= barEnd) return null;
+  const hasBar = barStart < barEnd;
+
+  const dotAbsoluteInView =
+    ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd;
+  if (!hasBar && !dotAbsoluteInView) return null;
 
   const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100 + 0.5;
   const widthPct = ((ep.endSec - ep.startSec) / visibleDuration) * 100;
@@ -56,25 +60,27 @@ const EventPointBar = ({
 
   return (
     <>
-      {/* Bar */}
-      <Box
-        onClick={onSelect}
-        sx={{
-          position: "absolute",
-          left: `${leftPct}%`,
-          width: `${widthPct}%`,
-          top: "50%",
-          transform: "translateY(-50%)",
-          borderRadius: "8px",
-          bgcolor: isSelected ? `${activeColor}99` : `${activeColor}55`,
-          boxShadow: isSelected ? `0 0 8px 2px ${idleColor}99` : "none",
-          height: 15,
-          zIndex: isSelected ? 3 : 2,
-          pointerEvents: "auto",
-          cursor: "pointer",
-          transition: "box-shadow 0.15s, background-color 0.15s",
-        }}
-      />
+      {/* Bar — only when there is actual width */}
+      {hasBar && (
+        <Box
+          onClick={onSelect}
+          sx={{
+            position: "absolute",
+            left: `${leftPct}%`,
+            width: `${widthPct}%`,
+            top: "50%",
+            transform: "translateY(-50%)",
+            borderRadius: "8px",
+            bgcolor: isSelected ? `${activeColor}99` : `${activeColor}55`,
+            boxShadow: isSelected ? `0 0 8px 2px ${idleColor}99` : "none",
+            height: 15,
+            zIndex: isSelected ? 3 : 2,
+            pointerEvents: "auto",
+            cursor: "pointer",
+            transition: "box-shadow 0.15s, background-color 0.15s",
+          }}
+        />
+      )}
       {/* Origin diamond at timeSec — drag handle when no extension yet (RANGE only) */}
       <Box
         onClick={onSelect}
