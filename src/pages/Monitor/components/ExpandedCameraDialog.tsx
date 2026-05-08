@@ -43,11 +43,19 @@ export const ExpandedCameraDialog = ({
       padding="0"
       open={open}
       onClose={onClose}
-      maxWidth="90%"
+      maxWidth="100%"
       align="flex-start"
+      customHeight="65%"
     >
       {open && (
-        <Box>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
           <Title
             smallText
             marginBottom="20px"
@@ -57,7 +65,7 @@ export const ExpandedCameraDialog = ({
               <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
             </Box>
           </Title>
-          <Box height="35vh" position="relative">
+          <Box sx={{ flex: 100, minHeight: 0, position: "relative" }}>
             <CameraItem
               index={cameraIndex}
               media={media}

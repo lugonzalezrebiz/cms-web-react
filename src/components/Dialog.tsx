@@ -12,6 +12,7 @@ export interface DialogComponentProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: string;
+  customHeight?: string;
   padding?: string;
   align?: "flex-start" | "center";
   bgColor?: string;
@@ -20,8 +21,18 @@ export interface DialogComponentProps {
 const DialogStyled = styled(DialogComponent, {
   shouldForwardProp: (prop) =>
     prop !== "customWidth" && prop !== "align" && prop !== "bgColor",
-})<{ customWidth?: string; align?: "flex-start" | "center"; bgColor?: string }>(
-  ({ customWidth, align = "center", bgColor = Colors.white }) => ({
+})<{
+  customWidth?: string;
+  customHeight?: string;
+  align?: "flex-start" | "center";
+  bgColor?: string;
+}>(
+  ({
+    customWidth,
+    customHeight,
+    align = "center",
+    bgColor = Colors.white,
+  }) => ({
     "& .MuiDialog-container": {
       alignItems: align,
     },
@@ -31,6 +42,8 @@ const DialogStyled = styled(DialogComponent, {
       backgroundColor: bgColor,
       padding: "0px",
       borderRadius: "16px",
+      height: customHeight ? "100%" : "auto",
+      maxHeight: customHeight,
     },
   }),
 );
@@ -41,6 +54,7 @@ const Dialog = ({
   children,
   footer,
   maxWidth,
+  customHeight,
   padding,
   align,
   bgColor,
@@ -52,10 +66,23 @@ const Dialog = ({
         onClose={onClose}
         maxWidth={false}
         customWidth={maxWidth}
+        customHeight={customHeight}
         align={align}
         bgColor={bgColor}
       >
-        <DialogContent sx={{ padding: padding }}>{children}</DialogContent>
+        <DialogContent
+          sx={{
+            padding,
+            ...(customHeight && {
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }),
+          }}
+        >
+          {children}
+        </DialogContent>
         {footer && (
           <DialogActions
             sx={{ mr: "26px", p: padding ? padding : "0 0 6px 0" }}

@@ -190,7 +190,7 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
+      <Box sx={{ flex: 7, minHeight: 0, height: 0 }}>
         <CameraLayout
           count={cameras.length}
           media="/assets/camera/Cam thumbnail.svg"
@@ -209,25 +209,17 @@ const Monitor = () => {
           onExpandCamera={handleExpandCamera}
         />
       </Box>
+      {/* && !expandedCamera */}
 
-      {!timelinePopped && (
-        <Box sx={{ flex: 4, minHeight: 0 }}>
+      {!timelinePopped && !expandedCamera && (
+        <Box sx={{ flex: 3, minHeight: 0 }}>
           <TimeLine {...timelineProps} />
         </Box>
       )}
 
-      {expandedCamera !== null && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            width: "100%",
-            height: "34vh",
-            zIndex: 2000,
-          }}
-        >
-          {!timelinePopped && <TimeLine {...timelineProps} />}
+      {expandedCamera !== null && !timelinePopped && (
+        <Box sx={{ flex: 3, minHeight: 0, zIndex: 2000 }}>
+          <TimeLine {...timelineProps} />
         </Box>
       )}
 
