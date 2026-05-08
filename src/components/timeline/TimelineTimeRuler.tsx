@@ -72,9 +72,10 @@ const TickLabels = ({
   visibleDuration,
   isInActivityRange,
 }: TickLabelsProps) => {
-  const visibleTicks = Array.from({ length: tickCount }, (_, i) => firstTick + i * tickStepSec).filter(
-    (tickSec) => tickSec >= visibleStart && tickSec <= visibleEnd
-  );
+  const visibleTicks = Array.from(
+    { length: tickCount },
+    (_, i) => firstTick + i * tickStepSec,
+  ).filter((tickSec) => tickSec >= visibleStart && tickSec <= visibleEnd);
 
   return (
     <Box>
@@ -88,7 +89,9 @@ const TickLabels = ({
             transform: "translateX(-50%)",
             fontSize: 14,
             fontFamily: Fonts.main,
-            color: isInActivityRange(tickSec) ? Colors.vividOrange : Colors.mediumGray,
+            color: isInActivityRange(tickSec)
+              ? Colors.vividOrange
+              : Colors.mediumGray,
             fontWeight: 400,
           }}
         >

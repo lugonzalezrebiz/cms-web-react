@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
-import type { FlatRow } from "../types";
+import type { CameraEventPoint, FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
   selectableRows: FlatRow[];
@@ -31,6 +31,8 @@ interface UseTimelineKeyboardParams {
   gridRef: React.RefObject<HTMLDivElement | null>;
   isPlaying: boolean;
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
+  cameraEventPoints?: CameraEventPoint[];
+  onDeleteEventPoint?: () => void;
 }
 
 export const useTimelineKeyboard = ({
@@ -56,7 +58,11 @@ export const useTimelineKeyboard = ({
   gridRef,
   isPlaying: _isPlaying,
   setIsPlaying,
+  cameraEventPoints,
+  onDeleteEventPoint,
 }: UseTimelineKeyboardParams) => {
+  const onDeleteRef = useRef(onDeleteEventPoint);
+  onDeleteRef.current = onDeleteEventPoint;
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const navigate = useNavigateWithQuery();
 
@@ -110,7 +116,9 @@ export const useTimelineKeyboard = ({
       //     }));
       //   }
       // } else
-      if (e.key === "G" && e.shiftKey) {
+      if (e.key === "Delete") {
+        onDeleteRef.current?.();
+      } else if (e.key === "G" && e.shiftKey) {
         e.preventDefault();
         setGoToTimeOpen(true);
       } else if (e.key === "h") {
@@ -185,29 +193,36 @@ export const useTimelineKeyboard = ({
   useEffect(() => {
     const handleArrow = (e: KeyboardEvent) => {
       if (e.altKey) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
-      if (selectedTracks.size > 0) {
-        if (e.key !== "ArrowRight") return;
-      } else {
-        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      }
       e.preventDefault();
-      const step = e.ctrlKey ? 600 : 180; // Ctrl: 10 min, default: 3 min
-      const delta = e.key === "ArrowRight" ? step : -step;
+
+      if (e.ctrlKey) {
+        const currentSec = markerSec ?? timelineStartSec;
+        const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+        if (e.key === "ArrowLeft") {
+          const prev = [...sorted].reverse().find((ep) => ep.timeSec < currentSec);
+          if (prev) setMarkerSec(prev.timeSec);
+        } else {
+          const next = sorted.find((ep) => ep.timeSec > currentSec);
+          if (next) setMarkerSec(next.timeSec);
+        }
+        return;
+      }
+
+      if (selectedTracks.size > 0 && e.key !== "ArrowRight") return;
+      const delta = e.key === "ArrowRight" ? 180 : -180;
       setMarkerSec((prev) => {
         const base = prev ?? timelineStartSec;
-        return Math.max(
-          timelineStartSec,
-          Math.min(timelineEndSec, base + delta),
-        );
+        return Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
       });
     };
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec]);
+  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
   useEffect(() => {
@@ -237,7 +252,7 @@ export const useTimelineKeyboard = ({
       const mouseX = Math.max(0, Math.min(mouseXRef.current, width));
 
       const oldZoom = zoom;
-      const newZoom = Math.min(4, Math.max(1, oldZoom + (e.key === "+" ? 0.2 : -0.2)));
+      const newZoom = Math.min(8, Math.max(1, oldZoom + (e.key === "+" ? 0.2 : -0.2)));
       if (newZoom === oldZoom) return;
 
       const oldVisibleDuration = totalSec / oldZoom;

@@ -1,5 +1,4 @@
 import { useGet } from "../../../hooks/useApi";
-import { MONITORING_ID } from "../../../config";
 import useAuth from "../../../hooks/useAuth";
 
 type TrackersResponse = {
@@ -7,12 +6,12 @@ type TrackersResponse = {
   trackers: { id: number; name: string }[];
 };
 
-export const useTrackers = () => {
+export const useTrackers = (monitoringID: string) => {
   const { token } = useAuth();
   const { data } = useGet<TrackersResponse>(
-    `tracker/${MONITORING_ID}`,
+    `tracker/${monitoringID}`,
     {},
-    { enabled: !!MONITORING_ID && !!token },
+    { enabled: !!monitoringID && !!token },
   );
   return data?.success ? data.trackers : [];
 };

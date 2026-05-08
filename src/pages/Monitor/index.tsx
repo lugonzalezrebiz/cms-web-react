@@ -1,39 +1,50 @@
-import { useState } from "react";
 import { Box } from "@mui/system";
-import EventMenu from "../../components/EventMenu";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useTrackersByCamera } from "../../hooks/useTrackersByCamera";
+import type { CameraContextMenuItem } from "../../components/CameraOverlayMenu";
+import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
+import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
-import { useCameras } from "./hooks/useCameras";
-import { useTrackers } from "./hooks/useTrackers";
+import { useTrackerCameras } from "./hooks/useTrackerCameras";
+import useTrackers from "../../hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
-import MediaCarousel from "../../components/MediaCarousel";
 import { useMenuItems } from "./hooks/useMenuItems";
-import { useSalesTransactions } from "./hooks/useSalesTransactions";
+// import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
-import ToggleButton from "../../components/ToggleButton";
-import { useEventMenu } from "./hooks/useEventMenu";
-import { usePosCarousel } from "./hooks/usePosCarousel";
+// import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
-import { Check } from "@mui/icons-material";
-import { IconButton } from "@mui/material";
-import { Colors } from "../../theme";
-import Button from "../../components/Button";
-
-const CameraGroups = [
-  { value: "1", title: "All" },
-  { value: "2", title: "POS" },
-];
+import { useTimelinePopout } from "./hooks/useTimelinePopout";
+import {
+  useRegisterMonitorActions,
+  useCameraGroup,
+} from "../../contexts/MonitorContext";
+import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 
 const Monitor = () => {
-  const { company, location, date } = useDashboardParams();
+  const { company, location, date, monitoringID } = useDashboardParams();
 
-  const cameras = useCameras(company, location, date);
-  const trackers = useTrackers();
-  const [cameraGroup, setCameraGroup] = useState("1");
+  const { assignments } = useAssignments(company, location);
+  const currentAssignment = assignments.find(
+    (a) => a.monitoringID === monitoringID,
+  );
+  const timeStart = currentAssignment?.open ?? null;
+  const timeEnd = currentAssignment?.close ?? null;
+
+  const { cameraGroup, trackerOption } = useCameraGroup();
+  const isTrackerTab = cameraGroup === "tracker";
+  const groupID =
+    cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
+  const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
+  const cameras = useTrackerCameras(groupID, trackerID);
+  const { trackers } = useTrackers();
+  const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
+
+  const { expandedCamera, handleExpandCamera } = useExpandedCamera();
 
   const {
     cameraEventPoints,
@@ -42,43 +53,47 @@ const Monitor = () => {
     handleActivitySelect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
-  } = useCameraEventPoints();
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
+  } = useCameraEventPoints(monitoringID);
 
-  const { snapshot, eventPoints: preloadedEventPoints } =
-    useMonitoring(trackers);
-  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
-
-  const { transactions, loading: transactionsLoading } = useSalesTransactions();
-
-  const {
-    timestamp,
-    setTimestamp,
-    posMarkerSec,
-    setPosMarkerSec,
-    activeMarkerSec,
-  } = useMarkerState(cameraGroup, markerSec);
-
-  const { allMenuItems, handleAddMenuItem, itemCounts } = useMenuItems(
-    trackers,
-    handleActivitySelect,
-    allEventPoints,
-    activeMarkerSec,
+  const fetchedTrackers = useTrackersByCamera(
+    company,
+    location,
+    (openMenuCamera ?? 0) + 1,
+    openMenuCamera !== null,
+  );
+  const cameraMenuItems = useMemo<CameraContextMenuItem[]>(
+    () => [
+      ...fetchedTrackers.map((t) => ({
+        id: t.id,
+        name: t.name,
+        label: t.name,
+        onClick: (idx: number) => handleActivitySelect(idx, t.name, t.mode),
+      })),
+    ],
+    [fetchedTrackers, handleActivitySelect],
   );
 
-  const { anchorEl, setAnchorEl, input, setInput, handleAdd } =
-    useEventMenu(handleAddMenuItem);
-
   const {
-    current,
-    goTo,
-    prev,
-    next,
-    currentCameraId,
-    currentTimeSec,
-    attended,
-    toggleAttended,
-    handleDone: handlePosDone,
-  } = usePosCarousel(transactions, setPosMarkerSec);
+    snapshot,
+    eventPoints: preloadedEventPoints,
+    rangeSessions,
+  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
+  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+
+  // const { transactions } = useSalesTransactions(monitoringID);
+
+  const { timestamp, setTimestamp, posMarkerSec } = useMarkerState(
+    cameraGroup,
+    markerSec,
+  );
+
+  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
+
+  // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
     useTimelineMarker({
@@ -87,12 +102,77 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
+  const { timelinePopped, handlePopOut } = useTimelinePopout(
+    handleMarkerChange,
+    markerTimeSec,
+  );
+
   const sessionDate = useSessionDate();
   const { handleDone } = useSaveMonitoring({
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
+    monitoringID,
   });
+
+  useRegisterMonitorActions(handleDone, showFinalizeButton);
+
+  const handleDoneRef = useRef(handleDone);
+  useEffect(() => {
+    handleDoneRef.current = handleDone;
+  }, [handleDone]);
+  useEffect(() => {
+    let active = false;
+    const id = setTimeout(() => {
+      active = true;
+    }, 0);
+    return () => {
+      clearTimeout(id);
+      if (active) handleDoneRef.current();
+    };
+  }, []);
+
+  const timelineProps = {
+    snapshot,
+    cameraEventPoints: allEventPoints,
+    onMarkerChange: handleMarkerChange,
+    markerTimeSec,
+    targetMarkerSec:
+      cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
+    onUpdateEventPoint: handleUpdateEventPoint,
+    onPopOut: handlePopOut,
+    headerLabel: "Compliance Violations",
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    canUndo,
+    canRedo,
+    onRemoveEventPoint: handleRemoveEventPoint,
+    viewMode: "activity" as const,
+    menuItems: trackers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      label: t.name,
+      onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
+    })),
+    rangeSessions,
+  } as const;
+
+  const expandedCameraTags =
+    expandedCamera !== null
+      ? allEventPoints
+          .filter(
+            (ep) =>
+              ep.cameraId === 1 + expandedCamera &&
+              markerSec >= ep.startSec &&
+              markerSec <= ep.endSec,
+          )
+          .map((ep) => ({
+            id: ep.id,
+            name: ep.label,
+            label: ep.label,
+            onClick: () => {},
+          }))
+      : [];
 
   return (
     <Box
@@ -104,143 +184,65 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          m: "10px 16px 0 16px",
-        }}
-      >
-        <ToggleButton
-          value={cameraGroup}
-          setValue={setCameraGroup}
-          label="Camera Groups"
-          groups={CameraGroups}
-        />
-
-        <EventMenu
-          contextMenuTitle="Comp. Violations"
-          contextMenuItems={allMenuItems}
-          iconMenu="/assets/plus-1.svg"
-          itemCounts={itemCounts}
-          subtitle="Drag an event onto a camera to assign it"
-          object="cam"
-          anchorEl={anchorEl}
-          onOpenMenu={setAnchorEl}
-          onCloseMenu={() => setAnchorEl(null)}
-          input={input}
-          onInputChange={setInput}
-          onAdd={handleAdd}
-        />
-      </Box>
-
       <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
-        {cameraGroup === "2" ? (
-          <Box
-            sx={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
-            <Box sx={{ flex: 1, minHeight: 0 }}>
-              <MediaCarousel
-                company={company}
-                location={location}
-                transactions={transactions}
-                loading={transactionsLoading}
-                current={current}
-                prev={prev}
-                next={next}
-                goTo={goTo}
-                onDragOver={(e) => {
-                  if (e.dataTransfer.types.includes("eventmenuid"))
-                    e.preventDefault();
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const itemId = Number(
-                    e.dataTransfer.getData("eventMenuItemId"),
-                  );
-                  if (!itemId) return;
-                  const item = allMenuItems.find((m) => m.id === itemId);
-                  if (!item) return;
-                  handleMarkerChange(currentTimeSec);
-                  handleActivitySelect(currentCameraId - 1, item.label);
-                }}
-              />
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 0.75,
-                alignItems: "center",
-                justifyContent: "flex-end",
-                px: 2,
-                pb: 1,
-                mr: "20px",
-              }}
-            >
-              <Button
-                color="secondary"
-                selected={attended === "attended"}
-                onClick={() => toggleAttended("attended")}
-                disableRipple={false}
-                sx={{ height: "32px" }}
-              >
-                Attended
-              </Button>
-              <Button
-                color="secondary"
-                selected={attended === "unattended"}
-                onClick={() => toggleAttended("unattended")}
-                disableRipple={false}
-                sx={{ height: "32px" }}
-              >
-                Unattended
-              </Button>
-              {attended !== null && (
-                <Box bgcolor={Colors.vividOrange} borderRadius="6px">
-                  <IconButton onClick={handlePosDone} size="small">
-                    <Check fontSize="small" sx={{ color: Colors.white }} />
-                  </IconButton>
-                </Box>
-              )}
-            </Box>
-          </Box>
-        ) : (
-          <CameraLayout
-            count={cameras.length}
-            media="/assets/camera/Cam thumbnail.svg"
-            maxHeight="100%"
-            cameraItemList={() => alert("Camera list clicked")}
-            contextMenuItems={allMenuItems}
-            cameraEventPoints={allEventPoints}
-            markerSec={markerSec}
-            onRemoveEventPoint={handleRemoveEventPoint}
-            cameras={cameras}
-            company={company}
-            location={location}
-            date={date}
-            timestamp={timestamp}
-          />
-        )}
-      </Box>
-
-      <Box sx={{ flex: 4, minHeight: 0 }}>
-        <TimeLine
-          snapshot={snapshot}
+        <CameraLayout
+          count={cameras.length}
+          media="/assets/camera/Cam thumbnail.svg"
+          maxHeight="100%"
+          contextMenuItems={cameraMenuItems}
+          onMenuOpen={setOpenMenuCamera}
           cameraEventPoints={allEventPoints}
-          onMarkerChange={handleMarkerChange}
-          markerTimeSec={markerTimeSec}
-          showFinalizeButton={showFinalizeButton}
-          targetMarkerSec={
-            cameraGroup === "2" && posMarkerSec !== null
-              ? posMarkerSec
-              : undefined
-          }
-          onUpdateEventPoint={handleUpdateEventPoint}
-          onDone={handleDone}
-          headerLabel="Cameras"
+          markerSec={markerSec}
+          onRemoveEventPoint={handleRemoveEventPoint}
+          cameras={cameras}
+          company={company}
+          location={location}
+          date={date}
+          timestamp={timestamp}
+          expandedCamera={expandedCamera}
+          onExpandCamera={handleExpandCamera}
         />
       </Box>
+
+      {!timelinePopped && (
+        <Box sx={{ flex: 4, minHeight: 0 }}>
+          <TimeLine {...timelineProps} />
+        </Box>
+      )}
+
+      {expandedCamera !== null && (
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            width: "100%",
+            height: "34vh",
+            zIndex: 2000,
+          }}
+        >
+          {!timelinePopped && <TimeLine {...timelineProps} />}
+        </Box>
+      )}
+
+      <ExpandedCameraDialog
+        open={expandedCamera !== null}
+        onClose={() =>
+          expandedCamera !== null && handleExpandCamera(expandedCamera)
+        }
+        cameraIndex={expandedCamera ?? 0}
+        media="/assets/camera/Cam thumbnail.svg"
+        expandCamera={handleExpandCamera}
+        tags={expandedCameraTags}
+        contextMenuItems={allMenuItems}
+        cameraId={cameras[expandedCamera ?? 0]?.id}
+        cameraName={cameras[expandedCamera ?? 0]?.name}
+        company={company}
+        location={location}
+        date={date}
+        timestamp={timestamp}
+        onRemoveTag={handleRemoveEventPoint}
+      />
     </Box>
   );
 };

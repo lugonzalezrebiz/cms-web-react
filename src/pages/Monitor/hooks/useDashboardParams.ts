@@ -5,5 +5,6 @@ export function useDashboardParams() {
   const company = Number(searchParams.get("company") ?? 0);
   const location = Number(searchParams.get("location") ?? 0);
   const date = searchParams.get("date") ?? ""; // YYYYMMDD
-  return { company, location, date };
+  const monitoringID = searchParams.get("monitoringID") ?? "";
+  return { company, location, date, monitoringID };
 }

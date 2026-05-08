@@ -1,36 +1,9 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
+import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
 const ROW_HEIGHT = 44;
-
-interface ResizeHandleProps {
-  epId: number;
-  side: "left" | "right";
-  setResizing: SetResizing;
-}
-
-const ResizeHandle = ({ epId, side, setResizing }: ResizeHandleProps) => {
-  return (
-    <Box
-      onMouseDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setResizing({ id: epId, side });
-      }}
-      sx={{
-        position: "absolute",
-        [side]: 0,
-        top: 0,
-        bottom: 0,
-        width: 8,
-        cursor: "ew-resize",
-        bgcolor: Colors.green,
-        borderRadius: side === "left" ? "6px 0 0 6px" : "0 6px 6px 0",
-      }}
-    />
-  );
-};
 
 interface EventPointBarProps {
   ep: CameraEventPoint;
@@ -38,6 +11,9 @@ interface EventPointBarProps {
   visibleEnd: number;
   visibleDuration: number;
   setResizing: SetResizing;
+  isSelected: boolean;
+  onSelect: () => void;
+  onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
 const EventPointBar = ({
@@ -45,49 +21,90 @@ const EventPointBar = ({
   visibleStart,
   visibleEnd,
   visibleDuration,
-  setResizing,
+  //setResizing,
+  isSelected,
+  onSelect,
+  onExtendStart,
 }: EventPointBarProps) => {
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);
   if (barStart >= barEnd) return null;
 
-  const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100;
+  const leftPct = ((ep.startSec - visibleStart) / visibleDuration) * 100 + 0.5;
   const widthPct = ((ep.endSec - ep.startSec) / visibleDuration) * 100;
-  const dotLeftPct =
-    ((ep.timeSec - ep.startSec) / (ep.endSec - ep.startSec)) * 100;
+  const dotAbsolutePct = ((ep.timeSec - visibleStart) / visibleDuration) * 100;
+  const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
+
+  const activeColor = ep.reviewed ? Colors.vividOrange : Colors.blue;
+  const idleColor = ep.reviewed ? Colors.lightOrange : Colors.lightSkyBlue;
+
+  const diamondSx = (selected: boolean) => ({
+    position: "absolute" as const,
+    top: "50%",
+    transform: "translate(-50%, -50%) rotate(45deg)",
+    width: 14,
+    height: 14,
+    bgcolor: selected ? activeColor : idleColor,
+    outline: selected
+      ? `1.5px solid ${Colors.white}`
+      : `1px solid ${Colors.white}`,
+    boxShadow: selected ? `0 0 6px 2px ${activeColor}99` : "none",
+    zIndex: selected ? 4 : 3,
+    pointerEvents: "auto" as const,
+    transition: "box-shadow 0.15s",
+  });
 
   return (
-    <Box
-      sx={{
-        position: "absolute",
-        left: `${leftPct}%`,
-        width: `${widthPct}%`,
-        top: "50%",
-        transform: "translate(-50%)",
-        borderRadius: "8px",
-        background: `${Colors.green}33`,
-        border: `2px solid ${Colors.green}`,
-        height: 15,
-        zIndex: 2,
-        pointerEvents: "auto",
-      }}
-    >
-      <ResizeHandle epId={ep.id} side="left" setResizing={setResizing} />
+    <>
+      {/* Bar */}
       <Box
+        onClick={onSelect}
         sx={{
           position: "absolute",
-          left: `${dotLeftPct}%`,
+          left: `${leftPct}%`,
+          width: `${widthPct}%`,
           top: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 7,
-          height: 7,
-          borderRadius: "50%",
-          bgcolor: Colors.green,
-          pointerEvents: "none",
+          transform: "translateY(-50%)",
+          borderRadius: "8px",
+          bgcolor: isSelected ? `${activeColor}99` : `${activeColor}55`,
+          boxShadow: isSelected ? `0 0 8px 2px ${idleColor}99` : "none",
+          height: 15,
+          zIndex: isSelected ? 3 : 2,
+          pointerEvents: "auto",
+          cursor: "pointer",
+          transition: "box-shadow 0.15s, background-color 0.15s",
         }}
       />
-      <ResizeHandle epId={ep.id} side="right" setResizing={setResizing} />
-    </Box>
+      {/* Origin diamond at timeSec — drag handle when no extension yet (RANGE only) */}
+      <Box
+        onClick={onSelect}
+        onMouseDown={
+          ep.mode === "RANGE" && ep.endSec <= ep.timeSec
+            ? (e) => onExtendStart(ep.id, e, ep.timeSec)
+            : undefined
+        }
+        sx={{
+          ...diamondSx(isSelected),
+          left: `${dotAbsolutePct}%`,
+          cursor:
+            ep.mode === "RANGE" && ep.endSec <= ep.timeSec
+              ? "ew-resize"
+              : "pointer",
+        }}
+      />
+      {/* End diamond at endSec — visible and draggable only when RANGE bar has been extended */}
+      {ep.mode === "RANGE" && ep.endSec > ep.timeSec && (
+        <Box
+          onClick={onSelect}
+          onMouseDown={(e) => onExtendStart(ep.id, e, ep.timeSec)}
+          sx={{
+            ...diamondSx(isSelected),
+            left: `${endPct}%`,
+            cursor: "ew-resize",
+          }}
+        />
+      )}
+    </>
   );
 };
 
@@ -99,6 +116,11 @@ export interface EventRowProps {
   visibleEnd: number;
   visibleDuration: number;
   setResizing: SetResizing;
+  setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedEventPointId: number | null;
+  setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
 export const EventRow = ({
@@ -109,7 +131,19 @@ export const EventRow = ({
   visibleEnd,
   visibleDuration,
   setResizing,
+  setMarkerSec,
+  setITrackId,
+  selectedEventPointId,
+  setSelectedEventPointId,
+  onExtendStart,
 }: EventRowProps) => {
+  const points =
+    row.kind === "activity"
+      ? cameraEventPoints.filter((ep) => ep.label === row.name)
+      : cameraEventPoints.filter(
+          (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
+        );
+
   return (
     <Box
       sx={{
@@ -121,20 +155,23 @@ export const EventRow = ({
         pointerEvents: "none",
       }}
     >
-      {cameraEventPoints
-        .filter(
-          (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
-        )
-        .map((ep) => (
-          <EventPointBar
-            key={ep.id}
-            ep={ep}
-            visibleStart={visibleStart}
-            visibleEnd={visibleEnd}
-            visibleDuration={visibleDuration}
-            setResizing={setResizing}
-          />
-        ))}
+      {points.map((ep) => (
+        <EventPointBar
+          key={ep.id}
+          ep={ep}
+          visibleStart={visibleStart}
+          visibleEnd={visibleEnd}
+          visibleDuration={visibleDuration}
+          setResizing={setResizing}
+          isSelected={selectedEventPointId === ep.id}
+          onSelect={() => {
+            setMarkerSec(ep.timeSec);
+            setSelectedEventPointId(ep.id);
+            setITrackId(row.id);
+          }}
+          onExtendStart={onExtendStart}
+        />
+      ))}
     </Box>
   );
 };

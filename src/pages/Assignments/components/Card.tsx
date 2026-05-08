@@ -1,3 +1,4 @@
+import type React from "react";
 import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
 import { Box } from "@mui/material";
@@ -81,13 +82,26 @@ const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
   );
 };
 
-type stateAssignments = "Paused" | "New" | "Resolved" | "Rejected";
+export type stateAssignments =
+  | "Ready"
+  | "Assigned"
+  | "Started"
+  | "Paused"
+  | "Resumed"
+  | "Completed"
+  | "Error"
+  | "Reported";
 
-const stateColors: Record<
+export const stateColors: Record<
   stateAssignments,
   { border: string; bg: string; color: string }
 > = {
-  New: {
+  Ready: {
+    border: Colors.leafGreen,
+    bg: Colors.mintFoam,
+    color: Colors.leafGreen,
+  },
+  Completed: {
     border: Colors.leafGreen,
     bg: Colors.mintFoam,
     color: Colors.leafGreen,
@@ -97,12 +111,27 @@ const stateColors: Record<
     bg: Colors.creamYellow,
     color: Colors.goldenAmber,
   },
-  Resolved: {
+  Started: {
+    border: Colors.goldenAmber,
+    bg: Colors.creamYellow,
+    color: Colors.goldenAmber,
+  },
+  Resumed: {
+    border: Colors.goldenAmber,
+    bg: Colors.creamYellow,
+    color: Colors.goldenAmber,
+  },
+  Assigned: {
     border: Colors.royalBlue,
     bg: Colors.lightSkyBlue,
     color: Colors.royalBlue,
   },
-  Rejected: {
+  Reported: {
+    border: Colors.royalBlue,
+    bg: Colors.lightSkyBlue,
+    color: Colors.royalBlue,
+  },
+  Error: {
     border: Colors.blushRed,
     bg: Colors.palePink,
     color: Colors.blushRed,
@@ -116,6 +145,7 @@ interface AssignmentCardProps {
   date?: string;
   comments?: number;
   onClick?: () => void;
+  openMenu?: (e: React.MouseEvent<HTMLElement>) => void;
 }
 
 const AssignmentSubText = styled("p")({
@@ -149,6 +179,7 @@ export const NewAssignmentsCard = ({
   date,
   comments,
   onClick,
+  openMenu,
 }: AssignmentCardProps) => {
   return (
     <Card
@@ -180,16 +211,26 @@ export const NewAssignmentsCard = ({
           {state}
         </Box>
         <img
-          style={{ position: "absolute", right: "16px" }}
+          style={{
+            position: "absolute",
+            right: "16px",
+            cursor: "pointer",
+            padding: "4px",
+          }}
           src="./assets/dots-vertical.svg"
-          alt=""
+          alt="More options"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            openMenu?.(e);
+          }}
         />
       </Box>
       <Box display={"flex"}>
         <img
           style={{ margin: "0 6px 0 0" }}
           src="./assets/building-07.svg"
-          alt=""
+          alt="Location"
         />
         <AssignmentSubText style={{ margin: "0 16px 0 0" }}>
           {location}
@@ -197,7 +238,7 @@ export const NewAssignmentsCard = ({
         <img
           style={{ margin: "0 6px 0 0" }}
           src="./assets/building-02.svg"
-          alt=""
+          alt="Store"
         />
         <AssignmentSubText style={{ margin: 0 }}>{store}</AssignmentSubText>
       </Box>
@@ -206,7 +247,7 @@ export const NewAssignmentsCard = ({
         <Divider marginBottom="10px" />
       </Box>
       <Box display={"flex"} alignItems={"center"}>
-        <img src="./assets/message-text-square-01.svg" alt="" />
+        <img src="./assets/message-text-square-01.svg" alt="Comments" />
         <AssignmentComments>
           <span style={{ color: Colors.vividOrange }}>{comments}</span> Comments
         </AssignmentComments>

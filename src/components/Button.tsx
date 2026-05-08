@@ -6,45 +6,49 @@ interface Props {
   outfit?: boolean;
   square?: boolean;
   selected?: boolean;
+  fontSize?: string;
 }
 
 const Button = styled(MuiButton, {
-  shouldForwardProp: (prop) => prop !== "outfit" && prop !== "square" && prop !== "selected",
-})<ButtonProps & Props>(({ color, outfit, disabled, square, selected }) => ({
-  borderRadius: square ? "12px" : "18px",
-  fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
-  fontSize: "16px",
-  fontWeight: "600",
-  textTransform: "none",
-  boxShadow: "none",
-  padding: "6px 20px",
-  ...(color === "primary" || !color
-    ? {
-        backgroundColor: theme.palette.primary.main,
-        color: theme.palette.primary.contrastText,
-      }
-    : {}),
-  ...(color === "secondary"
-    ? {
-        backgroundColor: Colors.white,
-        color: Colors.main,
-        border: `1px solid ${Colors.main}`,
-      }
-    : {}),
-  ...(selected
-    ? {
-        backgroundColor: theme.palette.primary.main,
-        color: theme.palette.primary.contrastText,
-        border: `1px solid ${theme.palette.primary.main}`,
-      }
-    : {}),
-  ...(disabled
-    ? {
-        backgroundColor: Colors.paleGray,
-        border: `1px solid ${Colors.paleGray}`,
-        cursor: "not-allowed",
-      }
-    : {}),
-}));
+  shouldForwardProp: (prop) =>
+    prop !== "outfit" && prop !== "square" && prop !== "selected",
+})<ButtonProps & Props>(
+  ({ color, outfit, disabled, square, selected, fontSize }) => ({
+    borderRadius: square ? "0px" : "18px",
+    fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
+    fontSize: fontSize ? fontSize : "16px",
+    fontWeight: "600",
+    textTransform: "none",
+    boxShadow: "none",
+    padding: "6px 20px",
+    ...(color === "primary" || !color
+      ? {
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
+        }
+      : {}),
+    ...(color === "secondary"
+      ? {
+          backgroundColor: Colors.white,
+          color: Colors.main,
+          border: `1px solid ${Colors.main}`,
+        }
+      : {}),
+    ...(selected
+      ? {
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
+          border: `1px solid ${theme.palette.primary.main}`,
+        }
+      : {}),
+    ...(disabled
+      ? {
+          backgroundColor: Colors.paleGray,
+          border: `1px solid ${Colors.paleGray}`,
+          cursor: "not-allowed",
+        }
+      : {}),
+  }),
+);
 
 export default Button;

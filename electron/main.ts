@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, Menu } from "electron";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
@@ -21,9 +21,9 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
-        frame: false,
+        frame: true,
         show: false,
-        icon: path.join(__dirname, "../../public/assets/rebiz-icon-1.png"),
+        icon: APP_ICON,
         webPreferences: {
             preload: path.join(__dirname, "../preload/index.cjs"),
         },
@@ -95,7 +95,15 @@ function createWindow() {
     }
 }
 
+const APP_ICON = path.join(__dirname, "../../public/assets/rebiz-icon-1.png");
+
+app.on("browser-window-created", (_, win) => {
+    win.setIcon(APP_ICON);
+});
+
 app.whenReady().then(() => {
+    //Menu.setApplicationMenu(null);
+
     // Register protocol BEFORE creating the window
     protocol.handle("dvr", async (request) => {
         const url = new URL(request.url);
@@ -111,7 +119,7 @@ app.whenReady().then(() => {
     });
 
     if (process.platform === "darwin") {
-        app.dock?.setIcon(path.join(__dirname, "../../public/assets/rebiz-icon-1.png"));
+        app.dock?.setIcon(APP_ICON);
     }
 
     createWindow();

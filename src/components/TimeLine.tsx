@@ -4,6 +4,7 @@ import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
+import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
@@ -15,10 +16,17 @@ const TimeLine = ({
   snapshot,
   targetMarkerSec,
   onUpdateEventPoint,
-  onDone,
+  onPopOut,
   headerLabel,
   markerTimeSec,
-  showFinalizeButton,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onRemoveEventPoint,
+  viewMode = "camera",
+  menuItems = [],
+  rangeSessions,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -28,21 +36,39 @@ const TimeLine = ({
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
-  onDone?: () => void;
+  onPopOut?: () => void;
   headerLabel: string;
   markerTimeSec: number | null;
-  showFinalizeButton: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onRemoveEventPoint?: (id: number) => void;
+  viewMode?: "camera" | "activity";
+  menuItems?: { id: number; name: string }[];
+  rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
 
-  const {
-    flatRows,
-    selectableRows,
-    timelineStartSec,
-    timelineEndSec,
-    firstActivitySec,
-  } = useFlatRows({ data, cameraEventPoints: mergedEventPoints });
+  const cameraRowsData = useFlatRows({
+    data,
+    cameraEventPoints: mergedEventPoints,
+  });
+  const activityRowsData = useActivityRows({
+    menuItems,
+    cameraEventPoints: mergedEventPoints,
+    rangeSessions,
+  });
+
+  const isActivityMode = viewMode === "activity";
+  const flatRows = isActivityMode
+    ? activityRowsData.flatRows
+    : cameraRowsData.flatRows;
+  const selectableRows = isActivityMode
+    ? activityRowsData.selectableRows
+    : cameraRowsData.selectableRows;
+  const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
 
   const state = useTimelineBodyState({
     snapshot,
@@ -78,6 +104,45 @@ const TimeLine = ({
     state.setMarkerSec(next);
   };
 
+  const sortedEventPoints = [...mergedEventPoints].sort(
+    (a, b) => a.timeSec - b.timeSec,
+  );
+  const prevEventPoint = [...sortedEventPoints]
+    .reverse()
+    .find((ep) => ep.timeSec < state.resolvedMarkerSec);
+  const nextEventPoint = sortedEventPoints.find(
+    (ep) => ep.timeSec > state.resolvedMarkerSec,
+  );
+
+  const handleGoToPrevEventPoint = () => {
+    if (prevEventPoint) state.setMarkerSec(prevEventPoint.timeSec);
+  };
+  const handleGoToNextEventPoint = () => {
+    if (nextEventPoint) state.setMarkerSec(nextEventPoint.timeSec);
+  };
+
+  const selectedActivityLabel = isActivityMode
+    ? menuItems.find((m) => m.id === state.iTrackId)?.name
+    : undefined;
+
+  const eventPointUnderMarker = mergedEventPoints.find((ep) =>
+    isActivityMode
+      ? ep.label === selectedActivityLabel &&
+        state.resolvedMarkerSec >= ep.startSec &&
+        state.resolvedMarkerSec <= ep.endSec
+      : ep.cameraId === state.iTrackId &&
+        state.resolvedMarkerSec >= ep.startSec &&
+        state.resolvedMarkerSec <= ep.endSec,
+  );
+
+  const handleDeleteEventPoint = () => {
+    const targetId = state.selectedEventPointId ?? eventPointUnderMarker?.id;
+    if (targetId !== undefined) {
+      onRemoveEventPoint?.(targetId);
+      state.setSelectedEventPointId(null);
+    }
+  };
+
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
@@ -101,6 +166,8 @@ const TimeLine = ({
     setPanOffsetSec: state.setPanOffsetSec,
     totalSec: state.totalSec,
     gridRef: state.gridRef,
+    cameraEventPoints: mergedEventPoints,
+    onDeleteEventPoint: handleDeleteEventPoint,
   });
 
   return (
@@ -109,16 +176,31 @@ const TimeLine = ({
         snapshot={snapshot}
         markerTimeSec={markerTimeSec}
         isPlaying={state.isPlaying}
-        showFinalizeButton={showFinalizeButton}
         onStepMarker={handleStepMarker}
         onTogglePlay={handleTogglePlay}
-        onDone={onDone ?? (() => {})}
+        onPopOut={onPopOut}
+        onUndo={onUndo}
+        onRedo={onRedo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onDeleteEventPoint={handleDeleteEventPoint}
+        canDelete={
+          state.selectedEventPointId !== null ||
+          eventPointUnderMarker !== undefined
+        }
+        onGoPrevEventPoint={handleGoToPrevEventPoint}
+        onGoNextEventPoint={handleGoToNextEventPoint}
+        hasPrevEventPoint={prevEventPoint !== undefined}
+        hasNextEventPoint={nextEventPoint !== undefined}
       />
 
       <TimelineBody
         flatRows={flatRows}
         headerLabel={headerLabel}
-        openDialog={state.openDialog}
+        openDialog={
+          //  state.openDialog
+          false
+        }
         dialogOnClose={state.handleOnCloseDialog}
         onOpenDialog={state.handleOnOpenDialog}
         selectedTracks={state.selectedTracks}
@@ -153,9 +235,15 @@ const TimeLine = ({
         onUpdateEventPoint={onUpdateEventPoint}
         currentLeft={state.currentLeft}
         setMarkerSec={state.setMarkerSec}
+        selectedEventPointId={state.selectedEventPointId}
+        setSelectedEventPointId={state.setSelectedEventPointId}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
       />
+      {/* <TimelineDialog
+        dialogOnClose={state.handleOnCloseDialog}
+        openDialog={state.openDialog}
+      /> */}
     </Box>
   );
 };

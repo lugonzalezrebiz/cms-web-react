@@ -4,39 +4,59 @@ import type { FlatRow } from "../types";
 
 const ROW_HEIGHT = 44;
 
-const toSeconds = (time: string) => {
-  const [h, m, s] = time.split(":").map(Number);
-  return h * 3600 + m * 60 + s;
-};
+// const toSeconds = (time: string) => {
+//   const [h, m, s] = time.split(":").map(Number);
+//   return h * 3600 + m * 60 + s;
+// };
 
 interface SessionBarProps {
   range: { start: number; end: number };
-  isSelected: boolean;
   visibleStart: number;
   visibleDuration: number;
 }
 
+const Diamond = ({ pct }: { pct: number }) => (
+  <Box
+    sx={{
+      position: "absolute",
+      left: `${pct}%`,
+      top: "50%",
+      transform: "translate(-50%, -50%) rotate(45deg)",
+      width: 14,
+      height: 14,
+      bgcolor: Colors.lightOrange,
+      outline: `1px solid ${Colors.white}`,
+      zIndex: 2,
+      pointerEvents: "none",
+    }}
+  />
+);
+
 const SessionBar = ({
   range,
-  isSelected,
   visibleStart,
   visibleDuration,
 }: SessionBarProps) => {
   const left = ((range.start - visibleStart) / visibleDuration) * 100;
   const width = ((range.end - range.start) / visibleDuration) * 100;
+  const rightPct = left + width;
   return (
-    <Box
-      sx={{
-        position: "absolute",
-        left: `${left}%`,
-        width: `${width}%`,
-        top: "50%",
-        transform: "translateY(-50%)",
-        height: 19,
-        borderRadius: "8px",
-        background: isSelected ? Colors.vividOrange : Colors.lightGrayishBlue,
-      }}
-    />
+    <>
+      <Box
+        sx={{
+          position: "absolute",
+          left: `${left}%`,
+          width: `${width}%`,
+          top: "50%",
+          transform: "translateY(-50%)",
+          height: 19,
+          borderRadius: "8px",
+          background: Colors.vividOrange,
+        }}
+      />
+      <Diamond pct={left} />
+      <Diamond pct={rightPct} />
+    </>
   );
 };
 
@@ -61,17 +81,20 @@ export const SessionRow = ({
   visibleStart,
   visibleDuration,
 }: SessionRowProps) => {
-  const snapshotRanges: { start: number; end: number }[] = [];
-  let currentIn: number | null = null;
-  for (const s of row.sessions) {
-    if (s.type === "in") currentIn = toSeconds(s.timestamp);
-    if (s.type === "out" && currentIn !== null) {
-      snapshotRanges.push({ start: currentIn, end: toSeconds(s.timestamp) });
-      currentIn = null;
-    }
-  }
+  // === OLD: sessions preloaded from API rangeSessions ===
+  // const snapshotRanges: { start: number; end: number }[] = [];
+  // let currentIn: number | null = null;
+  // for (const s of row.sessions) {
+  //   if (s.type === "in") currentIn = toSeconds(s.timestamp);
+  //   if (s.type === "out" && currentIn !== null) {
+  //     snapshotRanges.push({ start: currentIn, end: toSeconds(s.timestamp) });
+  //     currentIn = null;
+  //   }
+  // }
+  // const frozen = [...snapshotRanges, ...(completedSessions[row.id] ?? [])];
 
-  const frozen = [...snapshotRanges, ...(completedSessions[row.id] ?? [])];
+  // === NEW: sessions created by dragging on the timeline ===
+  const frozen = completedSessions[row.id] ?? [];
   const sessionStart = activeSessionStarts[row.id];
   const liveBar =
     sessionStart !== undefined && resolvedMarkerSec > sessionStart
@@ -94,7 +117,6 @@ export const SessionRow = ({
         <SessionBar
           key={i}
           range={range}
-          isSelected={isSelected}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
         />

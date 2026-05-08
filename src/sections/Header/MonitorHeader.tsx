@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -6,7 +5,10 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
-import HeaderInfoMenu from "../../components/HeaderInfoMenu";
+import HeaderInfoMenu, {
+  type HeaderInfo,
+} from "../../components/HeaderInfoMenu";
+import useAssignments from "../../hooks/useAssignments";
 import KeyboardMenu, {
   type KeyboardMenuData,
 } from "../../components/KeyboardMenu";
@@ -16,54 +18,70 @@ import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery from "../../hooks/useNavigate";
+import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
+import Button from "../../components/Button";
+import ToggleButton from "../../components/ToggleButton";
+import useTrackerOptions from "./hooks/useTrackerOptions";
+import useCameraGroups from "../../hooks/useCameraGroups";
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
   items: [
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }],
-      label: "Move back in time",
+      label: "Move marker back 3 min",
     },
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }],
-      label: "Move forward in time",
+      label: "Move marker forward 3 min",
     },
     {
       keys: [
         { type: "text", label: "Ctrl", fontSize: "14px" },
         { type: "img", src: "../assets/arrow-narrow-left.svg" },
       ],
-      label: "Back to person",
+      label: "Previous event point",
     },
     {
       keys: [
         { type: "text", label: "Ctrl", fontSize: "14px" },
         { type: "img", src: "../assets/arrow-narrow-right.svg" },
       ],
-      label: "Forward to person",
+      label: "Next event point",
+    },
+    {
+      keys: [
+        { type: "text", label: "Alt", fontSize: "12px" },
+        { type: "img", src: "../assets/arrow-narrow-left.svg" },
+      ],
+      label: "Go back",
     },
     {
       keys: [
         { type: "text", label: "Shift", fontSize: "12px" },
         { type: "text", label: "G", fontSize: "16px" },
       ],
-      label: "Move to specific time",
+      label: "Go to specific time",
     },
     {
-      keys: [{ type: "text", label: "Home", fontSize: "12px" }],
-      label: "Move to first frame",
-    },
-    {
-      keys: [{ type: "text", label: "Q", fontSize: "16px" }],
-      label: "Employee/Flag Mode",
+      keys: [{ type: "text", label: "H", fontSize: "16px" }],
+      label: "Move to start",
     },
     {
       keys: [{ type: "text", label: "DEL", fontSize: "12px" }],
-      label: "Delete selected employee",
+      label: "Delete event point under marker",
     },
     {
-      keys: [{ type: "img", src: "../assets/plus-1.svg" }],
-      label: "Delete selected employee",
+      keys: [{ type: "text", label: "Space", fontSize: "12px" }],
+      label: "Play / Pause",
+    },
+    {
+      keys: [{ type: "text", label: "+", fontSize: "16px" }],
+      label: "Zoom in",
+    },
+    {
+      keys: [{ type: "text", label: "-", fontSize: "16px" }],
+      label: "Zoom out",
     },
   ],
 };
@@ -99,10 +117,6 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const noDrag = {
-  ["WebkitAppRegion" as string]: "no-drag",
-} as React.CSSProperties;
-
 const MonitorHeader = ({
   toggleDrawer,
   withIconMenu = true,
@@ -118,14 +132,43 @@ const MonitorHeader = ({
   const userPanelHeader = usePopover();
   const navigate = useNavigateWithQuery();
   const goBack = () => navigate(-1);
-  const { companyLabel, storeLabel, formattedDate, timeRange } =
+  const { companyLabel, storeLabel, formattedDate, timeRange, companyID, locationID, monitoringID } =
     useMonitorParams();
+  const { assignments } = useAssignments(companyID, locationID);
+  const assignment = assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const headerInfo: HeaderInfo | undefined = assignment
+    ? {
+        title: assignment.date,
+        state: assignment.state,
+        subTitle: {
+          store: `${assignment.store} (${assignment.location})`,
+          user: String(assignment.userID),
+        },
+        items: assignment.items,
+        commentsTex: assignment.commentsTex,
+      }
+    : undefined;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const { handleDone, showFinalizeButton } = useMonitorState();
+  const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
+    useCameraGroup();
+  const { cameraGroups: cameraGroupsBase } = useCameraGroups();
+  const { trackerOptions } = useTrackerOptions();
+  const cameraGroups = [
+    { value: "0", title: "All" },
+    ...cameraGroupsBase,
+    {
+      value: "tracker",
+      title: "Tracker",
+      options: trackerOptions,
+    },
+  ];
 
   return (
     <>
@@ -134,7 +177,6 @@ const MonitorHeader = ({
           {withIconMenu && (
             <IconButton
               edge="start"
-              style={noDrag}
               sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
@@ -144,7 +186,6 @@ const MonitorHeader = ({
           )}
           {allowGoBack && (
             <IconButton
-              style={noDrag}
               sx={{ color: Colors.main }}
               onClick={goBack}
               aria-label="go back"
@@ -161,7 +202,6 @@ const MonitorHeader = ({
           >
             <Box
               onClick={menuHeader.handleOpen}
-              style={noDrag}
               sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
@@ -176,36 +216,33 @@ const MonitorHeader = ({
               </StyledSubTitle>
             </Box>
 
-            <Box display={"flex"} style={noDrag}>
+            <Box mr={"80px"}>
+              <ToggleButton
+                value={cameraGroup}
+                setValue={setCameraGroup}
+                label="Camera Groups"
+                groups={cameraGroups}
+                selectValue={trackerOption}
+                setSelectValue={setTrackerOption}
+              />
+            </Box>
+
+            <Box display={"flex"} alignItems="center" gap={1}>
+              <StyledImg
+                onClick={keyboardMenu.handleOpen}
+                src="../assets/keyboard-02.svg"
+                alt=""
+              />
+              <StyledImg
+                onClick={userPanelHeader.handleOpen}
+                src="../assets/user-circle.svg"
+                alt=""
+              />
+
               <Box>
-                <StyledImg
-                  onClick={keyboardMenu.handleOpen}
-                  src="../assets/keyboard-02.svg"
-                  alt=""
-                />
-                <StyledImg
-                  onClick={userPanelHeader.handleOpen}
-                  src="../assets/user-circle.svg"
-                  alt=""
-                />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg
-                  src="../assets/minus.svg"
-                  alt=""
-                  onClick={() => window.api?.minimize()}
-                />
-                <StyledImg
-                  style={{ marginBottom: "2px" }}
-                  src="../assets/expand-03.svg"
-                  alt=""
-                  onClick={() => window.api?.maximize()}
-                />
-                <StyledImg
-                  src="../assets/x-close.svg"
-                  alt=""
-                  onClick={() => window.api?.close()}
-                />
+                <Button onClick={handleDone} disabled={!showFinalizeButton}>
+                  Done
+                </Button>
               </Box>
             </Box>
           </Box>
@@ -215,6 +252,7 @@ const MonitorHeader = ({
           anchorEl={menuHeader.anchorEl}
           handleClose={menuHeader.handleClose}
           open={menuHeader.open}
+          info={headerInfo}
         />
 
         <KeyboardMenu

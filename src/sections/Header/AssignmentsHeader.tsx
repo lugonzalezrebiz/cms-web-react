@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -11,6 +10,8 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useNavigateWithQuery from "../../hooks/useNavigate";
+import NotificationMenu from "../../components/NotificationMenu";
+import { useNotifications } from "../../hooks/useNotifications";
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -35,10 +36,6 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const noDrag = {
-  ["WebkitAppRegion" as string]: "no-drag",
-} as React.CSSProperties;
-
 const AssignmentsHeader = ({
   toggleDrawer,
   withIconMenu = true,
@@ -51,7 +48,9 @@ const AssignmentsHeader = ({
   const [scrolled, setScrolled] = useState(false);
   const menuHeader = usePopover();
   const userPanelHeader = usePopover();
+  const notificationHeader = usePopover();
   const navigate = useNavigateWithQuery();
+  const { notifications } = useNotifications();
   const goBack = () => navigate(-1);
 
   useEffect(() => {
@@ -67,7 +66,6 @@ const AssignmentsHeader = ({
           {withIconMenu && (
             <IconButton
               edge="start"
-              style={noDrag}
               sx={{ color: Colors.main }}
               onClick={toggleDrawer}
               aria-label="menu"
@@ -77,7 +75,6 @@ const AssignmentsHeader = ({
           )}
           {allowGoBack && (
             <IconButton
-              style={noDrag}
               sx={{ color: Colors.main }}
               onClick={goBack}
               aria-label="go back"
@@ -94,7 +91,6 @@ const AssignmentsHeader = ({
           >
             <Box
               onClick={menuHeader.handleOpen}
-              style={noDrag}
               sx={{
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
@@ -116,41 +112,33 @@ const AssignmentsHeader = ({
                     color: Colors.vividLime,
                   }}
                 >
-                  <img src="./assets/online.svg" alt="" />
+                  <img src="./assets/online.svg" alt="Online status" />
                   <p style={{ margin: "0 0 0 8px" }}>Online</p>
                 </Box>
               </Box>
             </Box>
 
-            <Box display={"flex"} style={noDrag}>
-              <Box>
-                <StyledImg
-                  onClick={userPanelHeader.handleOpen}
-                  src="../assets/user-circle.svg"
-                  alt=""
-                />
-              </Box>
-              <Box ml={"20px"}>
-                <StyledImg
-                  src="../assets/minus.svg"
-                  alt=""
-                  onClick={() => window.api?.minimize()}
-                />
-                <StyledImg
-                  style={{ marginBottom: "2px" }}
-                  src="../assets/expand-03.svg"
-                  alt=""
-                  onClick={() => window.api?.maximize()}
-                />
-                <StyledImg
-                  src="../assets/x-close.svg"
-                  alt=""
-                  onClick={() => window.api?.close()}
-                />
-              </Box>
+            <Box display={"flex"}>
+              <StyledImg
+                onClick={notificationHeader.handleOpen}
+                src="../assets/notification.svg"
+                alt=""
+              />
+              <StyledImg
+                onClick={userPanelHeader.handleOpen}
+                src="../assets/user-circle.svg"
+                alt=""
+              />
             </Box>
           </Box>
         </StyledContainer>
+
+        <NotificationMenu
+          anchorEl={notificationHeader.anchorEl}
+          handleClose={notificationHeader.handleClose}
+          open={notificationHeader.open}
+          notifications={notifications}
+        />
 
         <UserPanel
           anchorEl={userPanelHeader.anchorEl}

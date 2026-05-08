@@ -97,7 +97,7 @@ const AiMenu = ({ anchorEl, open, handleClose }: Props) => {
               filter: "grayscale(30%)",
             }}
           >
-            <img style={{ height: "72px" }} src="../assets/ai.svg" alt="" />
+            <img style={{ height: "72px" }} src="../assets/ai.svg" alt="AI assistant" />
           </Box>
 
           <Box

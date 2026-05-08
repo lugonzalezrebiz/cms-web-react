@@ -1,29 +1,52 @@
+import { useState } from "react";
 import { Box } from "@mui/material";
 import { Grid } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import { secToTimeString } from "./hooks/useTimelineMarker";
-import Button from "../Button";
-import type { TimelineSnapshot } from "./types";
+import type { NavTab, TimelineSnapshot } from "./types";
+import TimelineNavPopover from "./TimelineNavPopover";
+import { usePopover } from "./hooks/usePopover";
 
 interface Props {
   snapshot: TimelineSnapshot;
   markerTimeSec: number | null;
   isPlaying: boolean;
-  showFinalizeButton: boolean;
   onStepMarker: (delta: number) => void;
   onTogglePlay: () => void;
-  onDone: () => void;
+  onPopOut?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onDeleteEventPoint?: () => void;
+  canDelete?: boolean;
+  onGoPrevEventPoint?: () => void;
+  onGoNextEventPoint?: () => void;
+  hasPrevEventPoint?: boolean;
+  hasNextEventPoint?: boolean;
 }
 
 const TimelineToolbar = ({
   snapshot,
   markerTimeSec,
   isPlaying,
-  showFinalizeButton,
   onStepMarker,
   onTogglePlay,
-  onDone,
+  onPopOut,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  onDeleteEventPoint,
+  canDelete = false,
+  onGoPrevEventPoint,
+  onGoNextEventPoint,
+  hasPrevEventPoint = false,
+  hasNextEventPoint = false,
 }: Props) => {
+  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
+  const navPopover = usePopover();
+
   return (
     <Grid
       container
@@ -46,15 +69,19 @@ const TimelineToolbar = ({
         alignItems={"center"}
         justifyContent={"start"}
       >
-        <Box>
-          <img
-            style={{ opacity: 0.5 }}
-            src="../assets/layers-three-02.svg"
-            alt=""
-          />
+        <TimelineNavPopover
+          open={navPopover.open}
+          anchorEl={navPopover.anchorEl}
+          onClose={navPopover.handleClose}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
+        <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
+          <img src="../assets/layers-three-02.svg" alt="Layers" />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/user-plus-01.svg" alt="" />
+          <img src="../assets/user-plus-01.svg" alt="Add user" />
         </Box>
         <Box
           position={"relative"}
@@ -62,7 +89,7 @@ const TimelineToolbar = ({
             opacity: 0.5,
           }}
         >
-          <img src="../assets/camera-02.svg" alt="" />
+          <img src="../assets/camera-02.svg" alt="Camera" />
         </Box>
       </Grid>
 
@@ -73,29 +100,43 @@ const TimelineToolbar = ({
         spacing={"18px"}
         justifyContent={"start"}
       >
-        <Box onClick={() => {}}>
+        <Box
+          onClick={canUndo ? onUndo : undefined}
+          sx={{ cursor: canUndo ? "pointer" : "default" }}
+        >
           <img
-            style={{ opacity: 0.5 }}
+            style={{ opacity: canUndo ? 1 : 0.5 }}
             src="../assets/reverse-left.svg"
-            alt=""
+            alt="Undo"
           />
         </Box>
-        <Box onClick={() => {}}>
+        <Box
+          onClick={canRedo ? onRedo : undefined}
+          sx={{ cursor: canRedo ? "pointer" : "default" }}
+        >
           <img
-            style={{ opacity: 0.5 }}
+            style={{ opacity: canRedo ? 1 : 0.5 }}
             src="../assets/reverse-right.svg"
-            alt=""
+            alt="Redo"
           />
         </Box>
-        <Box onClick={() => {}}>
-          <img src="../assets/trash-02.svg" alt="" />
+        <Box
+          onClick={canDelete ? onDeleteEventPoint : undefined}
+          sx={{ cursor: canDelete ? "pointer" : "default" }}
+        >
+          <img
+            style={{ opacity: canDelete ? 1 : 0.5 }}
+            src="../assets/trash-02.svg"
+            alt="Delete"
+          />
         </Box>
+        {/*
         <Box onClick={() => {}}>
-          <img src="../assets/divider.svg" alt="" />
+          <img src="../assets/divider.svg" alt="Divider" />
         </Box>
-        <Box onClick={() => {}}>
-          <img src="../assets/link-02.svg" alt="" />
-        </Box>
+         <Box onClick={() => {}}>
+          <img src="../assets/link-02.svg" alt="Link" />
+        </Box> */}
       </Grid>
 
       <Grid
@@ -105,12 +146,12 @@ const TimelineToolbar = ({
         spacing={"8px"}
         justifyContent={"flex-start"}
       >
-        <Box onClick={() => {}} ml={"18px"}>
-          <img src="../assets/punch-in.svg" alt="" />
+        {/* <Box onClick={() => {}} ml={"18px"}>
+          <img src="../assets/punch-in.svg" alt="Punch in" />
         </Box>
         <Box onClick={() => {}}>
-          <img src="../assets/punch-out.svg" alt="" />
-        </Box>
+          <img src="../assets/punch-out.svg" alt="Punch out" />
+        </Box> */}
       </Grid>
 
       <Grid
@@ -119,18 +160,22 @@ const TimelineToolbar = ({
         alignItems={"center"}
         justifyContent={"center"}
       >
-        <Box mr={"4px"} onClick={() => onStepMarker(-3600)}>
+        <Box
+          mr={"4px"}
+          onClick={hasPrevEventPoint ? onGoPrevEventPoint : undefined}
+          sx={{ cursor: hasPrevEventPoint ? "pointer" : "default" }}
+        >
           <img
-            style={{ cursor: "pointer" }}
+            style={{ opacity: hasPrevEventPoint ? 1 : 0.5 }}
             src="../assets/align-left-01.svg"
-            alt=""
+            alt="Previous event point"
           />
         </Box>
         <Box mr={"8px"} onClick={() => onStepMarker(-600)}>
           <img
             style={{ cursor: "pointer" }}
             src="../assets/chevron-left.svg"
-            alt=""
+            alt="Step backward"
           />
         </Box>
         <Box
@@ -143,7 +188,7 @@ const TimelineToolbar = ({
           }}
         >
           <Box mr={"8px"} onClick={() => {}}>
-            <img src="../assets/clock.svg" alt="" />
+            <img src="../assets/clock.svg" alt="Clock" />
           </Box>
           <Box
             sx={{
@@ -169,14 +214,17 @@ const TimelineToolbar = ({
           <img
             style={{ cursor: "pointer" }}
             src="../assets/chevron-right.svg"
-            alt=""
+            alt="Step forward"
           />
         </Box>
-        <Box onClick={() => onStepMarker(+3600)}>
+        <Box
+          onClick={hasNextEventPoint ? onGoNextEventPoint : undefined}
+          sx={{ cursor: hasNextEventPoint ? "pointer" : "default" }}
+        >
           <img
-            style={{ cursor: "pointer" }}
+            style={{ opacity: hasNextEventPoint ? 1 : 0.5 }}
             src="../assets/align-right-01.svg"
-            alt=""
+            alt="Next event point"
           />
         </Box>
       </Grid>
@@ -192,21 +240,11 @@ const TimelineToolbar = ({
           display={"flex"}
           justifyContent={"flex-end"}
         >
-          {showFinalizeButton && (
-            <Box>
-              <Button
-                onClick={onDone}
-                sx={{ height: "20px", mr: "36px", mb: "2px" }}
-              >
-                Finalize
-              </Button>
-            </Box>
-          )}
           <Box onClick={() => {}}>
             <img
               style={{ opacity: 0.5 }}
               src="../assets/dots-grid.svg"
-              alt=""
+              alt="Grid options"
             />
           </Box>
         </Grid>
@@ -252,7 +290,7 @@ const TimelineToolbar = ({
             <img
               style={{ opacity: 0.5 }}
               src="../assets/search-sm.svg"
-              alt=""
+              alt="Search"
             />
           </Box>
         </Grid>
@@ -282,11 +320,15 @@ const TimelineToolbar = ({
               }}
             />
           </Box>
-          <Box ml={"18px"} onClick={() => {}}>
+          <Box
+            ml={"18px"}
+            onClick={onPopOut}
+            sx={{ cursor: onPopOut ? "pointer" : "default" }}
+          >
             <img
               style={{ opacity: 0.5 }}
               src="../assets/expand-06.svg"
-              alt=""
+              alt="Expand"
             />
           </Box>
         </Grid>

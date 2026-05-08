@@ -1,28 +1,121 @@
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CameraEventPoint } from "../types";
 
-export const useCameraEventPoints = () => {
+const storageKey = (id: string) => `cameraEventPoints_${id}`;
+
+const readFromStorage = (id: string): CameraEventPoint[] => {
+  try {
+    const raw = sessionStorage.getItem(storageKey(id));
+    return raw ? (JSON.parse(raw) as CameraEventPoint[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const useCameraEventPoints = (monitoringID: string) => {
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
+  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>(
+    () => readFromStorage(monitoringID),
+  );
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
+  const historyRef = useRef<CameraEventPoint[][]>([]);
+  const futureRef = useRef<CameraEventPoint[][]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const lastUpdateTimeRef = useRef<number>(0);
+  const currentPointsRef = useRef<CameraEventPoint[]>(readFromStorage(monitoringID));
+
+  const syncChannelRef = useRef<BroadcastChannel | null>(null);
+  const suppressSyncRef = useRef(false);
+
+  // Cross-window event point sync
+  useEffect(() => {
+    const channel = new BroadcastChannel("camera-event-points-sync");
+    syncChannelRef.current = channel;
+    channel.addEventListener("message", (e: MessageEvent) => {
+      if (e.data?.type === "sync" && e.data?.monitoringID === monitoringID) {
+        const incoming = e.data.points as CameraEventPoint[];
+        suppressSyncRef.current = true;
+        currentPointsRef.current = incoming;
+        setCameraEventPoints(incoming);
+      }
+    });
+    return () => {
+      channel.close();
+      syncChannelRef.current = null;
+    };
+  }, [monitoringID]);
+
+  // Broadcast local changes to other windows
+  useEffect(() => {
+    if (suppressSyncRef.current) {
+      suppressSyncRef.current = false;
+      return;
+    }
+    syncChannelRef.current?.postMessage({ type: "sync", monitoringID, points: cameraEventPoints });
+  }, [cameraEventPoints, monitoringID]);
+
+  // Persist every change to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(storageKey(monitoringID), JSON.stringify(cameraEventPoints));
+    } catch { /* ignore */ }
+  }, [cameraEventPoints, monitoringID]);
+
+  // Clear sessionStorage on real navigation (not on browser reload)
+  useEffect(() => {
+    const isReloading = { current: false };
+    const onBeforeUnload = () => { isReloading.current = true; };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    let active = false;
+    const id = setTimeout(() => { active = true; }, 0);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      if (active && !isReloading.current) {
+        sessionStorage.removeItem(storageKey(monitoringID));
+      }
+    };
+  }, [monitoringID]);
+
+  const pushHistory = (snapshot: CameraEventPoint[]) => {
+    historyRef.current = [...historyRef.current, snapshot];
+    futureRef.current = [];
+    setCanUndo(true);
+    setCanRedo(false);
+  };
+
   const handleRemoveEventPoint = (id: number) => {
-    setCameraEventPoints((prev) => prev.filter((ep) => ep.id !== id));
+    pushHistory(currentPointsRef.current);
+    setCameraEventPoints((prev) => {
+      const next = prev.filter((ep) => ep.id !== id);
+      currentPointsRef.current = next;
+      return next;
+    });
   };
 
   const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
-    setCameraEventPoints((prev) =>
-      prev.map((ep) => (ep.id === id ? { ...ep, ...update } : ep)),
-    );
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current > 500) {
+      pushHistory(currentPointsRef.current);
+    }
+    lastUpdateTimeRef.current = now;
+    setCameraEventPoints((prev) => {
+      const next = prev.map((ep) => (ep.id === id ? { ...ep, ...update } : ep));
+      currentPointsRef.current = next;
+      return next;
+    });
   };
 
   const handleActivitySelect = (
     cameraIndex: number,
     activityLabel: string,
+    mode: "POINT" | "RANGE" = "POINT",
   ): void => {
     setCameraActivities((prev) => {
       const alreadyExists = prev.some(
@@ -36,7 +129,7 @@ export const useCameraEventPoints = () => {
     const cameraId = 1 + cameraIndex;
     const timeSec = markerSecRef.current;
     const startSec = Math.max(0, timeSec - 120);
-    const endSec = timeSec + 120;
+    const endSec = timeSec;
     setCameraEventPoints((prev) => {
       const duplicate = prev.some(
         (ep) =>
@@ -45,10 +138,13 @@ export const useCameraEventPoints = () => {
           Math.abs(timeSec - ep.timeSec) <= 300,
       );
       if (duplicate) return prev;
-      return [
+      pushHistory(prev);
+      const next = [
         ...prev,
-        { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel },
+        { id: Date.now(), cameraId, timeSec, startSec, endSec, label: activityLabel, reviewed: true, value: true, mode },
       ];
+      currentPointsRef.current = next;
+      return next;
     });
   };
 
@@ -56,6 +152,28 @@ export const useCameraEventPoints = () => {
     markerSecRef.current = sec;
     setMarkerSec(sec);
   };
+
+  const handleUndo = useCallback(() => {
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
+    futureRef.current = [currentPointsRef.current, ...futureRef.current];
+    historyRef.current = historyRef.current.slice(0, -1);
+    currentPointsRef.current = prev;
+    setCameraEventPoints(prev);
+    setCanUndo(historyRef.current.length > 0);
+    setCanRedo(true);
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    if (futureRef.current.length === 0) return;
+    const next = futureRef.current[0];
+    historyRef.current = [...historyRef.current, currentPointsRef.current];
+    futureRef.current = futureRef.current.slice(1);
+    currentPointsRef.current = next;
+    setCameraEventPoints(next);
+    setCanUndo(true);
+    setCanRedo(futureRef.current.length > 0);
+  }, []);
 
   return {
     cameraActivities,
@@ -65,5 +183,9 @@ export const useCameraEventPoints = () => {
     handleActivitySelect,
     handleMarkerChange,
     handleUpdateEventPoint,
+    handleUndo,
+    handleRedo,
+    canUndo,
+    canRedo,
   };
 };

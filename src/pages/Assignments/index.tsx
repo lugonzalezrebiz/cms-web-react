@@ -1,108 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useNavigateWithQuery from "../../hooks/useNavigate";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
 import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
+import { usePopover } from "../../components/timeline/hooks/usePopover";
+import DropDownMenu from "../../components/DropDownMenu";
+import type { Assignment } from "./components/InfoAssignment";
+import InfoAssignment from "./components/InfoAssignment";
+import useCompanies from "../../hooks/useCompanies";
+import useAssignments from "../../hooks/useAssignments";
+import { USE_STATIC_IDS, MONITORING_ID } from "../../config";
 
-const REVIEWER_REDIRECT = "/monitor?company=9001&location=222&date=20260407";
+const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20260407&monitoringID=${MONITORING_ID}`;
+const buildRedirect = (companyID: number, locationID: number, rawDate: string, monitoringID: string) =>
+  `/monitor?company=${companyID}&location=${locationID}&date=${rawDate}&monitoringID=${monitoringID}`;
 const activityIcon = "/assets/activity-other-icon.svg";
 
-const cards = [
-  { title: "New Assignments", current: 6 },
-  { title: "Paused Assignments", current: 2 },
-  { title: "Rejected Assignments", current: 3 },
-  { title: "Open Tickets", current: 2 },
-  { title: "Completed This Month", current: 34 },
-];
-
-const assignments = [
-  {
-    state: "Paused" as const,
-    location: 162,
-    store: 6015,
-    date: "February 24 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Paused" as const,
-    location: 205,
-    store: 9274,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Resolved" as const,
-    location: 187,
-    store: 4829,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 250,
-    store: 8537,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 2958,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 6392,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 162,
-    store: 1047,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "New" as const,
-    location: 205,
-    store: 7359,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-];
-
-const rejectedAssignments = [
-  {
-    state: "Rejected" as const,
-    location: 205,
-    store: 6392,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Rejected" as const,
-    location: 162,
-    store: 9274,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
-  {
-    state: "Rejected" as const,
-    location: 205,
-    store: 1047,
-    date: "February 25 - 2026",
-    comments: 0,
-  },
+const dropdownOptions = (onOpen: () => void) => [
+  { label: "See detail information", onClick: onOpen },
 ];
 
 const Monitor = () => {
   const navigate = useNavigateWithQuery();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
+  const { companyFilters, getStoreFilters } = useCompanies();
+  const { assignments } = useAssignments(
+    company ? Number(company) : null,
+    store ? Number(store) : null,
+  );
+
+  const cards = [
+    { title: "Assignments", current: assignments.length },
+    {
+      title: "Paused Assignments",
+      current: assignments.filter((a) => a.state === "Paused").length,
+    },
+    {
+      title: "Rejected Assignments",
+      current: assignments.filter((a) => a.state === "Error").length,
+    },
+    { title: "Open Tickets", current: 0 },
+    { title: "Completed This Month", current: 0 },
+  ];
+
+  const handleSetCompany = (value: string) => {
+    setCompany(value);
+    setStore("");
+  };
+
+  useEffect(() => {
+    if (company === "" && companyFilters.length > 1) {
+      setCompany(companyFilters[1].value);
+    }
+  }, [companyFilters]);
+
+  const cardMenu = usePopover();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<Assignment | null>(null);
+
+  const handleOpenDialog = () => {
+    setDialogOpen(true);
+    cardMenu.handleClose();
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -118,35 +84,66 @@ const Monitor = () => {
         ))}
       </Grid>
 
-      <Title title="New Assignments">
+      <Title title="Assignments">
         <Box mr={"20px"}>
           <SelectComponent
-            filters={[{ label: "All Companies", value: "" }]}
+            filters={companyFilters}
             filter={company}
-            setFilter={setCompany}
+            setFilter={handleSetCompany}
           />
         </Box>
         <SelectComponent
-          filters={[{ label: "All Stores", value: "" }]}
+          filters={getStoreFilters(company)}
           filter={store}
           setFilter={setStore}
         />
       </Title>
       <Grid container spacing={2}>
-        {assignments.map((a, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <NewAssignmentsCard {...a} onClick={() => navigate(REVIEWER_REDIRECT)} />
-          </Grid>
-        ))}
+        {assignments
+          .filter((a) => a.state !== "Error")
+          .map((a, i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+              <NewAssignmentsCard
+                {...a}
+                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                openMenu={(e) => {
+                  setSelectedAssignment(a);
+                  cardMenu.handleOpen(e);
+                }}
+              />
+            </Grid>
+          ))}
       </Grid>
       <Title title="Rejected Assignments"></Title>
       <Grid container spacing={2}>
-        {rejectedAssignments.map((a, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <NewAssignmentsCard {...a} onClick={() => navigate(REVIEWER_REDIRECT)} />
-          </Grid>
-        ))}
+        {assignments
+          .filter((a) => a.state === "Error")
+          .map((a, i) => (
+            <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+              <NewAssignmentsCard
+                {...a}
+                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                openMenu={(e) => {
+                  setSelectedAssignment(a);
+                  cardMenu.handleOpen(e);
+                }}
+              />
+            </Grid>
+          ))}
       </Grid>
+
+      <DropDownMenu
+        anchorEl={cardMenu.anchorEl}
+        open={cardMenu.open}
+        options={dropdownOptions(handleOpenDialog)}
+        handleClose={cardMenu.handleClose}
+      />
+
+      <InfoAssignment
+        handleCloseDialog={handleCloseDialog}
+        dialogOpen={dialogOpen}
+        selectedAssignment={selectedAssignment}
+      />
     </Box>
   );
 };

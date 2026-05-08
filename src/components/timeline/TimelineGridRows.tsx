@@ -1,7 +1,10 @@
 import { Box } from "@mui/system";
+import { Colors } from "../../theme";
+import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
+import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
 import { SessionRow } from "./rows/SessionRow";
 import { GridLines } from "./rows/GridLines";
@@ -32,7 +35,13 @@ interface TimelineGridRowsProps {
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
   ) => void;
+  iTrackId?: number | null;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
+  setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
+  selectedEventPointId: number | null;
+  setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
 }
+
 
 export const TimelineGridRows = ({
   flatRows,
@@ -55,6 +64,11 @@ export const TimelineGridRows = ({
   setPanOffsetSec,
   cameraEventPoints = [],
   onUpdateEventPoint,
+  iTrackId,
+  setITrackId,
+  setMarkerSec,
+  selectedEventPointId,
+  setSelectedEventPointId,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -77,8 +91,24 @@ export const TimelineGridRows = ({
     setPanOffsetSec,
   });
 
+  const { startExtend } = useDragExtendEventPoint({
+    gridRef,
+    visibleStart,
+    visibleDuration,
+    totalSec,
+    onUpdateEventPoint,
+  });
+
   return (
-    <Box ref={gridRef} sx={{ flex: 1, position: "relative", overflow: "hidden" }}>
+    <Box
+      ref={gridRef}
+      sx={{
+        flex: 1,
+        position: "relative",
+        overflow: "hidden",
+        cursor: "default",
+      }}
+    >
       <GridLines
         totalSec={totalSec}
         tickStepSec={tickStepSec}
@@ -101,20 +131,28 @@ export const TimelineGridRows = ({
           pointerEvents: "none",
         }}
       >
-        <Box sx={{ position: "relative", height: flatRows.length * ROW_HEIGHT }}>
+        <Box
+          sx={{ position: "relative", height: flatRows.length * ROW_HEIGHT }}
+        >
           {flatRows.map((row, rowIndex) =>
-            row.kind === "event" ? (
-              <EventRow
-                key={row.id}
-                row={row}
-                rowIndex={rowIndex}
-                cameraEventPoints={cameraEventPoints}
-                visibleStart={visibleStart}
-                visibleEnd={visibleEnd}
-                visibleDuration={visibleDuration}
-                setResizing={setResizing}
+            iTrackId === row.id ? (
+              <Box
+                key={`highlight-${row.id}`}
+                sx={{
+                  position: "absolute",
+                  top: rowIndex * ROW_HEIGHT,
+                  left: 0,
+                  right: 0,
+                  height: ROW_HEIGHT,
+                  bgcolor: `${Colors.semiTransparentGray}`,
+                  pointerEvents: "none",
+                  zIndex: 0,
+                }}
               />
-            ) : (
+            ) : null,
+          )}
+          {flatRows.map((row, rowIndex) =>
+            row.kind === "camera" ? (
               <SessionRow
                 key={row.id}
                 row={row}
@@ -126,8 +164,40 @@ export const TimelineGridRows = ({
                 visibleStart={visibleStart}
                 visibleDuration={visibleDuration}
               />
+            ) : (
+              <Box
+                key={row.id}
+                sx={{ position: "absolute", top: 0, left: 0, right: 0 }}
+              >
+                <SessionRow
+                  row={row}
+                  rowIndex={rowIndex}
+                  isSelected={selectedTracks.has(row.id)}
+                  completedSessions={completedSessions}
+                  activeSessionStarts={activeSessionStarts}
+                  resolvedMarkerSec={resolvedMarkerSec}
+                  visibleStart={visibleStart}
+                  visibleDuration={visibleDuration}
+                />
+                <EventRow
+                  row={row}
+                  rowIndex={rowIndex}
+                  cameraEventPoints={cameraEventPoints}
+                  visibleStart={visibleStart}
+                  visibleEnd={visibleEnd}
+                  visibleDuration={visibleDuration}
+                  setResizing={setResizing}
+                  setMarkerSec={setMarkerSec}
+                  setITrackId={setITrackId}
+                  selectedEventPointId={selectedEventPointId}
+                  setSelectedEventPointId={setSelectedEventPointId}
+                  onExtendStart={startExtend}
+                />
+              </Box>
             ),
           )}
+
+
         </Box>
       </Box>
     </Box>

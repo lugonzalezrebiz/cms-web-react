@@ -6,6 +6,10 @@ const useMonitorParams = () => {
   const companyParam = searchParams.get("company") ?? "";
   const locationParam = searchParams.get("location") ?? "";
   const dateParam = searchParams.get("date") ?? "";
+  const monitoringID = searchParams.get("monitoringID") ?? "";
+
+  const companyID = companyParam ? Number(companyParam) : null;
+  const locationID = locationParam ? Number(locationParam) : null;
 
   const companyLabel = companyParam || "----";
   const storeLabel = locationParam || "----";
@@ -28,7 +32,7 @@ const useMonitorParams = () => {
   const toHHmm = (t: string) => t.slice(0, 5);
   const timeRange = `${toHHmm(start)} - ${toHHmm(end)}`;
 
-  return { companyLabel, storeLabel, formattedDate, timeRange };
+  return { companyLabel, storeLabel, formattedDate, timeRange, companyID, locationID, monitoringID };
 };
 
 export type MonitorParams = ReturnType<typeof useMonitorParams>;
