@@ -64,7 +64,8 @@ export const useSaveMonitoring = ({
 }) => {
   const { user, token } = useAuth();
   const { mutate } = usePost<SaveResponse, SavePayload>(
-    `monitoring/${monitoringID}/save2`
+    `monitoring/${monitoringID}/save2`,
+    { onSuccess: () => alert("Monitoring saved successfully.") }
   );
 
   const buildPayload = useCallback((): SavePayload => {
