@@ -65,6 +65,7 @@ export const ExpandedCameraDialog = ({
               isExpanded
               tags={tags}
               contextMenuItems={contextMenuItems}
+              disableOverlay
               cameraId={cameraId}
               cameraName={cameraName}
               company={company}
