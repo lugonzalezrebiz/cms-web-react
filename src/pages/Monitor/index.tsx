@@ -157,22 +157,28 @@ const Monitor = () => {
     rangeSessions,
   } as const;
 
-  const expandedCameraTags =
-    expandedCamera !== null
-      ? allEventPoints
-          .filter(
-            (ep) =>
-              ep.cameraId === 1 + expandedCamera &&
-              markerSec >= ep.startSec &&
-              markerSec <= ep.endSec,
-          )
-          .map((ep) => ({
-            id: ep.id,
-            name: ep.label,
-            label: ep.label,
-            onClick: () => {},
-          }))
-      : [];
+  const expandedCameraTags = (() => {
+    if (expandedCamera === null) return [];
+    const seen = new Set<string>();
+    return allEventPoints
+      .filter(
+        (ep) =>
+          ep.cameraId === 1 + expandedCamera &&
+          markerSec >= ep.startSec &&
+          markerSec <= ep.endSec,
+      )
+      .filter((ep) => {
+        if (seen.has(ep.label)) return false;
+        seen.add(ep.label);
+        return true;
+      })
+      .map((ep) => ({
+        id: ep.id,
+        name: ep.label,
+        label: ep.label,
+        onClick: () => {},
+      }));
+  })();
 
   return (
     <Box

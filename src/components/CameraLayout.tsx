@@ -457,8 +457,9 @@ const CameraLayout = ({
     ? [...cameras].sort((a, b) => a.id - b.id)
     : undefined;
 
-  const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] =>
-    cameraEventPoints
+  const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] => {
+    const seen = new Set<string>();
+    return cameraEventPoints
       .filter(
         (ep) =>
           ep.cameraId ===
@@ -466,12 +467,18 @@ const CameraLayout = ({
           markerSec >= ep.startSec &&
           markerSec <= ep.endSec,
       )
+      .filter((ep) => {
+        if (seen.has(ep.label)) return false;
+        seen.add(ep.label);
+        return true;
+      })
       .map((ep) => ({
         id: ep.id,
         name: ep.label,
         label: ep.label,
         onClick: () => {},
       }));
+  };
 
   const sharedProps: SharedCameraItemProps = {
     media,
