@@ -18,7 +18,7 @@ import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery from "../../hooks/useNavigate";
-import { useMonitorState, useCameraGroup } from "../../contexts/MonitorContext";
+import { useMonitorState, useCameraGroup } from "../../contexts/useMonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import useTrackerOptions from "./hooks/useTrackerOptions";

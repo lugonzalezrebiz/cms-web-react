@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 
-export function useDashboardParams() {
+export const useDashboardParams = () => {
   const [searchParams] = useSearchParams();
   const company = Number(searchParams.get("company") ?? 0);
   const location = Number(searchParams.get("location") ?? 0);

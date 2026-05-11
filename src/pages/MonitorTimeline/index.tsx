@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Box } from "@mui/system";
 import TimeLine from "../../components/TimeLine";
@@ -9,6 +8,7 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import useTrackers from "../../hooks/useTrackers";
 import { useMenuItems } from "../Monitor/hooks/useMenuItems";
+import { useBroadcastSync } from "./hooks/useBroadcastSync";
 
 const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
@@ -37,34 +37,7 @@ const MonitorTimeline = () => {
 
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
-  const channelRef = useRef<BroadcastChannel | null>(null);
-  const suppressBroadcastRef = useRef(false);
-  const handleMarkerChangeRef = useRef(handleMarkerChange);
-  useEffect(() => { handleMarkerChangeRef.current = handleMarkerChange; }, [handleMarkerChange]);
-
-  useEffect(() => {
-    const channel = new BroadcastChannel("timeline-sync");
-    channelRef.current = channel;
-    channel.addEventListener("message", (e: MessageEvent) => {
-      if (e.data?.type === "marker" && e.data?.source === "monitor") {
-        suppressBroadcastRef.current = true;
-        handleMarkerChangeRef.current(e.data.sec as number);
-      }
-    });
-    return () => {
-      channel.close();
-      channelRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (markerTimeSec === null || !channelRef.current) return;
-    if (suppressBroadcastRef.current) {
-      suppressBroadcastRef.current = false;
-      return;
-    }
-    channelRef.current.postMessage({ type: "marker", sec: markerTimeSec, source: "popout" });
-  }, [markerTimeSec]);
+  useBroadcastSync(markerTimeSec, handleMarkerChange);
 
   const sessionDate = useSessionDate();
   useSaveMonitoring({

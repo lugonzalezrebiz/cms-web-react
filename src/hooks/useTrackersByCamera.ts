@@ -7,12 +7,12 @@ type TrackerSearchResponse = {
   data: Tracker[];
 };
 
-export function useTrackersByCamera(
+export const useTrackersByCamera=(
   company: number,
   location: number,
   cameraPosition: number,
   enabled: boolean,
-) {
+) =>{
   const { data } = usePostQuery<TrackerSearchResponse>(
     "tracker/search",
     { companyID: company, locationID: location, cameraID: cameraPosition },

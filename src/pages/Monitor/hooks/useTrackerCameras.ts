@@ -7,7 +7,7 @@ type CameraSearchResponse = {
   cameras: Array<{ id: number; name: string; group: { id: number; name: string } }>;
 };
 
-export function useTrackerCameras(groupID: number, trackerID: number): CameraInfo[] {
+export const useTrackerCameras=(groupID: number, trackerID: number): CameraInfo[]=> {
   const { company, location } = useDashboardParams();
   const enabled = !!company && !!location;
 
