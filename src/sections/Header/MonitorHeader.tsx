@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { IconButton } from "@mui/material";
+import { IconButton, useMediaQuery } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
@@ -117,7 +117,7 @@ const StyledImg = styled("img")({
   cursor: "pointer",
 });
 
-const MonitorHeader = ({
+const SmallSize = ({
   toggleDrawer,
   withIconMenu = true,
   allowGoBack = false,
@@ -132,10 +132,18 @@ const MonitorHeader = ({
   const userPanelHeader = usePopover();
   const navigate = useNavigateWithQuery();
   const goBack = () => navigate(-1);
-  const { companyLabel, storeLabel, formattedDate, timeRange, companyID, locationID, monitoringID } =
-    useMonitorParams();
+  const {
+    companyLabel,
+    storeLabel,
+    formattedDate,
+    timeRange,
+    companyID,
+    locationID,
+    monitoringID,
+  } = useMonitorParams();
   const { assignments } = useAssignments(companyID, locationID);
-  const assignment = assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const assignment =
+    assignments.find((a) => a.monitoringID === monitoringID) ?? null;
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
@@ -184,6 +192,7 @@ const MonitorHeader = ({
               <MenuIcon />
             </IconButton>
           )}
+
           {allowGoBack && (
             <IconButton
               sx={{ color: Colors.main }}
@@ -215,8 +224,175 @@ const MonitorHeader = ({
                 {formattedDate} / {timeRange} / Events
               </StyledSubTitle>
             </Box>
+            <Box display={"flex"} alignItems="center" gap={1}>
+              <StyledImg
+                onClick={keyboardMenu.handleOpen}
+                src="../assets/keyboard-02.svg"
+                alt=""
+              />
+              <StyledImg
+                onClick={userPanelHeader.handleOpen}
+                src="../assets/user-circle.svg"
+                alt=""
+              />
 
-            <Box mr={"80px"}>
+              <Box>
+                <Button onClick={handleDone} disabled={!showFinalizeButton}>
+                  Done
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+        </StyledContainer>
+        <Box
+          //mr={"80px"}
+          mb={"10px"}
+          display={"flex"}
+          justifyContent={"center"}
+        >
+          <ToggleButton
+            value={cameraGroup}
+            setValue={setCameraGroup}
+            label="Camera Groups"
+            groups={cameraGroups}
+            selectValue={trackerOption}
+            setSelectValue={setTrackerOption}
+          />
+        </Box>
+
+        <HeaderInfoMenu
+          anchorEl={menuHeader.anchorEl}
+          handleClose={menuHeader.handleClose}
+          open={menuHeader.open}
+          info={headerInfo}
+        />
+
+        <KeyboardMenu
+          anchorEl={keyboardMenu.anchorEl}
+          open={keyboardMenu.open}
+          handleClose={keyboardMenu.handleClose}
+          data={KEYBOARD_SHORTCUTS}
+        />
+
+        <UserPanel
+          anchorEl={userPanelHeader.anchorEl}
+          handleClose={userPanelHeader.handleClose}
+          open={userPanelHeader.open}
+        />
+        <Divider marginBottom="0" />
+      </Fix>
+    </>
+  );
+};
+
+const NormalSize = ({
+  toggleDrawer,
+  withIconMenu = true,
+  allowGoBack = false,
+}: {
+  toggleDrawer: () => void;
+  withIconMenu?: boolean;
+  allowGoBack?: boolean;
+}) => {
+  const [scrolled, setScrolled] = useState(false);
+  const menuHeader = usePopover();
+  const keyboardMenu = usePopover();
+  const userPanelHeader = usePopover();
+  const navigate = useNavigateWithQuery();
+  const goBack = () => navigate(-1);
+  const {
+    companyLabel,
+    storeLabel,
+    formattedDate,
+    timeRange,
+    companyID,
+    locationID,
+    monitoringID,
+  } = useMonitorParams();
+  const { assignments } = useAssignments(companyID, locationID);
+  const assignment =
+    assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const headerInfo: HeaderInfo | undefined = assignment
+    ? {
+        title: assignment.date,
+        state: assignment.state,
+        subTitle: {
+          store: `${assignment.store} (${assignment.location})`,
+          user: String(assignment.userID),
+        },
+        items: assignment.items,
+        commentsTex: assignment.commentsTex,
+      }
+    : undefined;
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 0);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const { handleDone, showFinalizeButton } = useMonitorState();
+  const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
+    useCameraGroup();
+  const { cameraGroups: cameraGroupsBase } = useCameraGroups();
+  const { trackerOptions } = useTrackerOptions();
+  const cameraGroups = [
+    { value: "0", title: "All" },
+    ...cameraGroupsBase,
+    {
+      value: "tracker",
+      title: "Tracker",
+      options: trackerOptions,
+    },
+  ];
+
+  return (
+    <>
+      <Fix scrolled={scrolled}>
+        <StyledContainer>
+          {withIconMenu && (
+            <IconButton
+              edge="start"
+              sx={{ color: Colors.main }}
+              onClick={toggleDrawer}
+              aria-label="menu"
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          {allowGoBack && (
+            <IconButton
+              sx={{ color: Colors.main }}
+              onClick={goBack}
+              aria-label="go back"
+            >
+              <ArrowBackIosNewIcon fontSize="small" />
+            </IconButton>
+          )}
+
+          <Box
+            display={"flex"}
+            alignItems="center"
+            justifyContent={"space-between"}
+            width={"100%"}
+          >
+            <Box
+              onClick={menuHeader.handleOpen}
+              sx={{
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                cursor: "pointer",
+              }}
+            >
+              <StyledTitle>
+                Store: {storeLabel} ({companyLabel})
+              </StyledTitle>
+              <StyledSubTitle>
+                {formattedDate} / {timeRange} / Events
+              </StyledSubTitle>
+            </Box>
+            <Box>
               <ToggleButton
                 value={cameraGroup}
                 setValue={setCameraGroup}
@@ -226,7 +402,6 @@ const MonitorHeader = ({
                 setSelectValue={setTrackerOption}
               />
             </Box>
-
             <Box display={"flex"} alignItems="center" gap={1}>
               <StyledImg
                 onClick={keyboardMenu.handleOpen}
@@ -271,6 +446,22 @@ const MonitorHeader = ({
       </Fix>
     </>
   );
+};
+
+const MonitorHeader = ({
+  toggleDrawer,
+  withIconMenu = true,
+  allowGoBack = false,
+}: {
+  toggleDrawer: () => void;
+  withIconMenu?: boolean;
+  allowGoBack?: boolean;
+}) => {
+  const isSmall = useMediaQuery("(max-width: 1050px)");
+
+  const props = { toggleDrawer, withIconMenu, allowGoBack };
+
+  return isSmall ? <SmallSize {...props} /> : <NormalSize {...props} />;
 };
 
 export default MonitorHeader;

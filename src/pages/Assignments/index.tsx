@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useNavigateWithQuery from "../../hooks/useNavigate";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
@@ -13,7 +13,12 @@ import useAssignments from "../../hooks/useAssignments";
 import { USE_STATIC_IDS, MONITORING_ID } from "../../config";
 
 const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20260407&monitoringID=${MONITORING_ID}`;
-const buildRedirect = (companyID: number, locationID: number, rawDate: string, monitoringID: string) =>
+const buildRedirect = (
+  companyID: number,
+  locationID: number,
+  rawDate: string,
+  monitoringID: string,
+) =>
   `/monitor?company=${companyID}&location=${locationID}&date=${rawDate}&monitoringID=${monitoringID}`;
 const activityIcon = "/assets/activity-other-icon.svg";
 
@@ -21,13 +26,14 @@ const dropdownOptions = (onOpen: () => void) => [
   { label: "See detail information", onClick: onOpen },
 ];
 
-const Monitor = () => {
+const Assignments = () => {
   const navigate = useNavigateWithQuery();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
+  const effectiveCompany = company || companyFilters[1]?.value || "";
   const { assignments } = useAssignments(
-    company ? Number(company) : null,
+    effectiveCompany ? Number(effectiveCompany) : null,
     store ? Number(store) : null,
   );
 
@@ -49,12 +55,6 @@ const Monitor = () => {
     setCompany(value);
     setStore("");
   };
-
-  useEffect(() => {
-    if (company === "" && companyFilters.length > 1) {
-      setCompany(companyFilters[1].value);
-    }
-  }, [companyFilters]);
 
   const cardMenu = usePopover();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -85,18 +85,25 @@ const Monitor = () => {
       </Grid>
 
       <Title title="Assignments">
-        <Box mr={"20px"}>
+        <Grid
+          container
+          sx={{
+            justifyContent: { xs: "center", sm: "flex-start" },
+          }}
+        >
+          <Box mr={{ xs: "0px", sm: "20px" }}>
+            <SelectComponent
+              filters={companyFilters}
+              filter={effectiveCompany}
+              setFilter={handleSetCompany}
+            />
+          </Box>
           <SelectComponent
-            filters={companyFilters}
-            filter={company}
-            setFilter={handleSetCompany}
+            filters={getStoreFilters(effectiveCompany)}
+            filter={store}
+            setFilter={setStore}
           />
-        </Box>
-        <SelectComponent
-          filters={getStoreFilters(company)}
-          filter={store}
-          setFilter={setStore}
-        />
+        </Grid>
       </Title>
       <Grid container spacing={2}>
         {assignments
@@ -105,7 +112,18 @@ const Monitor = () => {
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <NewAssignmentsCard
                 {...a}
-                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                onClick={() =>
+                  navigate(
+                    USE_STATIC_IDS
+                      ? STATIC_REDIRECT
+                      : buildRedirect(
+                          a.location,
+                          a.store,
+                          a.rawDate,
+                          a.monitoringID,
+                        ),
+                  )
+                }
                 openMenu={(e) => {
                   setSelectedAssignment(a);
                   cardMenu.handleOpen(e);
@@ -122,7 +140,18 @@ const Monitor = () => {
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <NewAssignmentsCard
                 {...a}
-                onClick={() => navigate(USE_STATIC_IDS ? STATIC_REDIRECT : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID))}
+                onClick={() =>
+                  navigate(
+                    USE_STATIC_IDS
+                      ? STATIC_REDIRECT
+                      : buildRedirect(
+                          a.location,
+                          a.store,
+                          a.rawDate,
+                          a.monitoringID,
+                        ),
+                  )
+                }
                 openMenu={(e) => {
                   setSelectedAssignment(a);
                   cardMenu.handleOpen(e);
@@ -148,4 +177,4 @@ const Monitor = () => {
   );
 };
 
-export default Monitor;
+export default Assignments;
