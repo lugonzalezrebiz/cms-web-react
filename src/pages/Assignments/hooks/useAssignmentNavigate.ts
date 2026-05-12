@@ -22,6 +22,8 @@ export type NavigationAssignment = {
   state: stateAssignments;
   date: string;
   userID: number;
+  open: string | null;
+  close: string | null;
   items: { activity: string; complement: string }[];
   commentsTex: string[];
 };

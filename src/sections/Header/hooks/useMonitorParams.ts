@@ -1,5 +1,4 @@
 import { useSearchParams } from "react-router-dom";
-import { MOCK_SNAPSHOT } from "../../../components/timeline/constants";
 
 const useMonitorParams = () => {
   const [searchParams] = useSearchParams();
@@ -28,11 +27,7 @@ const useMonitorParams = () => {
     return dateParam || "----";
   })();
 
-  const { start, end } = MOCK_SNAPSHOT.timeline.times;
-  const toHHmm = (t: string) => t.slice(0, 5);
-  const timeRange = `${toHHmm(start)} - ${toHHmm(end)}`;
-
-  return { companyLabel, storeLabel, formattedDate, timeRange, companyID, locationID, monitoringID };
+  return { companyLabel, storeLabel, formattedDate, companyID, locationID, monitoringID };
 };
 
 export type MonitorParams = ReturnType<typeof useMonitorParams>;

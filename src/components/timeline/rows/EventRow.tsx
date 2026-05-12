@@ -148,12 +148,13 @@ export const EventRow = ({
   setSelectedEventPointId,
   onExtendStart,
 }: EventRowProps) => {
-  const points =
+  const points = (
     row.kind === "activity"
       ? cameraEventPoints.filter((ep) => ep.label === row.name)
       : cameraEventPoints.filter(
           (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
-        );
+        )
+  ).sort((a, b) => Number(a.reviewed) - Number(b.reviewed));
 
   return (
     <Box

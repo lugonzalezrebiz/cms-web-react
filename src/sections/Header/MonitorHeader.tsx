@@ -140,7 +140,6 @@ const SmallSize = ({
     companyLabel,
     storeLabel,
     formattedDate,
-    timeRange,
     companyID,
     locationID,
     monitoringID,
@@ -149,6 +148,10 @@ const SmallSize = ({
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
     navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const toHHmm = (t: string | null) => (t ? t.slice(0, 5) : "----");
+  const timeRange = assignment
+    ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
+    : "----";
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
@@ -307,7 +310,6 @@ const NormalSize = ({
     companyLabel,
     storeLabel,
     formattedDate,
-    timeRange,
     companyID,
     locationID,
     monitoringID,
@@ -316,6 +318,10 @@ const NormalSize = ({
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
     navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const toHHmm = (t: string | null) => (t ? t.slice(0, 5) : "----");
+  const timeRange = assignment
+    ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
+    : "----";
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
