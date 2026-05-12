@@ -1,14 +1,16 @@
-import { app, BrowserWindow, ipcMain, protocol, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, protocol } from "electron";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
 import { config } from "dotenv";
+import updater from "electron-updater";
+
+const { autoUpdater } = updater;
 
 // Load .env from the project root (works in both dev and prod)
 config({ path: path.join(app.getAppPath(), ".env") });
 
 const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
-
 // Must be called before app.whenReady()
 protocol.registerSchemesAsPrivileged([
     {
@@ -17,13 +19,80 @@ protocol.registerSchemesAsPrivileged([
     },
 ]);
 
+function setupAutoUpdater(win: BrowserWindow) {
+    if (!app.isPackaged) {
+        return;
+    }
+
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.setFeedURL({
+        provider: "generic",
+        url: "https://cmsweb.rebiz.com/downloads",
+    });
+
+    autoUpdater.on("checking-for-update", () => {
+        win.webContents.send("update:checking");
+    });
+
+    autoUpdater.on("update-available", (info) => {
+        win.webContents.send("update:available", info);
+    });
+
+    autoUpdater.on("update-not-available", (info) => {
+        win.webContents.send("update:not-available", info);
+    });
+
+    autoUpdater.on("download-progress", (progress) => {
+        win.webContents.send("update:progress", {
+            percent: progress.percent,
+            transferred: progress.transferred,
+            total: progress.total,
+            bytesPerSecond: progress.bytesPerSecond,
+        });
+    });
+
+    autoUpdater.on("update-downloaded", (info) => {
+        win.webContents.send("update:downloaded", info);
+
+        setTimeout(() => {
+            autoUpdater.quitAndInstall(false, true);
+        }, 1500);
+    });
+
+    autoUpdater.on("error", (error) => {
+        win.webContents.send("update:error", {
+            message: error.message,
+            stack: error.stack,
+        });
+    });
+
+    ipcMain.handle("update:check", async () => {
+        return autoUpdater.checkForUpdates();
+    });
+
+    ipcMain.handle("update:restart", () => {
+        autoUpdater.quitAndInstall(false, true);
+    });
+
+    setTimeout(() => {
+        autoUpdater.checkForUpdates().catch((error) => {
+            win.webContents.send("update:error", {
+                message: error.message,
+                stack: error.stack,
+            });
+        });
+    }, 3000);
+}
+
 function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
-        frame: true,
+        frame: false,
         show: false,
-        icon: APP_ICON,
+        icon: path.join(__dirname, "../../public/assets/rebiz-icon-1.png"),
         webPreferences: {
             preload: path.join(__dirname, "../preload/index.cjs"),
         },
@@ -50,7 +119,7 @@ function createWindow() {
                 return files
                     .filter((f) => f.endsWith(".jpg"))
                     .map((f) => {
-                        // filename: 20260121_080000.jpg → time part "080000"
+                        // filename: YYMMDD_HHMMSS.jpg → time part "HHMMSS"
                         const ts = f.split("_")[1]?.replace(".jpg", "");
                         if (!ts || ts.length !== 6) return null;
                         return (
@@ -61,7 +130,8 @@ function createWindow() {
                     })
                     .filter((t): t is number => t !== null)
                     .sort((a, b) => a - b);
-            } catch {
+            } catch (error) {
+                console.log(`Failed to read timestamps from ${dir}`, error);
                 return [];
             }
         },
@@ -83,6 +153,8 @@ function createWindow() {
         },
     );
 
+    setupAutoUpdater(win);
+
     win.once("ready-to-show", () => {
         win.maximize();
         win.show();
@@ -95,15 +167,7 @@ function createWindow() {
     }
 }
 
-const APP_ICON = path.join(__dirname, "../../public/assets/rebiz-icon-1.png");
-
-app.on("browser-window-created", (_, win) => {
-    win.setIcon(APP_ICON);
-});
-
 app.whenReady().then(() => {
-    //Menu.setApplicationMenu(null);
-
     // Register protocol BEFORE creating the window
     protocol.handle("dvr", async (request) => {
         const url = new URL(request.url);
@@ -119,7 +183,7 @@ app.whenReady().then(() => {
     });
 
     if (process.platform === "darwin") {
-        app.dock?.setIcon(APP_ICON);
+        app.dock?.setIcon(path.join(__dirname, "../../public/assets/rebiz-icon-1.png"));
     }
 
     createWindow();

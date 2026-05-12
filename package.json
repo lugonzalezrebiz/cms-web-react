@@ -1,57 +1,99 @@
 {
-  "name": "cmsweb",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "main": "out/main/index.js",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "electron:dev": "electron-vite dev",
-    "electron:build": "electron-vite build",
-    "electron:preview": "electron-vite preview"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@highcharts/map-collection": "^2.3.0",
-    "@mui/icons-material": "^6.5.0",
-    "@mui/material": "^6.4.3",
-    "@mui/system": "^6.4.3",
-    "@mui/x-date-pickers": "^8.3.1",
-    "@tanstack/react-query": "^5.97.0",
-    "axios": "^1.15.0",
-    "date-fns": "^4.1.0",
-    "dayjs": "^1.11.13",
-    "framer-motion": "^12.12.1",
-    "highcharts": "^12.2.0",
-    "highcharts-react-official": "^3.2.1",
-    "jwt-decode": "^4.0.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.1"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "@types/electron": "^1.4.38",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.7",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "electron": "^41.1.0",
-    "electron-builder": "^26.8.1",
-    "electron-vite": "^5.0.0",
-    "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "globals": "^16.5.0",
-    "husky": ">=6",
-    "lint-staged": ">=10",
-    "prettier": "3.5.0",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.48.0",
-    "vite": "^7.3.1"
-  }
+	"name": "cmsweb",
+	"private": true,
+	"version": "1.0.0",
+	"type": "module",
+	"main": "out/main/index.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"lint": "eslint .",
+		"preview": "vite preview",
+
+		"electron:dev": "electron-vite dev",
+		"electron:build": "electron-vite build",
+		"electron:preview": "electron-vite preview",
+
+		"pack": "npm run electron:build && electron-builder --dir",
+		"dist": "npm run electron:build && electron-builder"
+	},
+	"build": {
+		"appId": "com.rebiz.cmsweb",
+		"productName": "CMSW",
+		"directories": {
+			"output": "release",
+			"buildResources": "public/assets/app"
+		},
+		"files": [
+			"out/**/*",
+			"resources/**/*",
+			"package.json",
+			"!**/*.map",
+			"!**/node_modules/*/{test,tests,__tests__}/**",
+			"!**/node_modules/.cache/**"
+		],
+		"asar": true,
+		"mac": { "icon": "public/assets/app/icons/darwin/icon.icns" },
+		"win": {
+			"target": ["nsis"],
+			"icon": "public/assets/app/icons/win32/icon.ico",
+			"forceCodeSigning": false
+		},
+		"linux": { "icon": "public/assets/app/icons/web/icon.png" },
+		"nsis": {
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"shortcutName": "CMSW"
+		},
+		"publish": [
+			{
+				"provider": "generic",
+				"url": "https://cmsweb.rebiz.com/downloads"
+			}
+		]
+	},
+	"dependencies": {
+		"@emotion/react": "^11.14.0",
+		"@emotion/styled": "^11.14.0",
+		"@highcharts/map-collection": "^2.3.0",
+		"@mui/icons-material": "^6.5.0",
+		"@mui/material": "^6.4.3",
+		"@mui/system": "^6.4.3",
+		"@mui/x-date-pickers": "^8.3.1",
+		"@tanstack/react-query": "^5.97.0",
+		"axios": "^1.15.0",
+		"date-fns": "^4.1.0",
+		"dayjs": "^1.11.13",
+		"electron-updater": "^6.8.3",
+		"framer-motion": "^12.12.1",
+		"highcharts": "^12.2.0",
+		"highcharts-react-official": "^3.2.1",
+		"jwt-decode": "^4.0.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"react-router-dom": "^7.13.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.39.1",
+		"@types/electron": "^1.4.38",
+		"@types/node": "^24.10.1",
+		"@types/react": "^19.2.7",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/plugin-react": "^5.1.1",
+		"electron": "^41.1.0",
+		"electron-builder": "^26.8.1",
+		"electron-vite": "^5.0.0",
+		"eslint": "^9.39.1",
+		"eslint-plugin-react-hooks": "^7.0.1",
+		"eslint-plugin-react-refresh": "^0.4.24",
+		"globals": "^16.5.0",
+		"husky": ">=6",
+		"lint-staged": ">=10",
+		"prettier": "3.5.0",
+		"typescript": "~5.9.3",
+		"typescript-eslint": "^8.48.0",
+		"vite": "^7.3.1"
+	}
 }

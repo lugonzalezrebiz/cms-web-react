@@ -12,7 +12,7 @@ import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { USE_STATIC_IDS, MONITORING_ID } from "../../config";
 
-const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20260407&monitoringID=${MONITORING_ID}`;
+const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20251224&monitoringID=${MONITORING_ID}`;
 const buildRedirect = (
   companyID: number,
   locationID: number,

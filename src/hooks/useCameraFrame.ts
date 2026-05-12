@@ -20,13 +20,13 @@ function timestampToSec(ts: string): number {
     return -1;
 }
 
-export const useCameraFrame=(params: {
+export function useCameraFrame(params: {
     company: number;
     location: number;
     date: string;
     camera: number;
     timestamp: string; // HH:mm:ss
-})=> {
+}) {
     const { company, location, date, camera, timestamp } = params;
 
     // Load file index once per camera — cached at module level
@@ -48,7 +48,7 @@ export const useCameraFrame=(params: {
             if (snapped === null) { setSrc(""); return; }
 
             const ts = secToCompact(snapped);
-            setSrc(`dvr://local/${company}/${location}/${date}/${camera}/${date}_${ts}.jpg`);
+            setSrc(`dvr://local/${company}/${location}/${date}/${camera}/${date.slice(2)}_${ts}.jpg`);
         }, 50);
 
         return () => clearTimeout(debounceRef.current);

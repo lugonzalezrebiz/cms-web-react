@@ -64,8 +64,7 @@ export const useSaveMonitoring = ({
 }) => {
   const { user, token } = useAuth();
   const { mutate } = usePost<SaveResponse, SavePayload>(
-    `monitoring/${monitoringID}/save2`,
-    { onSuccess: () => alert("Monitoring saved successfully.") }
+    `monitoring/${monitoringID}/save2`
   );
 
   const buildPayload = useCallback((): SavePayload => {
@@ -157,7 +156,6 @@ export const useSaveMonitoring = ({
     const savedID = sessionStorage.getItem("monitoringSavedOnReload");
     if (savedID === monitoringID) {
       sessionStorage.removeItem("monitoringSavedOnReload");
-      alert("Monitoring saved successfully.");
     }
   }, [monitoringID]);
 

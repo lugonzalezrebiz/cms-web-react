@@ -86,7 +86,7 @@ export const useTimelineBodyState = ({
     setOpenDialog(true);
   };
 
-  const STEP_SEC = 180;
+  const STEP_SEC = 5;
 
   useEffect(() => {
     if (!isPlaying) return;

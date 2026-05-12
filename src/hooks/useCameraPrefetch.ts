@@ -59,7 +59,7 @@ export const useCameraPrefetch = ({
       for (let i = start; i <= end; i++) {
         if (i === pos) continue;
         const ts = formatTimestamp(index[i]).replace(/:/g, "");
-        new Image().src = `dvr://local/${company}/${location}/${date}/${camera}/${date}_${ts}.jpg`;
+        new Image().src = `dvr://local/${company}/${location}/${date}/${camera}/${date.slice(2)}_${ts}.jpg`;
       }
     });
 
