@@ -18,7 +18,10 @@ import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery from "../../hooks/useNavigate";
-import { useMonitorState, useCameraGroup } from "../../contexts/useMonitorContext";
+import {
+  useMonitorState,
+  useCameraGroup,
+} from "../../contexts/useMonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import useTrackerOptions from "./hooks/useTrackerOptions";
@@ -163,7 +166,7 @@ const SmallSize = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, showFinalizeButton } = useMonitorState();
+  const { handleDone } = useMonitorState();
   const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
     useCameraGroup();
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
@@ -237,9 +240,7 @@ const SmallSize = ({
               />
 
               <Box>
-                <Button onClick={handleDone} disabled={!showFinalizeButton}>
-                  Done
-                </Button>
+                <Button onClick={handleDone}>Done</Button>
               </Box>
             </Box>
           </Box>
@@ -331,7 +332,7 @@ const NormalSize = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, showFinalizeButton } = useMonitorState();
+  const { handleDone } = useMonitorState();
   const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
     useCameraGroup();
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
@@ -415,9 +416,7 @@ const NormalSize = ({
               />
 
               <Box>
-                <Button onClick={handleDone} disabled={!showFinalizeButton}>
-                  Done
-                </Button>
+                <Button onClick={handleDone}>Done</Button>
               </Box>
             </Box>
           </Box>

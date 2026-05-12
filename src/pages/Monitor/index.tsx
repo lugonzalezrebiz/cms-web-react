@@ -101,7 +101,7 @@ const Monitor = () => {
   );
 
   const sessionDate = useSessionDate();
-  const { handleDone } = useSaveMonitoring({
+  const { handleSave, handleDone } = useSaveMonitoring({
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
@@ -110,7 +110,7 @@ const Monitor = () => {
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);
 
-  useAutoSaveOnUnmount(handleDone);
+  useAutoSaveOnUnmount(handleSave);
 
   const timelineProps = {
     snapshot,

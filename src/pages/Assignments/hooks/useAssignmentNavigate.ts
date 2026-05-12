@@ -1,5 +1,5 @@
 import useNavigateWithQuery from "../../../hooks/useNavigate";
-//import { usePostCallback } from "../../../hooks/useApi";
+import { usePostCallback } from "../../../hooks/useApi";
 import { USE_STATIC_IDS, MONITORING_ID } from "../../../config";
 
 const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20260407&monitoringID=${MONITORING_ID}`;
@@ -14,7 +14,7 @@ const buildRedirect = (
 
 export const useAssignmentNavigate = () => {
   const navigate = useNavigateWithQuery();
-  //const postCallback = usePostCallback();
+  const postCallback = usePostCallback();
 
   const handleNavigate = async (a: {
     location: number;
@@ -26,9 +26,9 @@ export const useAssignmentNavigate = () => {
     const url = USE_STATIC_IDS
       ? STATIC_REDIRECT
       : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID);
-    // if (a.statusName === "resource.review.ready") {
-    //   await postCallback(`monitoring/${a.monitoringID}/review/start`);
-    // }
+     if (a.statusName === "resource.review.ready") {
+       await postCallback(`monitoring/${a.monitoringID}/review/start`);
+     }
     navigate(url);
   };
 

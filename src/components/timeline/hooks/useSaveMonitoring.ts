@@ -63,8 +63,11 @@ export const useSaveMonitoring = ({
   monitoringID: string;
 }) => {
   const { user, token } = useAuth();
-  const { mutate } = usePost<SaveResponse, SavePayload>(
+  const { mutateAsync: mutateSave } = usePost<SaveResponse, SavePayload>(
     `monitoring/${monitoringID}/save2`
+  );
+  const { mutateAsync: mutateFinish } = usePost<unknown, void>(
+    `monitoring/${monitoringID}/review/finish`
   );
 
   const buildPayload = useCallback((): SavePayload => {
@@ -159,9 +162,14 @@ export const useSaveMonitoring = ({
     }
   }, [monitoringID]);
 
-  const handleDone = useCallback(() => {
-    mutate(buildPayloadRef.current());
-  }, [mutate]);
+  const handleSave = useCallback(() => {
+    mutateSave(buildPayloadRef.current());
+  }, [mutateSave]);
 
-  return { handleDone };
+  const handleDone = useCallback(async () => {
+    await mutateSave(buildPayloadRef.current());
+    await mutateFinish();
+  }, [mutateSave, mutateFinish]);
+
+  return { handleSave, handleDone };
 };
