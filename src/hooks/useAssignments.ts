@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 import { usePostQuery } from "./useApi";
 import type { stateAssignments } from "../pages/Assignments/components/stateColors";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 const VALID_STATES: stateAssignments[] = [
   "Ready", "Assigned", "Started", "Paused", "Resumed", "Completed", "Error", "Reported",
@@ -66,14 +69,14 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
     location: a.companyID,
     store: a.locationID,
     userID: a.userID,
-    date: dayjs(a.date).format("MMMM DD - YYYY"),
-    rawDate: dayjs(a.date).format("YYYYMMDD"),
+    date: dayjs.utc(a.date).format("MMMM DD - YYYY"),
+    rawDate: dayjs.utc(a.date).format("YYYYMMDD"),
     comments: a.details.comments ? 1 : 0,
     monitoringID: a.monitoringID,
     open: a.details.open,
     close: a.details.close,
     items: [
-      { activity: "Date", complement: dayjs(a.date).format("MMM DD, YYYY") },
+      { activity: "Date", complement: dayjs.utc(a.date).format("MMM DD, YYYY") },
       { activity: "Open", complement: formatTime(a.details.open) },
       { activity: "Close", complement: formatTime(a.details.close) },
       { activity: "DVR", complement: formatTime(a.details.dvr) },
