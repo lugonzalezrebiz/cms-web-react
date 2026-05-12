@@ -40,7 +40,10 @@ const Monitor = () => {
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
   const cameras = useTrackerCameras(groupID, trackerID);
-  const sortedCameras = [...cameras].sort((a, b) => a.id - b.id);
+  const sortedCameras = useMemo(
+    () => [...cameras].sort((a, b) => a.id - b.id),
+    [cameras],
+  );
   const { trackers } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
@@ -113,32 +116,57 @@ const Monitor = () => {
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);
 
-  const timelineProps = {
-    snapshot,
-    cameraEventPoints: allEventPoints,
-    onMarkerChange: handleMarkerChange,
-    markerTimeSec,
-    targetMarkerSec:
-      cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
-    onUpdateEventPoint: handleUpdateEventPoint,
-    onPopOut: handlePopOut,
-    headerLabel: "Compliance Violations",
-    onUndo: handleUndo,
-    onRedo: handleRedo,
-    canUndo,
-    canRedo,
-    onRemoveEventPoint: handleDeleteEventPoint,
-    viewMode: "activity" as const,
-    menuItems: trackers.map((t) => ({
-      id: t.id,
-      name: t.name,
-      label: t.name,
-      onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
-    })),
-    rangeSessions,
-  } as const;
+  const menuItems = useMemo(
+    () =>
+      trackers.map((t) => ({
+        id: t.id,
+        name: t.name,
+        label: t.name,
+        onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
+      })),
+    [trackers, handleActivitySelect],
+  );
 
-  const expandedCameraTags = (() => {
+  const timelineProps = useMemo(
+    () => ({
+      snapshot,
+      cameraEventPoints: allEventPoints,
+      onMarkerChange: handleMarkerChange,
+      markerTimeSec,
+      targetMarkerSec:
+        cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
+      onUpdateEventPoint: handleUpdateEventPoint,
+      onPopOut: handlePopOut,
+      headerLabel: "Compliance Violations" as const,
+      onUndo: handleUndo,
+      onRedo: handleRedo,
+      canUndo,
+      canRedo,
+      onRemoveEventPoint: handleDeleteEventPoint,
+      viewMode: "activity" as const,
+      menuItems,
+      rangeSessions,
+    }),
+    [
+      snapshot,
+      allEventPoints,
+      handleMarkerChange,
+      markerTimeSec,
+      cameraGroup,
+      posMarkerSec,
+      handleUpdateEventPoint,
+      handlePopOut,
+      handleUndo,
+      handleRedo,
+      canUndo,
+      canRedo,
+      handleDeleteEventPoint,
+      menuItems,
+      rangeSessions,
+    ],
+  );
+
+  const expandedCameraTags = useMemo(() => {
     if (expandedCamera === null) return [];
     const seen = new Set<string>();
     return allEventPoints
@@ -160,7 +188,7 @@ const Monitor = () => {
         reviewed: ep.reviewed,
         onClick: () => {},
       }));
-  })();
+  }, [allEventPoints, expandedCamera, sortedCameras, markerSec]);
 
   return (
     <Box

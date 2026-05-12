@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
+import { memo, useMemo } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
@@ -134,7 +135,7 @@ export interface EventRowProps {
   onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
-export const EventRow = ({
+export const EventRow = memo(({
   row,
   rowIndex,
   cameraEventPoints,
@@ -148,13 +149,16 @@ export const EventRow = ({
   setSelectedEventPointId,
   onExtendStart,
 }: EventRowProps) => {
-  const points = (
-    row.kind === "activity"
-      ? cameraEventPoints.filter((ep) => ep.label === row.name)
-      : cameraEventPoints.filter(
-          (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
-        )
-  ).sort((a, b) => Number(a.reviewed) - Number(b.reviewed));
+  const points = useMemo(
+    () =>
+      (row.kind === "activity"
+        ? cameraEventPoints.filter((ep) => ep.label === row.name)
+        : cameraEventPoints.filter(
+            (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
+          )
+      ).sort((a, b) => Number(a.reviewed) - Number(b.reviewed)),
+    [cameraEventPoints, row.kind, row.name, row.parentCameraId],
+  );
 
   return (
     <Box
@@ -186,4 +190,4 @@ export const EventRow = ({
       ))}
     </Box>
   );
-};
+}) as React.FC<EventRowProps>;
