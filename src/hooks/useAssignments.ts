@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { usePostQuery } from "./useApi";
-import type { stateAssignments } from "../pages/Assignments/components/Card";
+import type { stateAssignments } from "../pages/Assignments/components/stateColors";
 
 const VALID_STATES: stateAssignments[] = [
   "Ready", "Assigned", "Started", "Paused", "Resumed", "Completed", "Error", "Reported",

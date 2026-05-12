@@ -8,7 +8,7 @@ import useAuth from "./hooks/useAuth";
 import type { ReactNode } from "react";
 import AdminForm from "./pages/AdminForm";
 import { REVIEWER_ROLE, ADMIN_ROLE, AGENT_ROLE } from "./config";
-import Assigments from "./pages/Assignments";
+import Assignments from "./pages/Assignments";
 import Monitor from "./pages/Monitor";
 import MonitorTimeline from "./pages/MonitorTimeline";
 import MonitorHeader from "./sections/Header/MonitorHeader";
@@ -45,7 +45,7 @@ function App() {
     document.documentElement.style.margin = "0";
     document.documentElement.style.padding = "0";
     document.documentElement.style.height = "100%";
-    document.documentElement.style.backgroundColor = Colors.ghostoffWhite;
+    document.documentElement.style.backgroundColor = Colors.ghostOffWhite;
     const root = document.getElementById("root");
     if (root) {
       root.style.height = "100%";
@@ -110,7 +110,7 @@ function App() {
                   />
                 }
               >
-                <Assigments />
+                <Assignments />
               </RenderPage>
             </ProtectedRole>
           )

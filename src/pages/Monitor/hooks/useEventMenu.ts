@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function useEventMenu(handleAddMenuItem: (label: string) => void) {
+export const useEventMenu =(handleAddMenuItem: (label: string) => void) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [input, setInput] = useState("");
 

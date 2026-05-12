@@ -14,5 +14,7 @@ public/dist
 .vercel
 **/node_modules
 docker-compose.yml
-CLAUDE.md
 .claude
+.env
+
+release

@@ -2,10 +2,7 @@ import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
-import {
-  type stateAssignments,
-  stateColors,
-} from "../pages/Assignments/components/Card";
+import { type stateAssignments, stateColors } from "../pages/Assignments/components/stateColors";
 
 export interface HeaderInfo {
   title: string;

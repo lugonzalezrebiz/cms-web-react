@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
-export function useTimelinePopout(
+export const useTimelinePopout =(
   onMarkerChange: (sec: number) => void,
   markerTimeSec: number | null,
-) {
+) =>{
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
   const popoutRef = useRef<Window | null>(null);

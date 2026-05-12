@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function useCarousel(count: number, onChange?: (index: number) => void) {
+export const useCarousel=(count: number, onChange?: (index: number) => void)=> {
   const [current, setCurrent] = useState(0);
 
   const goTo = (index: number) => {

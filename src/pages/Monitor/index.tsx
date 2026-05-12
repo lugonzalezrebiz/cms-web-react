@@ -1,7 +1,5 @@
 import { Box } from "@mui/system";
-import { useState, useMemo, useEffect, useRef } from "react";
-import { useTrackersByCamera } from "../../hooks/useTrackersByCamera";
-import type { CameraContextMenuItem } from "../../components/CameraOverlayMenu";
+import { useState } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
@@ -19,10 +17,12 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
+import { useAutoSaveOnUnmount } from "./hooks/useAutoSaveOnUnmount";
+import { useCameraMenuItems } from "./hooks/useCameraMenuItems";
 import {
   useRegisterMonitorActions,
   useCameraGroup,
-} from "../../contexts/MonitorContext";
+} from "../../contexts/useMonitorContext";
 import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 
 const Monitor = () => {
@@ -59,23 +59,7 @@ const Monitor = () => {
     canRedo,
   } = useCameraEventPoints(monitoringID);
 
-  const fetchedTrackers = useTrackersByCamera(
-    company,
-    location,
-    (openMenuCamera ?? 0) + 1,
-    openMenuCamera !== null,
-  );
-  const cameraMenuItems = useMemo<CameraContextMenuItem[]>(
-    () => [
-      ...fetchedTrackers.map((t) => ({
-        id: t.id,
-        name: t.name,
-        label: t.name,
-        onClick: (idx: number) => handleActivitySelect(idx, t.name, t.mode),
-      })),
-    ],
-    [fetchedTrackers, handleActivitySelect],
-  );
+  const cameraMenuItems = useCameraMenuItems(company, location, openMenuCamera, handleActivitySelect);
 
   const {
     snapshot,
@@ -117,20 +101,7 @@ const Monitor = () => {
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);
 
-  const handleDoneRef = useRef(handleDone);
-  useEffect(() => {
-    handleDoneRef.current = handleDone;
-  }, [handleDone]);
-  useEffect(() => {
-    let active = false;
-    const id = setTimeout(() => {
-      active = true;
-    }, 0);
-    return () => {
-      clearTimeout(id);
-      if (active) handleDoneRef.current();
-    };
-  }, []);
+  useAutoSaveOnUnmount(handleDone);
 
   const timelineProps = {
     snapshot,
@@ -190,7 +161,7 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box sx={{ flex: 6, minHeight: 0, height: 0 }}>
+      <Box sx={{ flex: 7, minHeight: 0, height: 0 }}>
         <CameraLayout
           count={cameras.length}
           media="/assets/camera/Cam thumbnail.svg"
@@ -209,25 +180,17 @@ const Monitor = () => {
           onExpandCamera={handleExpandCamera}
         />
       </Box>
+      {/* && !expandedCamera */}
 
-      {!timelinePopped && (
-        <Box sx={{ flex: 4, minHeight: 0 }}>
+      {!timelinePopped && !expandedCamera && (
+        <Box sx={{ flex: 3, minHeight: 0 }}>
           <TimeLine {...timelineProps} />
         </Box>
       )}
 
-      {expandedCamera !== null && (
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            width: "100%",
-            height: "34vh",
-            zIndex: 2000,
-          }}
-        >
-          {!timelinePopped && <TimeLine {...timelineProps} />}
+      {expandedCamera !== null && !timelinePopped && (
+        <Box sx={{ flex: 3, minHeight: 0, zIndex: 2000 }}>
+          <TimeLine {...timelineProps} />
         </Box>
       )}
 

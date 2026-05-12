@@ -5,16 +5,17 @@ import type { SalesTransaction } from "./useSalesTransactions";
 
 export type AttendedValue = "attended" | "unattended";
 
-function toMarkerSec(timestamp: string): number {
+const toMarkerSec = (timestamp: string): number => {
   const [, time] = timestamp.split(" ");
   const [h, m, s] = (time ?? "00:00:00").split(":").map(Number);
   return h * 3600 + m * 60 + (s ?? 0);
-}
+};
 
-export function usePosCarousel(
+export const usePosCarousel = (
   transactions: SalesTransaction[],
   setPosMarkerSec: (sec: number | null) => void,
-) {
+  monitoringID: string,
+) => {
   const [attended, setAttended] = useState<AttendedValue | null>(null);
 
   const toggleAttended = (value: AttendedValue) =>
@@ -49,6 +50,9 @@ export function usePosCarousel(
         startSec: currentTimeSec,
         endSec: currentTimeSec,
         label: "Pay Station Attendance",
+        reviewed: false,
+        value: false,
+        mode: "POINT" as const,
       },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,6 +62,7 @@ export function usePosCarousel(
     trackers: [{ id: 8, name: "Pay Station Attendance", attended: attended === "attended" }],
     eventPoints: carouselEventPoints,
     sessionDate: carouselSessionDate,
+    monitoringID,
   });
 
   return {

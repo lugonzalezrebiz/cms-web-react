@@ -48,7 +48,7 @@ export function useCameraFrame(params: {
             if (snapped === null) { setSrc(""); return; }
 
             const ts = secToCompact(snapped);
-            setSrc(`dvr://local/${company}/${location}/${date}/${camera}/${date}_${ts}.jpg`);
+            setSrc(`dvr://local/${company}/${location}/${date}/${camera}/${date.slice(2)}_${ts}.jpg`);
         }, 50);
 
         return () => clearTimeout(debounceRef.current);

@@ -22,6 +22,7 @@ interface CameraItemProps {
   onMenuOpen?: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
   cameraLabel?: boolean;
+  disableOverlay?: boolean;
   // Real image props — when provided, loads from DVR via dvr:// protocol
   cameraId?: number;
   cameraName?: string;
@@ -39,6 +40,7 @@ export const CameraItem = ({
   tags,
   contextMenuItems,
   onMenuOpen,
+  disableOverlay = false,
   cameraId,
   cameraName,
   company,
@@ -68,7 +70,7 @@ export const CameraItem = ({
           company: company!,
           location: location!,
           date: date!,
-          camera: cameraId! - 1,
+          camera: cameraId!,
           timestamp: timestamp!,
         }
       : { company: 0, location: 0, date: "", camera: 0, timestamp: "" },
@@ -79,7 +81,7 @@ export const CameraItem = ({
   return (
     <Box
       onClick={(e) => {
-        handleMenuOpen(e);
+        if (!disableOverlay) handleMenuOpen(e);
       }}
       sx={{
         width: "100%",
@@ -237,17 +239,19 @@ export const CameraItem = ({
           style={{ cursor: "pointer" }}
           src={!isExpanded ? "../assets/expand-03.svg" : " "}
           alt={!isExpanded ? "Expand camera" : ""}
-          onClick={() => expandCamera(index)}
+          onClick={(e) => { e.stopPropagation(); expandCamera(index); }}
         />
       </Box>
 
-      <CameraOverlayMenu
-        open={showMenu}
-        onClose={closeMenu}
-        items={contextMenuItems}
-        cameraIndex={index}
-        title="Select a Compliance Violations"
-      />
+      {!disableOverlay && (
+        <CameraOverlayMenu
+          open={showMenu}
+          onClose={closeMenu}
+          items={contextMenuItems}
+          cameraIndex={index}
+          title="Select a Compliance Violations"
+        />
+      )}
     </Box>
   );
 };

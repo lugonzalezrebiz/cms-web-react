@@ -2,10 +2,10 @@ import { useMemo } from "react";
 import type { TimelineSnapshot, CameraEventPoint } from "../../../components/timeline/types";
 import type { SalesTransaction } from "./useSalesTransactions";
 
-export function usePosData(
+export const usePosData = (
   transactions: SalesTransaction[],
   snapshot: TimelineSnapshot,
-) {
+) => {
   const posSnapshot = useMemo(() => {
     const seen = new Set<number>();
     const tracks = transactions
@@ -35,6 +35,9 @@ export function usePosData(
         startSec: Math.max(0, timeSec - 120),
         endSec: timeSec + 120,
         label: tx.zone.name,
+        reviewed: false,
+        value: false,
+        mode: "POINT" as const,
       };
     }),
   [transactions]);

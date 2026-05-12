@@ -31,7 +31,7 @@ function timeAgo(dateStr: string): string {
   return then.format("MMM D, YYYY");
 }
 
-export function useNotifications() {
+export const useNotifications=()=> {
   const { data, isPending, error } = useGet<NotificationsResponse>(
     "notification/all",
     undefined,

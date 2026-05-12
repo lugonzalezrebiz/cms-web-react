@@ -87,11 +87,12 @@ export const useSaveMonitoring = ({
       const reviewed = isReviewer ? true : ep.reviewed;
       const reviewDate = isReviewer ? now : null;
 
-      if (ep.endSec > ep.timeSec) {
+      if (ep.mode === "RANGE") {
+        const endSec = ep.endSec > ep.timeSec ? ep.endSec : ep.timeSec;
         group.entries.push({
           type: "RANGE",
           start: `${sessionDate} ${secToTimeString(ep.timeSec)}`,
-          end: `${sessionDate} ${secToTimeString(ep.endSec)}`,
+          end: `${sessionDate} ${secToTimeString(endSec)}`,
           zoneId: null,
           reviewed,
           review_disagree: false,
@@ -155,7 +156,6 @@ export const useSaveMonitoring = ({
     const savedID = sessionStorage.getItem("monitoringSavedOnReload");
     if (savedID === monitoringID) {
       sessionStorage.removeItem("monitoringSavedOnReload");
-      alert("Monitoring saved successfully.");
     }
   }, [monitoringID]);
 

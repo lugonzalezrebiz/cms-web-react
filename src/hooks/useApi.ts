@@ -111,6 +111,7 @@ export const useGetCallback = <T = unknown>() => {
 export const usePostCallback = <T = unknown>(options?: { invalidateKey?: string[] }) => {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const invalidateKey = options?.invalidateKey;
   return useCallback(
     async (url: string, body?: unknown, config?: RequestConfig): Promise<T> => {
       const data = await apiClient
@@ -122,12 +123,12 @@ export const usePostCallback = <T = unknown>(options?: { invalidateKey?: string[
           },
         })
         .then((res) => res.data);
-      if (options?.invalidateKey) {
-        queryClient.invalidateQueries({ queryKey: options.invalidateKey });
+      if (invalidateKey) {
+        queryClient.invalidateQueries({ queryKey: invalidateKey });
       }
       return data;
     },
-    [token, queryClient, options?.invalidateKey],
+    [token, queryClient, invalidateKey],
   );
 };
 

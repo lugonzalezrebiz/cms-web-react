@@ -26,7 +26,7 @@ interface SalesResponse {
   transactions: SalesTransaction[];
 }
 
-export function useSalesTransactions(monitoringID: string) {
+export const useSalesTransactions=(monitoringID: string)=> {
   const { data, isPending: loading, error } = useGet<SalesResponse>(
     `sales/${monitoringID}/list`,
     {},
