@@ -8,7 +8,6 @@ import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
 import useTrackers from "../../hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
-import { useMenuItems } from "./hooks/useMenuItems";
 // import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
@@ -41,6 +40,7 @@ const Monitor = () => {
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
   const cameras = useTrackerCameras(groupID, trackerID);
+  const sortedCameras = [...cameras].sort((a, b) => a.id - b.id);
   const { trackers } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
@@ -62,6 +62,7 @@ const Monitor = () => {
   } = useCameraEventPoints(monitoringID);
 
   const cameraMenuItems = useCameraMenuItems(company, location, openMenuCamera, handleActivitySelect);
+  const expandedCameraMenuItems = useCameraMenuItems(company, location, expandedCamera, handleActivitySelect);
 
   const {
     snapshot,
@@ -83,8 +84,6 @@ const Monitor = () => {
     cameraGroup,
     markerSec,
   );
-
-  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
@@ -142,7 +141,7 @@ const Monitor = () => {
     return allEventPoints
       .filter(
         (ep) =>
-          ep.cameraId === 1 + expandedCamera &&
+          ep.cameraId === sortedCameras[expandedCamera]?.id &&
           markerSec >= ep.startSec &&
           markerSec <= ep.endSec,
       )
@@ -179,7 +178,7 @@ const Monitor = () => {
           onMenuOpen={setOpenMenuCamera}
           cameraEventPoints={allEventPoints}
           markerSec={markerSec}
-          onRemoveEventPoint={handleRemoveEventPoint}
+          onRemoveEventPoint={handleDeleteEventPoint}
           cameras={cameras}
           company={company}
           location={location}
@@ -212,9 +211,9 @@ const Monitor = () => {
         media="/assets/camera/Cam thumbnail.svg"
         expandCamera={handleExpandCamera}
         tags={expandedCameraTags}
-        contextMenuItems={allMenuItems}
-        cameraId={cameras[expandedCamera ?? 0]?.id}
-        cameraName={cameras[expandedCamera ?? 0]?.name}
+        contextMenuItems={expandedCameraMenuItems}
+        cameraId={sortedCameras[expandedCamera ?? 0]?.id}
+        cameraName={sortedCameras[expandedCamera ?? 0]?.name}
         company={company}
         location={location}
         date={date}
