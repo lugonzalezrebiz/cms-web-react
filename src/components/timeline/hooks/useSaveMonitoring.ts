@@ -55,16 +55,22 @@ export const useSaveMonitoring = ({
   rangeEvents = [],
   sessionDate,
   monitoringID,
+  onSuccess,
 }: {
   trackers: { id: number; name: string; attended?: boolean }[];
   eventPoints: CameraEventPoint[];
   rangeEvents?: RangeEvent[];
   sessionDate: string;
   monitoringID: string;
+  onSuccess?: () => void;
 }) => {
   const { user, token } = useAuth();
   const { mutateAsync: mutateSave } = usePost<SaveResponse, SavePayload>(
-    `monitoring/${monitoringID}/save2`
+    `monitoring/${monitoringID}/save2`, {
+      onSuccess: () => {
+        onSuccess?.();
+      },
+    },
   );
   const { mutateAsync: mutateFinish } = usePost<unknown, void>(
     `monitoring/${monitoringID}/review/finish`
@@ -130,7 +136,6 @@ export const useSaveMonitoring = ({
         processDate: null,
       });
     }
-
     return { events: Array.from(grouped.values()) };
   }, [trackers, eventPoints, rangeEvents, sessionDate, user]);
 

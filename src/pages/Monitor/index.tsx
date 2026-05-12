@@ -59,6 +59,7 @@ const Monitor = () => {
     handleRedo,
     canUndo,
     canRedo,
+    cleanUp
   } = useCameraEventPoints(monitoringID);
 
   const cameraMenuItems = useCameraMenuItems(company, location, openMenuCamera, handleActivitySelect);
@@ -106,6 +107,7 @@ const Monitor = () => {
     eventPoints: cameraEventPoints,
     sessionDate,
     monitoringID,
+    onSuccess: cleanUp,
   });
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);

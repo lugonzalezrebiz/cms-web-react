@@ -83,6 +83,11 @@ export const useCameraEventPoints = (monitoringID: string) => {
     };
   }, [monitoringID]);
 
+  const cleanUp = () => {
+    sessionStorage.removeItem(storageKey(monitoringID));
+    setCameraEventPoints(readFromStorage(monitoringID))
+  };
+
   const pushHistory = (snapshot: CameraEventPoint[]) => {
     historyRef.current = [...historyRef.current, snapshot];
     futureRef.current = [];
@@ -199,5 +204,6 @@ export const useCameraEventPoints = (monitoringID: string) => {
     handleRedo,
     canUndo,
     canRedo,
+    cleanUp,
   };
 };
