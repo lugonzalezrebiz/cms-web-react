@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
@@ -69,7 +69,10 @@ const Monitor = () => {
     eventPoints: preloadedEventPoints,
     rangeSessions,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+  const allEventPoints = useMemo(
+    () => [...cameraEventPoints, ...preloadedEventPoints],
+    [cameraEventPoints, preloadedEventPoints],
+  );
 
   const { handleDeleteEventPoint } = useDeleteEventPoint(
     monitoringID,

@@ -12,15 +12,18 @@ export const useAutoSelectOnEventPoint = ({
   setITrackId,
   setSelectedTracks,
 }: UseAutoSelectOnEventPointParams) => {
-  const prevEventCountRef = useRef(cameraEventPoints?.length ?? 0);
+  const prevUserCountRef = useRef(
+    cameraEventPoints?.filter((ep) => !ep.entryIds).length ?? 0,
+  );
 
   useEffect(() => {
-    const count = cameraEventPoints?.length ?? 0;
-    if (count > prevEventCountRef.current && cameraEventPoints?.length) {
-      const last = cameraEventPoints[cameraEventPoints.length - 1];
+    const userPoints = cameraEventPoints?.filter((ep) => !ep.entryIds) ?? [];
+    const count = userPoints.length;
+    if (count > prevUserCountRef.current && count > 0) {
+      const last = userPoints[userPoints.length - 1];
       setITrackId(last.cameraId);
       setSelectedTracks(new Set());
     }
-    prevEventCountRef.current = count;
+    prevUserCountRef.current = count;
   }, [cameraEventPoints]); // eslint-disable-line react-hooks/exhaustive-deps
 };

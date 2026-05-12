@@ -73,7 +73,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
       if (entry.type === "POINT") {
         const timeSec = toSec(entry.timestamp);
         points.push({
-          id: points.length,
+          id: Number(entry.id),
           cameraId: event.cameraId,
           timeSec,
           startSec: Math.max(0, timeSec - 120),
@@ -88,7 +88,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
         const timeSec = toSec(entry.start);
         const endSec = toSec(entry.end);
         points.push({
-          id: points.length,
+          id: Number(entry.startId),
           cameraId: event.cameraId,
           timeSec,
           startSec: timeSec,
@@ -135,6 +135,8 @@ export function useMonitoring(
 
   const { data, isPending: loading, error: queryError } = useGet<MonitoringResponse>(
     `monitoring/${monitoringID}/load2`,
+    undefined,
+    { refetchOnWindowFocus: false },
   );
 
   const monitoring = data?.success ? data.monitoring : null;
