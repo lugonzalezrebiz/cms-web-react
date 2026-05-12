@@ -17,9 +17,15 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>(
-    () => readFromStorage(monitoringID),
-  );
+  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>(() => {
+    const savedOnReload = sessionStorage.getItem("monitoringSavedOnReload");
+    if (savedOnReload === monitoringID) {
+      sessionStorage.removeItem("monitoringSavedOnReload");
+      sessionStorage.removeItem(storageKey(monitoringID));
+      return [];
+    }
+    return readFromStorage(monitoringID);
+  });
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
@@ -28,6 +34,8 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
+  // readFromStorage here is consistent with useState above: if flag was found,
+  // storage was already cleared, so this returns []; otherwise returns stored data.
   const currentPointsRef = useRef<CameraEventPoint[]>(readFromStorage(monitoringID));
 
   const syncChannelRef = useRef<BroadcastChannel | null>(null);

@@ -17,7 +17,6 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
-import { useAutoSaveOnUnmount } from "./hooks/useAutoSaveOnUnmount";
 import { useDeleteEventPoint } from "./hooks/useDeleteEventPoint";
 import { useCameraMenuItems } from "./hooks/useCameraMenuItems";
 import {
@@ -102,7 +101,7 @@ const Monitor = () => {
   );
 
   const sessionDate = useSessionDate();
-  const { handleSave, handleDone } = useSaveMonitoring({
+  const { handleDone } = useSaveMonitoring({
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
@@ -111,8 +110,6 @@ const Monitor = () => {
   });
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);
-
-  useAutoSaveOnUnmount(handleSave);
 
   const timelineProps = {
     snapshot,

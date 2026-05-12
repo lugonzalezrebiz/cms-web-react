@@ -4,6 +4,7 @@ import useAuth from "../../../hooks/useAuth";
 import { REVIEWER_ROLE, URL_API } from "../../../config";
 import { secToTimeString } from "./useTimelineMarker";
 import type { CameraEventPoint } from "../types";
+import { useNavigatePlain } from "../../../hooks/useNavigate";
 
 interface PointEntry {
   type: "POINT";
@@ -64,6 +65,7 @@ export const useSaveMonitoring = ({
   monitoringID: string;
   onSuccess?: () => void;
 }) => {
+  const navigate = useNavigatePlain();
   const { user, token } = useAuth();
   const { mutateAsync: mutateSave } = usePost<SaveResponse, SavePayload>(
     `monitoring/${monitoringID}/save2`, {
@@ -142,9 +144,16 @@ export const useSaveMonitoring = ({
   const buildPayloadRef = useRef(buildPayload);
   useEffect(() => { buildPayloadRef.current = buildPayload; }, [buildPayload]);
 
+  const savedRef = useRef(false);
+
   useEffect(() => {
+    savedRef.current = false;
+    let active = false;
+    const id = setTimeout(() => { active = true; }, 0);
+
     const onBeforeUnload = () => {
-      const payload = buildPayloadRef.current();
+      savedRef.current = true;
+      sessionStorage.setItem("monitoringSavedOnReload", monitoringID);
       fetch(`${URL_API}monitoring/${monitoringID}/save2`, {
         method: "POST",
         keepalive: true,
@@ -152,29 +161,43 @@ export const useSaveMonitoring = ({
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(buildPayloadRef.current()),
       });
-      sessionStorage.setItem("monitoringSavedOnReload", monitoringID);
     };
+
     window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      if (active && !savedRef.current) {
+        savedRef.current = true;
+        fetch(`${URL_API}monitoring/${monitoringID}/save2`, {
+          method: "POST",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(buildPayloadRef.current()),
+        });
+      }
+    };
   }, [monitoringID, token]);
 
-  useEffect(() => {
-    const savedID = sessionStorage.getItem("monitoringSavedOnReload");
-    if (savedID === monitoringID) {
-      sessionStorage.removeItem("monitoringSavedOnReload");
-    }
-  }, [monitoringID]);
-
-  const handleSave = useCallback(() => {
-    mutateSave(buildPayloadRef.current());
-  }, [mutateSave]);
-
   const handleDone = useCallback(async () => {
-    await mutateSave(buildPayloadRef.current());
-    await mutateFinish();
-  }, [mutateSave, mutateFinish]);
+    savedRef.current = true;
+    try {
+      await mutateSave(buildPayloadRef.current());
+    } catch {
+      // save failed — still proceed to navigate
+    }
+    try {
+      await mutateFinish();
+    } catch {
+      // review/finish may return 400 — ignore and proceed
+    }
+    navigate("/assignments");
+  }, [mutateSave, mutateFinish, navigate]);
 
-  return { handleSave, handleDone };
+  return { handleDone };
 };
