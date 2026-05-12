@@ -153,7 +153,6 @@ export const useSaveMonitoring = ({
 
     const onBeforeUnload = () => {
       savedRef.current = true;
-      sessionStorage.setItem("monitoringSavedOnReload", monitoringID);
       fetch(`${URL_API}monitoring/${monitoringID}/save2`, {
         method: "POST",
         keepalive: true,

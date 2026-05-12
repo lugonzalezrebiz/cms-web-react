@@ -1,31 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CameraEventPoint } from "../types";
 
-const storageKey = (id: string) => `cameraEventPoints_${id}`;
-
-const readFromStorage = (id: string): CameraEventPoint[] => {
-  try {
-    const raw = sessionStorage.getItem(storageKey(id));
-    return raw ? (JSON.parse(raw) as CameraEventPoint[]) : [];
-  } catch {
-    return [];
-  }
-};
-
 export const useCameraEventPoints = (monitoringID: string) => {
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>(() => {
-    const savedOnReload = sessionStorage.getItem("monitoringSavedOnReload");
-    if (savedOnReload === monitoringID) {
-      sessionStorage.removeItem("monitoringSavedOnReload");
-      sessionStorage.removeItem(storageKey(monitoringID));
-      return [];
-    }
-    return readFromStorage(monitoringID);
-  });
+  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
@@ -34,9 +15,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
-  // readFromStorage here is consistent with useState above: if flag was found,
-  // storage was already cleared, so this returns []; otherwise returns stored data.
-  const currentPointsRef = useRef<CameraEventPoint[]>(readFromStorage(monitoringID));
+  const currentPointsRef = useRef<CameraEventPoint[]>([]);
 
   const syncChannelRef = useRef<BroadcastChannel | null>(null);
   const suppressSyncRef = useRef(false);
@@ -68,32 +47,9 @@ export const useCameraEventPoints = (monitoringID: string) => {
     syncChannelRef.current?.postMessage({ type: "sync", monitoringID, points: cameraEventPoints });
   }, [cameraEventPoints, monitoringID]);
 
-  // Persist every change to sessionStorage
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(storageKey(monitoringID), JSON.stringify(cameraEventPoints));
-    } catch { /* ignore */ }
-  }, [cameraEventPoints, monitoringID]);
-
-  // Clear sessionStorage on real navigation (not on browser reload)
-  useEffect(() => {
-    const isReloading = { current: false };
-    const onBeforeUnload = () => { isReloading.current = true; };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    let active = false;
-    const id = setTimeout(() => { active = true; }, 0);
-    return () => {
-      clearTimeout(id);
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      if (active && !isReloading.current) {
-        sessionStorage.removeItem(storageKey(monitoringID));
-      }
-    };
-  }, [monitoringID]);
-
   const cleanUp = () => {
-    sessionStorage.removeItem(storageKey(monitoringID));
-    setCameraEventPoints(readFromStorage(monitoringID))
+    setCameraEventPoints([]);
+    currentPointsRef.current = [];
   };
 
   const pushHistory = (snapshot: CameraEventPoint[]) => {
