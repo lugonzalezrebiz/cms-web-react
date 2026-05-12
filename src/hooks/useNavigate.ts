@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCallback } from 'react';
 
 const useNavigateWithQuery = () => {
@@ -18,6 +18,11 @@ export const useNavigatePlain = () => {
     return useCallback((to: string | number, options = {}) => {
         navigate(to as string, options);
     }, [navigate]);
+};
+
+export const useLocationState = <T>(): T | null => {
+    const { state } = useLocation();
+    return (state ?? null) as T | null;
 };
 
 export default useNavigateWithQuery;

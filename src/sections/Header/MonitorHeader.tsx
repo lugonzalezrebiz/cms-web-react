@@ -17,7 +17,8 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
-import useNavigateWithQuery from "../../hooks/useNavigate";
+import useNavigateWithQuery, { useLocationState } from "../../hooks/useNavigate";
+import type { NavigationAssignment } from "../../pages/Assignments/hooks/useAssignmentNavigate";
 import {
   useMonitorState,
   useCameraGroup,
@@ -144,9 +145,10 @@ const SmallSize = ({
     locationID,
     monitoringID,
   } = useMonitorParams();
+  const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
-    assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+    navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
@@ -310,9 +312,10 @@ const NormalSize = ({
     locationID,
     monitoringID,
   } = useMonitorParams();
+  const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
-    assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+    navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
