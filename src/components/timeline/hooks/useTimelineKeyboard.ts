@@ -213,7 +213,7 @@ export const useTimelineKeyboard = ({
       }
 
       if (selectedTracks.size > 0 && e.key !== "ArrowRight") return;
-      const delta = e.key === "ArrowRight" ? 180 : -180;
+      const delta = e.key === "ArrowRight" ? 5 : -5;
       setMarkerSec((prev) => {
         const base = prev ?? timelineStartSec;
         return Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));

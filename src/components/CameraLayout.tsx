@@ -473,6 +473,7 @@ const CameraLayout = ({
           markerSec >= ep.startSec &&
           markerSec <= ep.endSec,
       )
+      .sort((a, b) => (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0))
       .filter((ep) => {
         if (seen.has(ep.label)) return false;
         seen.add(ep.label);

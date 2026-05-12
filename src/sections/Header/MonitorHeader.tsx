@@ -33,11 +33,11 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   items: [
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }],
-      label: "Move marker back 3 min",
+      label: "Move marker back 5 sec",
     },
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }],
-      label: "Move marker forward 3 min",
+      label: "Move marker forward 5 sec",
     },
     {
       keys: [
