@@ -1,5 +1,4 @@
 import { useState } from "react";
-import useNavigateWithQuery from "../../hooks/useNavigate";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
 import Title from "../../components/Title";
@@ -10,16 +9,8 @@ import type { Assignment } from "./components/InfoAssignment";
 import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
-import { USE_STATIC_IDS, MONITORING_ID } from "../../config";
+import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
 
-const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20251224&monitoringID=${MONITORING_ID}`;
-const buildRedirect = (
-  companyID: number,
-  locationID: number,
-  rawDate: string,
-  monitoringID: string,
-) =>
-  `/monitor?company=${companyID}&location=${locationID}&date=${rawDate}&monitoringID=${monitoringID}`;
 const activityIcon = "/assets/activity-other-icon.svg";
 
 const dropdownOptions = (onOpen: () => void) => [
@@ -27,7 +18,7 @@ const dropdownOptions = (onOpen: () => void) => [
 ];
 
 const Assignments = () => {
-  const navigate = useNavigateWithQuery();
+  const { handleNavigate } = useAssignmentNavigate();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
@@ -112,18 +103,7 @@ const Assignments = () => {
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <NewAssignmentsCard
                 {...a}
-                onClick={() =>
-                  navigate(
-                    USE_STATIC_IDS
-                      ? STATIC_REDIRECT
-                      : buildRedirect(
-                          a.location,
-                          a.store,
-                          a.rawDate,
-                          a.monitoringID,
-                        ),
-                  )
-                }
+                onClick={() => handleNavigate(a)}
                 openMenu={(e) => {
                   setSelectedAssignment(a);
                   cardMenu.handleOpen(e);
@@ -140,18 +120,7 @@ const Assignments = () => {
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
               <NewAssignmentsCard
                 {...a}
-                onClick={() =>
-                  navigate(
-                    USE_STATIC_IDS
-                      ? STATIC_REDIRECT
-                      : buildRedirect(
-                          a.location,
-                          a.store,
-                          a.rawDate,
-                          a.monitoringID,
-                        ),
-                  )
-                }
+                onClick={() => handleNavigate(a)}
                 openMenu={(e) => {
                   setSelectedAssignment(a);
                   cardMenu.handleOpen(e);

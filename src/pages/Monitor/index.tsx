@@ -18,6 +18,7 @@ import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonito
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
 import { useAutoSaveOnUnmount } from "./hooks/useAutoSaveOnUnmount";
+import { useDeleteEventPoint } from "./hooks/useDeleteEventPoint";
 import { useCameraMenuItems } from "./hooks/useCameraMenuItems";
 import {
   useRegisterMonitorActions,
@@ -50,6 +51,7 @@ const Monitor = () => {
     cameraEventPoints,
     markerSec,
     handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
     handleActivitySelect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
@@ -67,6 +69,13 @@ const Monitor = () => {
     rangeSessions,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+
+  const { handleDeleteEventPoint } = useDeleteEventPoint(
+    monitoringID,
+    allEventPoints,
+    handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
+  );
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
@@ -117,7 +126,7 @@ const Monitor = () => {
     onRedo: handleRedo,
     canUndo,
     canRedo,
-    onRemoveEventPoint: handleRemoveEventPoint,
+    onRemoveEventPoint: handleDeleteEventPoint,
     viewMode: "activity" as const,
     menuItems: trackers.map((t) => ({
       id: t.id,
@@ -147,6 +156,7 @@ const Monitor = () => {
         id: ep.id,
         name: ep.label,
         label: ep.label,
+        reviewed: ep.reviewed,
         onClick: () => {},
       }));
   })();
@@ -182,7 +192,7 @@ const Monitor = () => {
       </Box>
       {/* && !expandedCamera */}
 
-      {!timelinePopped && !expandedCamera && (
+      {!timelinePopped && expandedCamera === null && (
         <Box sx={{ flex: 3, minHeight: 0 }}>
           <TimeLine {...timelineProps} />
         </Box>
@@ -210,7 +220,7 @@ const Monitor = () => {
         location={location}
         date={date}
         timestamp={timestamp}
-        onRemoveTag={handleRemoveEventPoint}
+        onRemoveTag={handleDeleteEventPoint}
       />
     </Box>
   );

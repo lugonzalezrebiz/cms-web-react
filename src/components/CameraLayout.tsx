@@ -162,7 +162,7 @@ export const CameraItem = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                bgcolor: Colors.main,
+                bgcolor: tag.reviewed === false ? Colors.blue : Colors.main,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",
@@ -184,22 +184,24 @@ export const CameraItem = ({
               >
                 {tag.name}
               </span>
-              <Box
-                component="span"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemoveTag(tag.id);
-                }}
-                sx={{
-                  cursor: "pointer",
-                  lineHeight: 1,
-                  opacity: 0.8,
-                  fontSize: 10,
-                  "&:hover": { opacity: 1 },
-                }}
-              >
-                ✕
-              </Box>
+              {tag.reviewed !== false && (
+                <Box
+                  component="span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveTag(tag.id);
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    lineHeight: 1,
+                    opacity: 0.8,
+                    fontSize: 10,
+                    "&:hover": { opacity: 1 },
+                  }}
+                >
+                  ✕
+                </Box>
+              )}
             </Box>
           ))}
           {tags.length > 2 && (
@@ -480,6 +482,7 @@ const CameraLayout = ({
         id: ep.id,
         name: ep.label,
         label: ep.label,
+        reviewed: ep.reviewed,
         onClick: () => {},
       }));
   };

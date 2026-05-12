@@ -99,6 +99,17 @@ export const useCameraEventPoints = (monitoringID: string) => {
     });
   };
 
+  // Called when deleting a preloaded point (one with entryIds).
+  // The point is already being deleted from the server via the DELETE API.
+  // We push a history snapshot that includes a local copy of the point (without entryIds)
+  // so that undo can restore it and handleDone can re-save it via save2.
+  const handleRegisterPreloadedDelete = (point: CameraEventPoint) => {
+    const localCopy: CameraEventPoint = { ...point, entryIds: undefined, id: Date.now() };
+    pushHistory([...currentPointsRef.current, localCopy]);
+    // Current state stays unchanged; the point disappears from preloadedEventPoints
+    // naturally after the query is invalidated.
+  };
+
   const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 500) {
@@ -180,6 +191,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
     cameraEventPoints,
     markerSec,
     handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
     handleActivitySelect,
     handleMarkerChange,
     handleUpdateEventPoint,

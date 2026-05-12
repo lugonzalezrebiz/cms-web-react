@@ -17,6 +17,7 @@ interface ApiCamera {
 
 interface PointEntry {
   type: "POINT";
+  id: string;
   timestamp: string;
   zoneId: number | null;
   reviewed: boolean;
@@ -25,6 +26,8 @@ interface PointEntry {
 
 interface RangeEntry {
   type: "RANGE";
+  startId: string;
+  endId: string;
   start: string;
   end: string;
   zoneId: number | null;
@@ -79,6 +82,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           reviewed: entry.reviewed,
           value: entry.value,
           mode,
+          entryIds: [Number(entry.id)],
         });
       } else if (entry.type === "RANGE") {
         const timeSec = toSec(entry.start);
@@ -93,6 +97,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           reviewed: entry.reviewed,
           value: true,
           mode: "RANGE",
+          entryIds: [Number(entry.startId), Number(entry.endId)],
         });
       }
     }
