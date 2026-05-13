@@ -1,10 +1,12 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../theme";
+import { useCallback } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
 import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
+import type { DragConfig } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
 import { SessionRow } from "./rows/SessionRow";
 import { GridLines } from "./rows/GridLines";
@@ -41,7 +43,9 @@ interface TimelineGridRowsProps {
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   editingEventPointId: number | null;
+  setEditingEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   onClearEditing: () => void;
+  onStartEditEventPoint?: (id: number) => Promise<number>;
 }
 
 
@@ -72,7 +76,9 @@ export const TimelineGridRows = ({
   selectedEventPointId,
   setSelectedEventPointId,
   editingEventPointId,
+  setEditingEventPointId,
   onClearEditing,
+  onStartEditEventPoint,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -102,6 +108,58 @@ export const TimelineGridRows = ({
     totalSec,
     onUpdateEventPoint,
   });
+
+  const handleDragStart = useCallback(
+    async (ep: CameraEventPoint, e: React.MouseEvent, config: DragConfig) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (selectedEventPointId !== ep.id) {
+        setSelectedEventPointId(ep.id);
+        return;
+      }
+      if (editingEventPointId === ep.id) {
+        startExtend(ep.id, config);
+        return;
+      }
+      // Point has no range yet (first extension) — extend directly, no edit mode needed
+      if (ep.endSec <= ep.timeSec) {
+        startExtend(ep.id, config);
+        return;
+      }
+      if (ep.entryIds?.length && onStartEditEventPoint) {
+        // Wait for first mousemove before calling the API — prevents creating an
+        // orphaned shadow copy when the user clicks without dragging.
+        const userDragged = await new Promise<boolean>((resolve) => {
+          const onMove = () => { window.removeEventListener("mouseup", onUp); resolve(true); };
+          const onUp = () => { window.removeEventListener("mousemove", onMove); resolve(false); };
+          window.addEventListener("mousemove", onMove, { once: true });
+          window.addEventListener("mouseup", onUp, { once: true });
+        });
+        if (!userDragged) return;
+
+        // User is dragging — start extending the original optimistically while API resolves.
+        startExtend(ep.id, config);
+
+        let releasedBeforeReady = false;
+        const onEarlyMouseUp = () => { releasedBeforeReady = true; };
+        window.addEventListener("mouseup", onEarlyMouseUp, { once: true });
+
+        const newId = await onStartEditEventPoint(ep.id);
+        window.removeEventListener("mouseup", onEarlyMouseUp);
+
+        setEditingEventPointId(newId);
+        setSelectedEventPointId(newId);
+        if (!releasedBeforeReady) {
+          // Seamlessly switch the drag from original to shadow copy.
+          startExtend(newId, config);
+        }
+      } else {
+        setEditingEventPointId(ep.id);
+        startExtend(ep.id, config);
+      }
+    },
+    [editingEventPointId, selectedEventPointId, onStartEditEventPoint, setEditingEventPointId, setSelectedEventPointId, startExtend],
+  );
 
   const handleGridClick = () => {
     if (editingEventPointId !== null) onClearEditing();
@@ -202,7 +260,7 @@ export const TimelineGridRows = ({
                   selectedEventPointId={selectedEventPointId}
                   editingEventPointId={editingEventPointId}
                   setSelectedEventPointId={setSelectedEventPointId}
-                  onExtendStart={startExtend}
+                  onDragStart={handleDragStart}
                 />
               </Box>
             ),

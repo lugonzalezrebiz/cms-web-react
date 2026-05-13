@@ -161,19 +161,6 @@ const TimeLine = ({
 
   const [editingEventPointId, setEditingEventPointId] = useState<number | null>(null);
 
-  const handleEditEventPoint = () => {
-    if (!targetEventPoint || targetEventPoint.mode !== "RANGE") return;
-    if (targetEventPoint.entryIds?.length) {
-      if (!onStartEditEventPoint) return;
-      onStartEditEventPoint(targetEventPoint.id).then((newId) => {
-        setEditingEventPointId(newId);
-        state.setSelectedEventPointId(newId);
-      });
-    } else {
-      setEditingEventPointId(targetEventPoint.id);
-    }
-  };
-
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
@@ -199,7 +186,6 @@ const TimeLine = ({
     gridRef: state.gridRef,
     cameraEventPoints: mergedEventPoints,
     onDeleteEventPoint: handleDeleteEventPoint,
-    onEditEventPoint: handleEditEventPoint,
   });
 
   return (
@@ -267,7 +253,9 @@ const TimeLine = ({
         selectedEventPointId={state.selectedEventPointId}
         setSelectedEventPointId={state.setSelectedEventPointId}
         editingEventPointId={editingEventPointId}
+        setEditingEventPointId={setEditingEventPointId}
         onClearEditing={() => setEditingEventPointId(null)}
+        onStartEditEventPoint={onStartEditEventPoint}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
       />

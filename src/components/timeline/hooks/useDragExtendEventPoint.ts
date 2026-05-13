@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type React from "react";
 import type { CameraEventPoint } from "../types";
 
-type DragConfig = { target: "start" | "end"; minSec: number; maxSec: number };
+export type DragConfig = { target: "start" | "end"; minSec: number; maxSec: number };
 
 export const useDragExtendEventPoint = ({
   gridRef,
@@ -58,9 +58,7 @@ export const useDragExtendEventPoint = ({
     };
   }, [extendingId, gridRef]);
 
-  const startExtend = useCallback((epId: number, e: React.MouseEvent, config: DragConfig) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const startExtend = useCallback((epId: number, config: DragConfig) => {
     minSecRef.current = config.minSec;
     maxSecRef.current = config.maxSec;
     dragTargetRef.current = config.target;
