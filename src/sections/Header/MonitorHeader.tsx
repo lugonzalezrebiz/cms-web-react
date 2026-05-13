@@ -17,7 +17,9 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
-import useNavigateWithQuery, { useLocationState } from "../../hooks/useNavigate";
+import useNavigateWithQuery, {
+  useLocationState,
+} from "../../hooks/useNavigate";
 import type { NavigationAssignment } from "../../pages/Assignments/hooks/useAssignmentNavigate";
 import {
   useMonitorState,
@@ -27,6 +29,8 @@ import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import useTrackerOptions from "./hooks/useTrackerOptions";
 import useCameraGroups from "../../hooks/useCameraGroups";
+import useAuth from "../../hooks/useAuth";
+import { AGENT_ROLE } from "../../config";
 
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
@@ -59,6 +63,10 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
         { type: "img", src: "../assets/arrow-narrow-left.svg" },
       ],
       label: "Go back",
+    },
+    {
+      keys: [{ type: "text", label: "E", fontSize: "16px" }],
+      label: "Edit selected event point",
     },
     {
       keys: [
@@ -130,6 +138,8 @@ const SmallSize = ({
   withIconMenu?: boolean;
   allowGoBack?: boolean;
 }) => {
+  const { user } = useAuth();
+  const isAgent = user?.roleID === AGENT_ROLE;
   const [scrolled, setScrolled] = useState(false);
   const menuHeader = usePopover();
   const keyboardMenu = usePopover();
@@ -147,7 +157,9 @@ const SmallSize = ({
   const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
-    navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+    navState?.assignment ??
+    assignments.find((a) => a.monitoringID === monitoringID) ??
+    null;
   const toHHmm = (t: string | null) => (t ? t.slice(0, 5) : "----");
   const timeRange = assignment
     ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
@@ -245,7 +257,9 @@ const SmallSize = ({
               />
 
               <Box>
-                <Button onClick={handleDone}>Done</Button>
+                <Button disabled={isAgent} onClick={handleDone}>
+                  Done
+                </Button>
               </Box>
             </Box>
           </Box>
@@ -300,6 +314,8 @@ const NormalSize = ({
   withIconMenu?: boolean;
   allowGoBack?: boolean;
 }) => {
+  const { user } = useAuth();
+  const isAgent = user?.roleID === AGENT_ROLE;
   const [scrolled, setScrolled] = useState(false);
   const menuHeader = usePopover();
   const keyboardMenu = usePopover();
@@ -317,7 +333,9 @@ const NormalSize = ({
   const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
-    navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+    navState?.assignment ??
+    assignments.find((a) => a.monitoringID === monitoringID) ??
+    null;
   const toHHmm = (t: string | null) => (t ? t.slice(0, 5) : "----");
   const timeRange = assignment
     ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
@@ -425,7 +443,9 @@ const NormalSize = ({
               />
 
               <Box>
-                <Button onClick={handleDone}>Done</Button>
+                <Button disabled={isAgent} onClick={handleDone}>
+                  Done
+                </Button>
               </Box>
             </Box>
           </Box>

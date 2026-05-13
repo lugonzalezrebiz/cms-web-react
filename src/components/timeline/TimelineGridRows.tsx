@@ -33,13 +33,15 @@ interface TimelineGridRowsProps {
   cameraEventPoints?: CameraEventPoint[];
   onUpdateEventPoint?: (
     id: number,
-    update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
+    update: Partial<Pick<CameraEventPoint, "startSec" | "endSec" | "timeSec">>,
   ) => void;
   iTrackId?: number | null;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  editingEventPointId: number | null;
+  onClearEditing: () => void;
 }
 
 
@@ -69,6 +71,8 @@ export const TimelineGridRows = ({
   setMarkerSec,
   selectedEventPointId,
   setSelectedEventPointId,
+  editingEventPointId,
+  onClearEditing,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -99,9 +103,14 @@ export const TimelineGridRows = ({
     onUpdateEventPoint,
   });
 
+  const handleGridClick = () => {
+    if (editingEventPointId !== null) onClearEditing();
+  };
+
   return (
     <Box
       ref={gridRef}
+      onClick={handleGridClick}
       sx={{
         flex: 1,
         position: "relative",
@@ -187,9 +196,11 @@ export const TimelineGridRows = ({
                   visibleEnd={visibleEnd}
                   visibleDuration={visibleDuration}
                   setResizing={setResizing}
+                  totalSec={totalSec}
                   setMarkerSec={setMarkerSec}
                   setITrackId={setITrackId}
                   selectedEventPointId={selectedEventPointId}
+                  editingEventPointId={editingEventPointId}
                   setSelectedEventPointId={setSelectedEventPointId}
                   onExtendStart={startExtend}
                 />

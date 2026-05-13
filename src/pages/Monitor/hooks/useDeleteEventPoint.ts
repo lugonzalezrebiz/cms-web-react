@@ -7,6 +7,7 @@ export const useDeleteEventPoint = (
   allEventPoints: CameraEventPoint[],
   handleRemoveEventPoint: (id: number) => void,
   handleRegisterPreloadedDelete: (point: CameraEventPoint) => void,
+  handleConvertToLocal: (point: CameraEventPoint) => number,
 ) => {
   const deleteCallback = useDeleteCallback();
   const queryClient = useQueryClient();
@@ -24,5 +25,19 @@ export const useDeleteEventPoint = (
     }
   };
 
-  return { handleDeleteEventPoint };
+  const handleStartEditEventPoint = async (id: number): Promise<number> => {
+    const target = allEventPoints.find((ep) => ep.id === id);
+    if (!target) return id;
+
+    if (target.entryIds?.length) {
+      // Convert to a local copy immediately so drag updates work, then shadow-delete from server.
+      const newId = handleConvertToLocal(target);
+      deleteCallback(`tracker/${monitoringID}/bulk`, { ids: target.entryIds });
+      queryClient.invalidateQueries({ queryKey: [`monitoring/${monitoringID}/load2`] });
+      return newId;
+    }
+    return id;
+  };
+
+  return { handleDeleteEventPoint, handleStartEditEventPoint };
 };

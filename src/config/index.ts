@@ -24,3 +24,4 @@ export const REVIEWER_ROLE = Number(import.meta.env.VITE_REVIEWER_ROLE);
 export const AGENT_ROLE = Number(import.meta.env.VITE_AGENT_ROLE);
 export const ADMIN_ROLE = Number(import.meta.env.VITE_ADMIN_ROLE);
 export const USE_STATIC_IDS = import.meta.env.VITE_USE_STATIC_IDS === "true";
+export const ASSIGNMENTS_COMPLETED = import.meta.env.VITE_ASSIGNMENTS_COMPLETED === "true";

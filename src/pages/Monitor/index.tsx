@@ -54,6 +54,7 @@ const Monitor = () => {
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
+    handleConvertToLocal,
     handleActivitySelect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
@@ -77,11 +78,12 @@ const Monitor = () => {
     [cameraEventPoints, preloadedEventPoints],
   );
 
-  const { handleDeleteEventPoint } = useDeleteEventPoint(
+  const { handleDeleteEventPoint, handleStartEditEventPoint } = useDeleteEventPoint(
     monitoringID,
     allEventPoints,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
+    handleConvertToLocal,
   );
 
   // const { transactions } = useSalesTransactions(monitoringID);
@@ -143,6 +145,7 @@ const Monitor = () => {
       canUndo,
       canRedo,
       onRemoveEventPoint: handleDeleteEventPoint,
+      onStartEditEventPoint: handleStartEditEventPoint,
       viewMode: "activity" as const,
       menuItems,
       rangeSessions,
@@ -161,6 +164,7 @@ const Monitor = () => {
       canUndo,
       canRedo,
       handleDeleteEventPoint,
+      handleStartEditEventPoint,
       menuItems,
       rangeSessions,
     ],
