@@ -121,9 +121,34 @@ export const TimelineGridRows = ({
         startExtend(ep.id, config);
         return;
       }
-      // Point has no range yet (first extension) — extend directly, no edit mode needed
+      // Point has no range yet (first extension)
       if (ep.endSec <= ep.timeSec) {
-        startExtend(ep.id, config);
+        if (!ep.entryIds?.length) {
+          startExtend(ep.id, config);
+          return;
+        }
+        // Preloaded RANGE point — must convert to local before the drag updates take effect
+        if (!onStartEditEventPoint) return;
+        const userDragged = await new Promise<boolean>((resolve) => {
+          const onMove = () => { window.removeEventListener("mouseup", onUp); resolve(true); };
+          const onUp = () => { window.removeEventListener("mousemove", onMove); resolve(false); };
+          window.addEventListener("mousemove", onMove, { once: true });
+          window.addEventListener("mouseup", onUp, { once: true });
+        });
+        if (!userDragged) return;
+
+        let releasedBeforeReady = false;
+        const onEarlyMouseUp = () => { releasedBeforeReady = true; };
+        window.addEventListener("mouseup", onEarlyMouseUp, { once: true });
+
+        const newId = await onStartEditEventPoint(ep.id);
+        window.removeEventListener("mouseup", onEarlyMouseUp);
+
+        setEditingEventPointId(newId);
+        setSelectedEventPointId(newId);
+        if (!releasedBeforeReady) {
+          startExtend(newId, config);
+        }
         return;
       }
       if (ep.entryIds?.length && onStartEditEventPoint) {

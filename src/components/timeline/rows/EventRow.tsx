@@ -61,18 +61,16 @@ const EventPointBar = memo(
       ((ep.timeSec - visibleStart) / visibleDuration) * 100;
     const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
 
-    // const activeColor = isEditing
-    //   ? Colors.goldenAmber
-    //   : ep.reviewed
-    //     ? Colors.vividOrange
-    //     : Colors.blue;
-    // const idleColor = isEditing
-    //   ? Colors.creamYellow
-    //   : ep.reviewed
-    //     ? Colors.lightOrange
-    //     : Colors.lightSkyBlue;
-    const activeColor = ep.reviewed ? Colors.vividOrange : Colors.blue;
-    const idleColor = ep.reviewed ? Colors.lightOrange : Colors.lightSkyBlue;
+    const activeColor = isEditing
+      ? Colors.goldenAmber
+      : ep.reviewed
+        ? Colors.vividOrange
+        : Colors.blue;
+    const idleColor = isEditing
+      ? Colors.creamYellow
+      : ep.reviewed
+        ? Colors.lightOrange
+        : Colors.lightSkyBlue;
 
     const diamondSx = (selected: boolean) => ({
       position: "absolute" as const,
@@ -140,7 +138,7 @@ const EventPointBar = memo(
           sx={{
             ...diamondSx(isSelected),
             left: `${dotAbsolutePct}%`,
-            cursor: ep.mode === "RANGE" ? "ew-resize" : "pointer",
+            cursor: (isSelected && ep.mode === "RANGE") ? "ew-resize" : "pointer",
           }}
         />
 
@@ -160,7 +158,7 @@ const EventPointBar = memo(
             sx={{
               ...diamondSx(isSelected),
               left: `${endPct}%`,
-              cursor: "ew-resize",
+              cursor: isSelected ? "ew-resize" : "pointer",
             }}
           />
         )}
