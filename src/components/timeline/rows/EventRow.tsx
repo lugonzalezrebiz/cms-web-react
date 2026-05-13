@@ -13,20 +13,31 @@ interface EventPointBarProps {
   visibleDuration: number;
   setResizing: SetResizing;
   isSelected: boolean;
-  onSelect: () => void;
+  rowId: number;
+  setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
+  setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
-const EventPointBar = ({
+const EventPointBar = memo(({
   ep,
   visibleStart,
   visibleEnd,
   visibleDuration,
   //setResizing,
   isSelected,
-  onSelect,
+  rowId,
+  setMarkerSec,
+  setSelectedEventPointId,
+  setITrackId,
   onExtendStart,
 }: EventPointBarProps) => {
+  const handleSelect = () => {
+    setMarkerSec(ep.timeSec);
+    setSelectedEventPointId(ep.id);
+    setITrackId(rowId);
+  };
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);
   const hasBar = barStart < barEnd;
@@ -64,7 +75,7 @@ const EventPointBar = ({
       {/* Bar — only when there is actual width */}
       {hasBar && (
         <Box
-          onClick={onSelect}
+          onClick={handleSelect}
           sx={{
             position: "absolute",
             left: `${leftPct}%`,
@@ -89,7 +100,7 @@ const EventPointBar = ({
       )}
       {/* Origin diamond at timeSec — drag handle when no extension yet (RANGE only) */}
       <Box
-        onClick={onSelect}
+        onClick={handleSelect}
         onMouseDown={
           ep.mode === "RANGE" && ep.endSec <= ep.timeSec
             ? (e) => onExtendStart(ep.id, e, ep.timeSec)
@@ -107,7 +118,7 @@ const EventPointBar = ({
       {/* End diamond at endSec — visible and draggable only when RANGE bar has been extended */}
       {ep.mode === "RANGE" && ep.endSec > ep.timeSec && (
         <Box
-          onClick={onSelect}
+          onClick={handleSelect}
           onMouseDown={(e) => onExtendStart(ep.id, e, ep.timeSec)}
           sx={{
             ...diamondSx(isSelected),
@@ -118,7 +129,7 @@ const EventPointBar = ({
       )}
     </>
   );
-};
+});
 
 export interface EventRowProps {
   row: FlatRow;
@@ -180,11 +191,10 @@ export const EventRow = memo(({
           visibleDuration={visibleDuration}
           setResizing={setResizing}
           isSelected={selectedEventPointId === ep.id}
-          onSelect={() => {
-            setMarkerSec(ep.timeSec);
-            setSelectedEventPointId(ep.id);
-            setITrackId(row.id);
-          }}
+          rowId={row.id}
+          setMarkerSec={setMarkerSec}
+          setSelectedEventPointId={setSelectedEventPointId}
+          setITrackId={setITrackId}
           onExtendStart={onExtendStart}
         />
       ))}
