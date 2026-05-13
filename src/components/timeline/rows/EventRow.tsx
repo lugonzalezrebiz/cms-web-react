@@ -3,10 +3,9 @@ import { Colors } from "../../../theme";
 import { memo, useMemo } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
+import type { DragConfig } from "../hooks/useDragExtendEventPoint";
 
 const ROW_HEIGHT = 44;
-
-type DragConfig = { target: "start" | "end"; minSec: number; maxSec: number };
 
 interface EventPointBarProps {
   ep: CameraEventPoint;
@@ -21,11 +20,7 @@ interface EventPointBarProps {
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
-  onExtendStart: (
-    epId: number,
-    e: React.MouseEvent,
-    config: DragConfig,
-  ) => void;
+  onDragStart: (ep: CameraEventPoint, e: React.MouseEvent, config: DragConfig) => void;
 }
 
 const EventPointBar = memo(
@@ -42,7 +37,7 @@ const EventPointBar = memo(
     setMarkerSec,
     setSelectedEventPointId,
     setITrackId,
-    onExtendStart,
+    onDragStart,
   }: EventPointBarProps) => {
     const handleSelect = (e: React.MouseEvent) => {
       if (isEditing) e.stopPropagation();
@@ -66,16 +61,18 @@ const EventPointBar = memo(
       ((ep.timeSec - visibleStart) / visibleDuration) * 100;
     const endPct = ((ep.endSec - visibleStart) / visibleDuration) * 100;
 
-    const activeColor = isEditing
-      ? Colors.goldenAmber
-      : ep.reviewed
-        ? Colors.vividOrange
-        : Colors.blue;
-    const idleColor = isEditing
-      ? Colors.creamYellow
-      : ep.reviewed
-        ? Colors.lightOrange
-        : Colors.lightSkyBlue;
+    // const activeColor = isEditing
+    //   ? Colors.goldenAmber
+    //   : ep.reviewed
+    //     ? Colors.vividOrange
+    //     : Colors.blue;
+    // const idleColor = isEditing
+    //   ? Colors.creamYellow
+    //   : ep.reviewed
+    //     ? Colors.lightOrange
+    //     : Colors.lightSkyBlue;
+    const activeColor = ep.reviewed ? Colors.vividOrange : Colors.blue;
+    const idleColor = ep.reviewed ? Colors.lightOrange : Colors.lightSkyBlue;
 
     const diamondSx = (selected: boolean) => ({
       position: "absolute" as const,
@@ -129,29 +126,21 @@ const EventPointBar = memo(
         <Box
           onClick={handleSelect}
           onMouseDown={
-            isEditing
-              ? (e) =>
-                  onExtendStart(ep.id, e, {
-                    target: "start",
-                    minSec: 0,
-                    maxSec: ep.endSec,
-                  })
-              : ep.mode === "RANGE" && ep.endSec <= ep.timeSec
-                ? (e) =>
-                    onExtendStart(ep.id, e, {
-                      target: "end",
-                      minSec: ep.timeSec,
-                      maxSec: totalSec,
-                    })
-                : undefined
+            ep.mode === "RANGE"
+              ? (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const config: DragConfig = (!isEditing && ep.endSec <= ep.timeSec)
+                    ? { target: "end", minSec: ep.timeSec, maxSec: totalSec }
+                    : { target: "start", minSec: 0, maxSec: ep.endSec };
+                  onDragStart(ep, e, config);
+                }
+              : undefined
           }
           sx={{
             ...diamondSx(isSelected),
             left: `${dotAbsolutePct}%`,
-            cursor:
-              isEditing || (ep.mode === "RANGE" && ep.endSec <= ep.timeSec)
-                ? "ew-resize"
-                : "pointer",
+            cursor: ep.mode === "RANGE" ? "ew-resize" : "pointer",
           }}
         />
 
@@ -159,13 +148,15 @@ const EventPointBar = memo(
         {showEndDiamond && (
           <Box
             onClick={handleSelect}
-            onMouseDown={(e) =>
-              onExtendStart(ep.id, e, {
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDragStart(ep, e, {
                 target: "end",
                 minSec: ep.timeSec,
                 maxSec: totalSec,
-              })
-            }
+              });
+            }}
             sx={{
               ...diamondSx(isSelected),
               left: `${endPct}%`,
@@ -192,11 +183,7 @@ export interface EventRowProps {
   selectedEventPointId: number | null;
   editingEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
-  onExtendStart: (
-    epId: number,
-    e: React.MouseEvent,
-    config: DragConfig,
-  ) => void;
+  onDragStart: (ep: CameraEventPoint, e: React.MouseEvent, config: DragConfig) => void;
 }
 
 export const EventRow = memo(
@@ -214,7 +201,7 @@ export const EventRow = memo(
     selectedEventPointId,
     editingEventPointId,
     setSelectedEventPointId,
-    onExtendStart,
+    onDragStart,
   }: EventRowProps) => {
     const points = useMemo(
       () =>
@@ -254,7 +241,7 @@ export const EventRow = memo(
             setMarkerSec={setMarkerSec}
             setSelectedEventPointId={setSelectedEventPointId}
             setITrackId={setITrackId}
-            onExtendStart={onExtendStart}
+            onDragStart={onDragStart}
           />
         ))}
       </Box>
