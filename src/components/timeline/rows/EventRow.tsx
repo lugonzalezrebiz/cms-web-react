@@ -432,8 +432,8 @@ export const EventRow = memo(({
       const cy   = rect.height / 2;
       const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * rect.width;
       for (const ep of [...points].reverse()) {
-        // In edit mode: start diamond is also draggable
-        if (editingEventPointId === ep.id && ep.mode === "RANGE") {
+        // In edit mode: start diamond is draggable only when range already has width
+        if (editingEventPointId === ep.id && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
           if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
             e.preventDefault();
             e.stopPropagation();
@@ -441,15 +441,18 @@ export const EventRow = memo(({
             return;
           }
         }
-        if (isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
+        const isSelected = ep.id === selectedEventPointId;
+        const isNewLocal = !ep.entryIds && ep.endSec === ep.timeSec;
+        if (!ep.entryIds && (isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.preventDefault();
           e.stopPropagation();
+          onEditEventPoint?.(ep.id);
           onExtendStart(ep.id, e, ep.timeSec);
           return;
         }
       }
     },
-    [points, visibleStart, visibleDuration, editingEventPointId, onStartMove, isRangeDragHandle, onExtendStart],
+    [points, visibleStart, visibleDuration, selectedEventPointId, editingEventPointId, onStartMove, isRangeDragHandle, onExtendStart],
   );
 
   // -------------------------------------------------------------------------
@@ -464,14 +467,16 @@ export const EventRow = memo(({
       const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * rect.width;
 
       for (const ep of [...points].reverse()) {
-        // In edit mode: start diamond shows ew-resize cursor too
-        if (editingEventPointId === ep.id && ep.mode === "RANGE") {
+        // In edit mode: start diamond shows ew-resize cursor only when range already has width
+        if (editingEventPointId === ep.id && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
           if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
             e.currentTarget.style.cursor = "ew-resize";
             return;
           }
         }
-        if (isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
+        const isSelected = ep.id === selectedEventPointId;
+        const isNewLocal = !ep.entryIds && ep.endSec === ep.timeSec;
+        if (!ep.entryIds && (isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.currentTarget.style.cursor = "ew-resize";
           return;
         }
@@ -480,7 +485,7 @@ export const EventRow = memo(({
         ? "pointer"
         : "default";
     },
-    [points, visibleStart, visibleDuration, editingEventPointId, isRangeDragHandle, getHitEp],
+    [points, visibleStart, visibleDuration, selectedEventPointId, editingEventPointId, isRangeDragHandle, getHitEp],
   );
 
   // 3. Reset cursor when mouse leaves

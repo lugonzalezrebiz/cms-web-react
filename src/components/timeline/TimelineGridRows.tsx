@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../theme";
+import { useRef, useCallback } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
@@ -96,13 +97,26 @@ export const TimelineGridRows = ({
     setPanOffsetSec,
   });
 
+  const extendEnteredEditModeRef = useRef(false);
+
   const { startExtend, startMove } = useDragExtendEventPoint({
     gridRef,
     visibleStart,
     visibleDuration,
     totalSec,
     onUpdateEventPoint,
+    onExtendEnd: () => {
+      if (extendEnteredEditModeRef.current) {
+        onExitEditMode();
+        extendEnteredEditModeRef.current = false;
+      }
+    },
   });
+
+  const wrappedStartExtend = useCallback((epId: number, e: React.MouseEvent, minSec: number) => {
+    extendEnteredEditModeRef.current = editingEventPointId !== epId;
+    startExtend(epId, e, minSec);
+  }, [startExtend, editingEventPointId]);
 
   return (
     <Box
@@ -199,7 +213,7 @@ export const TimelineGridRows = ({
                   editingEventPointId={editingEventPointId}
                   onExitEditMode={onExitEditMode}
                   onStartMove={startMove}
-                  onExtendStart={startExtend}
+                  onExtendStart={wrappedStartExtend}
                   onEditEventPoint={onEditEventPoint}
                 />
               </Box>

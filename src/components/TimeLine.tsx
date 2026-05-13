@@ -95,6 +95,7 @@ const TimeLine = ({
     cameraEventPoints: mergedEventPoints,
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
+    setSelectedEventPointId: state.setSelectedEventPointId,
   });
 
   const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);

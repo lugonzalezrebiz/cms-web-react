@@ -5,12 +5,14 @@ interface UseAutoSelectOnEventPointParams {
   cameraEventPoints?: CameraEventPoint[];
   setITrackId: (id: number | null) => void;
   setSelectedTracks: (tracks: Set<number>) => void;
+  setSelectedEventPointId: (id: number | null) => void;
 }
 
 export const useAutoSelectOnEventPoint = ({
   cameraEventPoints,
   setITrackId,
   setSelectedTracks,
+  setSelectedEventPointId,
 }: UseAutoSelectOnEventPointParams) => {
   const prevUserCountRef = useRef(
     cameraEventPoints?.filter((ep) => !ep.entryIds).length ?? 0,
@@ -23,6 +25,7 @@ export const useAutoSelectOnEventPoint = ({
       const last = userPoints[userPoints.length - 1];
       setITrackId(last.cameraId);
       setSelectedTracks(new Set());
+      setSelectedEventPointId(last.id);
     }
     prevUserCountRef.current = count;
   }, [cameraEventPoints]); // eslint-disable-line react-hooks/exhaustive-deps
