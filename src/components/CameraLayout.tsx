@@ -466,13 +466,13 @@ const CameraLayout = ({
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] => {
     const seen = new Set<string>();
     return cameraEventPoints
-      .filter(
-        (ep) =>
-          ep.cameraId ===
-            (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1) &&
-          markerSec >= ep.startSec &&
-          markerSec <= ep.endSec,
-      )
+      .filter((ep) => {
+          if (ep.cameraId !== (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1)) return false;
+          const epStart = Math.min(ep.startSec, ep.timeSec);
+          const hasRange = ep.endSec > epStart;
+          const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
+          return markerSec >= epStart && markerSec <= epEnd;
+        })
       .sort((a, b) => (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0))
       .filter((ep) => {
         if (seen.has(ep.label)) return false;

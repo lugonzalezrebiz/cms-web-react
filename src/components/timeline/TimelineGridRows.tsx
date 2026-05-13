@@ -42,7 +42,6 @@ interface TimelineGridRowsProps {
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
-
 export const TimelineGridRows = ({
   flatRows,
   gridRef,
@@ -144,7 +143,7 @@ export const TimelineGridRows = ({
                   left: 0,
                   right: 0,
                   height: ROW_HEIGHT,
-                  bgcolor: `${Colors.semiTransparentGray}`,
+                  bgcolor: `${Colors.transparentVividOrange}`,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -196,8 +195,6 @@ export const TimelineGridRows = ({
               </Box>
             ),
           )}
-
-
         </Box>
       </Box>
     </Box>

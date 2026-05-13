@@ -166,7 +166,7 @@ const EventMenu = ({
                         minWidth: "16px",
                         height: "16px",
                         px: "4px",
-                        bgcolor: Colors.transparenvividOrange,
+                        bgcolor: Colors.transparentVividOrange,
                         color: Colors.vividOrange,
                         borderRadius: "8px",
                         fontSize: 10,
