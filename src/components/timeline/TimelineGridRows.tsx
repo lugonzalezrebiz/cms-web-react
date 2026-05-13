@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../theme";
-import { useRef, useCallback } from "react";
+import type { } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
@@ -44,6 +44,8 @@ interface TimelineGridRowsProps {
   editingEventPointId: number | null;
   onExitEditMode: () => void;
   onEditEventPoint?: (id: number) => void;
+  onConvertEventPointToLocal?: (id: number) => number;
+  onEnterEditMode?: (id: number) => void;
 }
 
 export const TimelineGridRows = ({
@@ -75,6 +77,8 @@ export const TimelineGridRows = ({
   editingEventPointId,
   onExitEditMode,
   onEditEventPoint,
+  onConvertEventPointToLocal,
+  onEnterEditMode,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -97,26 +101,13 @@ export const TimelineGridRows = ({
     setPanOffsetSec,
   });
 
-  const extendEnteredEditModeRef = useRef(false);
-
   const { startExtend, startMove } = useDragExtendEventPoint({
     gridRef,
     visibleStart,
     visibleDuration,
     totalSec,
     onUpdateEventPoint,
-    onExtendEnd: () => {
-      if (extendEnteredEditModeRef.current) {
-        onExitEditMode();
-        extendEnteredEditModeRef.current = false;
-      }
-    },
   });
-
-  const wrappedStartExtend = useCallback((epId: number, e: React.MouseEvent, minSec: number) => {
-    extendEnteredEditModeRef.current = editingEventPointId !== epId;
-    startExtend(epId, e, minSec);
-  }, [startExtend, editingEventPointId]);
 
   return (
     <Box
@@ -213,7 +204,9 @@ export const TimelineGridRows = ({
                   editingEventPointId={editingEventPointId}
                   onExitEditMode={onExitEditMode}
                   onStartMove={startMove}
-                  onExtendStart={wrappedStartExtend}
+                  onExtendStart={startExtend}
+                  onConvertEventPointToLocal={onConvertEventPointToLocal}
+                  onEnterEditMode={onEnterEditMode}
                   onEditEventPoint={onEditEventPoint}
                 />
               </Box>

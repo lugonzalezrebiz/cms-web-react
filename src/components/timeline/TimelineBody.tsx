@@ -54,6 +54,8 @@ export interface TimelineBodyViewProps {
   editingEventPointId: number | null;
   onExitEditMode: () => void;
   onEditEventPoint?: (id: number) => void;
+  onConvertEventPointToLocal?: (id: number) => number;
+  onEnterEditMode?: (id: number) => void;
   goToTimeOpen: boolean;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -101,6 +103,8 @@ const TimelineBody = ({
   editingEventPointId,
   onExitEditMode,
   onEditEventPoint,
+  onConvertEventPointToLocal,
+  onEnterEditMode,
   goToTimeOpen,
   setGoToTimeOpen,
 }: TimelineBodyViewProps) => {
@@ -185,6 +189,8 @@ const TimelineBody = ({
           editingEventPointId={editingEventPointId}
           onExitEditMode={onExitEditMode}
           onEditEventPoint={onEditEventPoint}
+          onConvertEventPointToLocal={onConvertEventPointToLocal}
+          onEnterEditMode={onEnterEditMode}
         />
 
         <TimelineMarker

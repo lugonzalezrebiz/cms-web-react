@@ -194,6 +194,8 @@ export interface EventRowProps {
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
+  onConvertEventPointToLocal?: (id: number) => number;
+  onEnterEditMode?: (id: number) => void;
   editingEventPointId: number | null;
   onExitEditMode: () => void;
   onStartMove: (epId: number, e: React.MouseEvent, maxSec: number) => void;
@@ -212,6 +214,8 @@ export const EventRow = memo(({
   selectedEventPointId,
   setSelectedEventPointId,
   onExtendStart,
+  onConvertEventPointToLocal,
+  onEnterEditMode,
   editingEventPointId,
   onExitEditMode,
   onStartMove,
@@ -432,27 +436,31 @@ export const EventRow = memo(({
       const cy   = rect.height / 2;
       const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * rect.width;
       for (const ep of [...points].reverse()) {
-        // In edit mode: start diamond is draggable only when range already has width
-        if (editingEventPointId === ep.id && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
+        // Start diamond is draggable when selected or in edit mode, only when range has width
+        const isActivePoint = ep.id === editingEventPointId || ep.id === selectedEventPointId;
+        if (isActivePoint && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
           if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
             e.preventDefault();
             e.stopPropagation();
-            onStartMove(ep.id, e, ep.endSec);
+            const targetId = onConvertEventPointToLocal?.(ep.id) ?? ep.id;
+            onEnterEditMode?.(targetId);
+            onStartMove(targetId, e, ep.endSec);
             return;
           }
         }
         const isSelected = ep.id === selectedEventPointId;
         const isNewLocal = !ep.entryIds && ep.endSec === ep.timeSec;
-        if (!ep.entryIds && (isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
+        if ((isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.preventDefault();
           e.stopPropagation();
-          onEditEventPoint?.(ep.id);
-          onExtendStart(ep.id, e, ep.timeSec);
+          const targetId = onConvertEventPointToLocal?.(ep.id) ?? ep.id;
+          onEnterEditMode?.(targetId);
+          onExtendStart(targetId, e, ep.timeSec);
           return;
         }
       }
     },
-    [points, visibleStart, visibleDuration, selectedEventPointId, editingEventPointId, onStartMove, isRangeDragHandle, onExtendStart],
+    [points, visibleStart, visibleDuration, selectedEventPointId, editingEventPointId, onStartMove, isRangeDragHandle, onExtendStart, onConvertEventPointToLocal, onEnterEditMode],
   );
 
   // -------------------------------------------------------------------------
@@ -467,8 +475,8 @@ export const EventRow = memo(({
       const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * rect.width;
 
       for (const ep of [...points].reverse()) {
-        // In edit mode: start diamond shows ew-resize cursor only when range already has width
-        if (editingEventPointId === ep.id && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
+        const isActivePoint = ep.id === editingEventPointId || ep.id === selectedEventPointId;
+        if (isActivePoint && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
           if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
             e.currentTarget.style.cursor = "ew-resize";
             return;
@@ -476,7 +484,7 @@ export const EventRow = memo(({
         }
         const isSelected = ep.id === selectedEventPointId;
         const isNewLocal = !ep.entryIds && ep.endSec === ep.timeSec;
-        if (!ep.entryIds && (isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
+        if ((isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.currentTarget.style.cursor = "ew-resize";
           return;
         }

@@ -8,14 +8,12 @@ export const useDragExtendEventPoint = ({
   visibleDuration,
   totalSec,
   onUpdateEventPoint,
-  onExtendEnd,
 }: {
   gridRef: React.RefObject<HTMLDivElement | null>;
   visibleStart: number;
   visibleDuration: number;
   totalSec: number;
   onUpdateEventPoint?: (id: number, update: EventPointUpdate) => void;
-  onExtendEnd?: () => void;
 }) => {
   // End-diamond drag (updates endSec)
   const [extendingId, setExtendingId] = useState<number | null>(null);
@@ -28,12 +26,10 @@ export const useDragExtendEventPoint = ({
   const visibleStartRef = useRef(visibleStart);
   const visibleDurationRef = useRef(visibleDuration);
   const onUpdateRef = useRef(onUpdateEventPoint);
-  const onExtendEndRef = useRef(onExtendEnd);
 
   useEffect(() => { visibleStartRef.current = visibleStart; }, [visibleStart]);
   useEffect(() => { visibleDurationRef.current = visibleDuration; }, [visibleDuration]);
   useEffect(() => { onUpdateRef.current = onUpdateEventPoint; }, [onUpdateEventPoint]);
-  useEffect(() => { onExtendEndRef.current = onExtendEnd; }, [onExtendEnd]);
 
   // End diamond drag
   useEffect(() => {
@@ -48,10 +44,7 @@ export const useDragExtendEventPoint = ({
       onUpdateRef.current?.(extendingId, { endSec: newSec });
     };
 
-    const handleMouseUp = () => {
-      setExtendingId(null);
-      onExtendEndRef.current?.();
-    };
+    const handleMouseUp = () => setExtendingId(null);
 
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);

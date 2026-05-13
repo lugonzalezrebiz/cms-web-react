@@ -173,6 +173,11 @@ const TimeLine = ({
     state.setSelectedEventPointId(newId);
   };
 
+  const handleEnterEditMode = (id: number) => {
+    state.setEditingEventPointId(id);
+    state.setSelectedEventPointId(id);
+  };
+
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
@@ -268,6 +273,8 @@ const TimeLine = ({
         editingEventPointId={state.editingEventPointId}
         onExitEditMode={() => state.setEditingEventPointId(null)}
         onEditEventPoint={handleEditEventPointById}
+        onConvertEventPointToLocal={onConvertEventPointToLocal}
+        onEnterEditMode={handleEnterEditMode}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
       />
