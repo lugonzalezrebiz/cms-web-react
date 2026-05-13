@@ -25,6 +25,7 @@ const TimeLine = ({
   canUndo,
   canRedo,
   onRemoveEventPoint,
+  onConvertEventPointToLocal,
   viewMode = "camera",
   menuItems = [],
   rangeSessions,
@@ -35,7 +36,7 @@ const TimeLine = ({
   targetMarkerSec?: number;
   onUpdateEventPoint?: (
     id: number,
-    update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
+    update: Partial<Pick<CameraEventPoint, "timeSec" | "startSec" | "endSec">>,
   ) => void;
   onPopOut?: () => void;
   headerLabel: string;
@@ -45,6 +46,7 @@ const TimeLine = ({
   canUndo?: boolean;
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
+  onConvertEventPointToLocal?: (id: number) => number;
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
@@ -157,6 +159,13 @@ const TimeLine = ({
     state.setSelectedEventPointId(null);
   };
 
+  const handleEditEventPoint = () => {
+    if (!targetEventPoint) return;
+    const newId = onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
+    state.setEditingEventPointId(newId);
+    state.setSelectedEventPointId(newId);
+  };
+
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
@@ -182,6 +191,7 @@ const TimeLine = ({
     gridRef: state.gridRef,
     cameraEventPoints: mergedEventPoints,
     onDeleteEventPoint: handleDeleteEventPoint,
+    onEditEventPoint: handleEditEventPoint,
   });
 
   return (
@@ -248,6 +258,8 @@ const TimeLine = ({
         setMarkerSec={state.setMarkerSec}
         selectedEventPointId={state.selectedEventPointId}
         setSelectedEventPointId={state.setSelectedEventPointId}
+        editingEventPointId={state.editingEventPointId}
+        onExitEditMode={() => state.setEditingEventPointId(null)}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
       />

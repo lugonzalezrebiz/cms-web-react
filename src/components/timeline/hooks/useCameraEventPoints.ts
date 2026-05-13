@@ -79,7 +79,19 @@ export const useCameraEventPoints = (monitoringID: string) => {
     // naturally after the query is invalidated.
   };
 
-  const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
+  const handleConvertToEditableLocal = (point: CameraEventPoint): number => {
+    const newId = Date.now();
+    const localCopy: CameraEventPoint = { ...point, entryIds: undefined, id: newId };
+    pushHistory(currentPointsRef.current);
+    setCameraEventPoints((prev) => {
+      const next = [...prev, localCopy];
+      currentPointsRef.current = next;
+      return next;
+    });
+    return newId;
+  };
+
+  const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "timeSec" | "startSec" | "endSec">>) => {
     const now = Date.now();
     if (now - lastUpdateTimeRef.current > 500) {
       pushHistory(currentPointsRef.current);
@@ -161,6 +173,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
+    handleConvertToEditableLocal,
     handleActivitySelect,
     handleMarkerChange,
     handleUpdateEventPoint,

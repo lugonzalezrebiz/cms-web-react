@@ -40,6 +40,8 @@ interface TimelineGridRowsProps {
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  editingEventPointId: number | null;
+  onExitEditMode: () => void;
 }
 
 export const TimelineGridRows = ({
@@ -68,6 +70,8 @@ export const TimelineGridRows = ({
   setMarkerSec,
   selectedEventPointId,
   setSelectedEventPointId,
+  editingEventPointId,
+  onExitEditMode,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -90,7 +94,7 @@ export const TimelineGridRows = ({
     setPanOffsetSec,
   });
 
-  const { startExtend } = useDragExtendEventPoint({
+  const { startExtend, startMove } = useDragExtendEventPoint({
     gridRef,
     visibleStart,
     visibleDuration,
@@ -190,6 +194,9 @@ export const TimelineGridRows = ({
                   setITrackId={setITrackId}
                   selectedEventPointId={selectedEventPointId}
                   setSelectedEventPointId={setSelectedEventPointId}
+                  editingEventPointId={editingEventPointId}
+                  onExitEditMode={onExitEditMode}
+                  onStartMove={startMove}
                   onExtendStart={startExtend}
                 />
               </Box>

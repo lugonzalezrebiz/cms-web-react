@@ -33,6 +33,7 @@ interface UseTimelineKeyboardParams {
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   cameraEventPoints?: CameraEventPoint[];
   onDeleteEventPoint?: () => void;
+  onEditEventPoint?: () => void;
 }
 
 export const useTimelineKeyboard = ({
@@ -60,9 +61,12 @@ export const useTimelineKeyboard = ({
   setIsPlaying,
   cameraEventPoints,
   onDeleteEventPoint,
+  onEditEventPoint,
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
   onDeleteRef.current = onDeleteEventPoint;
+  const onEditRef = useRef(onEditEventPoint);
+  onEditRef.current = onEditEventPoint;
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const navigate = useNavigateWithQuery();
 
@@ -118,6 +122,8 @@ export const useTimelineKeyboard = ({
       // } else
       if (e.key === "Delete") {
         onDeleteRef.current?.();
+      } else if (e.key === "e") {
+        onEditRef.current?.();
       } else if (e.key === "G" && e.shiftKey) {
         e.preventDefault();
         setGoToTimeOpen(true);

@@ -109,6 +109,7 @@ function drawFrame(
   visibleEnd: number,
   visibleDuration: number,
   anim: AnimState,
+  editingId: number | null,
 ) {
   ctx.clearRect(0, 0, width, height);
   const cy      = height / 2;
@@ -132,8 +133,9 @@ function drawFrame(
             ? 1 - anim.animProgress
             : isSelected ? 1 : 0;
 
-        const activeColor = ep.reviewed ? Colors.vividOrange : Colors.blue;
-        const idleColor   = ep.reviewed ? Colors.lightOrange  : Colors.lightSkyBlue;
+        const isEditing   = ep.id === editingId;
+        const activeColor = isEditing ? Colors.goldenAmber : ep.reviewed ? Colors.vividOrange : Colors.blue;
+        const idleColor   = isEditing ? Colors.creamYellow : ep.reviewed ? Colors.lightOrange  : Colors.lightSkyBlue;
         const shadowColor = t > 0 ? colorAlpha(activeColor, "99") : null;
         const shadowBlur  = t * 10;
 
@@ -192,6 +194,9 @@ export interface EventRowProps {
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
+  editingEventPointId: number | null;
+  onExitEditMode: () => void;
+  onStartMove: (epId: number, e: React.MouseEvent, maxSec: number) => void;
 }
 
 export const EventRow = memo(({
@@ -206,6 +211,9 @@ export const EventRow = memo(({
   selectedEventPointId,
   setSelectedEventPointId,
   onExtendStart,
+  editingEventPointId,
+  onExitEditMode,
+  onStartMove,
 }: EventRowProps) => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -218,6 +226,7 @@ export const EventRow = memo(({
     visibleDuration: 1,
     selectedId:   null as number | null,
     prevSelectedId: null as number | null,
+    editingId:    null as number | null,
     animating:    false,
     animStartTime: 0,
     rafId:        0,
@@ -278,7 +287,7 @@ export const EventRow = memo(({
         fromId:       s.prevSelectedId,
         toId:         s.selectedId,
         animProgress,
-      });
+      }, s.editingId);
     });
   }, []);
 
@@ -295,6 +304,7 @@ export const EventRow = memo(({
     s.visibleStart   = visibleStart;
     s.visibleEnd     = visibleEnd;
     s.visibleDuration = visibleDuration;
+    s.editingId      = editingEventPointId;
 
     if (selectedEventPointId !== prevSelectedId) {
       s.prevSelectedId = prevSelectedId;
@@ -311,7 +321,7 @@ export const EventRow = memo(({
         s.rafId = 0;
       }
     };
-  }, [points, visibleStart, visibleEnd, visibleDuration, selectedEventPointId, scheduleFrame]);
+  }, [points, visibleStart, visibleEnd, visibleDuration, selectedEventPointId, editingEventPointId, scheduleFrame]);
 
   // -------------------------------------------------------------------------
   // Hit testing helpers
@@ -374,8 +384,13 @@ export const EventRow = memo(({
       const px   = e.clientX - rect.left;
       const py   = e.clientY - rect.top;
       const ep   = getHitEp(px, py, rect.width, rect.height);
-      if (ep) { selectEp(ep); return; }
+      if (ep) {
+        if (ep.id !== editingEventPointId) onExitEditMode();
+        selectEp(ep);
+        return;
+      }
 
+      onExitEditMode();
       // Pass through to element below
       const canvas = e.currentTarget;
       canvas.style.pointerEvents = "none";
@@ -391,7 +406,7 @@ export const EventRow = memo(({
         );
       }
     },
-    [getHitEp, selectEp],
+    [getHitEp, selectEp, editingEventPointId, onExitEditMode],
   );
 
   const handleMouseDown = useCallback(
@@ -399,7 +414,18 @@ export const EventRow = memo(({
       const rect = e.currentTarget.getBoundingClientRect();
       const px   = e.clientX - rect.left;
       const py   = e.clientY - rect.top;
+      const cy   = rect.height / 2;
+      const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * rect.width;
       for (const ep of [...points].reverse()) {
+        // In edit mode: start diamond is also draggable
+        if (editingEventPointId === ep.id && ep.mode === "RANGE") {
+          if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
+            e.preventDefault();
+            e.stopPropagation();
+            onStartMove(ep.id, e, ep.endSec);
+            return;
+          }
+        }
         if (isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.preventDefault();
           e.stopPropagation();
@@ -408,7 +434,7 @@ export const EventRow = memo(({
         }
       }
     },
-    [points, isRangeDragHandle, onExtendStart],
+    [points, visibleStart, visibleDuration, editingEventPointId, onStartMove, isRangeDragHandle, onExtendStart],
   );
 
   // -------------------------------------------------------------------------
@@ -419,8 +445,17 @@ export const EventRow = memo(({
       const rect = e.currentTarget.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+      const cy = rect.height / 2;
+      const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * rect.width;
 
       for (const ep of [...points].reverse()) {
+        // In edit mode: start diamond shows ew-resize cursor too
+        if (editingEventPointId === ep.id && ep.mode === "RANGE") {
+          if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
+            e.currentTarget.style.cursor = "ew-resize";
+            return;
+          }
+        }
         if (isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.currentTarget.style.cursor = "ew-resize";
           return;
@@ -430,7 +465,7 @@ export const EventRow = memo(({
         ? "pointer"
         : "default";
     },
-    [points, isRangeDragHandle, getHitEp],
+    [points, visibleStart, visibleDuration, editingEventPointId, isRangeDragHandle, getHitEp],
   );
 
   // 3. Reset cursor when mouse leaves
