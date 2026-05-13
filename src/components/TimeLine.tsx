@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import TimelineBody from "./timeline/TimelineBody";
 import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
@@ -25,6 +25,7 @@ const TimeLine = ({
   canUndo,
   canRedo,
   onRemoveEventPoint,
+  onStartEditEventPoint,
   viewMode = "camera",
   menuItems = [],
   rangeSessions,
@@ -45,6 +46,7 @@ const TimeLine = ({
   canUndo?: boolean;
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
+  onStartEditEventPoint?: (id: number) => Promise<number>;
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
@@ -157,6 +159,21 @@ const TimeLine = ({
     state.setSelectedEventPointId(null);
   };
 
+  const [editingEventPointId, setEditingEventPointId] = useState<number | null>(null);
+
+  const handleEditEventPoint = () => {
+    if (!targetEventPoint || targetEventPoint.mode !== "RANGE") return;
+    if (targetEventPoint.entryIds?.length) {
+      if (!onStartEditEventPoint) return;
+      onStartEditEventPoint(targetEventPoint.id).then((newId) => {
+        setEditingEventPointId(newId);
+        state.setSelectedEventPointId(newId);
+      });
+    } else {
+      setEditingEventPointId(targetEventPoint.id);
+    }
+  };
+
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
@@ -182,6 +199,7 @@ const TimeLine = ({
     gridRef: state.gridRef,
     cameraEventPoints: mergedEventPoints,
     onDeleteEventPoint: handleDeleteEventPoint,
+    onEditEventPoint: handleEditEventPoint,
   });
 
   return (
@@ -248,6 +266,8 @@ const TimeLine = ({
         setMarkerSec={state.setMarkerSec}
         selectedEventPointId={state.selectedEventPointId}
         setSelectedEventPointId={state.setSelectedEventPointId}
+        editingEventPointId={editingEventPointId}
+        onClearEditing={() => setEditingEventPointId(null)}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
       />

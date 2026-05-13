@@ -1,6 +1,6 @@
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import { usePostCallback } from "../../../hooks/useApi";
-import { USE_STATIC_IDS, MONITORING_ID } from "../../../config";
+import { USE_STATIC_IDS, MONITORING_ID, ASSIGNMENTS_COMPLETED } from "../../../config";
 import type { stateAssignments } from "../../Assignments/components/stateColors";
 
 const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20251224&monitoringID=${MONITORING_ID}`;
@@ -38,6 +38,8 @@ export const useAssignmentNavigate = () => {
       : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID);
     if (a.statusName === "resource.review.ready") {
       await postCallback(`monitoring/${a.monitoringID}/review/start`);
+    } else if (a.statusName === "resource.review.completed" && ASSIGNMENTS_COMPLETED === true){
+      return 
     }
     navigate(url, USE_STATIC_IDS ? {} : { state: { assignment: a } });
   };

@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type React from "react";
 import type { CameraEventPoint } from "../types";
 
+type DragConfig = { target: "start" | "end"; minSec: number; maxSec: number };
+
 export const useDragExtendEventPoint = ({
   gridRef,
   visibleStart,
   visibleDuration,
-  totalSec,
   onUpdateEventPoint,
 }: {
   gridRef: React.RefObject<HTMLDivElement | null>;
@@ -15,11 +16,13 @@ export const useDragExtendEventPoint = ({
   totalSec: number;
   onUpdateEventPoint?: (
     id: number,
-    update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
+    update: Partial<Pick<CameraEventPoint, "startSec" | "endSec" | "timeSec">>,
   ) => void;
 }) => {
   const [extendingId, setExtendingId] = useState<number | null>(null);
   const minSecRef = useRef(0);
+  const maxSecRef = useRef(Infinity);
+  const dragTargetRef = useRef<"start" | "end">("end");
   const visibleStartRef = useRef(visibleStart);
   const visibleDurationRef = useRef(visibleDuration);
   const onUpdateRef = useRef(onUpdateEventPoint);
@@ -36,8 +39,13 @@ export const useDragExtendEventPoint = ({
       if (!rect) return;
       const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       const rawSec = visibleStartRef.current + fraction * visibleDurationRef.current;
-      const newSec = Math.max(minSecRef.current, Math.min(totalSec, rawSec));
-      onUpdateRef.current?.(extendingId, { endSec: newSec });
+      const newSec = Math.max(minSecRef.current, Math.min(maxSecRef.current, rawSec));
+
+      if (dragTargetRef.current === "start") {
+        onUpdateRef.current?.(extendingId, { timeSec: newSec, startSec: newSec });
+      } else {
+        onUpdateRef.current?.(extendingId, { endSec: newSec });
+      }
     };
 
     const handleMouseUp = () => setExtendingId(null);
@@ -48,12 +56,14 @@ export const useDragExtendEventPoint = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [extendingId, gridRef, totalSec]);
+  }, [extendingId, gridRef]);
 
-  const startExtend = useCallback((epId: number, e: React.MouseEvent, minSec: number) => {
+  const startExtend = useCallback((epId: number, e: React.MouseEvent, config: DragConfig) => {
     e.preventDefault();
     e.stopPropagation();
-    minSecRef.current = minSec;
+    minSecRef.current = config.minSec;
+    maxSecRef.current = config.maxSec;
+    dragTargetRef.current = config.target;
     setExtendingId(epId);
   }, []);
 
