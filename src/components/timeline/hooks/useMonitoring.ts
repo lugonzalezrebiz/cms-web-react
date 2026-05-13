@@ -42,7 +42,7 @@ interface ApiEvent {
   entries: EventEntry[];
 }
 
-interface MonitoringResponse {
+export interface MonitoringResponse {
   success: boolean;
   monitoring: {
     id: string;
