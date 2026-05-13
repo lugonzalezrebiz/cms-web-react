@@ -197,6 +197,7 @@ export interface EventRowProps {
   editingEventPointId: number | null;
   onExitEditMode: () => void;
   onStartMove: (epId: number, e: React.MouseEvent, maxSec: number) => void;
+  onEditEventPoint?: (id: number) => void;
 }
 
 export const EventRow = memo(({
@@ -214,6 +215,7 @@ export const EventRow = memo(({
   editingEventPointId,
   onExitEditMode,
   onStartMove,
+  onEditEventPoint,
 }: EventRowProps) => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -409,6 +411,19 @@ export const EventRow = memo(({
     [getHitEp, selectEp, editingEventPointId, onExitEditMode],
   );
 
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const px   = e.clientX - rect.left;
+      const py   = e.clientY - rect.top;
+      const ep   = getHitEp(px, py, rect.width, rect.height);
+      if (ep?.mode === "RANGE") {
+        onEditEventPoint?.(ep.id);
+      }
+    },
+    [getHitEp, onEditEventPoint],
+  );
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -495,6 +510,7 @@ export const EventRow = memo(({
         data-ep-ids={points.map(ep => ep.id).join(",")}
         style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", display: "block", pointerEvents: "auto" }}
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}

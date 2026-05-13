@@ -42,6 +42,7 @@ interface TimelineGridRowsProps {
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   editingEventPointId: number | null;
   onExitEditMode: () => void;
+  onEditEventPoint?: (id: number) => void;
 }
 
 export const TimelineGridRows = ({
@@ -72,6 +73,7 @@ export const TimelineGridRows = ({
   setSelectedEventPointId,
   editingEventPointId,
   onExitEditMode,
+  onEditEventPoint,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -198,6 +200,7 @@ export const TimelineGridRows = ({
                   onExitEditMode={onExitEditMode}
                   onStartMove={startMove}
                   onExtendStart={startExtend}
+                  onEditEventPoint={onEditEventPoint}
                 />
               </Box>
             ),
