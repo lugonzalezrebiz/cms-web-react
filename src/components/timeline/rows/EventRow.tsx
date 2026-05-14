@@ -115,11 +115,18 @@ function drawFrame(
   const cy      = height / 2;
   const toSecX  = (sec: number) => ((sec - visibleStart) / visibleDuration) * width;
 
-  // Two-pass: bars first (z-index 2-3), then diamonds (z-index 3-4)
-  // Within each pass: unselected before selected (z-order)
-  for (const pass of ["bars", "diamonds"] as const) {
+  // Draw order: unreviewed-bars → unreviewed-diamonds → reviewed-bars → reviewed-diamonds
+  // Within each group: unselected before selected
+  const groups: [boolean, "bars" | "diamonds"][] = [
+    [false, "bars"],
+    [false, "diamonds"],
+    [true,  "bars"],
+    [true,  "diamonds"],
+  ];
+  for (const [passReviewed, pass] of groups) {
     for (const selPass of [false, true] as const) {
       for (const ep of points) {
+        if (ep.reviewed !== passReviewed) continue;
         const isSelected = ep.id === anim.toId;
         if (isSelected !== selPass) continue;
 
@@ -336,20 +343,37 @@ export const EventRow = memo(({
     (px: number, py: number, w: number, h: number): CameraEventPoint | null => {
       const cy     = h / 2;
       const toSecX = (s: number) => ((s - visibleStart) / visibleDuration) * w;
-      for (const ep of [...points].reverse()) {
-        if (ep.mode === "RANGE" && ep.endSec > ep.timeSec &&
-            ep.endSec >= visibleStart && ep.endSec <= visibleEnd) {
-          if (hitDiamond(px, py, toSecX(ep.endSec), cy, DIAMOND_SIZE)) return ep;
-        }
-        if (ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd) {
-          if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) return ep;
-        }
-        const bS = Math.max(ep.startSec, visibleStart);
-        const bE = Math.min(ep.endSec,   visibleEnd);
-        if (bS < bE) {
-          const lx = toSecX(ep.startSec);
-          const bw = (ep.endSec - ep.startSec) / visibleDuration * w;
-          if (hitBar(px, py, lx, cy - BAR_HEIGHT / 2, bw, BAR_HEIGHT)) return ep;
+      const reversed = [...points].reverse();
+
+      // Priority mirrors draw order in reverse (last drawn = highest priority):
+      // reviewed-diamonds → reviewed-bars → unreviewed-diamonds → unreviewed-bars
+      const hitGroups: [boolean, "diamonds" | "bars"][] = [
+        [true,  "diamonds"],
+        [true,  "bars"],
+        [false, "diamonds"],
+        [false, "bars"],
+      ];
+
+      for (const [hitReviewed, hitKind] of hitGroups) {
+        for (const ep of reversed) {
+          if (ep.reviewed !== hitReviewed) continue;
+          if (hitKind === "diamonds") {
+            if (ep.mode === "RANGE" && ep.endSec > ep.timeSec &&
+                ep.endSec >= visibleStart && ep.endSec <= visibleEnd) {
+              if (hitDiamond(px, py, toSecX(ep.endSec), cy, DIAMOND_SIZE)) return ep;
+            }
+            if (ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd) {
+              if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) return ep;
+            }
+          } else {
+            const bS = Math.max(ep.startSec, visibleStart);
+            const bE = Math.min(ep.endSec,   visibleEnd);
+            if (bS < bE) {
+              const lx = toSecX(ep.startSec);
+              const bw = (ep.endSec - ep.startSec) / visibleDuration * w;
+              if (hitBar(px, py, lx, cy - BAR_HEIGHT / 2, bw, BAR_HEIGHT)) return ep;
+            }
+          }
         }
       }
       return null;
