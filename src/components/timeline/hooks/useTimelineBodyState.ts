@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FlatRow, TimelineSnapshot } from "../types";
 
 interface UseTimelineBodyStateParams {
@@ -43,6 +43,7 @@ export const useTimelineBodyState = ({
   const listBodyRef = useRef<HTMLDivElement | null>(null);
   const rowsScrollRef = useRef<HTMLDivElement | null>(null);
   const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoFollowRef = useRef(false);
 
   // Derived layout values
   const visibleDuration = totalSec / zoom;
@@ -72,12 +73,17 @@ export const useTimelineBodyState = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || dragStartX === null) return;
+    autoFollowRef.current = false;
     const deltaX = e.clientX - dragStartX;
     const secondsPerPixel = visibleDuration / e.currentTarget.clientWidth;
     const newOffset = dragStartOffset - deltaX * secondsPerPixel;
     const maxOffset = totalSec - visibleDuration;
     setPanOffsetSec(Math.max(0, Math.min(maxOffset, newOffset)));
   };
+
+  const disableAutoFollow = useCallback(() => {
+    autoFollowRef.current = false;
+  }, []);
 
   const handleOnCloseDialog = () => {
     setOpenDialog(false);
@@ -104,13 +110,17 @@ export const useTimelineBodyState = ({
     return () => clearInterval(id);
   }, [isPlaying, timelineStartSec, timelineEndSec]);
 
+  // Enable auto-follow whenever playback starts
   useEffect(() => {
-    if (!isPlaying || markerSec === null) return;
-    if (markerSec < visibleStart || markerSec > visibleEnd) {
-      const maxOffset = totalSec - visibleDuration;
-      setPanOffsetSec(Math.max(0, Math.min(maxOffset, markerSec - visibleDuration * 0.1)));
-    }
-  }, [markerSec, isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isPlaying) autoFollowRef.current = true;
+  }, [isPlaying]);
+
+  // Keep marker at 20% from left while playing and auto-follow is active
+  useEffect(() => {
+    if (!isPlaying || markerSec === null || !autoFollowRef.current) return;
+    const maxOffset = totalSec - visibleDuration;
+    setPanOffsetSec(Math.max(0, Math.min(maxOffset, markerSec - visibleDuration * 0.2)));
+  }, [markerSec, isPlaying, totalSec, visibleDuration]);
 
   useEffect(() => {
     const vd = totalSec / zoom;
@@ -194,5 +204,6 @@ export const useTimelineBodyState = ({
     handleOnCloseDialog,
     handleOnOpenDialog,
     openDialog,
+    disableAutoFollow,
   };
 };

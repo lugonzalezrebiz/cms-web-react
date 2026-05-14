@@ -58,6 +58,7 @@ export interface TimelineBodyViewProps {
   onEnterEditMode?: (id: number) => void;
   goToTimeOpen: boolean;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onUserPan?: () => void;
 }
 
 const TimelineBody = ({
@@ -107,6 +108,7 @@ const TimelineBody = ({
   onEnterEditMode,
   goToTimeOpen,
   setGoToTimeOpen,
+  onUserPan,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -179,6 +181,7 @@ const TimelineBody = ({
           hasAnyBars={hasAnyBars}
           setZoom={setZoom}
           setPanOffsetSec={setPanOffsetSec}
+          onUserPan={onUserPan}
           cameraEventPoints={cameraEventPoints}
           onUpdateEventPoint={onUpdateEventPoint}
           iTrackId={iTrackId}

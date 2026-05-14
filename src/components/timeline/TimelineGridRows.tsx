@@ -46,6 +46,7 @@ interface TimelineGridRowsProps {
   onEditEventPoint?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   onEnterEditMode?: (id: number) => void;
+  onUserPan?: () => void;
 }
 
 export const TimelineGridRows = ({
@@ -79,6 +80,7 @@ export const TimelineGridRows = ({
   onEditEventPoint,
   onConvertEventPointToLocal,
   onEnterEditMode,
+  onUserPan,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -99,6 +101,7 @@ export const TimelineGridRows = ({
     totalSec,
     setZoom,
     setPanOffsetSec,
+    onUserPan,
   });
 
   const { startExtend, startMove } = useDragExtendEventPoint({

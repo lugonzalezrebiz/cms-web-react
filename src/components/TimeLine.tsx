@@ -264,6 +264,7 @@ const TimeLine = ({
         hasAnyBars={state.hasAnyBars}
         setZoom={state.setZoom}
         setPanOffsetSec={state.setPanOffsetSec}
+        onUserPan={state.disableAutoFollow}
         cameraEventPoints={mergedEventPoints}
         onUpdateEventPoint={onUpdateEventPoint}
         currentLeft={state.currentLeft}
