@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Box } from "@mui/system";
 import TimeLine from "../../components/TimeLine";
@@ -38,7 +39,8 @@ const MonitorTimeline = () => {
 
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
-  useBroadcastSync(markerTimeSec, handleMarkerChange);
+  const [targetSec, setTargetSec] = useState<number | undefined>(undefined);
+  useBroadcastSync(markerTimeSec, setTargetSec);
 
   const sessionDate = useSessionDate();
   useSaveMonitoring({
@@ -56,6 +58,7 @@ const MonitorTimeline = () => {
         cameraEventPoints={allEventPoints}
         onMarkerChange={handleMarkerChange}
         markerTimeSec={markerTimeSec}
+        targetMarkerSec={targetSec}
         onUpdateEventPoint={handleUpdateEventPoint}
         onRemoveEventPoint={handleRemoveEventPoint}
         onUndo={handleUndo}

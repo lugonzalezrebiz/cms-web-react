@@ -236,7 +236,9 @@ const Monitor = () => {
       </Box>
 
       {!timelinePopped && (
-        <Box sx={{ flex: 3, minHeight: 0, zIndex: 2000 }}>
+        <Box
+          sx={{ flex: 3, minHeight: 0, zIndex: expandedCamera ? 2000 : 1000 }}
+        >
           <TimeLine {...timelineProps} />
         </Box>
       )}
