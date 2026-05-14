@@ -46,6 +46,7 @@ interface TimelineGridRowsProps {
   setEditingEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
   onClearEditing: () => void;
   onStartEditEventPoint?: (id: number) => Promise<number>;
+  onUserPan?: () => void;
 }
 
 
@@ -79,6 +80,7 @@ export const TimelineGridRows = ({
   setEditingEventPointId,
   onClearEditing,
   onStartEditEventPoint,
+  onUserPan,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -99,6 +101,7 @@ export const TimelineGridRows = ({
     totalSec,
     setZoom,
     setPanOffsetSec,
+    onUserPan,
   });
 
   const { startExtend } = useDragExtendEventPoint({

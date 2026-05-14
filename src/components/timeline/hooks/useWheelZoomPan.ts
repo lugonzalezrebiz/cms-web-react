@@ -9,6 +9,7 @@ interface UseWheelZoomPanArgs {
   totalSec: number;
   setZoom: React.Dispatch<React.SetStateAction<number>>;
   setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
+  onUserPan?: () => void;
 }
 
 export const useWheelZoomPan = ({
@@ -20,6 +21,7 @@ export const useWheelZoomPan = ({
   totalSec,
   setZoom,
   setPanOffsetSec,
+  onUserPan,
 }: UseWheelZoomPanArgs) => {
   useEffect(() => {
     const el = gridRef.current;
@@ -52,6 +54,7 @@ export const useWheelZoomPan = ({
           }
         }
         if (e.deltaX !== 0) {
+          onUserPan?.();
           const maxOffset = totalSec - totalSec / zoom;
           setPanOffsetSec((prev) =>
             Math.max(0, Math.min(maxOffset, prev + e.deltaX * 5)),
@@ -62,5 +65,5 @@ export const useWheelZoomPan = ({
 
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
-  }, [zoom, panOffsetSec, totalSec, setZoom, setPanOffsetSec, gridRef, listBodyRef, rowsScrollRef]);
+  }, [zoom, panOffsetSec, totalSec, setZoom, setPanOffsetSec, onUserPan, gridRef, listBodyRef, rowsScrollRef]);
 };

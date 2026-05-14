@@ -38,7 +38,7 @@ const MonitorTimeline = () => {
 
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
-  useBroadcastSync(markerTimeSec, handleMarkerChange);
+  const { targetSec } = useBroadcastSync(markerTimeSec);
 
   const sessionDate = useSessionDate();
   useSaveMonitoring({
@@ -56,6 +56,7 @@ const MonitorTimeline = () => {
         cameraEventPoints={allEventPoints}
         onMarkerChange={handleMarkerChange}
         markerTimeSec={markerTimeSec}
+        targetMarkerSec={targetSec ?? undefined}
         onUpdateEventPoint={handleUpdateEventPoint}
         onRemoveEventPoint={handleRemoveEventPoint}
         onUndo={handleUndo}

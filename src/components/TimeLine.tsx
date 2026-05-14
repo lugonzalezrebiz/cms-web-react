@@ -232,6 +232,7 @@ const TimeLine = ({
         setDragStartX={state.setDragStartX}
         setDragStartOffset={state.setDragStartOffset}
         handleMouseMove={state.handleMouseMove}
+        onUserPan={state.disableAutoFollow}
         timelineStartSec={timelineStartSec}
         timelineEndSec={timelineEndSec}
         visibleStart={state.visibleStart}

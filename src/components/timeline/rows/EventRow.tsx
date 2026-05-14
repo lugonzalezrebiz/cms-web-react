@@ -72,6 +72,8 @@ const EventPointBar = memo(
         ? Colors.lightOrange
         : Colors.lightSkyBlue;
 
+    const baseZ = ep.reviewed ? 10 : 0;
+
     const diamondSx = (selected: boolean) => ({
       position: "absolute" as const,
       top: "50%",
@@ -83,7 +85,7 @@ const EventPointBar = memo(
         ? `1.5px solid ${Colors.white}`
         : `1px solid ${Colors.white}`,
       boxShadow: selected ? `0 0 6px 2px ${activeColor}99` : "none",
-      zIndex: selected ? 4 : 3,
+      zIndex: baseZ + (selected ? 4 : 3),
       pointerEvents: "auto" as const,
       transition: "box-shadow 0.15s",
     });
@@ -112,7 +114,7 @@ const EventPointBar = memo(
                     : `${activeColor}55`,
               boxShadow: isSelected ? `0 0 8px 2px ${idleColor}99` : "none",
               height: 15,
-              zIndex: isSelected ? 3 : 2,
+              zIndex: baseZ + (isSelected ? 3 : 2),
               pointerEvents: "auto",
               cursor: "pointer",
               transition: "box-shadow 0.15s, background-color 0.15s",

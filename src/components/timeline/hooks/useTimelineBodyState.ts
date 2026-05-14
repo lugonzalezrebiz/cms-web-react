@@ -42,6 +42,7 @@ export const useTimelineBodyState = ({
   const listBodyRef = useRef<HTMLDivElement | null>(null);
   const rowsScrollRef = useRef<HTMLDivElement | null>(null);
   const punchOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoFollowRef = useRef(false);
 
   // Derived layout values
   const visibleDuration = totalSec / zoom;
@@ -69,8 +70,13 @@ export const useTimelineBodyState = ({
   const isInActivityRange = (sec: number) =>
     sec >= timelineStartSec && sec <= timelineEndSec;
 
+  const disableAutoFollow = () => {
+    autoFollowRef.current = false;
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || dragStartX === null) return;
+    autoFollowRef.current = false;
     const deltaX = e.clientX - dragStartX;
     const secondsPerPixel = visibleDuration / e.currentTarget.clientWidth;
     const newOffset = dragStartOffset - deltaX * secondsPerPixel;
@@ -104,11 +110,13 @@ export const useTimelineBodyState = ({
   }, [isPlaying, timelineStartSec, timelineEndSec]);
 
   useEffect(() => {
-    if (!isPlaying || markerSec === null) return;
-    if (markerSec < visibleStart || markerSec > visibleEnd) {
-      const maxOffset = totalSec - visibleDuration;
-      setPanOffsetSec(Math.max(0, Math.min(maxOffset, markerSec - visibleDuration * 0.1)));
-    }
+    if (isPlaying) autoFollowRef.current = true;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isPlaying || markerSec === null || !autoFollowRef.current) return;
+    const maxOffset = totalSec - visibleDuration;
+    setPanOffsetSec(Math.max(0, Math.min(maxOffset, markerSec - visibleDuration * 0.2)));
   }, [markerSec, isPlaying]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -187,6 +195,7 @@ export const useTimelineBodyState = ({
     currentLeft,
     hasAnyBars,
     isInActivityRange,
+    disableAutoFollow,
     handleMouseMove,
     handleOnCloseDialog,
     handleOnOpenDialog,
