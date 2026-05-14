@@ -88,13 +88,14 @@ const Monitor = () => {
     [cameraEventPoints, preloadedEventPoints],
   );
 
-  const { handleDeleteEventPoint, handleConvertEventPoint } = useDeleteEventPoint(
-    monitoringID,
-    allEventPoints,
-    handleRemoveEventPoint,
-    handleRegisterPreloadedDelete,
-    handleConvertToEditableLocal,
-  );
+  const { handleDeleteEventPoint, handleConvertEventPoint } =
+    useDeleteEventPoint(
+      monitoringID,
+      allEventPoints,
+      handleRemoveEventPoint,
+      handleRegisterPreloadedDelete,
+      handleConvertToEditableLocal,
+    );
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
@@ -234,18 +235,11 @@ const Monitor = () => {
         />
       </Box>
 
-      {!timelinePopped && expandedCamera === null && (
-        <Box sx={{ flex: 3, minHeight: 0 }}>
-          <TimeLine {...timelineProps} />
-        </Box>
-      )}
-
-      {expandedCamera !== null && !timelinePopped && (
+      {!timelinePopped && (
         <Box sx={{ flex: 3, minHeight: 0, zIndex: 2000 }}>
           <TimeLine {...timelineProps} />
         </Box>
       )}
-
       <ExpandedCameraDialog
         open={expandedCamera !== null}
         onClose={() =>
