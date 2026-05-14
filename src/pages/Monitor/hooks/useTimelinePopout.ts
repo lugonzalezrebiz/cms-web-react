@@ -10,9 +10,11 @@ export const useTimelinePopout =(
   const popoutRef = useRef<Window | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
+  const markerTimeSecRef = useRef(markerTimeSec);
   const suppressSendRef = useRef(false);
 
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; });
+  useEffect(() => { markerTimeSecRef.current = markerTimeSec; }, [markerTimeSec]);
 
   useEffect(() => {
     if (!timelinePopped) return;
@@ -23,6 +25,9 @@ export const useTimelinePopout =(
       if (e.data?.type === "marker" && e.data?.source === "popout") {
         suppressSendRef.current = true;
         onMarkerChangeRef.current(e.data.sec as number);
+      }
+      if (e.data?.type === "request-sync" && markerTimeSecRef.current !== null) {
+        channel.postMessage({ type: "marker", sec: markerTimeSecRef.current, source: "monitor" });
       }
     });
 

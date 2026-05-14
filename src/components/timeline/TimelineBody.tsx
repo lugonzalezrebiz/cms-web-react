@@ -57,6 +57,7 @@ export interface TimelineBodyViewProps {
   onStartEditEventPoint?: (id: number) => Promise<number>;
   goToTimeOpen: boolean;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onUserPan?: () => void;
 }
 
 const TimelineBody = ({
@@ -105,6 +106,7 @@ const TimelineBody = ({
   onStartEditEventPoint,
   goToTimeOpen,
   setGoToTimeOpen,
+  onUserPan,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -188,6 +190,7 @@ const TimelineBody = ({
           setEditingEventPointId={setEditingEventPointId}
           onClearEditing={onClearEditing}
           onStartEditEventPoint={onStartEditEventPoint}
+          onUserPan={onUserPan}
         />
 
         <TimelineMarker

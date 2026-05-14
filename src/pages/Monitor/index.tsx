@@ -62,11 +62,21 @@ const Monitor = () => {
     handleRedo,
     canUndo,
     canRedo,
-    cleanUp
+    cleanUp,
   } = useCameraEventPoints(monitoringID);
 
-  const cameraMenuItems = useCameraMenuItems(company, location, openMenuCamera, handleActivitySelect);
-  const expandedCameraMenuItems = useCameraMenuItems(company, location, expandedCamera, handleActivitySelect);
+  const cameraMenuItems = useCameraMenuItems(
+    company,
+    location,
+    openMenuCamera,
+    handleActivitySelect,
+  );
+  const expandedCameraMenuItems = useCameraMenuItems(
+    company,
+    location,
+    expandedCamera,
+    handleActivitySelect,
+  );
 
   const {
     snapshot,
@@ -78,13 +88,14 @@ const Monitor = () => {
     [cameraEventPoints, preloadedEventPoints],
   );
 
-  const { handleDeleteEventPoint, handleStartEditEventPoint } = useDeleteEventPoint(
-    monitoringID,
-    allEventPoints,
-    handleRemoveEventPoint,
-    handleRegisterPreloadedDelete,
-    handleConvertToLocal,
-  );
+  const { handleDeleteEventPoint, handleStartEditEventPoint } =
+    useDeleteEventPoint(
+      monitoringID,
+      allEventPoints,
+      handleRemoveEventPoint,
+      handleRegisterPreloadedDelete,
+      handleConvertToLocal,
+    );
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
@@ -223,16 +234,11 @@ const Monitor = () => {
           onExpandCamera={handleExpandCamera}
         />
       </Box>
-      {/* && !expandedCamera */}
 
-      {!timelinePopped && expandedCamera === null && (
-        <Box sx={{ flex: 3, minHeight: 0 }}>
-          <TimeLine {...timelineProps} />
-        </Box>
-      )}
-
-      {expandedCamera !== null && !timelinePopped && (
-        <Box sx={{ flex: 3, minHeight: 0, zIndex: 2000 }}>
+      {!timelinePopped && (
+        <Box
+          sx={{ flex: 3, minHeight: 0, zIndex: expandedCamera ? 2000 : 1000 }}
+        >
           <TimeLine {...timelineProps} />
         </Box>
       )}
