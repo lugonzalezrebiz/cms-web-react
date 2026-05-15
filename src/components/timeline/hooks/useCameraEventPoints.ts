@@ -1,25 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CameraEventPoint } from "../types";
 
-const storageKey = (id: string) => `cameraEventPoints_${id}`;
-
-const readFromStorage = (id: string): CameraEventPoint[] => {
-  try {
-    const raw = sessionStorage.getItem(storageKey(id));
-    return raw ? (JSON.parse(raw) as CameraEventPoint[]) : [];
-  } catch {
-    return [];
-  }
-};
-
 export const useCameraEventPoints = (monitoringID: string) => {
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraIndex: number; activityLabel: string }[]
   >([]);
-  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>(
-    () => readFromStorage(monitoringID),
-  );
+  const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
@@ -28,7 +15,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
-  const currentPointsRef = useRef<CameraEventPoint[]>(readFromStorage(monitoringID));
+  const currentPointsRef = useRef<CameraEventPoint[]>([]);
 
   const syncChannelRef = useRef<BroadcastChannel | null>(null);
   const suppressSyncRef = useRef(false);
@@ -60,28 +47,10 @@ export const useCameraEventPoints = (monitoringID: string) => {
     syncChannelRef.current?.postMessage({ type: "sync", monitoringID, points: cameraEventPoints });
   }, [cameraEventPoints, monitoringID]);
 
-  // Persist every change to sessionStorage
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(storageKey(monitoringID), JSON.stringify(cameraEventPoints));
-    } catch { /* ignore */ }
-  }, [cameraEventPoints, monitoringID]);
-
-  // Clear sessionStorage on real navigation (not on browser reload)
-  useEffect(() => {
-    const isReloading = { current: false };
-    const onBeforeUnload = () => { isReloading.current = true; };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    let active = false;
-    const id = setTimeout(() => { active = true; }, 0);
-    return () => {
-      clearTimeout(id);
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      if (active && !isReloading.current) {
-        sessionStorage.removeItem(storageKey(monitoringID));
-      }
-    };
-  }, [monitoringID]);
+  const cleanUp = () => {
+    setCameraEventPoints([]);
+    currentPointsRef.current = [];
+  };
 
   const pushHistory = (snapshot: CameraEventPoint[]) => {
     historyRef.current = [...historyRef.current, snapshot];
@@ -97,6 +66,17 @@ export const useCameraEventPoints = (monitoringID: string) => {
       currentPointsRef.current = next;
       return next;
     });
+  };
+
+  // Called when deleting a preloaded point (one with entryIds).
+  // The point is already being deleted from the server via the DELETE API.
+  // We push a history snapshot that includes a local copy of the point (without entryIds)
+  // so that undo can restore it and handleDone can re-save it via save2.
+  const handleRegisterPreloadedDelete = (point: CameraEventPoint) => {
+    const localCopy: CameraEventPoint = { ...point, entryIds: undefined, id: Date.now() };
+    pushHistory([...currentPointsRef.current, localCopy]);
+    // Current state stays unchanged; the point disappears from preloadedEventPoints
+    // naturally after the query is invalidated.
   };
 
   const handleUpdateEventPoint = (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => {
@@ -180,6 +160,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
     cameraEventPoints,
     markerSec,
     handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
     handleActivitySelect,
     handleMarkerChange,
     handleUpdateEventPoint,
@@ -187,5 +168,6 @@ export const useCameraEventPoints = (monitoringID: string) => {
     handleRedo,
     canUndo,
     canRedo,
+    cleanUp,
   };
 };

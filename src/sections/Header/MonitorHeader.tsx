@@ -17,8 +17,12 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useMonitorParams from "./hooks/useMonitorParams";
-import useNavigateWithQuery from "../../hooks/useNavigate";
-import { useMonitorState, useCameraGroup } from "../../contexts/useMonitorContext";
+import useNavigateWithQuery, { useLocationState } from "../../hooks/useNavigate";
+import type { NavigationAssignment } from "../../pages/Assignments/hooks/useAssignmentNavigate";
+import {
+  useMonitorState,
+  useCameraGroup,
+} from "../../contexts/useMonitorContext";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import useTrackerOptions from "./hooks/useTrackerOptions";
@@ -29,11 +33,11 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   items: [
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }],
-      label: "Move marker back 3 min",
+      label: "Move marker back 5 sec",
     },
     {
       keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }],
-      label: "Move marker forward 3 min",
+      label: "Move marker forward 5 sec",
     },
     {
       keys: [
@@ -136,14 +140,18 @@ const SmallSize = ({
     companyLabel,
     storeLabel,
     formattedDate,
-    timeRange,
     companyID,
     locationID,
     monitoringID,
   } = useMonitorParams();
+  const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
-    assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+    navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const toHHmm = (t: string | null) => (t ? t.slice(0, 5) : "----");
+  const timeRange = assignment
+    ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
+    : "----";
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
@@ -163,7 +171,7 @@ const SmallSize = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, showFinalizeButton } = useMonitorState();
+  const { handleDone } = useMonitorState();
   const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
     useCameraGroup();
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
@@ -237,9 +245,7 @@ const SmallSize = ({
               />
 
               <Box>
-                <Button onClick={handleDone} disabled={!showFinalizeButton}>
-                  Done
-                </Button>
+                <Button onClick={handleDone}>Done</Button>
               </Box>
             </Box>
           </Box>
@@ -304,14 +310,18 @@ const NormalSize = ({
     companyLabel,
     storeLabel,
     formattedDate,
-    timeRange,
     companyID,
     locationID,
     monitoringID,
   } = useMonitorParams();
+  const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
-    assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+    navState?.assignment ?? assignments.find((a) => a.monitoringID === monitoringID) ?? null;
+  const toHHmm = (t: string | null) => (t ? t.slice(0, 5) : "----");
+  const timeRange = assignment
+    ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
+    : "----";
   const headerInfo: HeaderInfo | undefined = assignment
     ? {
         title: assignment.date,
@@ -331,7 +341,7 @@ const NormalSize = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, showFinalizeButton } = useMonitorState();
+  const { handleDone } = useMonitorState();
   const { cameraGroup, setCameraGroup, trackerOption, setTrackerOption } =
     useCameraGroup();
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
@@ -415,9 +425,7 @@ const NormalSize = ({
               />
 
               <Box>
-                <Button onClick={handleDone} disabled={!showFinalizeButton}>
-                  Done
-                </Button>
+                <Button onClick={handleDone}>Done</Button>
               </Box>
             </Box>
           </Box>

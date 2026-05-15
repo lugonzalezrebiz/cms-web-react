@@ -9,6 +9,7 @@ export interface CameraContextMenuItem {
   icon?: string;
   shortcut?: string;
   dividerAfter?: boolean;
+  reviewed?: boolean;
   onClick: (cameraIndex: number) => void;
 }
 

@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { memo, useMemo } from "react";
 import TimelineBody from "./timeline/TimelineBody";
 import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
@@ -104,14 +105,17 @@ const TimeLine = ({
     state.setMarkerSec(next);
   };
 
-  const sortedEventPoints = [...mergedEventPoints].sort(
-    (a, b) => a.timeSec - b.timeSec,
+  const sortedEventPoints = useMemo(
+    () => [...mergedEventPoints].sort((a, b) => a.timeSec - b.timeSec),
+    [mergedEventPoints],
   );
-  const prevEventPoint = [...sortedEventPoints]
-    .reverse()
-    .find((ep) => ep.timeSec < state.resolvedMarkerSec);
-  const nextEventPoint = sortedEventPoints.find(
-    (ep) => ep.timeSec > state.resolvedMarkerSec,
+  const prevEventPoint = useMemo(
+    () => [...sortedEventPoints].reverse().find((ep) => ep.timeSec < state.resolvedMarkerSec),
+    [sortedEventPoints, state.resolvedMarkerSec],
+  );
+  const nextEventPoint = useMemo(
+    () => sortedEventPoints.find((ep) => ep.timeSec > state.resolvedMarkerSec),
+    [sortedEventPoints, state.resolvedMarkerSec],
   );
 
   const handleGoToPrevEventPoint = () => {
@@ -125,22 +129,32 @@ const TimeLine = ({
     ? menuItems.find((m) => m.id === state.iTrackId)?.name
     : undefined;
 
-  const eventPointUnderMarker = mergedEventPoints.find((ep) =>
-    isActivityMode
-      ? ep.label === selectedActivityLabel &&
-        state.resolvedMarkerSec >= ep.startSec &&
-        state.resolvedMarkerSec <= ep.endSec
-      : ep.cameraId === state.iTrackId &&
-        state.resolvedMarkerSec >= ep.startSec &&
-        state.resolvedMarkerSec <= ep.endSec,
+  const eventPointUnderMarker = useMemo(
+    () =>
+      mergedEventPoints.find((ep) =>
+        isActivityMode
+          ? ep.label === selectedActivityLabel &&
+            state.resolvedMarkerSec >= ep.startSec &&
+            state.resolvedMarkerSec <= ep.endSec
+          : ep.cameraId === state.iTrackId &&
+            state.resolvedMarkerSec >= ep.startSec &&
+            state.resolvedMarkerSec <= ep.endSec,
+      ),
+    [mergedEventPoints, isActivityMode, selectedActivityLabel, state.resolvedMarkerSec, state.iTrackId],
+  );
+
+  const targetEventPoint = useMemo(
+    () =>
+      state.selectedEventPointId !== null
+        ? mergedEventPoints.find((ep) => ep.id === state.selectedEventPointId)
+        : eventPointUnderMarker,
+    [state.selectedEventPointId, mergedEventPoints, eventPointUnderMarker],
   );
 
   const handleDeleteEventPoint = () => {
-    const targetId = state.selectedEventPointId ?? eventPointUnderMarker?.id;
-    if (targetId !== undefined) {
-      onRemoveEventPoint?.(targetId);
-      state.setSelectedEventPointId(null);
-    }
+    if (!targetEventPoint?.reviewed) return;
+    onRemoveEventPoint?.(targetEventPoint.id);
+    state.setSelectedEventPointId(null);
   };
 
   const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
@@ -184,10 +198,7 @@ const TimeLine = ({
         canUndo={canUndo}
         canRedo={canRedo}
         onDeleteEventPoint={handleDeleteEventPoint}
-        canDelete={
-          state.selectedEventPointId !== null ||
-          eventPointUnderMarker !== undefined
-        }
+        canDelete={targetEventPoint?.reviewed === true}
         onGoPrevEventPoint={handleGoToPrevEventPoint}
         onGoNextEventPoint={handleGoToNextEventPoint}
         hasPrevEventPoint={prevEventPoint !== undefined}
@@ -248,4 +259,4 @@ const TimeLine = ({
   );
 };
 
-export default TimeLine;
+export default memo(TimeLine);

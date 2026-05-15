@@ -132,6 +132,20 @@ export const usePostCallback = <T = unknown>(options?: { invalidateKey?: string[
   );
 };
 
+export const useDeleteCallback = <T = unknown>() => {
+  const { token } = useAuth();
+  return useCallback(
+    async (url: string, body?: unknown): Promise<T> => {
+      const res = await apiClient.delete<T>(url, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        data: body,
+      });
+      return res.data;
+    },
+    [token],
+  );
+};
+
 export const usePost = <TData = unknown, TVariables = unknown>(
   url: string,
   options?: UseMutationOptions<TData, Error, TVariables> & {

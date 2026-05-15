@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
@@ -8,7 +8,6 @@ import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
 import useTrackers from "../../hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
-import { useMenuItems } from "./hooks/useMenuItems";
 // import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
@@ -17,7 +16,7 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
-import { useAutoSaveOnUnmount } from "./hooks/useAutoSaveOnUnmount";
+import { useDeleteEventPoint } from "./hooks/useDeleteEventPoint";
 import { useCameraMenuItems } from "./hooks/useCameraMenuItems";
 import {
   useRegisterMonitorActions,
@@ -41,6 +40,10 @@ const Monitor = () => {
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
   const cameras = useTrackerCameras(groupID, trackerID);
+  const sortedCameras = useMemo(
+    () => [...cameras].sort((a, b) => a.id - b.id),
+    [cameras],
+  );
   const { trackers } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
@@ -50,6 +53,7 @@ const Monitor = () => {
     cameraEventPoints,
     markerSec,
     handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
     handleActivitySelect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
@@ -57,16 +61,28 @@ const Monitor = () => {
     handleRedo,
     canUndo,
     canRedo,
+    cleanUp
   } = useCameraEventPoints(monitoringID);
 
   const cameraMenuItems = useCameraMenuItems(company, location, openMenuCamera, handleActivitySelect);
+  const expandedCameraMenuItems = useCameraMenuItems(company, location, expandedCamera, handleActivitySelect);
 
   const {
     snapshot,
     eventPoints: preloadedEventPoints,
     rangeSessions,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+  const allEventPoints = useMemo(
+    () => [...cameraEventPoints, ...preloadedEventPoints],
+    [cameraEventPoints, preloadedEventPoints],
+  );
+
+  const { handleDeleteEventPoint } = useDeleteEventPoint(
+    monitoringID,
+    allEventPoints,
+    handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
+  );
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
@@ -74,8 +90,6 @@ const Monitor = () => {
     cameraGroup,
     markerSec,
   );
-
-  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
@@ -97,44 +111,68 @@ const Monitor = () => {
     eventPoints: cameraEventPoints,
     sessionDate,
     monitoringID,
+    onSuccess: cleanUp,
   });
 
   useRegisterMonitorActions(handleDone, showFinalizeButton);
 
-  useAutoSaveOnUnmount(handleDone);
+  const menuItems = useMemo(
+    () =>
+      trackers.map((t) => ({
+        id: t.id,
+        name: t.name,
+        label: t.name,
+        onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
+      })),
+    [trackers, handleActivitySelect],
+  );
 
-  const timelineProps = {
-    snapshot,
-    cameraEventPoints: allEventPoints,
-    onMarkerChange: handleMarkerChange,
-    markerTimeSec,
-    targetMarkerSec:
-      cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
-    onUpdateEventPoint: handleUpdateEventPoint,
-    onPopOut: handlePopOut,
-    headerLabel: "Compliance Violations",
-    onUndo: handleUndo,
-    onRedo: handleRedo,
-    canUndo,
-    canRedo,
-    onRemoveEventPoint: handleRemoveEventPoint,
-    viewMode: "activity" as const,
-    menuItems: trackers.map((t) => ({
-      id: t.id,
-      name: t.name,
-      label: t.name,
-      onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
-    })),
-    rangeSessions,
-  } as const;
+  const timelineProps = useMemo(
+    () => ({
+      snapshot,
+      cameraEventPoints: allEventPoints,
+      onMarkerChange: handleMarkerChange,
+      markerTimeSec,
+      targetMarkerSec:
+        cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
+      onUpdateEventPoint: handleUpdateEventPoint,
+      onPopOut: handlePopOut,
+      headerLabel: "Compliance Violations" as const,
+      onUndo: handleUndo,
+      onRedo: handleRedo,
+      canUndo,
+      canRedo,
+      onRemoveEventPoint: handleDeleteEventPoint,
+      viewMode: "activity" as const,
+      menuItems,
+      rangeSessions,
+    }),
+    [
+      snapshot,
+      allEventPoints,
+      handleMarkerChange,
+      markerTimeSec,
+      cameraGroup,
+      posMarkerSec,
+      handleUpdateEventPoint,
+      handlePopOut,
+      handleUndo,
+      handleRedo,
+      canUndo,
+      canRedo,
+      handleDeleteEventPoint,
+      menuItems,
+      rangeSessions,
+    ],
+  );
 
-  const expandedCameraTags = (() => {
+  const expandedCameraTags = useMemo(() => {
     if (expandedCamera === null) return [];
     const seen = new Set<string>();
     return allEventPoints
       .filter(
         (ep) =>
-          ep.cameraId === 1 + expandedCamera &&
+          ep.cameraId === sortedCameras[expandedCamera]?.id &&
           markerSec >= ep.startSec &&
           markerSec <= ep.endSec,
       )
@@ -147,9 +185,10 @@ const Monitor = () => {
         id: ep.id,
         name: ep.label,
         label: ep.label,
+        reviewed: ep.reviewed,
         onClick: () => {},
       }));
-  })();
+  }, [allEventPoints, expandedCamera, sortedCameras, markerSec]);
 
   return (
     <Box
@@ -170,7 +209,7 @@ const Monitor = () => {
           onMenuOpen={setOpenMenuCamera}
           cameraEventPoints={allEventPoints}
           markerSec={markerSec}
-          onRemoveEventPoint={handleRemoveEventPoint}
+          onRemoveEventPoint={handleDeleteEventPoint}
           cameras={cameras}
           company={company}
           location={location}
@@ -182,7 +221,7 @@ const Monitor = () => {
       </Box>
       {/* && !expandedCamera */}
 
-      {!timelinePopped && !expandedCamera && (
+      {!timelinePopped && expandedCamera === null && (
         <Box sx={{ flex: 3, minHeight: 0 }}>
           <TimeLine {...timelineProps} />
         </Box>
@@ -203,14 +242,14 @@ const Monitor = () => {
         media="/assets/camera/Cam thumbnail.svg"
         expandCamera={handleExpandCamera}
         tags={expandedCameraTags}
-        contextMenuItems={allMenuItems}
-        cameraId={cameras[expandedCamera ?? 0]?.id}
-        cameraName={cameras[expandedCamera ?? 0]?.name}
+        contextMenuItems={expandedCameraMenuItems}
+        cameraId={sortedCameras[expandedCamera ?? 0]?.id}
+        cameraName={sortedCameras[expandedCamera ?? 0]?.name}
         company={company}
         location={location}
         date={date}
         timestamp={timestamp}
-        onRemoveTag={handleRemoveEventPoint}
+        onRemoveTag={handleDeleteEventPoint}
       />
     </Box>
   );

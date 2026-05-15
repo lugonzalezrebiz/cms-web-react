@@ -26,6 +26,7 @@ const MonitorTimeline = () => {
     handleRedo,
     canUndo,
     canRedo,
+    cleanUp,
   } = useCameraEventPoints(monitoringID);
 
   const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
@@ -45,6 +46,7 @@ const MonitorTimeline = () => {
     eventPoints: cameraEventPoints,
     sessionDate,
     monitoringID,
+    onSuccess: cleanUp,
   });
 
   return (

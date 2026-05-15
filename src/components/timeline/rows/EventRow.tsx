@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
+import { memo, useMemo } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
@@ -12,20 +13,31 @@ interface EventPointBarProps {
   visibleDuration: number;
   setResizing: SetResizing;
   isSelected: boolean;
-  onSelect: () => void;
+  rowId: number;
+  setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
+  setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
-const EventPointBar = ({
+const EventPointBar = memo(({
   ep,
   visibleStart,
   visibleEnd,
   visibleDuration,
   //setResizing,
   isSelected,
-  onSelect,
+  rowId,
+  setMarkerSec,
+  setSelectedEventPointId,
+  setITrackId,
   onExtendStart,
 }: EventPointBarProps) => {
+  const handleSelect = () => {
+    setMarkerSec(ep.timeSec);
+    setSelectedEventPointId(ep.id);
+    setITrackId(rowId);
+  };
   const barStart = Math.max(ep.startSec, visibleStart);
   const barEnd = Math.min(ep.endSec, visibleEnd);
   const hasBar = barStart < barEnd;
@@ -63,7 +75,7 @@ const EventPointBar = ({
       {/* Bar — only when there is actual width */}
       {hasBar && (
         <Box
-          onClick={onSelect}
+          onClick={handleSelect}
           sx={{
             position: "absolute",
             left: `${leftPct}%`,
@@ -88,7 +100,7 @@ const EventPointBar = ({
       )}
       {/* Origin diamond at timeSec — drag handle when no extension yet (RANGE only) */}
       <Box
-        onClick={onSelect}
+        onClick={handleSelect}
         onMouseDown={
           ep.mode === "RANGE" && ep.endSec <= ep.timeSec
             ? (e) => onExtendStart(ep.id, e, ep.timeSec)
@@ -106,7 +118,7 @@ const EventPointBar = ({
       {/* End diamond at endSec — visible and draggable only when RANGE bar has been extended */}
       {ep.mode === "RANGE" && ep.endSec > ep.timeSec && (
         <Box
-          onClick={onSelect}
+          onClick={handleSelect}
           onMouseDown={(e) => onExtendStart(ep.id, e, ep.timeSec)}
           sx={{
             ...diamondSx(isSelected),
@@ -117,7 +129,7 @@ const EventPointBar = ({
       )}
     </>
   );
-};
+});
 
 export interface EventRowProps {
   row: FlatRow;
@@ -134,7 +146,7 @@ export interface EventRowProps {
   onExtendStart: (epId: number, e: React.MouseEvent, minSec: number) => void;
 }
 
-export const EventRow = ({
+export const EventRow = memo(({
   row,
   rowIndex,
   cameraEventPoints,
@@ -148,12 +160,16 @@ export const EventRow = ({
   setSelectedEventPointId,
   onExtendStart,
 }: EventRowProps) => {
-  const points =
-    row.kind === "activity"
-      ? cameraEventPoints.filter((ep) => ep.label === row.name)
-      : cameraEventPoints.filter(
-          (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
-        );
+  const points = useMemo(
+    () =>
+      (row.kind === "activity"
+        ? cameraEventPoints.filter((ep) => ep.label === row.name)
+        : cameraEventPoints.filter(
+            (ep) => ep.cameraId === row.parentCameraId && ep.label === row.name,
+          )
+      ).sort((a, b) => Number(a.reviewed) - Number(b.reviewed)),
+    [cameraEventPoints, row.kind, row.name, row.parentCameraId],
+  );
 
   return (
     <Box
@@ -175,14 +191,13 @@ export const EventRow = ({
           visibleDuration={visibleDuration}
           setResizing={setResizing}
           isSelected={selectedEventPointId === ep.id}
-          onSelect={() => {
-            setMarkerSec(ep.timeSec);
-            setSelectedEventPointId(ep.id);
-            setITrackId(row.id);
-          }}
+          rowId={row.id}
+          setMarkerSec={setMarkerSec}
+          setSelectedEventPointId={setSelectedEventPointId}
+          setITrackId={setITrackId}
           onExtendStart={onExtendStart}
         />
       ))}
     </Box>
   );
-};
+}) as React.FC<EventRowProps>;
