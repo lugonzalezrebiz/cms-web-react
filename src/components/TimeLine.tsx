@@ -1,35 +1,17 @@
 import { Box } from "@mui/material";
-import { memo, useMemo, useState } from "react";
+import { forwardRef, memo, useEffect, useMemo, useState } from "react";
 import TimelineBody from "./timeline/TimelineBody";
-import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
+import type { CameraEventPoint, TimelineSnapshot } from "../types";
+import type { TimelineBodyHandle, RangeSessions } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
-import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
-import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
+import { useTimelineHandle } from "./timeline/hooks/useTimelineHandle";
 
-const TimeLine = ({
-  cameraEventPoints,
-  onMarkerChange,
-  snapshot,
-  targetMarkerSec,
-  onUpdateEventPoint,
-  onPopOut,
-  headerLabel,
-  markerTimeSec,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-  onRemoveEventPoint,
-  onStartEditEventPoint,
-  viewMode = "camera",
-  menuItems = [],
-  rangeSessions,
-}: {
+const TimeLine = forwardRef<TimelineBodyHandle, {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
   snapshot: TimelineSnapshot;
@@ -49,29 +31,37 @@ const TimeLine = ({
   onStartEditEventPoint?: (id: number) => Promise<number>;
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string }[];
-  rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
-}) => {
+  rangeSessions?: RangeSessions;
+}>(({
+  cameraEventPoints,
+  onMarkerChange,
+  snapshot,
+  targetMarkerSec,
+  onUpdateEventPoint,
+  onPopOut,
+  headerLabel,
+  markerTimeSec,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onRemoveEventPoint,
+  onStartEditEventPoint,
+  viewMode = "camera",
+  menuItems = [],
+  rangeSessions,
+}, ref) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
+  const isActivityMode = viewMode === "activity";
 
-  const cameraRowsData = useFlatRows({
+  const { flatRows, selectableRows, timelineStartSec, timelineEndSec, firstActivitySec } = useFlatRows({
     data,
     cameraEventPoints: mergedEventPoints,
-  });
-  const activityRowsData = useActivityRows({
+    viewMode,
     menuItems,
-    cameraEventPoints: mergedEventPoints,
     rangeSessions,
   });
-
-  const isActivityMode = viewMode === "activity";
-  const flatRows = isActivityMode
-    ? activityRowsData.flatRows
-    : cameraRowsData.flatRows;
-  const selectableRows = isActivityMode
-    ? activityRowsData.selectableRows
-    : cameraRowsData.selectableRows;
-  const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
 
   const state = useTimelineBodyState({
     snapshot,
@@ -82,19 +72,29 @@ const TimeLine = ({
     firstActivitySec,
   });
 
-  useMarkerSync({
-    targetMarkerSec,
-    resolvedMarkerSec: state.resolvedMarkerSec,
-    timelineStartSec,
-    timelineEndSec,
-    setMarkerSec: state.setMarkerSec,
-    handleMarkerChange: onMarkerChange ?? (() => {}),
-  });
+  useEffect(() => {
+    if (targetMarkerSec !== undefined) {
+      state.setMarkerSec(Math.max(timelineStartSec, Math.min(timelineEndSec, targetMarkerSec)));
+    }
+  }, [targetMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    onMarkerChange?.(state.resolvedMarkerSec);
+  }, [state.resolvedMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useAutoSelectOnEventPoint({
     cameraEventPoints: mergedEventPoints,
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
+  });
+
+  useTimelineHandle({
+    ref,
+    timelineStartSec,
+    timelineEndSec,
+    resolvedMarkerSec: state.resolvedMarkerSec,
+    setMarkerSec: state.setMarkerSec,
+    setIsPlaying: state.setIsPlaying,
   });
 
   const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
@@ -266,6 +266,6 @@ const TimeLine = ({
       /> */}
     </Box>
   );
-};
+});
 
 export default memo(TimeLine);

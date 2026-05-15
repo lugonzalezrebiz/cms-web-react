@@ -1,24 +1,26 @@
 import { useMemo } from "react";
-import type { CameraEventPoint, FlatRow, TimelineSnapshot } from "../types";
-
-function toSeconds(time: string): number {
-  const [h, m, s] = time.split(":").map(Number);
-  return h * 3600 + m * 60 + s;
-}
+import type { CameraEventPoint, FlatRow, TimelineSnapshot, RangeSessions } from "../types";
+import { timeStringToSec } from "../utils";
 
 interface UseFlatRowsParams {
   data: TimelineSnapshot;
   cameraEventPoints?: CameraEventPoint[];
+  viewMode?: "camera" | "activity";
+  menuItems?: { id: number; name: string }[];
+  rangeSessions?: RangeSessions;
 }
 
 export const useFlatRows = ({
   data,
   cameraEventPoints,
+  viewMode = "camera",
+  menuItems = [],
+  rangeSessions,
 }: UseFlatRowsParams) => {
-  const timelineStartSec = toSeconds(data.timeline.times.start);
-  const timelineEndSec = toSeconds(data.timeline.times.end);
+  const timelineStartSec = timeStringToSec(data.timeline.times.start);
+  const timelineEndSec = timeStringToSec(data.timeline.times.end);
 
-  const flatRows = useMemo((): FlatRow[] => {
+  const cameraFlatRows = useMemo((): FlatRow[] => {
     const tracks = data.timeline.tracks;
     const rows: FlatRow[] = [];
     for (let i = 0; i < tracks.length; i++) {
@@ -51,13 +53,29 @@ export const useFlatRows = ({
     return rows;
   }, [cameraEventPoints, data]);
 
-  const selectableRows = useMemo(
-    () => flatRows.filter((r) => r.kind !== "event"),
-    [flatRows],
+  const activityFlatRows = useMemo(
+    (): FlatRow[] =>
+      menuItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        kind: "activity" as const,
+        cameraNumber: 0,
+        sessions: rangeSessions?.[item.id] ?? [],
+      })),
+    [menuItems, rangeSessions],
   );
 
-  const allTimestamps = flatRows.flatMap((row) =>
-    row.sessions.map((s) => toSeconds(s.timestamp)),
+  const cameraSelectableRows = useMemo(
+    () => cameraFlatRows.filter((r) => r.kind !== "event"),
+    [cameraFlatRows],
+  );
+
+  const isActivityMode = viewMode === "activity";
+  const flatRows = isActivityMode ? activityFlatRows : cameraFlatRows;
+  const selectableRows = isActivityMode ? activityFlatRows : cameraSelectableRows;
+
+  const allTimestamps = cameraFlatRows.flatMap((row) =>
+    row.sessions.map((s) => timeStringToSec(s.timestamp)),
   );
   const firstActivitySec =
     allTimestamps.length > 0 ? Math.min(...allTimestamps) : 0;

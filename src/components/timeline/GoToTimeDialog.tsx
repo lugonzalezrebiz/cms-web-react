@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { secToTimeString } from "./utils";
 import {
   Dialog,
   DialogContent,
@@ -31,12 +32,6 @@ const parseTime = (value: string): number | null => {
   return null;
 };
 
-const formatSec = (sec: number): string => {
-  const h = Math.floor(sec / 3600) % 24;
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-};
 
 export const GoToTimeDialog = ({
   open,
@@ -50,7 +45,7 @@ export const GoToTimeDialog = ({
 
   useEffect(() => {
     if (open) {
-      setValue(formatSec(timelineStartSec));
+      setValue(secToTimeString(timelineStartSec));
       setError("");
     }
   }, [open, timelineStartSec]);
@@ -63,7 +58,7 @@ export const GoToTimeDialog = ({
     }
     if (sec < timelineStartSec || sec > timelineEndSec) {
       setError(
-        `Out of range (${formatSec(timelineStartSec)} – ${formatSec(timelineEndSec)})`,
+        `Out of range (${secToTimeString(timelineStartSec)} – ${secToTimeString(timelineEndSec)})`,
       );
       return;
     }

@@ -3,8 +3,8 @@ import { IconButton, useMediaQuery } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
-import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
+import { StyledContainer, StyledTitle, StyledSubTitle, StyledImg } from "./styles";
 import HeaderInfoMenu, {
   type HeaderInfo,
 } from "../../components/HeaderInfoMenu";
@@ -20,7 +20,7 @@ import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery, {
   useLocationState,
 } from "../../hooks/useNavigate";
-import type { NavigationAssignment } from "../../pages/Assignments/hooks/useAssignmentNavigate";
+import type { NavigationAssignment } from "../../types";
 import {
   useMonitorState,
   useCameraGroup,
@@ -97,37 +97,6 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
     },
   ],
 };
-
-const StyledContainer = styled("div")({
-  display: "flex",
-  padding: "0.5em 1em 0.5em 1em",
-  alignItems: "center",
-  gap: "10px",
-  justifyContent: "space-between",
-});
-
-const StyledTitle = styled("p")({
-  margin: 0,
-  fontSize: "16px",
-  fontWeight: "600",
-  lineHeight: 1.5,
-  color: Colors.lightBlack,
-  fontFamily: Fonts.main,
-});
-
-const StyledSubTitle = styled("p")({
-  margin: 0,
-  fontSize: "12px",
-  fontWeight: "normal",
-  lineHeight: 1.5,
-  color: Colors.vividOrange,
-  fontFamily: Fonts.main,
-});
-
-const StyledImg = styled("img")({
-  margin: "0 8px",
-  cursor: "pointer",
-});
 
 const SmallSize = ({
   toggleDrawer,

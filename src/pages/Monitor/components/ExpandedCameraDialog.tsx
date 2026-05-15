@@ -3,7 +3,7 @@ import Dialog from "../../../components/Dialog";
 import { CameraItem } from "../../../components/CameraLayout";
 import Button from "../../../components/Button";
 import Title from "../../../components/Title";
-import type { CameraContextMenuItem } from "../../../components/CameraOverlayMenu";
+import type { CameraContextMenuItem } from "../../../types";
 
 export interface ExpandedCameraDialogProps {
   open: boolean;

@@ -4,7 +4,7 @@ import { Check } from "@mui/icons-material";
 import MediaCarousel from "../../../components/MediaCarousel";
 import Button from "../../../components/Button";
 import { Colors } from "../../../theme";
-import type { CameraContextMenuItem } from "../../../components/DragDropMenu";
+import type { CameraContextMenuItem } from "../../../types";
 import type { SalesTransaction } from "../hooks/useSalesTransactions";
 import type { AttendedValue } from "../hooks/usePosCarousel";
 

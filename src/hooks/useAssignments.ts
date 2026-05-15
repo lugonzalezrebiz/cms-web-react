@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { usePostQuery } from "./useApi";
-import type { stateAssignments } from "../pages/Assignments/components/stateColors";
+import type { stateAssignments } from "../types";
 import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);

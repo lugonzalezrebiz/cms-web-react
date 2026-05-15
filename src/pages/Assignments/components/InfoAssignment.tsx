@@ -2,17 +2,8 @@ import { Box } from "@mui/system";
 import Dialog from "../../../components/Dialog";
 import { Colors, Fonts } from "../../../theme";
 import styled from "@emotion/styled";
-import { type stateAssignments, stateColors } from "./stateColors";
-
-export type Assignment = {
-  state: stateAssignments;
-  location: number;
-  store: number;
-  date: string;
-  comments: number;
-  items: { activity: string; complement: string }[];
-  commentsTex: string[];
-};
+import { stateColors } from "./stateColors";
+import { type stateAssignments, type Assignment } from "../types";
 
 interface InfoAssignmentProps {
   handleCloseDialog: () => void;

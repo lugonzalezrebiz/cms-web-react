@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Box, useMediaQuery } from "@mui/material";
 import { Grid } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
-import { secToTimeString } from "./hooks/useTimelineMarker";
+import { secToTimeString } from "./utils";
 import type { NavTab, TimelineSnapshot } from "./types";
 import TimelineNavPopover from "./TimelineNavPopover";
 import { usePopover } from "./hooks/usePopover";

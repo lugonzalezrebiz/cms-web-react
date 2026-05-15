@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
-export function useMarkerDrag(
+export const useMarkerDrag=(
   gridRef: React.RefObject<HTMLDivElement | null>,
   visibleStart: number,
   visibleDuration: number,
   timelineStartSec: number,
   timelineEndSec: number,
   setMarkerSec: (sec: number) => void,
-) {
+)=> {
   const [isDraggingMarker, setIsDraggingMarker] = useState(false);
 
   useEffect(() => {

@@ -1,17 +1,9 @@
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import { Colors, Fonts } from "../theme";
+import type { CameraContextMenuItem } from "./types";
 
-export interface CameraContextMenuItem {
-  id: number;
-  name: string;
-  label: string;
-  icon?: string;
-  shortcut?: string;
-  dividerAfter?: boolean;
-  reviewed?: boolean;
-  onClick: (cameraIndex: number) => void;
-}
+export type { CameraContextMenuItem };
 
 interface CameraOverlayMenuProps {
   open: boolean;

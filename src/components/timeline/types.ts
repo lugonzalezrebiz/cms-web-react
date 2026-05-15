@@ -62,19 +62,6 @@ export type CameraEventPoint = {
 export type ResizingState = { id: number; side: "left" | "right" } | null;
 export type SetResizing = React.Dispatch<React.SetStateAction<ResizingState>>;
 
-export interface TimelineBodyProps {
-  snapshot?: TimelineSnapshot;
-  posSnapshot?: TimelineSnapshot;
-  posEventPoints?: CameraEventPoint[];
-  activeTab: NavTab;
-  selectedTab?: string;
-  cameraActivities?: {
-    id: number;
-    cameraIndex: number;
-    activityLabel: string;
-  }[];
-  cameraEventPoints?: CameraEventPoint[];
-  onMarkerChange?: (sec: number) => void;
-  onPlayingChange?: (playing: boolean) => void;
-  onUpdateEventPoint?: (id: number, update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>) => void;
-}
+export type RangeSessions = Record<number, { type: "in" | "out"; timestamp: string }[]>;
+
+export type DragConfig = { target: "start" | "end"; minSec: number; maxSec: number };

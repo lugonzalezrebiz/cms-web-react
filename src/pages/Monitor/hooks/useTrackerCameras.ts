@@ -1,13 +1,13 @@
 import { usePostQuery } from "../../../hooks/useApi";
 import { useDashboardParams } from "./useDashboardParams";
-import type { CameraInfo } from "../../../components/CameraLayout";
+import type { Camera } from "../../../types";
 
 type CameraSearchResponse = {
   success: boolean;
   cameras: Array<{ id: number; name: string; group: { id: number; name: string } }>;
 };
 
-export const useTrackerCameras=(groupID: number, trackerID: number): CameraInfo[]=> {
+export const useTrackerCameras=(groupID: number, trackerID: number): Camera[]=> {
   const { company, location } = useDashboardParams();
   const enabled = !!company && !!location;
 

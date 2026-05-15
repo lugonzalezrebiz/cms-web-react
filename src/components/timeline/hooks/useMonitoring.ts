@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { TimelineSnapshot, CameraEventPoint } from "../types";
+import type { TimelineSnapshot, CameraEventPoint, RangeSessions } from "../types";
 import { MOCK_SNAPSHOT } from "../constants";
 import { useGet } from "../../../hooks/useApi";
 
@@ -52,19 +52,18 @@ export interface MonitoringResponse {
   };
 }
 
-function toSec(datetime: string): number {
+const toSec=(datetime: string): number =>{
   const time = datetime.split(" ")[1] ?? "00:00:00";
   const [h, m, s] = time.split(":").map(Number);
   return h * 3600 + m * 60 + (s ?? 0);
 }
 
-type RangeSessions = Record<number, { type: "in" | "out"; timestamp: string }[]>;
 
-function toTimeStr(datetime: string): string {
+const toTimeStr=(datetime: string): string =>{
   return datetime.split(" ")[1] ?? "00:00:00";
 }
 
-function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, modeMap: Map<number, "POINT" | "RANGE">): CameraEventPoint[] {
+const buildEventPoints=(events: ApiEvent[], trackerMap: Map<number, string>, modeMap: Map<number, "POINT" | "RANGE">): CameraEventPoint[]=> {
   const points: CameraEventPoint[] = [];
   for (const event of events) {
     const label = trackerMap.get(event.trackerId) ?? "";
@@ -105,7 +104,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
   return points;
 }
 
-function buildRangeSessions(events: ApiEvent[]): RangeSessions {
+const buildRangeSessions=(events: ApiEvent[]): RangeSessions=> {
   const sessions: RangeSessions = {};
   for (const event of events) {
     for (const entry of event.entries) {
@@ -119,7 +118,7 @@ function buildRangeSessions(events: ApiEvent[]): RangeSessions {
   return sessions;
 }
 
-export function useMonitoring(
+export const useMonitoring=(
   _trackers: { id: number; name: string }[],
   monitoringID: string,
   timeStart?: string | null,
@@ -130,7 +129,7 @@ export function useMonitoring(
   rangeSessions: RangeSessions;
   loading: boolean;
   error: string | null;
-} {
+} =>{
   const [baseSnapshot] = useState<TimelineSnapshot>(MOCK_SNAPSHOT);
 
   const { data, isPending: loading, error: queryError } = useGet<MonitoringResponse>(

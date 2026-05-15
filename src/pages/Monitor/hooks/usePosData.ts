@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { TimelineSnapshot, CameraEventPoint } from "../../../components/timeline/types";
+import type { TimelineSnapshot, CameraEventPoint } from "../../../types";
 import type { SalesTransaction } from "./useSalesTransactions";
 
 export const usePosData = (
