@@ -1,13 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type React from "react";
-import type { CameraEventPoint } from "../types";
-
-export type DragConfig = { target: "start" | "end"; minSec: number; maxSec: number };
+import type { CameraEventPoint, DragConfig, ResizingState, SetResizing } from "../types";
 
 export const useDragExtendEventPoint = ({
   gridRef,
   visibleStart,
   visibleDuration,
+  totalSec,
   onUpdateEventPoint,
 }: {
   gridRef: React.RefObject<HTMLDivElement | null>;
@@ -19,10 +18,7 @@ export const useDragExtendEventPoint = ({
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec" | "timeSec">>,
   ) => void;
 }) => {
-  const [extendingId, setExtendingId] = useState<number | null>(null);
-  const minSecRef = useRef(0);
-  const maxSecRef = useRef(Infinity);
-  const dragTargetRef = useRef<"start" | "end">("end");
+  // ── shared refs ─────────────────────────────────────────────────────────────
   const visibleStartRef = useRef(visibleStart);
   const visibleDurationRef = useRef(visibleDuration);
   const onUpdateRef = useRef(onUpdateEventPoint);
@@ -30,6 +26,12 @@ export const useDragExtendEventPoint = ({
   useEffect(() => { visibleStartRef.current = visibleStart; }, [visibleStart]);
   useEffect(() => { visibleDurationRef.current = visibleDuration; }, [visibleDuration]);
   useEffect(() => { onUpdateRef.current = onUpdateEventPoint; }, [onUpdateEventPoint]);
+
+  // ── extend drag ─────────────────────────────────────────────────────────────
+  const [extendingId, setExtendingId] = useState<number | null>(null);
+  const minSecRef = useRef(0);
+  const maxSecRef = useRef(Infinity);
+  const dragTargetRef = useRef<"start" | "end">("end");
 
   useEffect(() => {
     if (extendingId === null) return;
@@ -65,5 +67,30 @@ export const useDragExtendEventPoint = ({
     setExtendingId(epId);
   }, []);
 
-  return { extendingId, startExtend };
+  // ── resize drag (handle grips) ───────────────────────────────────────────────
+  const [resizing, setResizing] = useState<ResizingState>(null);
+
+  useEffect(() => {
+    if (!resizing) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      const el = gridRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const relX = (e.clientX - rect.left) / rect.width;
+      const newSec = Math.max(0, Math.min(totalSec, visibleStartRef.current + relX * visibleDurationRef.current));
+      onUpdateRef.current?.(
+        resizing.id,
+        resizing.side === "left" ? { startSec: newSec } : { endSec: newSec },
+      );
+    };
+    const handleMouseUp = () => setResizing(null);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [resizing, gridRef, totalSec]);
+
+  return { extendingId, startExtend, setResizing: setResizing as SetResizing };
 };

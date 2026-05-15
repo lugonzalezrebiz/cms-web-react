@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteCallback } from "../../../hooks/useApi";
-import type { CameraEventPoint } from "../../../components/timeline/types";
+import type { CameraEventPoint } from "../../../types";
 import type { MonitoringResponse } from "../../../components/timeline/hooks/useMonitoring";
 
 export const useDeleteEventPoint = (

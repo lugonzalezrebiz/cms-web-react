@@ -15,14 +15,6 @@ export const CAMERA_OPTIONS = [
   "Slip & Fall",
 ];
 
-export const TUNNEL_CAMERAS: TimelineSnapshot["timeline"]["tracks"] = [
-  { id: 1, name: "Camera 1", category: "activities", sessions: [] },
-  { id: 2, name: "Camera 2", category: "activities", sessions: [] },
-  { id: 3, name: "Camera 3", category: "activities", sessions: [] },
-  { id: 4, name: "Camera 4", category: "activities", sessions: [] },
-  { id: 5, name: "Camera 5", category: "activities", sessions: [] },
-  { id: 6, name: "Camera 6", category: "activities", sessions: [] },
-];
 
 export const MOCK_SNAPSHOT: TimelineSnapshot = {
   timeline: {

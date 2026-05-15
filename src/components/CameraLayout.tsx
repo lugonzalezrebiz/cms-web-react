@@ -4,10 +4,9 @@ import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
 import { Colors, Fonts } from "../theme";
 import Tooltip from "./Tooltip";
 import { useCameraFrame } from "../hooks/useCameraFrame";
-import type { CameraEventPoint } from "./timeline/types";
-import CameraOverlayMenu, {
-  type CameraContextMenuItem,
-} from "./CameraOverlayMenu";
+import type { CameraEventPoint } from "../types";
+import CameraOverlayMenu from "./CameraOverlayMenu";
+import type { Camera, CameraContextMenuItem } from "./types";
 import { usePopover } from "../hooks/usePopover";
 
 export const TAG_TOLERANCE_SEC = 300;
@@ -258,7 +257,7 @@ export const CameraItem = ({
   );
 };
 
-export type CameraInfo = { id: number; name: string };
+export type { Camera };
 
 interface CameraLayoutProps {
   count: number;
@@ -266,7 +265,7 @@ interface CameraLayoutProps {
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
-  cameras?: CameraInfo[];
+  cameras?: Camera[];
   company?: number;
   location?: number;
   date?: string;
@@ -313,7 +312,7 @@ interface SharedCameraItemProps {
   getTagsForCamera: (index: number) => CameraContextMenuItem[];
   contextMenuItems: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
-  cameras?: CameraInfo[];
+  cameras?: Camera[];
   company?: number;
   location?: number;
   date?: string;

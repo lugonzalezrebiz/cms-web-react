@@ -3,8 +3,8 @@ import { IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
-import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
+import { StyledContainer, StyledTitle, StyledImg } from "./styles";
 import UserPanel from "../../components/UserPanel";
 import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
@@ -12,29 +12,6 @@ import usePopover from "./hooks/usePopover";
 import useNavigateWithQuery from "../../hooks/useNavigate";
 import NotificationMenu from "../../components/NotificationMenu";
 import { useNotifications } from "../../hooks/useNotifications";
-
-const StyledContainer = styled("div")({
-  display: "flex",
-  padding: "0.5em 1em 0.5em 1em",
-  alignItems: "center",
-  gap: "10px",
-  justifyContent: "space-between",
-  minHeight: "42px",
-});
-
-const StyledTitle = styled("p")({
-  margin: 0,
-  fontSize: "16px",
-  fontWeight: "600",
-  lineHeight: 1.5,
-  color: Colors.lightBlack,
-  fontFamily: Fonts.main,
-});
-
-const StyledImg = styled("img")({
-  margin: "0 8px",
-  cursor: "pointer",
-});
 
 const AssignmentsHeader = ({
   toggleDrawer,

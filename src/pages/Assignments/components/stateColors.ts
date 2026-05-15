@@ -1,14 +1,5 @@
 import { Colors } from "../../../theme";
-
-export type stateAssignments =
-  | "Ready"
-  | "Assigned"
-  | "Started"
-  | "Paused"
-  | "Resumed"
-  | "Completed"
-  | "Error"
-  | "Reported";
+import { type stateAssignments } from "../types";
 
 export const stateColors: Record<
   stateAssignments,

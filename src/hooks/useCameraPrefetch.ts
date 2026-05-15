@@ -1,29 +1,6 @@
 import { useEffect } from "react";
 import { useTimestampIndex, snapToNearest } from "./useTimestampIndex";
-
-const parseTimestamp = (ts: string): number => {
-  if (!ts) return 0;
-  if (ts.includes(":")) {
-    const [h, m, s] = ts.split(":").map(Number);
-    return h * 3600 + m * 60 + (s || 0);
-  }
-  if (ts.length === 6) {
-    return (
-      Number(ts.slice(0, 2)) * 3600 +
-      Number(ts.slice(2, 4)) * 60 +
-      Number(ts.slice(4, 6))
-    );
-  }
-  return 0;
-};
-
-const formatTimestamp = (sec: number): string => {
-  const s = Math.max(0, Math.min(86399, sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const ss = s % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
-};
+import { timestampToSec, secToCompact } from "./utils";
 
 type Params = {
   company: number;
@@ -48,7 +25,7 @@ export const useCameraPrefetch = ({
     if (index.length === 0 || !timestamp) return;
 
     const id = requestIdleCallback(() => {
-      const targetSec = parseTimestamp(timestamp);
+      const targetSec = timestampToSec(timestamp);
       const nearest = snapToNearest(index, targetSec);
       if (nearest === null) return;
 
@@ -58,7 +35,7 @@ export const useCameraPrefetch = ({
 
       for (let i = start; i <= end; i++) {
         if (i === pos) continue;
-        const ts = formatTimestamp(index[i]).replace(/:/g, "");
+        const ts = secToCompact(index[i]);
         new Image().src = `dvr://local/${company}/${location}/${date}/${camera}/${date.slice(2)}_${ts}.jpg`;
       }
     });

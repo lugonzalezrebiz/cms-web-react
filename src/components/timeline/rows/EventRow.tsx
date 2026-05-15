@@ -2,8 +2,7 @@ import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
 import { memo, useMemo } from "react";
 import type React from "react";
-import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
-import type { DragConfig } from "../hooks/useDragExtendEventPoint";
+import type { FlatRow, CameraEventPoint, SetResizing, DragConfig } from "../types";
 
 const ROW_HEIGHT = 44;
 

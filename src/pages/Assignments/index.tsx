@@ -5,7 +5,7 @@ import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
 import { usePopover } from "../../components/timeline/hooks/usePopover";
 import DropDownMenu from "../../components/DropDownMenu";
-import type { Assignment } from "./components/InfoAssignment";
+import type { Assignment } from "./types";
 import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";

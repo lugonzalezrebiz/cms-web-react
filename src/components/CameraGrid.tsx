@@ -2,7 +2,9 @@ import { CameraFrame } from "./CameraFrame";
 import { useCameraPrefetch } from "../hooks/useCameraPrefetch";
 import { Box } from "@mui/system";
 
-export type Camera = { id: number; name: string };
+import type { Camera } from "./types";
+
+export type { Camera };
 
 export type CameraGridProps = {
   company: number;

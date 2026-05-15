@@ -5,7 +5,8 @@ import { Box } from "@mui/material";
 import { Colors, Fonts } from "../../../theme";
 import Card from "../../../components/Card";
 import Divider from "../../../components/Divider";
-import { type stateAssignments, stateColors } from "./stateColors";
+import { stateColors } from "./stateColors";
+import { type stateAssignments } from "../types";
 
 const Current = styled("p")({
   fontFamily: Fonts.main,

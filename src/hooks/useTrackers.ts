@@ -1,11 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import { usePostQuery } from "./useApi";
-
-interface Tracker {
-  id: number;
-  name: string;
-  mode: "POINT" | "RANGE";
-}
+import type { Tracker } from "./types";
 
 interface TrackersResponse {
   success: boolean;

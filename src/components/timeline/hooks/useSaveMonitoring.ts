@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { usePost } from "../../../hooks/useApi";
 import useAuth from "../../../hooks/useAuth";
 import { REVIEWER_ROLE, URL_API } from "../../../config";
-import { secToTimeString } from "./useTimelineMarker";
+import { secToTimeString } from "../utils";
 import type { CameraEventPoint } from "../types";
 import { useNavigatePlain } from "../../../hooks/useNavigate";
 

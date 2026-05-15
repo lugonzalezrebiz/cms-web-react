@@ -1,4 +1,4 @@
-import type { CameraContextMenuItem } from "../../../components/CameraOverlayMenu";
+import type { CameraContextMenuItem } from "../../../types";
 
 export const useMenuItems = (
   trackers: { id: number; name: string; mode: "POINT" | "RANGE" }[],

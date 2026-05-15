@@ -3,10 +3,9 @@ import { Colors } from "../../theme";
 import { useCallback } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
-import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
 import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
-import type { DragConfig } from "./hooks/useDragExtendEventPoint";
+import type { DragConfig } from "./types";
 import { EventRow } from "./rows/EventRow";
 import { SessionRow } from "./rows/SessionRow";
 import { GridLines } from "./rows/GridLines";
@@ -84,7 +83,7 @@ export const TimelineGridRows = ({
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
-  const setResizing = useEventPointResize({
+  const { startExtend, setResizing } = useDragExtendEventPoint({
     gridRef,
     visibleStart,
     visibleDuration,
@@ -102,14 +101,6 @@ export const TimelineGridRows = ({
     setZoom,
     setPanOffsetSec,
     onUserPan,
-  });
-
-  const { startExtend } = useDragExtendEventPoint({
-    gridRef,
-    visibleStart,
-    visibleDuration,
-    totalSec,
-    onUpdateEventPoint,
   });
 
   const handleDragStart = useCallback(
