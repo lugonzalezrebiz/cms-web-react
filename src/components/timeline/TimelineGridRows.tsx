@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../theme";
+import type { } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
@@ -40,8 +41,13 @@ interface TimelineGridRowsProps {
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  editingEventPointId: number | null;
+  onExitEditMode: () => void;
+  onEditEventPoint?: (id: number) => void;
+  onConvertEventPointToLocal?: (id: number) => number;
+  onEnterEditMode?: (id: number) => void;
+  onUserPan?: () => void;
 }
-
 
 export const TimelineGridRows = ({
   flatRows,
@@ -69,6 +75,12 @@ export const TimelineGridRows = ({
   setMarkerSec,
   selectedEventPointId,
   setSelectedEventPointId,
+  editingEventPointId,
+  onExitEditMode,
+  onEditEventPoint,
+  onConvertEventPointToLocal,
+  onEnterEditMode,
+  onUserPan,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -89,9 +101,10 @@ export const TimelineGridRows = ({
     totalSec,
     setZoom,
     setPanOffsetSec,
+    onUserPan,
   });
 
-  const { startExtend } = useDragExtendEventPoint({
+  const { startExtend, startMove } = useDragExtendEventPoint({
     gridRef,
     visibleStart,
     visibleDuration,
@@ -144,7 +157,7 @@ export const TimelineGridRows = ({
                   left: 0,
                   right: 0,
                   height: ROW_HEIGHT,
-                  bgcolor: `${Colors.semiTransparentGray}`,
+                  bgcolor: `${Colors.transparentVividOrange}`,
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
@@ -191,13 +204,17 @@ export const TimelineGridRows = ({
                   setITrackId={setITrackId}
                   selectedEventPointId={selectedEventPointId}
                   setSelectedEventPointId={setSelectedEventPointId}
+                  editingEventPointId={editingEventPointId}
+                  onExitEditMode={onExitEditMode}
+                  onStartMove={startMove}
                   onExtendStart={startExtend}
+                  onConvertEventPointToLocal={onConvertEventPointToLocal}
+                  onEnterEditMode={onEnterEditMode}
+                  onEditEventPoint={onEditEventPoint}
                 />
               </Box>
             ),
           )}
-
-
         </Box>
       </Box>
     </Box>

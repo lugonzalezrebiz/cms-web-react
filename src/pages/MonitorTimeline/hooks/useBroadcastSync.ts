@@ -18,6 +18,7 @@ export const useBroadcastSync = (
         onMarkerChangeRef.current(e.data.sec as number);
       }
     });
+    channel.postMessage({ type: "request-sync" });
     return () => {
       channel.close();
       channelRef.current = null;

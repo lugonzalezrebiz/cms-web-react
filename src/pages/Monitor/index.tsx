@@ -54,6 +54,7 @@ const Monitor = () => {
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
+    handleConvertToEditableLocal,
     handleActivitySelect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
@@ -61,11 +62,21 @@ const Monitor = () => {
     handleRedo,
     canUndo,
     canRedo,
-    cleanUp
+    cleanUp,
   } = useCameraEventPoints(monitoringID);
 
-  const cameraMenuItems = useCameraMenuItems(company, location, openMenuCamera, handleActivitySelect);
-  const expandedCameraMenuItems = useCameraMenuItems(company, location, expandedCamera, handleActivitySelect);
+  const cameraMenuItems = useCameraMenuItems(
+    company,
+    location,
+    openMenuCamera,
+    handleActivitySelect,
+  );
+  const expandedCameraMenuItems = useCameraMenuItems(
+    company,
+    location,
+    expandedCamera,
+    handleActivitySelect,
+  );
 
   const {
     snapshot,
@@ -77,12 +88,14 @@ const Monitor = () => {
     [cameraEventPoints, preloadedEventPoints],
   );
 
-  const { handleDeleteEventPoint } = useDeleteEventPoint(
-    monitoringID,
-    allEventPoints,
-    handleRemoveEventPoint,
-    handleRegisterPreloadedDelete,
-  );
+  const { handleDeleteEventPoint, handleConvertEventPoint } =
+    useDeleteEventPoint(
+      monitoringID,
+      allEventPoints,
+      handleRemoveEventPoint,
+      handleRegisterPreloadedDelete,
+      handleConvertToEditableLocal,
+    );
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
@@ -143,6 +156,7 @@ const Monitor = () => {
       canUndo,
       canRedo,
       onRemoveEventPoint: handleDeleteEventPoint,
+      onConvertEventPointToLocal: handleConvertEventPoint,
       viewMode: "activity" as const,
       menuItems,
       rangeSessions,
@@ -161,6 +175,7 @@ const Monitor = () => {
       canUndo,
       canRedo,
       handleDeleteEventPoint,
+      handleConvertEventPoint,
       menuItems,
       rangeSessions,
     ],
@@ -219,20 +234,14 @@ const Monitor = () => {
           onExpandCamera={handleExpandCamera}
         />
       </Box>
-      {/* && !expandedCamera */}
 
-      {!timelinePopped && expandedCamera === null && (
-        <Box sx={{ flex: 3, minHeight: 0 }}>
+      {!timelinePopped && (
+        <Box
+          sx={{ flex: 3, minHeight: 0, zIndex: expandedCamera ? 2000 : 1000 }}
+        >
           <TimeLine {...timelineProps} />
         </Box>
       )}
-
-      {expandedCamera !== null && !timelinePopped && (
-        <Box sx={{ flex: 3, minHeight: 0, zIndex: 2000 }}>
-          <TimeLine {...timelineProps} />
-        </Box>
-      )}
-
       <ExpandedCameraDialog
         open={expandedCamera !== null}
         onClose={() =>

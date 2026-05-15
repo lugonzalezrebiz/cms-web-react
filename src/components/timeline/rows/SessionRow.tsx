@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
+
 import type { FlatRow } from "../types";
 
 const ROW_HEIGHT = 44;
@@ -110,7 +111,7 @@ export const SessionRow = ({
         left: 0,
         right: 0,
         height: ROW_HEIGHT,
-        bgcolor: isSelected ? "rgba(255, 166, 0, 0.04)" : "transparent",
+        bgcolor: isSelected ? Colors.transparentVividOrange : "transparent",
       }}
     >
       {allRanges.map((range, i) => (

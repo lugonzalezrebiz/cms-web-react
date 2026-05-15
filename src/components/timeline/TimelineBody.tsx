@@ -51,8 +51,14 @@ export interface TimelineBodyViewProps {
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId: number | null;
   setSelectedEventPointId: React.Dispatch<React.SetStateAction<number | null>>;
+  editingEventPointId: number | null;
+  onExitEditMode: () => void;
+  onEditEventPoint?: (id: number) => void;
+  onConvertEventPointToLocal?: (id: number) => number;
+  onEnterEditMode?: (id: number) => void;
   goToTimeOpen: boolean;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onUserPan?: () => void;
 }
 
 const TimelineBody = ({
@@ -95,8 +101,14 @@ const TimelineBody = ({
   setMarkerSec,
   selectedEventPointId,
   setSelectedEventPointId,
+  editingEventPointId,
+  onExitEditMode,
+  onEditEventPoint,
+  onConvertEventPointToLocal,
+  onEnterEditMode,
   goToTimeOpen,
   setGoToTimeOpen,
+  onUserPan,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -169,6 +181,7 @@ const TimelineBody = ({
           hasAnyBars={hasAnyBars}
           setZoom={setZoom}
           setPanOffsetSec={setPanOffsetSec}
+          onUserPan={onUserPan}
           cameraEventPoints={cameraEventPoints}
           onUpdateEventPoint={onUpdateEventPoint}
           iTrackId={iTrackId}
@@ -176,6 +189,11 @@ const TimelineBody = ({
           setMarkerSec={setMarkerSec}
           selectedEventPointId={selectedEventPointId}
           setSelectedEventPointId={setSelectedEventPointId}
+          editingEventPointId={editingEventPointId}
+          onExitEditMode={onExitEditMode}
+          onEditEventPoint={onEditEventPoint}
+          onConvertEventPointToLocal={onConvertEventPointToLocal}
+          onEnterEditMode={onEnterEditMode}
         />
 
         <TimelineMarker

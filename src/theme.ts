@@ -72,7 +72,7 @@ export const Colors = {
   softBluishGray: "#d0d5dd",
   bluishGray: "#98A2B3",
   vividOrange: "#fa5f02",
-  transparenvividOrange: "#fa610220",
+  transparentVividOrange: "#fa610220",
   ghostOffWhite: "#eff1f4",
   silverGrey: "#b3b3b3",
   blushWhite: "#fef7f6",

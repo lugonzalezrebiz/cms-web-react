@@ -171,7 +171,8 @@ const ToggleButton = ({
                 backgroundColor: Colors.vividOrange,
               },
               "&.Mui-selected:hover": {
-                backgroundColor: Colors.transparenvividOrange,
+                backgroundColor: Colors.transparentVividOrange,
+                color: Colors.lightBlack,
               },
             }}
           >
