@@ -34,6 +34,8 @@ interface UseTimelineKeyboardParams {
   cameraEventPoints?: CameraEventPoint[];
   onDeleteEventPoint?: () => void;
   onEditEventPoint?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const useTimelineKeyboard = ({
@@ -62,11 +64,17 @@ export const useTimelineKeyboard = ({
   cameraEventPoints,
   onDeleteEventPoint,
   onEditEventPoint,
+  onUndo,
+  onRedo,
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
   onDeleteRef.current = onDeleteEventPoint;
   const onEditRef = useRef(onEditEventPoint);
   onEditRef.current = onEditEventPoint;
+  const onUndoRef = useRef(onUndo);
+  onUndoRef.current = onUndo;
+  const onRedoRef = useRef(onRedo);
+  onRedoRef.current = onRedo;
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const navigate = useNavigateWithQuery();
 
@@ -120,7 +128,13 @@ export const useTimelineKeyboard = ({
       //     }));
       //   }
       // } else
-      if (e.key === "Delete") {
+      if (e.ctrlKey && e.key === "z") {
+        e.preventDefault();
+        onUndoRef.current?.();
+      } else if (e.ctrlKey && e.key === "y") {
+        e.preventDefault();
+        onRedoRef.current?.();
+      } else if (e.key === "Delete") {
         onDeleteRef.current?.();
       } else if (e.key === "e") {
         onEditRef.current?.();

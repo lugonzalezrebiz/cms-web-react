@@ -218,6 +218,8 @@ const TimeLine = ({
     cameraEventPoints: mergedEventPoints,
     onDeleteEventPoint: handleDeleteEventPoint,
     onEditEventPoint: handleEditEventPoint,
+    onUndo,
+    onRedo,
   });
 
   return (
