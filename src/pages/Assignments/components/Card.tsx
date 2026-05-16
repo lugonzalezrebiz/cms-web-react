@@ -1,7 +1,8 @@
 import type React from "react";
+import { useState, useEffect } from "react";
 import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
-import { Box } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import { Colors, Fonts } from "../../../theme";
 import Card from "../../../components/Card";
 import Divider from "../../../components/Divider";
@@ -55,6 +56,17 @@ interface HeaderCardProps {
 }
 
 const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (current !== 0) return;
+    const timer = setTimeout(() => setTimedOut(true), 2000);
+    return () => {
+      clearTimeout(timer);
+      setTimedOut(false);
+    };
+  }, [current]);
+
   return (
     <Card>
       <CardContainer>
@@ -76,13 +88,18 @@ const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
           </MediaContainer>
         </CardTitleContainer>
         <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
-          <Current>{current}</Current>
+          <Current>
+            {current !== 0 || timedOut ? (
+              current
+            ) : (
+              <Skeleton variant="text" width={80} height={44} />
+            )}
+          </Current>
         </Grid>
       </CardContainer>
     </Card>
   );
 };
-
 
 interface AssignmentCardProps {
   state: stateAssignments;
@@ -159,9 +176,9 @@ export const NewAssignmentsCard = ({
         <img
           style={{
             position: "absolute",
-            right: "16px",
+            right: "5px",
             cursor: "pointer",
-            padding: "4px",
+            //padding: "1px 4px",
           }}
           src="./assets/dots-vertical.svg"
           alt="More options"

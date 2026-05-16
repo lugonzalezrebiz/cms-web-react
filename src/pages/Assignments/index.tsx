@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
+import CardSkeleton from "../../components/CardSkeleton";
 import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
 import { usePopover } from "../../components/timeline/hooks/usePopover";
@@ -23,7 +24,7 @@ const Assignments = () => {
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
   const effectiveCompany = company || companyFilters[1]?.value || "";
-  const { assignments } = useAssignments(
+  const { assignments, isPending: isLoading } = useAssignments(
     effectiveCompany ? Number(effectiveCompany) : null,
     store ? Number(store) : null,
   );
@@ -97,37 +98,61 @@ const Assignments = () => {
         </Grid>
       </Title>
       <Grid container spacing={2}>
-        {assignments
-          .filter((a) => a.state !== "Error")
-          .map((a, i) => (
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <NewAssignmentsCard
-                {...a}
-                onClick={() => handleNavigate(a)}
-                openMenu={(e) => {
-                  setSelectedAssignment(a);
-                  cardMenu.handleOpen(e);
-                }}
-              />
+              <CardSkeleton variant="assignment" />
             </Grid>
-          ))}
+          ))
+        ) : assignments.filter((a) => a.state !== "Error").length === 0 ? (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+            <CardSkeleton variant="none" />
+          </Grid>
+        ) : (
+          assignments
+            .filter((a) => a.state !== "Error")
+            .map((a, i) => (
+              <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <NewAssignmentsCard
+                  {...a}
+                  onClick={() => handleNavigate(a)}
+                  openMenu={(e) => {
+                    setSelectedAssignment(a);
+                    cardMenu.handleOpen(e);
+                  }}
+                />
+              </Grid>
+            ))
+        )}
       </Grid>
       <Title title="Rejected Assignments"></Title>
       <Grid container spacing={2}>
-        {assignments
-          .filter((a) => a.state === "Error")
-          .map((a, i) => (
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <NewAssignmentsCard
-                {...a}
-                onClick={() => handleNavigate(a)}
-                openMenu={(e) => {
-                  setSelectedAssignment(a);
-                  cardMenu.handleOpen(e);
-                }}
-              />
+              <CardSkeleton variant="assignment" />
             </Grid>
-          ))}
+          ))
+        ) : assignments.filter((a) => a.state === "Error").length === 0 ? (
+          <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+            <CardSkeleton variant="none" />
+          </Grid>
+        ) : (
+          assignments
+            .filter((a) => a.state === "Error")
+            .map((a, i) => (
+              <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <NewAssignmentsCard
+                  {...a}
+                  onClick={() => handleNavigate(a)}
+                  openMenu={(e) => {
+                    setSelectedAssignment(a);
+                    cardMenu.handleOpen(e);
+                  }}
+                />
+              </Grid>
+            ))
+        )}
       </Grid>
 
       <DropDownMenu

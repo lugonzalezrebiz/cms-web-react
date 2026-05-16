@@ -52,7 +52,7 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
   const body: AssignmentsPayload = { companyID: companyID ?? 0 };
   if (locationID) body.locationID = locationID;
 
-  const { data, isLoading, isError } = usePostQuery<AssignmentsResponse, AssignmentsPayload>(
+  const { data, isLoading, isPending, isError } = usePostQuery<AssignmentsResponse, AssignmentsPayload>(
     "location/assignments",
     body,
     {
@@ -86,7 +86,7 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
     commentsTex: a.details.comments ? [a.details.comments] : [],
   }));
 
-  return { assignments, isLoading, isError };
+  return { assignments, isLoading, isPending, isError };
 };
 
 export default useAssignments;
