@@ -99,10 +99,7 @@ const Monitor = () => {
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
-  const { timestamp, setTimestamp, posMarkerSec } = useMarkerState(
-    cameraGroup,
-    markerSec,
-  );
+  const { timestamp, setTimestamp } = useMarkerState();
 
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
@@ -113,7 +110,7 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
-  const { timelinePopped, handlePopOut } = useTimelinePopout(
+  const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
   );
@@ -146,8 +143,7 @@ const Monitor = () => {
       cameraEventPoints: allEventPoints,
       onMarkerChange: handleMarkerChange,
       markerTimeSec,
-      targetMarkerSec:
-        cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
+      targetMarkerSec: restoreMarkerSec,
       onUpdateEventPoint: handleUpdateEventPoint,
       onPopOut: handlePopOut,
       headerLabel: "Compliance Violations" as const,
@@ -167,8 +163,7 @@ const Monitor = () => {
       allEventPoints,
       handleMarkerChange,
       markerTimeSec,
-      cameraGroup,
-      posMarkerSec,
+      restoreMarkerSec,
       handleUpdateEventPoint,
       handlePopOut,
       handleUndo,

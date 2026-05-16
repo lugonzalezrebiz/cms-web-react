@@ -7,6 +7,7 @@ export const useTimelinePopout =(
 ) =>{
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
+  const [restoreMarkerSec, setRestoreMarkerSec] = useState<number | undefined>(undefined);
   const popoutRef = useRef<Window | null>(null);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
@@ -65,11 +66,14 @@ export const useTimelinePopout =(
     const interval = setInterval(() => {
       if (win.closed) {
         clearInterval(interval);
+        if (markerTimeSecRef.current !== null) {
+          setRestoreMarkerSec(markerTimeSecRef.current);
+        }
         setTimelinePopped(false);
         popoutRef.current = null;
       }
     }, 500);
   }, [searchParams]);
 
-  return { timelinePopped, handlePopOut };
+  return { timelinePopped, handlePopOut, restoreMarkerSec };
 }

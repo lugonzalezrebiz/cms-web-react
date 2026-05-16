@@ -1,8 +1,6 @@
 import { useState } from "react";
 
-export const useMarkerState=(selectedTab: string, markerSec: number) =>{
+export const useMarkerState = () => {
   const [timestamp, setTimestamp] = useState("");
-  const [posMarkerSec, setPosMarkerSec] = useState<number | null>(null);
-  const activeMarkerSec = selectedTab === "2" ? (posMarkerSec ?? markerSec) : markerSec;
-  return { timestamp, setTimestamp, posMarkerSec, setPosMarkerSec, activeMarkerSec };
+  return { timestamp, setTimestamp };
 }
