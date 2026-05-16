@@ -32,6 +32,10 @@ import useCameraGroups from "../../hooks/useCameraGroups";
 import { AGENT_ROLE } from "../../config";
 import useAuth from "../../hooks/useAuth";
 
+const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
+const mod = isMac ? "⌘" : "Ctrl";
+const alt = isMac ? "⌥" : "Alt";
+
 const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
   items: [
@@ -45,24 +49,38 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
     },
     {
       keys: [
-        { type: "text", label: "Ctrl", fontSize: "14px" },
+        { type: "text", label: mod, fontSize: "14px" },
         { type: "img", src: "../assets/arrow-narrow-left.svg" },
       ],
       label: "Previous event point",
     },
     {
       keys: [
-        { type: "text", label: "Ctrl", fontSize: "14px" },
+        { type: "text", label: mod, fontSize: "14px" },
         { type: "img", src: "../assets/arrow-narrow-right.svg" },
       ],
       label: "Next event point",
     },
     {
       keys: [
-        { type: "text", label: "Alt", fontSize: "12px" },
+        { type: "text", label: alt, fontSize: "12px" },
         { type: "img", src: "../assets/arrow-narrow-left.svg" },
       ],
       label: "Go back",
+    },
+    {
+      keys: [
+        { type: "text", label: mod, fontSize: "14px" },
+        { type: "text", label: "Z", fontSize: "16px" },
+      ],
+      label: "Undo",
+    },
+    {
+      keys: [
+        { type: "text", label: mod, fontSize: "14px" },
+        { type: "text", label: "Y", fontSize: "16px" },
+      ],
+      label: "Redo",
     },
     {
       keys: [{ type: "text", label: "E", fontSize: "16px" }],

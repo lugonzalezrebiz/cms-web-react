@@ -20,7 +20,7 @@ interface UseTimelineKeyboardParams {
   >;
   setMarkerSec: React.Dispatch<React.SetStateAction<number | null>>;
   setShowPunchOut: React.Dispatch<React.SetStateAction<boolean>>;
-  punchOutTimerRef: React.MutableRefObject<
+  punchOutTimerRef: React.RefObject<
     ReturnType<typeof setTimeout> | null
   >;
   zoom: number;
@@ -128,10 +128,10 @@ export const useTimelineKeyboard = ({
       //     }));
       //   }
       // } else
-      if (e.ctrlKey && e.key === "z") {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         onUndoRef.current?.();
-      } else if (e.ctrlKey && e.key === "y") {
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
         e.preventDefault();
         onRedoRef.current?.();
       } else if (e.key === "Delete") {
@@ -219,7 +219,7 @@ export const useTimelineKeyboard = ({
       if (isEditable) return;
       e.preventDefault();
 
-      if (e.ctrlKey) {
+      if (e.ctrlKey || e.metaKey) {
         const currentSec = markerSec ?? timelineStartSec;
         const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
         if (e.key === "ArrowLeft") {
