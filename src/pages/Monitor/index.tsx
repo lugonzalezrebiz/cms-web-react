@@ -160,6 +160,7 @@ const Monitor = () => {
       viewMode: "activity" as const,
       menuItems,
       rangeSessions,
+      expandedIcon: !expandedCamera,
     }),
     [
       snapshot,
@@ -178,6 +179,7 @@ const Monitor = () => {
       handleConvertEventPoint,
       menuItems,
       rangeSessions,
+      expandedCamera,
     ],
   );
 

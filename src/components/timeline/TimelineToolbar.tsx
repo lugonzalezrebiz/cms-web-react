@@ -24,6 +24,7 @@ interface Props {
   onGoNextEventPoint?: () => void;
   hasPrevEventPoint?: boolean;
   hasNextEventPoint?: boolean;
+  expanded?: boolean;
 }
 
 const SmallSize = ({
@@ -43,6 +44,7 @@ const SmallSize = ({
   onGoNextEventPoint,
   hasPrevEventPoint = false,
   hasNextEventPoint = false,
+  expanded = false,
 }: Props) => {
   const [activeTab, setActiveTab] = useState<NavTab>("compliances");
   const navPopover = usePopover();
@@ -309,11 +311,19 @@ const SmallSize = ({
             onClick={onPopOut}
             sx={{ cursor: onPopOut ? "pointer" : "default" }}
           >
-            <img
-              style={{ opacity: 0.5 }}
-              src="../assets/expand-06.svg"
-              alt="Expand"
-            />
+            {!expanded ? (
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/minimize.svg"
+                alt="Minimize"
+              />
+            ) : (
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/expand-06.svg"
+                alt="Expand"
+              />
+            )}
           </Box>
         </Grid>
       </Grid>
@@ -338,6 +348,7 @@ const NormalSize = ({
   onGoNextEventPoint,
   hasPrevEventPoint = false,
   hasNextEventPoint = false,
+  expanded = false,
 }: Props) => {
   const [activeTab, setActiveTab] = useState<NavTab>("compliances");
   const navPopover = usePopover();
@@ -622,11 +633,19 @@ const NormalSize = ({
             onClick={onPopOut}
             sx={{ cursor: onPopOut ? "pointer" : "default" }}
           >
-            <img
-              style={{ opacity: 0.5 }}
-              src="../assets/expand-06.svg"
-              alt="Expand"
-            />
+            {!expanded ? (
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/minimize.svg"
+                alt="Minimize"
+              />
+            ) : (
+              <img
+                style={{ opacity: 0.5 }}
+                src="../assets/expand-06.svg"
+                alt="Expand"
+              />
+            )}
           </Box>
         </Grid>
       </Grid>

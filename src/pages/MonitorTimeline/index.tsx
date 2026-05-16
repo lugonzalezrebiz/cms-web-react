@@ -15,7 +15,11 @@ const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
   const monitoringID = searchParams.get("monitoringID") ?? "";
   const { trackers } = useTrackers();
-  const { snapshot, eventPoints: preloadedEventPoints, rangeSessions } = useMonitoring(trackers, monitoringID);
+  const {
+    snapshot,
+    eventPoints: preloadedEventPoints,
+    rangeSessions,
+  } = useMonitoring(trackers, monitoringID);
 
   const {
     cameraEventPoints,
@@ -69,6 +73,7 @@ const MonitorTimeline = () => {
         viewMode="activity"
         menuItems={allMenuItems}
         rangeSessions={rangeSessions}
+        expandedIcon={false}
       />
     </Box>
   );

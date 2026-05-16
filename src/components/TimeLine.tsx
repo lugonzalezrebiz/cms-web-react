@@ -29,6 +29,7 @@ const TimeLine = ({
   viewMode = "camera",
   menuItems = [],
   rangeSessions,
+  expandedIcon = false,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -50,6 +51,7 @@ const TimeLine = ({
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
+  expandedIcon: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -113,7 +115,10 @@ const TimeLine = ({
     [mergedEventPoints],
   );
   const prevEventPoint = useMemo(
-    () => [...sortedEventPoints].reverse().find((ep) => ep.timeSec < state.resolvedMarkerSec),
+    () =>
+      [...sortedEventPoints]
+        .reverse()
+        .find((ep) => ep.timeSec < state.resolvedMarkerSec),
     [sortedEventPoints, state.resolvedMarkerSec],
   );
   const nextEventPoint = useMemo(
@@ -143,7 +148,13 @@ const TimeLine = ({
             state.resolvedMarkerSec >= ep.startSec &&
             state.resolvedMarkerSec <= ep.endSec,
       ),
-    [mergedEventPoints, isActivityMode, selectedActivityLabel, state.resolvedMarkerSec, state.iTrackId],
+    [
+      mergedEventPoints,
+      isActivityMode,
+      selectedActivityLabel,
+      state.resolvedMarkerSec,
+      state.iTrackId,
+    ],
   );
 
   const targetEventPoint = useMemo(
@@ -162,7 +173,8 @@ const TimeLine = ({
 
   const handleEditEventPoint = () => {
     if (!targetEventPoint) return;
-    const newId = onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
+    const newId =
+      onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
     state.setEditingEventPointId(newId);
     state.setSelectedEventPointId(newId);
   };
@@ -225,6 +237,7 @@ const TimeLine = ({
         onGoNextEventPoint={handleGoToNextEventPoint}
         hasPrevEventPoint={prevEventPoint !== undefined}
         hasNextEventPoint={nextEventPoint !== undefined}
+        expanded={expandedIcon}
       />
 
       <TimelineBody
