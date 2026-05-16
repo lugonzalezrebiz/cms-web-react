@@ -445,7 +445,7 @@ export const EventRow = memo(({
       const px   = e.clientX - rect.left;
       const py   = e.clientY - rect.top;
       const ep   = getHitEp(px, py, rect.width, rect.height);
-      if (ep?.mode === "RANGE") {
+      if (ep?.mode === "RANGE" && ep.reviewed) {
         onEditEventPoint?.(ep.id);
       }
     },
@@ -462,7 +462,7 @@ export const EventRow = memo(({
       for (const ep of [...points].reverse()) {
         // Start diamond is draggable when selected or in edit mode, only when range has width
         const isActivePoint = ep.id === editingEventPointId || ep.id === selectedEventPointId;
-        if (isActivePoint && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
+        if (isActivePoint && ep.reviewed && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
           if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
             e.preventDefault();
             e.stopPropagation();
@@ -474,7 +474,7 @@ export const EventRow = memo(({
         }
         const isSelected = ep.id === selectedEventPointId;
         const isNewLocal = !ep.entryIds && ep.endSec === ep.timeSec;
-        if ((isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
+        if (ep.reviewed && (isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.preventDefault();
           e.stopPropagation();
           const targetId = onConvertEventPointToLocal?.(ep.id) ?? ep.id;
@@ -500,7 +500,7 @@ export const EventRow = memo(({
 
       for (const ep of [...points].reverse()) {
         const isActivePoint = ep.id === editingEventPointId || ep.id === selectedEventPointId;
-        if (isActivePoint && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
+        if (isActivePoint && ep.reviewed && ep.mode === "RANGE" && ep.endSec > ep.timeSec) {
           if (hitDiamond(px, py, toSecX(ep.timeSec), cy, DIAMOND_SIZE)) {
             e.currentTarget.style.cursor = "ew-resize";
             return;
@@ -508,7 +508,7 @@ export const EventRow = memo(({
         }
         const isSelected = ep.id === selectedEventPointId;
         const isNewLocal = !ep.entryIds && ep.endSec === ep.timeSec;
-        if ((isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
+        if (ep.reviewed && (isSelected || isNewLocal) && isRangeDragHandle(ep, px, py, rect.width, rect.height)) {
           e.currentTarget.style.cursor = "ew-resize";
           return;
         }

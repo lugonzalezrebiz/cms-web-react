@@ -172,7 +172,7 @@ const TimeLine = ({
   };
 
   const handleEditEventPoint = () => {
-    if (!targetEventPoint) return;
+    if (!targetEventPoint?.reviewed) return;
     const newId =
       onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
     state.setEditingEventPointId(newId);
@@ -180,6 +180,8 @@ const TimeLine = ({
   };
 
   const handleEditEventPointById = (id: number) => {
+    const ep = mergedEventPoints.find((p) => p.id === id);
+    if (!ep?.reviewed) return;
     const newId = onConvertEventPointToLocal?.(id) ?? id;
     state.setEditingEventPointId(newId);
     state.setSelectedEventPointId(newId);
