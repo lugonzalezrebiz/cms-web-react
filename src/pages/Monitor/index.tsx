@@ -65,17 +65,34 @@ const Monitor = () => {
     cleanUp,
   } = useCameraEventPoints(monitoringID);
 
-  const cameraMenuItems = useCameraMenuItems(
+  const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
     openMenuCamera,
     handleActivitySelect,
   );
-  const expandedCameraMenuItems = useCameraMenuItems(
+  const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
     location,
     expandedCamera,
     handleActivitySelect,
+  );
+
+  const trackerMenuFilter = useMemo(
+    () => (items: typeof allCameraMenuItems) => {
+      if (!isTrackerTab || !trackerOption) return items;
+      return items.filter((item) => item.id === Number(trackerOption));
+    },
+    [isTrackerTab, trackerOption],
+  );
+
+  const cameraMenuItems = useMemo(
+    () => trackerMenuFilter(allCameraMenuItems),
+    [trackerMenuFilter, allCameraMenuItems],
+  );
+  const expandedCameraMenuItems = useMemo(
+    () => trackerMenuFilter(allExpandedCameraMenuItems),
+    [trackerMenuFilter, allExpandedCameraMenuItems],
   );
 
   const {
@@ -87,6 +104,13 @@ const Monitor = () => {
     () => [...cameraEventPoints, ...preloadedEventPoints],
     [cameraEventPoints, preloadedEventPoints],
   );
+
+  const filteredEventPoints = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return allEventPoints;
+    const tracker = trackers.find((t) => t.id === Number(trackerOption));
+    if (!tracker) return allEventPoints;
+    return allEventPoints.filter((ep) => ep.label === tracker.name);
+  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
 
   const { handleDeleteEventPoint, handleConvertEventPoint } =
     useDeleteEventPoint(
@@ -137,10 +161,15 @@ const Monitor = () => {
     [trackers, handleActivitySelect],
   );
 
+  const filteredMenuItems = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return menuItems;
+    return menuItems.filter((item) => item.id === Number(trackerOption));
+  }, [menuItems, isTrackerTab, trackerOption]);
+
   const timelineProps = useMemo(
     () => ({
       snapshot,
-      cameraEventPoints: allEventPoints,
+      cameraEventPoints: filteredEventPoints,
       onMarkerChange: handleMarkerChange,
       markerTimeSec,
       targetMarkerSec: restoreMarkerSec,
@@ -154,13 +183,13 @@ const Monitor = () => {
       onRemoveEventPoint: handleDeleteEventPoint,
       onConvertEventPointToLocal: handleConvertEventPoint,
       viewMode: "activity" as const,
-      menuItems,
+      menuItems: filteredMenuItems,
       rangeSessions,
       expandedIcon: !expandedCamera,
     }),
     [
       snapshot,
-      allEventPoints,
+      filteredEventPoints,
       handleMarkerChange,
       markerTimeSec,
       restoreMarkerSec,
@@ -172,7 +201,7 @@ const Monitor = () => {
       canRedo,
       handleDeleteEventPoint,
       handleConvertEventPoint,
-      menuItems,
+      filteredMenuItems,
       rangeSessions,
       expandedCamera,
     ],
@@ -181,7 +210,7 @@ const Monitor = () => {
   const expandedCameraTags = useMemo(() => {
     if (expandedCamera === null) return [];
     const seen = new Set<string>();
-    return allEventPoints
+    return filteredEventPoints
       .filter(
         (ep) =>
           ep.cameraId === sortedCameras[expandedCamera]?.id &&
@@ -200,7 +229,7 @@ const Monitor = () => {
         reviewed: ep.reviewed,
         onClick: () => {},
       }));
-  }, [allEventPoints, expandedCamera, sortedCameras, markerSec]);
+  }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec]);
 
   return (
     <Box
@@ -219,7 +248,7 @@ const Monitor = () => {
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
           onMenuOpen={setOpenMenuCamera}
-          cameraEventPoints={allEventPoints}
+          cameraEventPoints={filteredEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleDeleteEventPoint}
           cameras={cameras}
