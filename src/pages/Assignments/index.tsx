@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, Grid } from "@mui/system";
 import HeaderCard, { NewAssignmentsCard } from "./components/Card";
-import CardSkeleton from "../../components/CardSkeleton";
+import CardSkeleton from "./components/CardSkeleton";
 import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
 import { usePopover } from "../../components/timeline/hooks/usePopover";
@@ -11,6 +11,7 @@ import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
+import { useNavigatePlain } from "../../hooks/useNavigate";
 
 const activityIcon = "/assets/activity-other-icon.svg";
 
@@ -20,6 +21,7 @@ const dropdownOptions = (onOpen: () => void) => [
 
 const Assignments = () => {
   const { handleNavigate } = useAssignmentNavigate();
+  const navigate = useNavigatePlain();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
@@ -153,6 +155,20 @@ const Assignments = () => {
               </Grid>
             ))
         )}
+      </Grid>
+
+      <Title title="Test" />
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+          <NewAssignmentsCard
+            state="Ready"
+            location={9001}
+            store={222}
+            date="Monitor Test"
+            comments={0}
+            onClick={() => navigate("/monitor-test")}
+          />
+        </Grid>
       </Grid>
 
       <DropDownMenu

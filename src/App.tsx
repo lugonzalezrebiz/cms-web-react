@@ -10,6 +10,7 @@ import AdminForm from "./pages/AdminForm";
 import { REVIEWER_ROLE, ADMIN_ROLE, AGENT_ROLE } from "./config";
 import Assignments from "./pages/Assignments";
 import Monitor from "./pages/Monitor";
+import MonitorTest from "./pages/MonitorTest";
 import MonitorTimeline from "./pages/MonitorTimeline";
 import MonitorHeader from "./sections/Header/MonitorHeader";
 import AdminHeader from "./sections/Header/AdminHeader";
@@ -122,6 +123,27 @@ function App() {
         element={
           <ProtectedRole roles={[REVIEWER_ROLE, AGENT_ROLE]}>
             <MonitorTimeline />
+          </ProtectedRole>
+        }
+      />
+      <Route
+        path="/monitor-test"
+        element={
+          <ProtectedRole roles={[REVIEWER_ROLE, AGENT_ROLE]}>
+            <RenderPage
+              drawerOpen={drawerOpen}
+              toggleDrawer={toggleDrawer}
+              isMobile={isMobile}
+              header={
+                <MonitorHeader
+                  toggleDrawer={toggleDrawer}
+                  withIconMenu={false}
+                  allowGoBack
+                />
+              }
+            >
+              <MonitorTest />
+            </RenderPage>
           </ProtectedRole>
         }
       />

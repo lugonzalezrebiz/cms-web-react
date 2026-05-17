@@ -5,6 +5,7 @@ import {
   ToggleButtonGroup,
   Menu,
   MenuItem,
+  Grow,
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { Colors, Fonts } from "../theme";
@@ -133,10 +134,12 @@ const ToggleButton = ({
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
         onClose={handleClose}
+        slots={{ transition: Grow }}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
         transformOrigin={{ vertical: "top", horizontal: "center" }}
         marginThreshold={0}
         slotProps={{
+          transition: { timeout: 5000 },
           paper: {
             sx: {
               maxHeight: "50%",

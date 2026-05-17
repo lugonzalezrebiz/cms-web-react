@@ -39,12 +39,12 @@ const Monitor = () => {
   const groupID =
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
-  const cameras = useTrackerCameras(groupID, trackerID);
+  const { cameras, isLoading: isCamerasLoading } = useTrackerCameras(groupID, trackerID);
   const sortedCameras = useMemo(
     () => [...cameras].sort((a, b) => a.id - b.id),
     [cameras],
   );
-  const { trackers } = useTrackers();
+  const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
@@ -99,6 +99,7 @@ const Monitor = () => {
     snapshot,
     eventPoints: preloadedEventPoints,
     rangeSessions,
+    loading: isMonitoringLoading,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
   const allEventPoints = useMemo(
     () => [...cameraEventPoints, ...preloadedEventPoints],
@@ -186,6 +187,8 @@ const Monitor = () => {
       menuItems: filteredMenuItems,
       rangeSessions,
       expandedIcon: !expandedCamera,
+      rowsLoadState: isTrackersLoading,
+      loadState: isMonitoringLoading || isTrackersLoading,
     }),
     [
       snapshot,
@@ -204,6 +207,8 @@ const Monitor = () => {
       filteredMenuItems,
       rangeSessions,
       expandedCamera,
+      isTrackersLoading,
+      isMonitoringLoading,
     ],
   );
 
@@ -258,6 +263,7 @@ const Monitor = () => {
           timestamp={timestamp}
           expandedCamera={expandedCamera}
           onExpandCamera={handleExpandCamera}
+          loadState={isCamerasLoading}
         />
       </Box>
 

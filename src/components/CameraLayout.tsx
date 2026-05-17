@@ -3,6 +3,7 @@ import { Typography } from "@mui/material";
 import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
 import { Colors, Fonts } from "../theme";
 import Tooltip from "./Tooltip";
+import Spinner from "./Spinner";
 import { useCameraFrame } from "../hooks/useCameraFrame";
 import type { CameraEventPoint } from "./timeline/types";
 import CameraOverlayMenu, {
@@ -276,6 +277,7 @@ interface CameraLayoutProps {
   onRemoveEventPoint?: (id: number) => void;
   expandedCamera: number | null;
   onExpandCamera: (index: number) => void;
+  loadState?: boolean;
 }
 
 const getRowDistribution = (count: number): number[] => {
@@ -417,7 +419,40 @@ const CameraLayout = ({
   markerSec = 0,
   onRemoveEventPoint,
   onExpandCamera: handleExpandCamera,
+  loadState = false,
 }: CameraLayoutProps) => {
+  if (loadState) {
+    return (
+      <Box
+        sx={{
+          width: "97%",
+          height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
+          m: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: Colors.blushWhite,
+          borderRadius: 1,
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <Spinner />
+        <Typography
+          sx={{
+            color: Colors.dimGray,
+            fontFamily: Fonts.main,
+            fontSize: 14,
+            opacity: 0.6,
+            mt: "20px",
+          }}
+        >
+          Loading cameras...
+        </Typography>
+      </Box>
+    );
+  }
+
   if (count === 0) {
     return (
       <Box

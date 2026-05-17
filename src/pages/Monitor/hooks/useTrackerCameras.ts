@@ -7,11 +7,11 @@ type CameraSearchResponse = {
   cameras: Array<{ id: number; name: string; group: { id: number; name: string } }>;
 };
 
-export const useTrackerCameras=(groupID: number, trackerID: number): CameraInfo[]=> {
+export const useTrackerCameras = (groupID: number, trackerID: number): { cameras: CameraInfo[]; isLoading: boolean } => {
   const { company, location } = useDashboardParams();
   const enabled = !!company && !!location;
 
-  const { data } = usePostQuery<CameraSearchResponse>(
+  const { data, isLoading } = usePostQuery<CameraSearchResponse>(
     "camera/search",
     { companyID: company, locationID: location, groupID, trackerID },
     {
@@ -21,5 +21,6 @@ export const useTrackerCameras=(groupID: number, trackerID: number): CameraInfo[
     },
   );
 
-  return data?.success ? data.cameras.map((c) => ({ id: c.id, name: c.name })) : [];
+  const cameras = data?.success ? data.cameras.map((c) => ({ id: c.id, name: c.name })) : [];
+  return { cameras, isLoading };
 }

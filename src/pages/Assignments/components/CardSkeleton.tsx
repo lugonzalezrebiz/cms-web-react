@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import Skeleton from "@mui/material/Skeleton";
-import Card from "./Card";
-import { Colors, Fonts } from "../theme";
+import Card from "../../../components/Card";
+import { Colors, Fonts } from "../../../theme";
 
 interface CardSkeletonProps {
   variant?: "header" | "assignment" | "none";

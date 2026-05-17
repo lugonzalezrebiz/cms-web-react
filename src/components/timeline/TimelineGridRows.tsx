@@ -1,7 +1,8 @@
 import { Box } from "@mui/system";
-import { Colors } from "../../theme";
-import type { } from "react";
+import { Colors, Fonts } from "../../theme";
+import type {} from "react";
 import type React from "react";
+import Spinner from "../Spinner";
 import type { FlatRow, CameraEventPoint } from "./types";
 import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
@@ -9,6 +10,7 @@ import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
 import { SessionRow } from "./rows/SessionRow";
 import { GridLines } from "./rows/GridLines";
+import Card from "../Card";
 
 const ROW_HEIGHT = 44;
 
@@ -47,6 +49,7 @@ interface TimelineGridRowsProps {
   onConvertEventPointToLocal?: (id: number) => number;
   onEnterEditMode?: (id: number) => void;
   onUserPan?: () => void;
+  loadState?: boolean;
 }
 
 export const TimelineGridRows = ({
@@ -81,6 +84,7 @@ export const TimelineGridRows = ({
   onConvertEventPointToLocal,
   onEnterEditMode,
   onUserPan,
+  loadState = false,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -130,6 +134,50 @@ export const TimelineGridRows = ({
         visibleEnd={visibleEnd}
         visibleDuration={visibleDuration}
       />
+
+      {flatRows.filter((r) => r.kind !== "event").length === 0 && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "4px",
+            fontFamily: Fonts.main,
+            fontSize: 12,
+            color: Colors.dimGray,
+            lineHeight: 1.5,
+          }}
+        >
+          {loadState ? (
+            <Card
+              sx={{
+                bgcolor: Colors.white,
+                display: "flex",
+                alignItems: "center",
+                width: "120px",
+              }}
+            >
+              <Spinner m="8px" />
+              loading...
+            </Card>
+          ) : (
+            <Card
+              sx={{
+                bgcolor: Colors.white,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "100px",
+                height: "25px",
+              }}
+            >
+              Empty
+            </Card>
+          )}
+        </Box>
+      )}
 
       {/* Rows — scroll-synced with left list */}
       <Box

@@ -272,7 +272,7 @@ export const EventRow = memo(({
       const dpr = window.devicePixelRatio || 1;
       const w   = canvas.offsetWidth;
       const h   = canvas.offsetHeight;
-      if (w === 0 || h === 0) return;
+      if (w === 0 || h === 0) { scheduleFrameRef.current(); return; }
 
       const needW = Math.round(w * dpr);
       const needH = Math.round(h * dpr);
@@ -308,6 +308,18 @@ export const EventRow = memo(({
     scheduleFrameRef.current = scheduleFrame;
   }, [scheduleFrame]);
 
+  // Cancel RAF only on unmount — not on every re-render.
+  // stateRef is always current so any pending RAF will draw the latest data.
+  useEffect(() => {
+    const s = stateRef.current;
+    return () => {
+      if (s.rafId) {
+        cancelAnimationFrame(s.rafId);
+        s.rafId = 0;
+      }
+    };
+  }, []);
+
   // Sync React state → stateRef, then kick the RAF
   useEffect(() => {
     const s = stateRef.current;
@@ -327,13 +339,6 @@ export const EventRow = memo(({
     }
 
     scheduleFrame();
-
-    return () => {
-      if (s.rafId) {
-        cancelAnimationFrame(s.rafId);
-        s.rafId = 0;
-      }
-    };
   }, [points, visibleStart, visibleEnd, visibleDuration, selectedEventPointId, editingEventPointId, scheduleFrame]);
 
   // -------------------------------------------------------------------------

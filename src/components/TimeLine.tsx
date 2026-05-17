@@ -30,6 +30,8 @@ const TimeLine = ({
   menuItems = [],
   rangeSessions,
   expandedIcon = false,
+  rowsLoadState,
+  loadState,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -52,6 +54,8 @@ const TimeLine = ({
   menuItems?: { id: number; name: string }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
   expandedIcon: boolean;
+  rowsLoadState?: boolean;
+  loadState?: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -295,6 +299,8 @@ const TimeLine = ({
         onEnterEditMode={handleEnterEditMode}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
+        rowsLoadState={rowsLoadState}
+        loadState={loadState}
       />
       {/* <TimelineDialog
         dialogOnClose={state.handleOnCloseDialog}

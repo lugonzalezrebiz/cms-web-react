@@ -1,6 +1,8 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
 import type { FlatRow } from "./types";
+import Spinner from "../Spinner";
+import { Skeleton } from "@mui/material";
 
 interface RowItemProps {
   row: FlatRow;
@@ -115,6 +117,7 @@ interface TimelineRowListProps {
   dialogOnClose?: () => void;
   onOpenDialog?: () => void;
   openDialog?: boolean;
+  loadState?: boolean;
 }
 
 export const TimelineRowList = ({
@@ -128,6 +131,7 @@ export const TimelineRowList = ({
   setITrackId,
   setSelectedTracks,
   onOpenDialog,
+  loadState,
 }: TimelineRowListProps) => {
   return (
     <Box
@@ -149,7 +153,8 @@ export const TimelineRowList = ({
           justifyContent: "space-between",
           height: "28px",
           width: "90%",
-          //maxWidth: "175px",
+          maxWidth: "197px",
+          minWidth: "197px",
           padding: "0 4px 0 8px",
         }}
       >
@@ -164,7 +169,13 @@ export const TimelineRowList = ({
             fontWeight: 700,
           }}
         >
-          {headerLabel}
+          {headerLabel ? (
+            headerLabel
+          ) : (
+            <>
+              <Skeleton width={"150px"} height={"20px"} variant="text" />
+            </>
+          )}
         </p>
         <Box sx={{ cursor: "pointer", ml: "3px" }} onClick={onOpenDialog}>
           <img src="../assets/plus-1.svg" alt="Add row" />
@@ -209,9 +220,20 @@ export const TimelineRowList = ({
               color: Colors.dimGray,
               lineHeight: 1.5,
               textAlign: "center",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
             }}
           >
-            Empty
+            {!loadState ? (
+              "Empty"
+            ) : (
+              <>
+                <Spinner m="20px" />
+                loading...
+              </>
+            )}
           </Box>
         )}
       </Box>
