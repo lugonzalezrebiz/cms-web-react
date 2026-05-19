@@ -169,12 +169,12 @@ function drawFrame(
 
         const isEditing = ep.id === editingId;
         const activeColor = isEditing
-          ? Colors.goldenAmber
+          ? Colors.vividOrange
           : ep.reviewed
             ? Colors.vividOrange
             : Colors.blue;
         const idleColor = isEditing
-          ? Colors.creamYellow
+          ? Colors.lightOrange
           : ep.reviewed
             ? Colors.lightOrange
             : Colors.lightSkyBlue;

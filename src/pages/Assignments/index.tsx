@@ -157,7 +157,7 @@ const Assignments = () => {
         )}
       </Grid>
 
-      <Title title="Test" />
+      {/* <Title title="Test" />
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
           <NewAssignmentsCard
@@ -169,7 +169,7 @@ const Assignments = () => {
             onClick={() => navigate("/monitor-test")}
           />
         </Grid>
-      </Grid>
+      </Grid> */}
 
       <DropDownMenu
         anchorEl={cardMenu.anchorEl}
