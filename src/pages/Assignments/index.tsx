@@ -11,7 +11,6 @@ import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
-import { useNavigatePlain } from "../../hooks/useNavigate";
 
 const activityIcon = "/assets/activity-other-icon.svg";
 
@@ -21,7 +20,6 @@ const dropdownOptions = (onOpen: () => void) => [
 
 const Assignments = () => {
   const { handleNavigate } = useAssignmentNavigate();
-  const navigate = useNavigatePlain();
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
