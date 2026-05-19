@@ -242,7 +242,10 @@ export const CameraItem = ({
           style={{ cursor: "pointer" }}
           src={!isExpanded ? "../assets/expand-03.svg" : " "}
           alt={!isExpanded ? "Expand camera" : ""}
-          onClick={(e) => { e.stopPropagation(); expandCamera(index); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            expandCamera(index);
+          }}
         />
       </Box>
 
@@ -291,6 +294,17 @@ const getRowDistribution = (count: number): number[] => {
       const rowCount = Math.ceil(remaining / (numRows - i));
       rows.push(rowCount);
       remaining -= rowCount;
+    }
+    return rows;
+  }
+
+  // multiples of 5 greater than 16: rows of 5
+  if (count > 16 && count % 5 === 0) {
+    const rows: number[] = [];
+    let remaining = count;
+    while (remaining > 0) {
+      rows.push(Math.min(remaining, 5));
+      remaining -= 5;
     }
     return rows;
   }
@@ -425,7 +439,7 @@ const CameraLayout = ({
     return (
       <Box
         sx={{
-          width: "97%",
+          width: "98.8%",
           height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
           m: "auto",
           display: "flex",
@@ -435,6 +449,7 @@ const CameraLayout = ({
           borderRadius: 1,
           flexDirection: "column",
           gap: 1,
+          p: "0 10px",
         }}
       >
         <Spinner />
@@ -457,7 +472,7 @@ const CameraLayout = ({
     return (
       <Box
         sx={{
-          width: "97%",
+          width: "100%",
           height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
           m: "auto",
           display: "flex",
@@ -502,13 +517,19 @@ const CameraLayout = ({
     const seen = new Set<string>();
     return cameraEventPoints
       .filter((ep) => {
-          if (ep.cameraId !== (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1)) return false;
-          const epStart = Math.min(ep.startSec, ep.timeSec);
-          const hasRange = ep.endSec > epStart;
-          const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
-          return markerSec >= epStart && markerSec <= epEnd;
-        })
-      .sort((a, b) => (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0))
+        if (
+          ep.cameraId !== (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1)
+        )
+          return false;
+        const epStart = Math.min(ep.startSec, ep.timeSec);
+        const hasRange = ep.endSec > epStart;
+        const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
+        return markerSec >= epStart && markerSec <= epEnd;
+      })
+      .sort(
+        (a, b) =>
+          (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0),
+      )
       .filter((ep) => {
         if (seen.has(ep.label)) return false;
         seen.add(ep.label);
@@ -551,10 +572,11 @@ const CameraLayout = ({
           display: "flex",
           flexDirection: "column",
           gap: `${GAP}px`,
-          width: "97%",
+          width: "98.8%",
           height: totalHeight,
           overflowY: "auto",
           m: "auto",
+          p: "0 10px",
         }}
       >
         {rowDistribution.map((rowCount, rowIndex) => (
@@ -577,10 +599,11 @@ const CameraLayout = ({
         display: "grid",
         gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
         gap: `${GAP}px`,
-        width: "97%",
+        width: "98.8%",
         height: totalHeight,
         overflow: "hidden",
         m: "auto",
+        p: "0 10px",
       }}
     >
       {rowDistribution.map((rowCount, rowIndex) => (
