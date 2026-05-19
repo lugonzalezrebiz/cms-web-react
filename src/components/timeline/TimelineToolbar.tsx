@@ -306,14 +306,10 @@ const SmallSize = ({
               }}
             />
           </Box>
-          <Box
-            ml={"18px"}
-            onClick={onPopOut}
-            sx={{ cursor: onPopOut ? "pointer" : "default" }}
-          >
+          <Box ml={"18px"} onClick={onPopOut} sx={{ cursor: "pointer" }}>
             {!expanded ? (
               <img
-                style={{ opacity: 0.5 }}
+                style={{ opacity: 0.5, cursor: "pointer" }}
                 src="../assets/minimize.svg"
                 alt="Minimize"
               />
@@ -628,11 +624,7 @@ const NormalSize = ({
               }}
             />
           </Box>
-          <Box
-            ml={"18px"}
-            onClick={onPopOut}
-            sx={{ cursor: onPopOut ? "pointer" : "default" }}
-          >
+          <Box ml={"18px"} onClick={onPopOut} sx={{ cursor: "pointer" }}>
             {!expanded ? (
               <img
                 style={{ opacity: 0.5 }}

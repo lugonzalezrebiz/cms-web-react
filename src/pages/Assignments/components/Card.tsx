@@ -7,7 +7,7 @@ import { Colors, Fonts } from "../../../theme";
 import Card from "../../../components/Card";
 import Divider from "../../../components/Divider";
 import { type stateAssignments, stateColors } from "./stateColors";
-import { ASSIGNMENT_COMPLETED } from "../../../config";
+
 
 const Current = styled("p")({
   fontFamily: Fonts.main,
@@ -110,6 +110,7 @@ interface AssignmentCardProps {
   comments?: number;
   onClick?: () => void;
   openMenu?: (e: React.MouseEvent<HTMLElement>) => void;
+  isCompleted?: boolean;
 }
 
 const AssignmentSubText = styled("p")({
@@ -144,6 +145,7 @@ export const NewAssignmentsCard = ({
   comments,
   onClick,
   openMenu,
+  isCompleted,
 }: AssignmentCardProps) => {
   return (
     <Card
@@ -151,7 +153,10 @@ export const NewAssignmentsCard = ({
       padding={"16px"}
       borderRadius={"16px"}
       onClick={onClick}
-      sx={{ cursor: onClick && !ASSIGNMENT_COMPLETED ? "pointer" : "default" }}
+      sx={{
+        cursor:
+          onClick && !isCompleted ? "pointer" : "default",
+      }}
     >
       <Box
         display={"flex"}

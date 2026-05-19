@@ -73,6 +73,7 @@ const MonitorTimeline = () => {
         viewMode="activity"
         menuItems={allMenuItems}
         rangeSessions={rangeSessions}
+        onPopOut={() => window.close()}
         expandedIcon={false}
       />
     </Box>

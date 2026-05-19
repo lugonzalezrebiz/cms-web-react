@@ -120,6 +120,7 @@ const Assignments = () => {
                     setSelectedAssignment(a);
                     cardMenu.handleOpen(e);
                   }}
+                  isCompleted={a.statusName === "resource.review.completed"}
                 />
               </Grid>
             ))
