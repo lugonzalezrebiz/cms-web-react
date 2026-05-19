@@ -152,36 +152,51 @@ const ToggleButton = ({
           },
         }}
       >
-        {activeGroup?.options?.map((option) => (
+        {activeGroup?.options?.length ? (
+          activeGroup.options.map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={selectValue === option.value}
+              onClick={() => {
+                setSelectValue?.(option.value);
+                handleClose();
+              }}
+              sx={{
+                fontFamily: Fonts.main,
+                fontSize: "16px",
+                fontWeight: 400,
+                color: Colors.dimGray,
+                lineHeight: "24px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                "&.Mui-selected": {
+                  color: Colors.white,
+                  backgroundColor: Colors.vividOrange,
+                },
+                "&.Mui-selected:hover": {
+                  color: Colors.white,
+                  backgroundColor: Colors.vividOrange,
+                },
+              }}
+            >
+              {option.title}
+            </MenuItem>
+          ))
+        ) : (
           <MenuItem
-            key={option.value}
-            selected={selectValue === option.value}
-            onClick={() => {
-              setSelectValue?.(option.value);
-              handleClose();
-            }}
+            disabled
             sx={{
               fontFamily: Fonts.main,
               fontSize: "16px",
               fontWeight: 400,
               color: Colors.dimGray,
               lineHeight: "24px",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              "&.Mui-selected": {
-                color: Colors.white,
-                backgroundColor: Colors.vividOrange,
-              },
-              "&.Mui-selected:hover": {
-                color: Colors.white,
-                backgroundColor: Colors.vividOrange,
-              },
             }}
           >
-            {option.title}
+            No options available
           </MenuItem>
-        ))}
+        )}
       </Menu>
     </Box>
   );
