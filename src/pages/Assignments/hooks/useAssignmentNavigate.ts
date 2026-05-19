@@ -1,4 +1,5 @@
-import useNavigateWithQuery from "../../../hooks/useNavigate";
+import { useRef } from "react";
+import { useNavigatePlain } from "../../../hooks/useNavigate";
 import { usePostCallback } from "../../../hooks/useApi";
 import { USE_STATIC_IDS, MONITORING_ID, ASSIGNMENT_COMPLETED } from "../../../config";
 import type { stateAssignments } from "../../Assignments/components/stateColors";
@@ -29,19 +30,26 @@ export type NavigationAssignment = {
 };
 
 export const useAssignmentNavigate = () => {
-  const navigate = useNavigateWithQuery();
+  const navigate = useNavigatePlain();
   const postCallback = usePostCallback();
+  const navigating = useRef(false);
 
   const handleNavigate = async (a: NavigationAssignment) => {
-    const url = USE_STATIC_IDS
-      ? STATIC_REDIRECT
-      : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID);
-    if (a.statusName === "resource.review.ready") {
-      await postCallback(`monitoring/${a.monitoringID}/review/start`);
-    } else if (a.statusName === "resource.review.completed" && ASSIGNMENT_COMPLETED === true) {
-      return
+    if (navigating.current) return;
+    navigating.current = true;
+    try {
+      const url = USE_STATIC_IDS
+        ? STATIC_REDIRECT
+        : buildRedirect(a.location, a.store, a.rawDate, a.monitoringID);
+      if (a.statusName === "resource.review.ready") {
+        await postCallback(`monitoring/${a.monitoringID}/review/start`);
+      } else if (a.statusName === "resource.review.completed" && ASSIGNMENT_COMPLETED === true) {
+        return;
+      }
+      navigate(url, USE_STATIC_IDS ? {} : { state: { assignment: a } });
+    } finally {
+      navigating.current = false;
     }
-    navigate(url, USE_STATIC_IDS ? {} : { state: { assignment: a } });
   };
 
   return { handleNavigate };

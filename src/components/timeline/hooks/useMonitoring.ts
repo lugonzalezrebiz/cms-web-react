@@ -133,11 +133,12 @@ export function useMonitoring(
 } {
   const [baseSnapshot] = useState<TimelineSnapshot>(MOCK_SNAPSHOT);
 
-  const { data, isPending: loading, error: queryError } = useGet<MonitoringResponse>(
+  const { data, error: queryError } = useGet<MonitoringResponse>(
     `monitoring/${monitoringID}/load2`,
     undefined,
     { refetchOnWindowFocus: false },
   );
+  const loading = !data?.success;
 
   const monitoring = data?.success ? data.monitoring : null;
   const error = queryError ? queryError.message : null;

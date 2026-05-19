@@ -39,12 +39,12 @@ const Monitor = () => {
   const groupID =
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
-  const cameras = useTrackerCameras(groupID, trackerID);
+  const { cameras, isLoading: isCamerasLoading } = useTrackerCameras(groupID, trackerID);
   const sortedCameras = useMemo(
     () => [...cameras].sort((a, b) => a.id - b.id),
     [cameras],
   );
-  const { trackers } = useTrackers();
+  const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
@@ -65,28 +65,53 @@ const Monitor = () => {
     cleanUp,
   } = useCameraEventPoints(monitoringID);
 
-  const cameraMenuItems = useCameraMenuItems(
+  const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
     openMenuCamera,
     handleActivitySelect,
   );
-  const expandedCameraMenuItems = useCameraMenuItems(
+  const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
     location,
     expandedCamera,
     handleActivitySelect,
   );
 
+  const trackerMenuFilter = useMemo(
+    () => (items: typeof allCameraMenuItems) => {
+      if (!isTrackerTab || !trackerOption) return items;
+      return items.filter((item) => item.id === Number(trackerOption));
+    },
+    [isTrackerTab, trackerOption],
+  );
+
+  const cameraMenuItems = useMemo(
+    () => trackerMenuFilter(allCameraMenuItems),
+    [trackerMenuFilter, allCameraMenuItems],
+  );
+  const expandedCameraMenuItems = useMemo(
+    () => trackerMenuFilter(allExpandedCameraMenuItems),
+    [trackerMenuFilter, allExpandedCameraMenuItems],
+  );
+
   const {
     snapshot,
     eventPoints: preloadedEventPoints,
     rangeSessions,
+    loading: isMonitoringLoading,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
   const allEventPoints = useMemo(
     () => [...cameraEventPoints, ...preloadedEventPoints],
     [cameraEventPoints, preloadedEventPoints],
   );
+
+  const filteredEventPoints = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return allEventPoints;
+    const tracker = trackers.find((t) => t.id === Number(trackerOption));
+    if (!tracker) return allEventPoints;
+    return allEventPoints.filter((ep) => ep.label === tracker.name);
+  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
 
   const { handleDeleteEventPoint, handleConvertEventPoint } =
     useDeleteEventPoint(
@@ -99,10 +124,7 @@ const Monitor = () => {
 
   // const { transactions } = useSalesTransactions(monitoringID);
 
-  const { timestamp, setTimestamp, posMarkerSec } = useMarkerState(
-    cameraGroup,
-    markerSec,
-  );
+  const { timestamp, setTimestamp } = useMarkerState();
 
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
@@ -113,7 +135,7 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
-  const { timelinePopped, handlePopOut } = useTimelinePopout(
+  const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
   );
@@ -140,14 +162,18 @@ const Monitor = () => {
     [trackers, handleActivitySelect],
   );
 
+  const filteredMenuItems = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return menuItems;
+    return menuItems.filter((item) => item.id === Number(trackerOption));
+  }, [menuItems, isTrackerTab, trackerOption]);
+
   const timelineProps = useMemo(
     () => ({
       snapshot,
-      cameraEventPoints: allEventPoints,
+      cameraEventPoints: filteredEventPoints,
       onMarkerChange: handleMarkerChange,
       markerTimeSec,
-      targetMarkerSec:
-        cameraGroup === "2" && posMarkerSec !== null ? posMarkerSec : undefined,
+      targetMarkerSec: restoreMarkerSec,
       onUpdateEventPoint: handleUpdateEventPoint,
       onPopOut: handlePopOut,
       headerLabel: "Compliance Violations" as const,
@@ -158,16 +184,18 @@ const Monitor = () => {
       onRemoveEventPoint: handleDeleteEventPoint,
       onConvertEventPointToLocal: handleConvertEventPoint,
       viewMode: "activity" as const,
-      menuItems,
+      menuItems: filteredMenuItems,
       rangeSessions,
+      expandedIcon: !expandedCamera,
+      rowsLoadState: isTrackersLoading,
+      loadState: isMonitoringLoading || isTrackersLoading,
     }),
     [
       snapshot,
-      allEventPoints,
+      filteredEventPoints,
       handleMarkerChange,
       markerTimeSec,
-      cameraGroup,
-      posMarkerSec,
+      restoreMarkerSec,
       handleUpdateEventPoint,
       handlePopOut,
       handleUndo,
@@ -176,15 +204,18 @@ const Monitor = () => {
       canRedo,
       handleDeleteEventPoint,
       handleConvertEventPoint,
-      menuItems,
+      filteredMenuItems,
       rangeSessions,
+      expandedCamera,
+      isTrackersLoading,
+      isMonitoringLoading,
     ],
   );
 
   const expandedCameraTags = useMemo(() => {
     if (expandedCamera === null) return [];
     const seen = new Set<string>();
-    return allEventPoints
+    return filteredEventPoints
       .filter(
         (ep) =>
           ep.cameraId === sortedCameras[expandedCamera]?.id &&
@@ -203,7 +234,7 @@ const Monitor = () => {
         reviewed: ep.reviewed,
         onClick: () => {},
       }));
-  }, [allEventPoints, expandedCamera, sortedCameras, markerSec]);
+  }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec]);
 
   return (
     <Box
@@ -222,7 +253,7 @@ const Monitor = () => {
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
           onMenuOpen={setOpenMenuCamera}
-          cameraEventPoints={allEventPoints}
+          cameraEventPoints={filteredEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleDeleteEventPoint}
           cameras={cameras}
@@ -232,6 +263,7 @@ const Monitor = () => {
           timestamp={timestamp}
           expandedCamera={expandedCamera}
           onExpandCamera={handleExpandCamera}
+          loadState={isCamerasLoading}
         />
       </Box>
 

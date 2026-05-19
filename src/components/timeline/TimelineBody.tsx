@@ -59,6 +59,8 @@ export interface TimelineBodyViewProps {
   goToTimeOpen: boolean;
   setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onUserPan?: () => void;
+  rowsLoadState?: boolean;
+  loadState?: boolean;
 }
 
 const TimelineBody = ({
@@ -109,6 +111,8 @@ const TimelineBody = ({
   goToTimeOpen,
   setGoToTimeOpen,
   onUserPan,
+  rowsLoadState,
+  loadState,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -133,6 +137,7 @@ const TimelineBody = ({
         iTrackId={iTrackId}
         setITrackId={setITrackId}
         setSelectedTracks={setSelectedTracks}
+        loadState={rowsLoadState}
       />
 
       <Box
@@ -194,6 +199,7 @@ const TimelineBody = ({
           onEditEventPoint={onEditEventPoint}
           onConvertEventPointToLocal={onConvertEventPointToLocal}
           onEnterEditMode={onEnterEditMode}
+          loadState={loadState}
         />
 
         <TimelineMarker

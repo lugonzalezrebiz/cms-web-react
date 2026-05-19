@@ -40,7 +40,7 @@ const CameraOverlayMenu = ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        margin: "0 8px",
+        margin: "0",
         overflow: "hidden",
         containerType: "size",
       }}

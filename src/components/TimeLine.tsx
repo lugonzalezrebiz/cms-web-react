@@ -29,6 +29,9 @@ const TimeLine = ({
   viewMode = "camera",
   menuItems = [],
   rangeSessions,
+  expandedIcon = false,
+  rowsLoadState,
+  loadState,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -50,6 +53,9 @@ const TimeLine = ({
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
+  expandedIcon: boolean;
+  rowsLoadState?: boolean;
+  loadState?: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -113,7 +119,10 @@ const TimeLine = ({
     [mergedEventPoints],
   );
   const prevEventPoint = useMemo(
-    () => [...sortedEventPoints].reverse().find((ep) => ep.timeSec < state.resolvedMarkerSec),
+    () =>
+      [...sortedEventPoints]
+        .reverse()
+        .find((ep) => ep.timeSec < state.resolvedMarkerSec),
     [sortedEventPoints, state.resolvedMarkerSec],
   );
   const nextEventPoint = useMemo(
@@ -143,7 +152,13 @@ const TimeLine = ({
             state.resolvedMarkerSec >= ep.startSec &&
             state.resolvedMarkerSec <= ep.endSec,
       ),
-    [mergedEventPoints, isActivityMode, selectedActivityLabel, state.resolvedMarkerSec, state.iTrackId],
+    [
+      mergedEventPoints,
+      isActivityMode,
+      selectedActivityLabel,
+      state.resolvedMarkerSec,
+      state.iTrackId,
+    ],
   );
 
   const targetEventPoint = useMemo(
@@ -161,13 +176,16 @@ const TimeLine = ({
   };
 
   const handleEditEventPoint = () => {
-    if (!targetEventPoint) return;
-    const newId = onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
+    if (!targetEventPoint?.reviewed) return;
+    const newId =
+      onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
     state.setEditingEventPointId(newId);
     state.setSelectedEventPointId(newId);
   };
 
   const handleEditEventPointById = (id: number) => {
+    const ep = mergedEventPoints.find((p) => p.id === id);
+    if (!ep?.reviewed) return;
     const newId = onConvertEventPointToLocal?.(id) ?? id;
     state.setEditingEventPointId(newId);
     state.setSelectedEventPointId(newId);
@@ -204,6 +222,8 @@ const TimeLine = ({
     cameraEventPoints: mergedEventPoints,
     onDeleteEventPoint: handleDeleteEventPoint,
     onEditEventPoint: handleEditEventPoint,
+    onUndo,
+    onRedo,
   });
 
   return (
@@ -225,6 +245,7 @@ const TimeLine = ({
         onGoNextEventPoint={handleGoToNextEventPoint}
         hasPrevEventPoint={prevEventPoint !== undefined}
         hasNextEventPoint={nextEventPoint !== undefined}
+        expanded={expandedIcon}
       />
 
       <TimelineBody
@@ -278,6 +299,8 @@ const TimeLine = ({
         onEnterEditMode={handleEnterEditMode}
         goToTimeOpen={goToTimeOpen}
         setGoToTimeOpen={setGoToTimeOpen}
+        rowsLoadState={rowsLoadState}
+        loadState={loadState}
       />
       {/* <TimelineDialog
         dialogOnClose={state.handleOnCloseDialog}

@@ -1,9 +1,9 @@
 import type { NavTab, TimelineSnapshot } from "./types";
 
 export const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
-  { id: "employees", label: "Employee punches", iconClass: "users-03" },
+  //{ id: "employees", label: "Employee punches", iconClass: "users-03" },
   { id: "compliances", label: "Compliance violations", iconClass: "shield-tick" },
-  { id: "activities", label: "Activities", iconClass: "placeholder" },
+ // { id: "activities", label: "Activities", iconClass: "placeholder" },
 ];
 
 export const CAMERA_OPTIONS = [
