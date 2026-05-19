@@ -7,6 +7,7 @@ import { Colors, Fonts } from "../../../theme";
 import Card from "../../../components/Card";
 import Divider from "../../../components/Divider";
 import { type stateAssignments, stateColors } from "./stateColors";
+import { ASSIGNMENT_COMPLETED } from "../../../config";
 
 const Current = styled("p")({
   fontFamily: Fonts.main,
@@ -150,7 +151,7 @@ export const NewAssignmentsCard = ({
       padding={"16px"}
       borderRadius={"16px"}
       onClick={onClick}
-      sx={{ cursor: onClick ? "pointer" : "default" }}
+      sx={{ cursor: onClick && !ASSIGNMENT_COMPLETED ? "pointer" : "default" }}
     >
       <Box
         display={"flex"}
