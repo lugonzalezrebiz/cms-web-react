@@ -185,7 +185,7 @@ export const TimelineRowList = ({
     <Box
       sx={{
         width: "100%",
-        maxWidth: "260px",
+        maxWidth: "245px",
         background: Colors.white,
         display: "flex",
         flexDirection: "column",
@@ -203,7 +203,7 @@ export const TimelineRowList = ({
           justifyContent: "space-between",
           height: "28px",
           width: "100%",
-          maxWidth: "260px",
+          maxWidth: "245px",
           minWidth: "180px",
           padding: "0 4px 0 8px",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
