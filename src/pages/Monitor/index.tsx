@@ -249,7 +249,7 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box sx={{ flex: 7, minHeight: 0, height: 0 }}>
+      <Box sx={{ flex: 9, minHeight: 0, height: 0 }}>
         <CameraLayout
           count={cameras.length}
           media="/assets/camera/Cam thumbnail.svg"

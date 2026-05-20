@@ -366,7 +366,7 @@ const NormalSize = ({
       }}
     >
       <Grid
-        size={{ md: 1.5, lg: 1.5, xl: 1 }}
+        size={{ md: 2, lg: 2, xl: 1.5 }}
         container
         spacing={"18px"}
         alignItems={"center"}
@@ -400,7 +400,7 @@ const NormalSize = ({
       </Grid>
 
       <Grid
-        size={{ md: 2.5, lg: 2, xl: 1.5 }}
+        size={{ md: 2, lg: 1, xl: 1 }}
         alignItems={"center"}
         container
         spacing={"18px"}

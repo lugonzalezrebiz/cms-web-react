@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import type React from "react";
 import type { FlatRow } from "../types";
 
-const ROW_HEIGHT = 44;
+const ROW_HEIGHT = 32.8;
 const MIN_DRAG_SEC = 5;
 const MIN_DRAG_PX = 5;
 

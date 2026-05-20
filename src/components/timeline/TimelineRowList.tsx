@@ -86,7 +86,7 @@ const RowItem = ({
         cursor: "pointer",
         fontFamily: Fonts.main,
         fontSize: 14,
-        height: "32px",
+        height: "20px",
         lineHeight: 1.43,
         fontWeight: 400,
         backgroundColor: bgColor,
@@ -94,7 +94,7 @@ const RowItem = ({
         whiteSpace: "nowrap",
         overflow: "hidden",
         textOverflow: "ellipsis",
-        border: `1px solid ${Colors.lightGrayishBlue}`,
+        borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
       }}
     >
       {!isEventSubRow && !isActivityRow && (
@@ -185,7 +185,7 @@ export const TimelineRowList = ({
     <Box
       sx={{
         width: "100%",
-        maxWidth: "186px",
+        maxWidth: "260px",
         background: Colors.white,
         display: "flex",
         flexDirection: "column",
@@ -203,7 +203,7 @@ export const TimelineRowList = ({
           justifyContent: "space-between",
           height: "28px",
           width: "100%",
-          maxWidth: "186px",
+          maxWidth: "260px",
           minWidth: "180px",
           padding: "0 4px 0 8px",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
@@ -214,10 +214,11 @@ export const TimelineRowList = ({
             textTransform: "capitalize",
             fontFamily: Fonts.main,
             fontSize: 12,
-            color: Colors.lightBlack,
+            color: Colors.charcoalNavy,
             lineHeight: 1.5,
             margin: 0,
-            fontWeight: 700,
+            fontWeight: 500,
+            height: "18px",
           }}
         >
           {headerLabel ? (

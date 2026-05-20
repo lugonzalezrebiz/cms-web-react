@@ -83,12 +83,12 @@ const CustomScrollbar = ({
         sx={{
           position: "absolute",
           right: 2,
-          top: 4,
-          bottom: 4,
+          top: 0,
+          bottom: 0,
           width: 8,
-          background: Colors.lightGrayBlue,
-          //borderRadius: "8px",
-          border: `1px solid ${Colors.softSteelBlue}`,
+          background: Colors.blushWhite,
+          borderRadius: "8px",
+          border: `1px solid ${Colors.black}`,
         }}
       >
         {/* Thumb */}
@@ -103,7 +103,7 @@ const CustomScrollbar = ({
           sx={{
             position: "absolute",
             top: 0,
-            width: 12,
+            width: 8,
             height: thumbLength,
             left: "50%",
             transform: "translateX(-50%)",

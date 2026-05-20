@@ -75,7 +75,9 @@ export const CameraItem = ({
   };
 
   const [imgError, setImgError] = useState(false);
-  const [prevImageSrc, setPrevImageSrc] = useState<string | undefined>(undefined);
+  const [prevImageSrc, setPrevImageSrc] = useState<string | undefined>(
+    undefined,
+  );
 
   const useRealImages =
     cameraId !== undefined &&
@@ -514,7 +516,7 @@ const CameraLayout = ({
     return (
       <Box
         sx={{
-          width: "98.8%",
+          width: "100%",
           height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
           m: "auto",
           display: "flex",
@@ -649,8 +651,8 @@ const CameraLayout = ({
     return (
       <CustomScrollbar
         height={totalHeight}
-        sx={{ width: "98.8%", m: "auto" }}
-        thumbLength={12}
+        sx={{ width: "100%", m: "auto" }}
+        thumbLength={14}
         contentSx={{
           display: "flex",
           flexDirection: "column",
@@ -678,7 +680,7 @@ const CameraLayout = ({
         display: "grid",
         gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
         gap: `${GAP}px`,
-        width: "98.8%",
+        width: "100%",
         height: totalHeight,
         overflow: "hidden",
         m: "auto",
