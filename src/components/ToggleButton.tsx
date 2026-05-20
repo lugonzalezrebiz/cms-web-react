@@ -55,6 +55,7 @@ const StyledToggleButton = styled(MuiToggleButton)({
   "&.Mui-selected": {
     color: Colors.lightBlack,
     backgroundColor: Colors.white,
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   "&.Mui-selected:hover": {
     backgroundColor: Colors.white,

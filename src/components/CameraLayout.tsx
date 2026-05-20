@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
@@ -11,6 +11,7 @@ import CameraOverlayMenu, {
   type CameraContextMenuItem,
 } from "./CameraOverlayMenu";
 import { usePopover } from "../hooks/usePopover";
+import CustomScrollbar from "./CustomScrollbar";
 
 export const TAG_TOLERANCE_SEC = 300;
 
@@ -56,11 +57,17 @@ export const CameraItem = ({
   controlledOpen,
   onControlledClose,
 }: CameraItemProps) => {
-  const { open: localShowMenu, handleOpen, handleClose: localCloseMenu } = usePopover();
+  const {
+    open: localShowMenu,
+    handleOpen,
+    handleClose: localCloseMenu,
+  } = usePopover();
 
   const isControlled = controlledOpen !== undefined;
   const showMenu = isControlled ? controlledOpen! : localShowMenu;
-  const closeMenu = isControlled ? (onControlledClose ?? (() => {})) : localCloseMenu;
+  const closeMenu = isControlled
+    ? (onControlledClose ?? (() => {}))
+    : localCloseMenu;
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
     if (!isControlled) handleOpen(e);
@@ -68,6 +75,7 @@ export const CameraItem = ({
   };
 
   const [imgError, setImgError] = useState(false);
+  const [prevImageSrc, setPrevImageSrc] = useState<string | undefined>(undefined);
 
   const useRealImages =
     cameraId !== undefined &&
@@ -90,9 +98,10 @@ export const CameraItem = ({
 
   const imageSrc = useRealImages ? liveSrc : media;
 
-  useEffect(() => {
+  if (imageSrc !== prevImageSrc) {
+    setPrevImageSrc(imageSrc);
     setImgError(false);
-  }, [imageSrc]);
+  }
 
   return (
     <Box
@@ -282,7 +291,20 @@ export const CameraItem = ({
       )}
 
       {/* Bottom-right: expand button */}
-      <Box sx={{ position: "absolute", bottom: 10, right: 13, zIndex: 1 }}>
+      <Box
+        sx={{
+          position: "absolute",
+          bottom: 10,
+          right: 13,
+          zIndex: 1,
+          bgcolor: Colors.semiTransparentBlackTwo,
+          borderRadius: "4px",
+          p: "2px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <img
           style={{ cursor: "pointer" }}
           src={!isExpanded ? "../assets/expand-03.svg" : " "}
@@ -487,6 +509,7 @@ const CameraLayout = ({
   loadState = false,
 }: CameraLayoutProps) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
+
   if (loadState) {
     return (
       <Box
@@ -553,7 +576,7 @@ const CameraLayout = ({
     );
   }
 
-  const scrollable = count > 12;
+  const scrollable = count > 16; // beyond 16 cameras, we switch to a scrollable layout with fixed 4-column rows
   const totalHeight =
     typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
   // Each row fills exactly 1/3 of the container (same size as the 12-camera grid rows).
@@ -624,16 +647,15 @@ const CameraLayout = ({
 
   if (scrollable) {
     return (
-      <Box
-        sx={{
+      <CustomScrollbar
+        height={totalHeight}
+        sx={{ width: "98.8%", m: "auto" }}
+        thumbLength={12}
+        contentSx={{
           display: "flex",
           flexDirection: "column",
           gap: `${GAP}px`,
-          width: "98.8%",
-          height: totalHeight,
-          overflowY: "auto",
-          m: "auto",
-          p: "0 10px",
+          pl: "10px",
         }}
       >
         {rowDistribution.map((rowCount, rowIndex) => (
@@ -646,7 +668,7 @@ const CameraLayout = ({
             {...sharedProps}
           />
         ))}
-      </Box>
+      </CustomScrollbar>
     );
   }
 
