@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
@@ -24,6 +25,8 @@ interface CameraItemProps {
   onRemoveTag: (tagId: number) => void;
   cameraLabel?: boolean;
   disableOverlay?: boolean;
+  controlledOpen?: boolean;
+  onControlledClose?: () => void;
   // Real image props — when provided, loads from DVR via dvr:// protocol
   cameraId?: number;
   cameraName?: string;
@@ -50,13 +53,21 @@ export const CameraItem = ({
   timestamp,
   onRemoveTag,
   cameraLabel = true,
+  controlledOpen,
+  onControlledClose,
 }: CameraItemProps) => {
-  const { open: showMenu, handleOpen, handleClose: closeMenu } = usePopover();
+  const { open: localShowMenu, handleOpen, handleClose: localCloseMenu } = usePopover();
+
+  const isControlled = controlledOpen !== undefined;
+  const showMenu = isControlled ? controlledOpen! : localShowMenu;
+  const closeMenu = isControlled ? (onControlledClose ?? (() => {})) : localCloseMenu;
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
-    handleOpen(e);
+    if (!isControlled) handleOpen(e);
     onMenuOpen?.(index);
   };
+
+  const [imgError, setImgError] = useState(false);
 
   const useRealImages =
     cameraId !== undefined &&
@@ -79,6 +90,10 @@ export const CameraItem = ({
 
   const imageSrc = useRealImages ? liveSrc : media;
 
+  useEffect(() => {
+    setImgError(false);
+  }, [imageSrc]);
+
   return (
     <Box
       onClick={(e) => {
@@ -96,6 +111,7 @@ export const CameraItem = ({
       <img
         src={imageSrc || media}
         alt={cameraName ?? `Camera ${index + 1}`}
+        onError={() => setImgError(true)}
         style={{
           width: "100%",
           height: "100%",
@@ -104,6 +120,35 @@ export const CameraItem = ({
           opacity: useRealImages && !liveSrc ? 0.15 : 1,
         }}
       />
+
+      {imgError && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: Colors.blushWhite,
+            gap: 1,
+          }}
+        >
+          <VideocamOffOutlinedIcon
+            sx={{ fontSize: 36, color: Colors.dimGray, opacity: 0.4 }}
+          />
+          <Typography
+            sx={{
+              color: Colors.dimGray,
+              fontFamily: Fonts.main,
+              fontSize: 13,
+              opacity: 0.6,
+            }}
+          >
+            Camera doesn't work
+          </Typography>
+        </Box>
+      )}
 
       {/* Top-left: camera label */}
       {cameraLabel && (
@@ -334,6 +379,8 @@ interface SharedCameraItemProps {
   location?: number;
   date?: string;
   timestamp?: string;
+  openMenuIndex: number | null;
+  onCloseMenu: () => void;
 }
 
 const CameraCell = ({
@@ -350,6 +397,8 @@ const CameraCell = ({
   location,
   date,
   timestamp,
+  openMenuIndex,
+  onCloseMenu,
 }: SharedCameraItemProps & { camIndex: number; maxCols: number }) => {
   return (
     <Box
@@ -375,6 +424,8 @@ const CameraCell = ({
         location={location}
         date={date}
         timestamp={timestamp}
+        controlledOpen={openMenuIndex === camIndex}
+        onControlledClose={onCloseMenu}
       />
     </Box>
   );
@@ -435,6 +486,7 @@ const CameraLayout = ({
   onExpandCamera: handleExpandCamera,
   loadState = false,
 }: CameraLayoutProps) => {
+  const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
   if (loadState) {
     return (
       <Box
@@ -550,12 +602,17 @@ const CameraLayout = ({
     onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
     getTagsForCamera,
     contextMenuItems,
-    onMenuOpen,
+    onMenuOpen: (index) => {
+      setOpenMenuIndex(index);
+      onMenuOpen?.(index);
+    },
     cameras: sortedCameras,
     company,
     location,
     date,
     timestamp,
+    openMenuIndex,
+    onCloseMenu: () => setOpenMenuIndex(null),
   };
 
   const rowDistribution = getRowDistribution(count);

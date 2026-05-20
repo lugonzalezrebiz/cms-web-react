@@ -39,7 +39,10 @@ const Monitor = () => {
   const groupID =
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
-  const { cameras, isLoading: isCamerasLoading } = useTrackerCameras(groupID, trackerID);
+  const { cameras, isLoading: isCamerasLoading } = useTrackerCameras(
+    groupID,
+    trackerID,
+  );
   const sortedCameras = useMemo(
     () => [...cameras].sort((a, b) => a.id - b.id),
     [cameras],
@@ -269,7 +272,11 @@ const Monitor = () => {
 
       {!timelinePopped && (
         <Box
-          sx={{ flex: 3, minHeight: 0, zIndex: expandedCamera ? 2000 : 1000 }}
+          sx={{
+            flex: 3,
+            minHeight: 0,
+            zIndex: expandedCamera !== null ? 2000 : 1000,
+          }}
         >
           <TimeLine {...timelineProps} />
         </Box>
