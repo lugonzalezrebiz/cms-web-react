@@ -10,7 +10,10 @@ import usePasswordValidation from "../hooks/usePasswordValidation";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: { oldPassword: string; newPassword: string }, onReset: () => void) => void;
+  onSubmit: (
+    payload: { oldPassword: string; newPassword: string },
+    onReset: () => void,
+  ) => void;
   isError: boolean;
   isPending: boolean;
   errorMessage: string | null;
@@ -30,7 +33,7 @@ const FieldLabel = styled("p")({
   margin: "0 0 6px 0",
   fontFamily: Fonts.secondary,
   fontSize: "14px",
-  fontWeight: 500,
+  fontWeight: 400,
   color: Colors.charcoalNavy,
   lineHeight: 1.43,
   height: "20px",
@@ -98,10 +101,10 @@ const ResetPasswordDialog = ({
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const eyeAdornment = (toggle: () => void) => (
+  const eyeAdornment = (toggle: () => void, show: boolean) => (
     <InputAdornment position="end">
       <img
-        src="/assets/eye.svg"
+        src={show ? "/assets/close-eye.svg" : "/assets/eye.svg"}
         alt="toggle visibility"
         onClick={toggle}
         style={{ cursor: "pointer", width: "20px", height: "20px" }}
@@ -154,7 +157,11 @@ const ResetPasswordDialog = ({
             cursor: "pointer",
           }}
         >
-          <img src="../assets/x-close.svg" alt="Close" width={20} height={20} />
+          <img
+            src="../assets/x-close.svg"
+            alt="Close"
+            style={{ width: "24px", height: "24" }}
+          />
         </Box>
       </Box>
 
@@ -171,7 +178,10 @@ const ResetPasswordDialog = ({
             sx={textFieldSx}
             slotProps={{
               input: {
-                endAdornment: eyeAdornment(() => setShowOld((v) => !v)),
+                endAdornment: eyeAdornment(
+                  () => setShowOld((v) => !v),
+                  showOld,
+                ),
               },
             }}
           />
@@ -189,7 +199,10 @@ const ResetPasswordDialog = ({
             sx={textFieldSx}
             slotProps={{
               input: {
-                endAdornment: eyeAdornment(() => setShowNew((v) => !v)),
+                endAdornment: eyeAdornment(
+                  () => setShowNew((v) => !v),
+                  showNew,
+                ),
               },
             }}
           />
@@ -243,7 +256,10 @@ const ResetPasswordDialog = ({
             sx={textFieldSx}
             slotProps={{
               input: {
-                endAdornment: eyeAdornment(() => setShowConfirm((v) => !v)),
+                endAdornment: eyeAdornment(
+                  () => setShowConfirm((v) => !v),
+                  showConfirm,
+                ),
               },
             }}
           />
@@ -260,7 +276,12 @@ const ResetPasswordDialog = ({
           <Button outfit color="secondary" onClick={handleClose}>
             Cancel
           </Button>
-          <Button outfit color="primary" type="submit" disabled={!isValid || isPending}>
+          <Button
+            outfit
+            color="primary"
+            type="submit"
+            disabled={!isValid || isPending}
+          >
             {isPending ? "Loading..." : "Reset Password"}
           </Button>
         </Box>
