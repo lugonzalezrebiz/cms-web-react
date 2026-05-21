@@ -1,40 +1,35 @@
-import { useState } from "react";
 import { Box, Grid } from "@mui/system";
-import Form from "./sections/Form";
-import TableSection from "./sections/TableSection";
-import { Colors } from "../../theme";
+import HeaderCard from "./components/Card";
+
+const cards = [
+  { title: "Unassigned", current: 9 },
+  {
+    title: "Paused Assignments",
+    current: 1,
+  },
+  {
+    title: "Rejected Assignments",
+    current: 1,
+  },
+  { title: "Open Tickets", current: 1 },
+  { title: "Unassigned", current: 9 },
+];
+
+const activityIcon = "/assets/activity-other-icon.svg";
 
 const AdminForm = () => {
-  const [rows, setRows] = useState<Record<string, string>[]>([]);
-
-  const handleAddRow = (row: Record<string, string>) => {
-    setRows((prev) => [...prev, row]);
-  };
-
   return (
-    <Box mt={"2%"}>
-      <Grid container spacing={2} mt={"25px"}>
-        <Grid size={6}>
-          <Form onAddRow={handleAddRow} />
-        </Grid>
-        <Grid size={6}>
-          <Box
-            sx={{
-              height: "474px",
-              bgcolor: Colors.white,
-              borderRadius: "8px",
-              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-              maxWidth: "600px",
-              padding: "0 0 0 20px",
-              ml: "16px",
-              overflow: "scroll",
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": { display: "none" },
-            }}
-          >
-            <TableSection rows={rows} />
-          </Box>
-        </Grid>
+    <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+      <Grid container spacing={2}>
+        {cards.map((card) => (
+          <Grid key={card.title} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+            <HeaderCard
+              title={card.title}
+              current={card.current}
+              image={activityIcon}
+            />
+          </Grid>
+        ))}
       </Grid>
     </Box>
   );
