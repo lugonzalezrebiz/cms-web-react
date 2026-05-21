@@ -350,11 +350,11 @@ const NormalSize = ({
   const navPopover = usePopover();
 
   return (
-    <Box display={"flex"} alignItems={"center"}>
+    <Box display={"flex"} alignItems={"center"} bgcolor={Colors.white}>
       <Box
         sx={{
           cursor: "pointer",
-          maxWidth: "230px",
+          maxWidth: "232px",
           width: "100%",
           bgcolor: Colors.white,
           ml: "6px",

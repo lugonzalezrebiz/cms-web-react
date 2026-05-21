@@ -15,7 +15,7 @@ import { useNotifications } from "../../hooks/useNotifications";
 
 const StyledContainer = styled("div")({
   display: "flex",
-  padding: "0.5em 1em 0.5em 1em",
+  padding: "0.5em 1em 0.5em 12px",
   alignItems: "center",
   gap: "10px",
   justifyContent: "space-between",
@@ -125,8 +125,7 @@ const AssignmentsHeader = ({
                   <p
                     style={{
                       color: Colors.vividLime,
-                      margin: "0 0 0 7px",
-                      width: "48px",
+                      margin: "0 0 0 0px",
                       height: "24px",
                       fontFamily: Fonts.main,
                       fontSize: "16px",

@@ -51,7 +51,7 @@ const StyledToggleButton = styled(MuiToggleButton)({
   margin: 0,
   fontSize: "14px",
   borderRadius: 35,
-  maxWidth: "89px",
+  maxWidth: "120px",
   "& .toggle-label": {
     overflow: "hidden",
     textOverflow: "ellipsis",
