@@ -10,6 +10,7 @@ interface PopoverMenuProps {
   children: ReactNode;
   height?: string;
   maxWidth?: string;
+  padding?: string;
 }
 
 const PopoverMenu = ({
@@ -19,6 +20,7 @@ const PopoverMenu = ({
   children,
   height,
   maxWidth,
+  padding,
 }: PopoverMenuProps) => {
   return (
     <Popover
@@ -55,8 +57,8 @@ const PopoverMenu = ({
           onClick={() => setAnchorEl()}
           sx={{
             position: "absolute",
-            right: 24,
-            top: 24,
+            right: padding ? padding : 24,
+            top: padding ? padding : 24,
             cursor: "pointer",
           }}
         >

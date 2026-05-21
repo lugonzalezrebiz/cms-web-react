@@ -91,7 +91,7 @@ const MenuRowText = styled("p")({
   margin: 0,
   fontFamily: Fonts.main,
   fontSize: "14px",
-  fontWeight: 700,
+  fontWeight: 600,
   lineHeight: 1.43,
   color: Colors.lightBlack,
 });
@@ -105,11 +105,15 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
   const { user, logout } = useAuth();
   const [openResetPassword, setOpenResetPassword] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const { mutate: changePassword, isError, errorMessage } = useChangePassword();
+  const { mutate: changePassword, isError, isPending, errorMessage } = useChangePassword();
 
-  const handlePasswordSubmit = (payload: { oldPassword: string; newPassword: string }) => {
+  const handlePasswordSubmit = (
+    payload: { oldPassword: string; newPassword: string },
+    onReset: () => void
+  ) => {
     changePassword(payload, {
       onSuccess: () => {
+        onReset();
         setOpenResetPassword(false);
         setShowSuccess(true);
       },
@@ -136,6 +140,7 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
       open={open}
       setAnchorEl={handleClose}
       height="255px"
+      padding="12px"
     >
       <Box
         sx={{
@@ -181,7 +186,7 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
               width={18}
               height={18}
             />
-            <LogoutText>Log out</LogoutText>
+            <LogoutText>Log Out</LogoutText>
           </MenuRow>
         </Box>
       </Box>
@@ -191,6 +196,7 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
         onClose={() => setOpenResetPassword(false)}
         onSubmit={handlePasswordSubmit}
         isError={isError}
+        isPending={isPending}
         errorMessage={errorMessage}
       />
 

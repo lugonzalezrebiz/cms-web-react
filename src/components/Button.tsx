@@ -43,8 +43,9 @@ const Button = styled(MuiButton, {
       : {}),
     ...(disabled
       ? {
-          backgroundColor: Colors.paleGray,
-          border: `1px solid ${Colors.paleGray}`,
+          backgroundColor: Colors.lightGray,
+          border: `1px solid ${Colors.silverGrey}`,
+          color: Colors.silverGrey,
           cursor: "not-allowed",
         }
       : {}),

@@ -10,8 +10,9 @@ import usePasswordValidation from "../hooks/usePasswordValidation";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: { oldPassword: string; newPassword: string }) => void;
+  onSubmit: (payload: { oldPassword: string; newPassword: string }, onReset: () => void) => void;
   isError: boolean;
+  isPending: boolean;
   errorMessage: string | null;
 }
 
@@ -19,50 +20,54 @@ const DialogHeading = styled("p")({
   margin: 0,
   fontFamily: Fonts.main,
   fontSize: "20px",
-  fontWeight: 700,
+  fontWeight: 600,
   color: Colors.charcoalNavy,
   lineHeight: 1.5,
+  height: "30px",
 });
 
 const FieldLabel = styled("p")({
   margin: "0 0 6px 0",
-  fontFamily: Fonts.main,
+  fontFamily: Fonts.secondary,
   fontSize: "14px",
   fontWeight: 500,
-  color: Colors.lightBlack,
+  color: Colors.charcoalNavy,
   lineHeight: 1.43,
   height: "20px",
 });
 
 const HintText = styled("p")({
   margin: 0,
-  fontFamily: Fonts.main,
-  fontSize: "13px",
+  fontFamily: Fonts.secondary,
+  fontSize: "12px",
   color: Colors.dimGray,
+  height: "16px",
 });
 
 const ErrorText = styled("p")({
   margin: "4px 0 0 0",
   fontFamily: Fonts.main,
-  fontSize: "13px",
+  fontSize: "12px",
   color: Colors.red,
 });
 
 const HintDot = styled(Box)({
-  width: "18px",
-  height: "18px",
+  width: "16px",
+  height: "16px",
   borderRadius: "50%",
-  backgroundColor: Colors.paleGray,
+  backgroundColor: Colors.softSteelBlue,
   flexShrink: 0,
 });
 
 const textFieldSx = {
   width: "100%",
-  height: "44px",
+  minHeight: "44px",
   "& .MuiOutlinedInput-root": {
     borderRadius: "10px",
     backgroundColor: Colors.white,
-    "& fieldset": { borderColor: Colors.paleSteal },
+    "& fieldset": {
+      borderColor: Colors.paleSteal,
+    },
     "&:hover fieldset": { borderColor: Colors.softSteelBlue },
     "&.Mui-focused fieldset": {
       borderColor: Colors.vividOrange,
@@ -78,7 +83,14 @@ const textFieldSx = {
   },
 };
 
-const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }: Props) => {
+const ResetPasswordDialog = ({
+  open,
+  onClose,
+  onSubmit,
+  isError,
+  isPending,
+  errorMessage,
+}: Props) => {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -100,18 +112,22 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
   const { validLength, validUpperCase, passwordsMatch, isValid } =
     usePasswordValidation({ oldPassword, newPassword, confirmPassword });
 
-  const handleSubmit = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    onSubmit({ oldPassword, newPassword });
-  };
-
-  const handleClose = () => {
+  const resetForm = () => {
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
     setShowOld(false);
     setShowNew(false);
     setShowConfirm(false);
+  };
+
+  const handleSubmit = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    onSubmit({ oldPassword, newPassword }, resetForm);
+  };
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
@@ -131,8 +147,8 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
           onClick={handleClose}
           sx={{
             position: "absolute",
-            right: "10px",
-            top: "10px",
+            right: 8,
+            top: 8,
             background: "none",
             border: "none",
             cursor: "pointer",
@@ -153,7 +169,11 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
             value={oldPassword}
             autoComplete="current-password"
             sx={textFieldSx}
-            slotProps={{ input: { endAdornment: eyeAdornment(() => setShowOld((v) => !v)) } }}
+            slotProps={{
+              input: {
+                endAdornment: eyeAdornment(() => setShowOld((v) => !v)),
+              },
+            }}
           />
         </Box>
 
@@ -167,14 +187,30 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
             value={newPassword}
             autoComplete="new-password"
             sx={textFieldSx}
-            slotProps={{ input: { endAdornment: eyeAdornment(() => setShowNew((v) => !v)) } }}
+            slotProps={{
+              input: {
+                endAdornment: eyeAdornment(() => setShowNew((v) => !v)),
+              },
+            }}
           />
         </Box>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "6px", mb: "16px" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            mb: "16px",
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {validLength ? (
-              <img src="/assets/check-circle.svg" alt="valid" width={18} height={18} />
+              <img
+                src="/assets/check-circle.svg"
+                alt="valid"
+                width={18}
+                height={18}
+              />
             ) : (
               <HintDot />
             )}
@@ -182,7 +218,12 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {validUpperCase ? (
-              <img src="/assets/check-circle.svg" alt="valid" width={18} height={18} />
+              <img
+                src="/assets/check-circle.svg"
+                alt="valid"
+                width={18}
+                height={18}
+              />
             ) : (
               <HintDot />
             )}
@@ -200,7 +241,11 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
             value={confirmPassword}
             autoComplete="new-password"
             sx={textFieldSx}
-            slotProps={{ input: { endAdornment: eyeAdornment(() => setShowConfirm((v) => !v)) } }}
+            slotProps={{
+              input: {
+                endAdornment: eyeAdornment(() => setShowConfirm((v) => !v)),
+              },
+            }}
           />
           {confirmPassword.length > 0 && !passwordsMatch && (
             <ErrorText>Passwords do not match</ErrorText>
@@ -212,11 +257,11 @@ const ResetPasswordDialog = ({ open, onClose, onSubmit, isError, errorMessage }:
         )}
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-          <Button color="secondary" onClick={handleClose}>
+          <Button outfit color="secondary" onClick={handleClose}>
             Cancel
           </Button>
-          <Button color="primary" type="submit" disabled={!isValid}>
-            Reset Password
+          <Button outfit color="primary" type="submit" disabled={!isValid || isPending}>
+            {isPending ? "Loading..." : "Reset Password"}
           </Button>
         </Box>
       </form>
