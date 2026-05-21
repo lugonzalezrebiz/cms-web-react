@@ -24,11 +24,12 @@ const StyledContainer = styled("div")({
 
 const StyledTitle = styled("p")({
   margin: 0,
-  fontSize: "16px",
-  fontWeight: "600",
+  fontSize: "20px",
+  fontWeight: 600,
   lineHeight: 1.5,
-  color: Colors.lightBlack,
+  color: Colors.charcoalNavy,
   fontFamily: Fonts.main,
+  height: "30px",
 });
 
 const StyledImg = styled("img")({
@@ -97,23 +98,44 @@ const AssignmentsHeader = ({
                 cursor: "pointer",
               }}
             >
-              <Box display={"flex"} alignItems="center" gap={"12px"}>
+              <Box display={"flex"} alignItems="center" gap={"16px"}>
+                <img
+                  style={{ width: "57px", height: "15px" }}
+                  src="./assets/rebiz-logo-1.svg"
+                  alt=""
+                />
                 <StyledTitle>Monitoring Dashboad</StyledTitle>
                 <Box
                   sx={{
                     bgcolor: Colors.lightLime,
-                    p: "4px 12px",
-                    display: "inline-flex",
+                    p: "4px 12px 4px 12px",
+                    display: "flex",
+                    justifyContent: "flex-start",
                     alignItems: "center",
-                    borderRadius: "20px",
-                    fontFamily: Fonts.main,
-                    fontSize: "16px",
-                    fontWeight: 600,
-                    color: Colors.vividLime,
+                    gap: "8px",
+                    borderRadius: "16px",
+                    width: "80px",
                   }}
                 >
-                  <img src="./assets/online.svg" alt="Online status" />
-                  <p style={{ margin: "0 0 0 8px" }}>Online</p>
+                  <img
+                    style={{ width: "20px", height: "18px" }}
+                    src="./assets/online.svg"
+                    alt="Online status"
+                  />
+                  <p
+                    style={{
+                      color: Colors.vividLime,
+                      margin: "0 0 0 7px",
+                      width: "48px",
+                      height: "24px",
+                      fontFamily: Fonts.main,
+                      fontSize: "16px",
+                      fontWeight: 500,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Online
+                  </p>
                 </Box>
               </Box>
             </Box>

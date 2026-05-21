@@ -19,6 +19,7 @@ const CustomScrollbar = ({
   contentSx,
 }: CustomScrollbarProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
@@ -26,9 +27,10 @@ const CustomScrollbar = ({
 
   const updateThumb = useCallback(() => {
     const el = scrollRef.current;
+    const track = trackRef.current;
     const thumb = thumbRef.current;
-    if (!el || !thumb) return;
-    const trackHeight = el.clientHeight - thumbLength;
+    if (!el || !track || !thumb) return;
+    const trackHeight = track.clientHeight - thumbLength;
     const scrollable = el.scrollHeight - el.clientHeight;
     const top = scrollable > 0 ? (el.scrollTop / scrollable) * trackHeight : 0;
     thumb.style.top = `${top}px`;
@@ -80,15 +82,16 @@ const CustomScrollbar = ({
       </Box>
       {/* Track */}
       <Box
+        ref={trackRef}
         sx={{
           position: "absolute",
-          right: 2,
+          right: 0,
           top: 0,
-          bottom: 0,
-          width: 8,
+          bottom: -7,
+          width: 10,
           background: Colors.blushWhite,
           borderRadius: "8px",
-          border: `1px solid ${Colors.black}`,
+          border: `1px solid ${Colors.charcoalNavy}`,
         }}
       >
         {/* Thumb */}
@@ -103,7 +106,7 @@ const CustomScrollbar = ({
           sx={{
             position: "absolute",
             top: 0,
-            width: 8,
+            width: 10,
             height: thumbLength,
             left: "50%",
             transform: "translateX(-50%)",

@@ -32,7 +32,8 @@ import useCameraGroups from "../../hooks/useCameraGroups";
 import { AGENT_ROLE } from "../../config";
 import useAuth from "../../hooks/useAuth";
 
-const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
+const isMac =
+  typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
 const alt = isMac ? "⌥" : "Alt";
 
@@ -118,7 +119,7 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
 
 const StyledContainer = styled("div")({
   display: "flex",
-  padding: "0.5em 1em 0.5em 1em",
+  padding: "0.5em 1em 0.5em 0",
   alignItems: "center",
   gap: "10px",
   justifyContent: "space-between",
@@ -220,6 +221,16 @@ const SmallSize = ({
     <>
       <Fix scrolled={scrolled}>
         <StyledContainer>
+          {allowGoBack && (
+            <IconButton
+              sx={{ color: Colors.main }}
+              onClick={goBack}
+              aria-label="go back"
+            >
+              <ArrowBackIosNewIcon fontSize="small" />
+            </IconButton>
+          )}
+
           {withIconMenu && (
             <IconButton
               edge="start"
@@ -228,16 +239,6 @@ const SmallSize = ({
               aria-label="menu"
             >
               <MenuIcon />
-            </IconButton>
-          )}
-
-          {allowGoBack && (
-            <IconButton
-              sx={{ color: Colors.main }}
-              onClick={goBack}
-              aria-label="go back"
-            >
-              <ArrowBackIosNewIcon fontSize="small" />
             </IconButton>
           )}
 
