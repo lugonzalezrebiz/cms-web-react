@@ -1,7 +1,7 @@
 {
 	"name": "cmsweb",
 	"private": true,
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"type": "module",
 	"main": "out/main/index.js",
 	"scripts": {
@@ -31,19 +31,13 @@
 			"!**/node_modules/.cache/**"
 		],
 		"asar": true,
-		"mac": {
-			"icon": "public/assets/app/icons/darwin/icon.icns"
-		},
+		"mac": { "icon": "icons/darwin/icon.icns" },
 		"win": {
-			"target": [
-				"nsis"
-			],
-			"icon": "public/assets/app/icons/win32/icon.ico",
+			"target": ["nsis"],
+			"icon": "icons/win32/icon.ico",
 			"forceCodeSigning": false
 		},
-		"linux": {
-			"icon": "public/assets/app/icons/web/icon.png"
-		},
+		"linux": { "icon": "icons/web/icon.png" },
 		"nsis": {
 			"oneClick": false,
 			"allowToChangeInstallationDirectory": true,

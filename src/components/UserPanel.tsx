@@ -181,7 +181,7 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
           <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
           <MenuRow onClick={handleLogout}>
             <img
-              src="../assets/log-out-03.svg"
+              src="./assets/log-out-03.svg"
               alt="Close"
               width={18}
               height={18}

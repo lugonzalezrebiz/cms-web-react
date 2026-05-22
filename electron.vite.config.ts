@@ -32,6 +32,8 @@ export default defineConfig(({ mode }) => {
         renderer: {
             plugins: [react()],
             root: resolve(__dirname, "."),
+            publicDir: resolve(__dirname, "public"),
+            base: "./",
             server: {
                 proxy: {
                     "/api": {
@@ -42,6 +44,8 @@ export default defineConfig(({ mode }) => {
                 },
             },
             build: {
+                outDir: resolve(__dirname, "out/renderer"),
+                emptyOutDir: true,
                 rollupOptions: {
                     input: {
                         index: resolve(__dirname, "index.html"),

@@ -61,10 +61,10 @@ export const MOCK_SNAPSHOT: TimelineSnapshot = {
 };
 
 export const TABS_DIALOG = [
-  { key: "all", label: "All", icon: "../assets/users-03.svg" },
-  { key: "sales", label: "Sales", icon: "../assets/tag-01.svg" },
-  { key: "nonsales", label: "Non.Sales", icon: "../assets/user-02.svg" },
-  { key: "unknown", label: "Unknow", icon: "../assets/help-circle.svg" },
+  { key: "all", label: "All", icon: "./assets/users-03.svg" },
+  { key: "sales", label: "Sales", icon: "./assets/tag-01.svg" },
+  { key: "nonsales", label: "Non.Sales", icon: "./assets/user-02.svg" },
+  { key: "unknown", label: "Unknow", icon: "./assets/help-circle.svg" },
 ];
 
 export const PEOPLE = [

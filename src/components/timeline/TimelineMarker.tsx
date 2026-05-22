@@ -79,12 +79,12 @@ export const TimelineMarker = ({
       >
         <img
           style={{ height: "7px", filter: "brightness(0) invert(1)" }}
-          src="../assets/chevron-left.svg"
+          src="./assets/chevron-left.svg"
           alt=""
         />
         <img
           style={{ height: "7px", filter: "brightness(0) invert(1)" }}
-          src="../assets/chevron-right.svg"
+          src="./assets/chevron-right.svg"
           alt=""
         />
       </Box>

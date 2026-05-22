@@ -51,10 +51,17 @@ const StyledToggleButton = styled(MuiToggleButton)({
   margin: 0,
   fontSize: "14px",
   borderRadius: 35,
-  whiteSpace: "nowrap",
+  maxWidth: "120px",
+  "& .toggle-label": {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    minWidth: 0,
+  },
   "&.Mui-selected": {
     color: Colors.lightBlack,
     backgroundColor: Colors.white,
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   "&.Mui-selected:hover": {
     backgroundColor: Colors.white,
@@ -121,7 +128,9 @@ const ToggleButton = ({
                   : undefined
               }
             >
-              {selectedOption ? selectedOption.title : group.title}
+              <span className="toggle-label">
+                {selectedOption ? selectedOption.title : group.title}
+              </span>
               {group.options && (
                 <KeyboardArrowDownIcon sx={{ fontSize: 14, ml: 0.3 }} />
               )}
@@ -140,14 +149,18 @@ const ToggleButton = ({
         marginThreshold={0}
         slotProps={{
           transition: { timeout: 5000 },
+          list: { disablePadding: true },
           paper: {
             sx: {
-              maxHeight: "50%",
-              borderRadius: "4px",
+              width: "100%",
+              maxWidth: "180px",
+              borderRadius: "8px",
               bgcolor: Colors.white,
-              border: `1px solid ${Colors.paleSteal}`,
-              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-              mt: "2px",
+              boxShadow: " 0 2px 10px 0 rgba(0, 0, 0, 0.16)",
+              p: 0,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             },
           },
         }}
@@ -162,14 +175,17 @@ const ToggleButton = ({
                 handleClose();
               }}
               sx={{
-                fontFamily: Fonts.main,
-                fontSize: "16px",
+                fontFamily: Fonts.secondary,
+                fontSize: "12px",
                 fontWeight: 400,
-                color: Colors.dimGray,
-                lineHeight: "24px",
+                color: Colors.lightBlack,
+                display: "block",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                p: "8px",
+                minHeight: 0,
+                height: "31px",
                 "&.Mui-selected": {
                   color: Colors.white,
                   backgroundColor: Colors.vividOrange,
@@ -187,11 +203,17 @@ const ToggleButton = ({
           <MenuItem
             disabled
             sx={{
-              fontFamily: Fonts.main,
-              fontSize: "16px",
+              fontFamily: Fonts.secondary,
+              fontSize: "12px",
               fontWeight: 400,
-              color: Colors.dimGray,
-              lineHeight: "24px",
+              color: Colors.lightBlack,
+              display: "block",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              p: "8px",
+              minHeight: 0,
+              height: "31px",
             }}
           >
             No options available

@@ -76,7 +76,7 @@ const TimelineCameraPopover = ({
     <Box sx={{ width: "100%", height: "100%" }}>
       <TitleCameraMenu>
         Focused monitoring
-        <img src="../assets/plus-1.svg" alt="Add camera" />
+        <img src="./assets/plus-1.svg" alt="Add camera" />
       </TitleCameraMenu>
       {CAMERA_OPTIONS.map((option) => {
         const isSelected = selectedOption === option;

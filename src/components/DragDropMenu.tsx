@@ -240,7 +240,7 @@ const EventMenu = ({
             sx={{ p: "4px", opacity: input.trim() ? 1 : 0.3 }}
           >
             <img
-              src="../assets/arrow-narrow-right.svg"
+              src="./assets/arrow-narrow-right.svg"
               alt="add"
               style={{ height: "18px" }}
             />
