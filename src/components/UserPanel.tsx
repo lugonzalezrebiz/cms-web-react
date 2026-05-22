@@ -5,6 +5,10 @@ import styled from "@emotion/styled";
 import { Divider } from "@mui/material";
 import useNavigateWithQuery from "../hooks/useNavigate";
 import useAuth from "../hooks/useAuth";
+import useChangePassword from "../hooks/useChangePassword";
+import ResetPasswordDialog from "./ResetPasswordDialog";
+import PasswordChangedDialog from "./PasswordChangedDialog";
+import { useState } from "react";
 
 interface Props {
   open: boolean;
@@ -87,21 +91,42 @@ const MenuRowText = styled("p")({
   margin: 0,
   fontFamily: Fonts.main,
   fontSize: "14px",
-  fontWeight: "normal",
+  fontWeight: 600,
   lineHeight: 1.43,
   color: Colors.lightBlack,
 });
 
 const LogoutText = styled(MenuRowText)({
-  color: Colors.red,
+  color: Colors.lightBlack,
 });
 
 const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
   const navigate = useNavigateWithQuery();
   const { user, logout } = useAuth();
+  const [openResetPassword, setOpenResetPassword] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { mutate: changePassword, isError, isPending, errorMessage } = useChangePassword();
+
+  const handlePasswordSubmit = (
+    payload: { oldPassword: string; newPassword: string },
+    onReset: () => void
+  ) => {
+    changePassword(payload, {
+      onSuccess: () => {
+        onReset();
+        setOpenResetPassword(false);
+        setShowSuccess(true);
+      },
+    });
+  };
 
   const initials = user?.name
-    ? user.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+    ? user.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
     : "??";
 
   const handleLogout = () => {
@@ -115,6 +140,7 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
       open={open}
       setAnchorEl={handleClose}
       height="255px"
+      padding="12px"
     >
       <Box
         sx={{
@@ -143,13 +169,41 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
 
         <Box sx={{ display: "flex", flexDirection: "column" }}>
           <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
-
+          <MenuRow onClick={() => setOpenResetPassword(true)}>
+            <img
+              src="./assets/passcode.svg"
+              alt="Reset Password"
+              width={18}
+              height={18}
+            />
+            <LogoutText>Reset Password</LogoutText>
+          </MenuRow>
+          <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
           <MenuRow onClick={handleLogout}>
-            <img src="./assets/x-close.svg" alt="Close" width={18} height={18} />
-            <LogoutText>Log out</LogoutText>
+            <img
+              src="./assets/log-out-03.svg"
+              alt="Close"
+              width={18}
+              height={18}
+            />
+            <LogoutText>Log Out</LogoutText>
           </MenuRow>
         </Box>
       </Box>
+
+      <ResetPasswordDialog
+        open={openResetPassword}
+        onClose={() => setOpenResetPassword(false)}
+        onSubmit={handlePasswordSubmit}
+        isError={isError}
+        isPending={isPending}
+        errorMessage={errorMessage}
+      />
+
+      <PasswordChangedDialog
+        open={showSuccess}
+        onClose={() => setShowSuccess(false)}
+      />
     </PopoverMenu>
   );
 };
