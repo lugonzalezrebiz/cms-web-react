@@ -6,7 +6,7 @@ import { Colors, Fonts } from "../../../theme";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
 import EmployeeTypeRadioGroup from "./EmployeeTypeRadioGroup";
-import usePasswordValidation from "../../../hooks/usePasswordValidation";
+import usePasswordValidation from "../../../hooks/usePasswordFormUserValidation";
 import useCreateUser from "../hooks/useCreateUser";
 import useCreateEmployeeForm from "../hooks/useCreateEmployeeForm";
 import { generatePassword } from "../../../utils/generatePassword";
@@ -16,7 +16,6 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
-
 
 const Label = styled(FormLabel)({
   fontFamily: Fonts.secondary,
@@ -93,100 +92,98 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
   return (
     <FormDialog open={open} onClose={handleClose} title="Create New Employee">
       <Box>
-          <Label>Select type of employee</Label>
-          <EmployeeTypeRadioGroup
-            value={employeeType}
-            onChange={setEmployeeType}
-          />
-        </Box>
+        <Label>Select type of employee</Label>
+        <EmployeeTypeRadioGroup
+          value={employeeType}
+          onChange={setEmployeeType}
+        />
+      </Box>
 
-        <Box>
-          <Label>Employee Name</Label>
-          <StyledInput
-            fullWidth
-            size="small"
-            value={employeeName}
-            onChange={(e) => setField("employeeName", e.target.value)}
-            error={!!errors.employeeName}
-          />
-          {errors.employeeName && <ErrorText>{errors.employeeName}</ErrorText>}
-        </Box>
+      <Box>
+        <Label>Employee Name</Label>
+        <StyledInput
+          fullWidth
+          size="small"
+          value={employeeName}
+          onChange={(e) => setField("employeeName", e.target.value)}
+          error={!!errors.employeeName}
+        />
+        {errors.employeeName && <ErrorText>{errors.employeeName}</ErrorText>}
+      </Box>
 
-        <Box>
-          <Label>Email</Label>
-          <StyledInput
-            fullWidth
-            size="small"
-            type="email"
-            value={email}
-            onChange={(e) => setField("email", e.target.value)}
-            error={!!errors.email}
-          />
-          {errors.email && <ErrorText>{errors.email}</ErrorText>}
-        </Box>
+      <Box>
+        <Label>Email</Label>
+        <StyledInput
+          fullWidth
+          size="small"
+          type="email"
+          value={email}
+          onChange={(e) => setField("email", e.target.value)}
+          error={!!errors.email}
+        />
+        {errors.email && <ErrorText>{errors.email}</ErrorText>}
+      </Box>
 
-        <Box>
-          <Label>User Name</Label>
-          <StyledInput
-            fullWidth
-            size="small"
-            value={userName}
-            onChange={(e) => setField("userName", e.target.value)}
-            error={!!errors.userName}
-          />
-          {errors.userName && <ErrorText>{errors.userName}</ErrorText>}
-        </Box>
+      <Box>
+        <Label>User Name</Label>
+        <StyledInput
+          fullWidth
+          size="small"
+          value={userName}
+          onChange={(e) => setField("userName", e.target.value)}
+          error={!!errors.userName}
+        />
+        {errors.userName && <ErrorText>{errors.userName}</ErrorText>}
+      </Box>
 
-        <Box>
-          <Label>Password</Label>
-          <PasswordInput
-            value={password}
-            onChange={(value) => setField("password", value)}
-            error={!!errors.password}
-            errorText={errors.password}
-            onGenerate={() => setField("password", generatePassword())}
-            validations={[
-              { valid: validLength, label: "8–20 characters" },
-              { valid: validUpperCase, label: "At least one uppercase letter" },
-            ]}
-          />
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            pb: "8px",
-          }}
-        >
-          {errorMessage && (
-            <span
-              style={{
-                fontFamily: Fonts.main,
-                fontSize: "12px",
-                color: Colors.red,
-                textAlign: "left",
-              }}
-            >
-              {errorMessage}
-            </span>
-          )}
-          <Box
-            sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}
+      <Box>
+        <Label>Password</Label>
+        <PasswordInput
+          value={password}
+          onChange={(value) => setField("password", value)}
+          error={!!errors.password}
+          errorText={errors.password}
+          onGenerate={() => setField("password", generatePassword())}
+          validations={[
+            { valid: validLength, label: "8–20 characters" },
+            { valid: validUpperCase, label: "At least one uppercase letter" },
+          ]}
+        />
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          pb: "8px",
+        }}
+      >
+        {errorMessage && (
+          <span
+            style={{
+              fontFamily: Fonts.main,
+              fontSize: "12px",
+              color: Colors.red,
+              textAlign: "left",
+            }}
           >
-            <Button color="secondary" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              onClick={handleCreate}
-              outfit
-              disabled={!isValid || isPending}
-            >
-              Create New Employee
-            </Button>
-          </Box>
+            {errorMessage}
+          </span>
+        )}
+        <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <Button color="secondary" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            color="primary"
+            onClick={handleCreate}
+            outfit
+            disabled={!isValid || isPending}
+          >
+            Create New Employee
+          </Button>
         </Box>
+      </Box>
     </FormDialog>
   );
 };
