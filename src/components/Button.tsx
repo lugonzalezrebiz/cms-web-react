@@ -17,7 +17,7 @@ const Button = styled(MuiButton, {
     borderRadius: square ? "0px" : "18px",
     fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
     fontSize: fontSize ? fontSize : "16px",
-    fontWeight: "600",
+    fontWeight: "500",
     textTransform: "none",
     boxShadow: "none",
     padding: "6px 20px",
@@ -43,8 +43,9 @@ const Button = styled(MuiButton, {
       : {}),
     ...(disabled
       ? {
-          backgroundColor: Colors.paleGray,
-          border: `1px solid ${Colors.paleGray}`,
+          backgroundColor: Colors.lightGray,
+          border: `1px solid ${Colors.silverGrey}`,
+          color: Colors.silverGrey,
           cursor: "not-allowed",
         }
       : {}),

@@ -9,11 +9,9 @@
 		"build": "tsc -b && vite build",
 		"lint": "eslint .",
 		"preview": "vite preview",
-
 		"electron:dev": "electron-vite dev",
 		"electron:build": "electron-vite build",
 		"electron:preview": "electron-vite preview",
-
 		"pack": "npm run electron:build && electron-builder --dir",
 		"dist": "npm run electron:build && electron-builder"
 	},
@@ -73,7 +71,8 @@
 		"jwt-decode": "^4.0.0",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
-		"react-router-dom": "^7.13.1"
+		"react-router-dom": "^7.13.1",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.1",

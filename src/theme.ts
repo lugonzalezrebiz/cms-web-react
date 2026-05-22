@@ -88,6 +88,7 @@ export const Colors = {
   palePink: "#F8BCBC",
   softWhite: "#ffffffde",
   semiTransparentGray: "#ededed4c",
+  slateGray: "#667085",
   softMistGray: "#f0efef66",
 };
 
