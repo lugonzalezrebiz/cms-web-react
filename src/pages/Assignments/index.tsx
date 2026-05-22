@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Box, Grid } from "@mui/system";
-import HeaderCard, { NewAssignmentsCard } from "./components/Card";
-import CardSkeleton from "./components/CardSkeleton";
+import { HeaderCard, NewAssignmentsCard } from "../../components/DashboardCards";
+import CardSkeleton from "../../components/CardSkeleton";
 import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
 import { usePopover } from "../../components/timeline/hooks/usePopover";

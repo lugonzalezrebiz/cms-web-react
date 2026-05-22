@@ -1,26 +1,210 @@
-import Table from "../../../components/Table";
-import type { Column } from "../../../components/Table";
+import { useMemo, useState } from "react";
+import { Colors, Fonts } from "../../../theme";
+import { Box, Grid } from "@mui/system";
+import SelectComponent from "../../../components/SelectComponent";
+import Title from "../../../components/Title";
+import TickBox from "../../../components/TickBox";
+import Button from "../../../components/Button";
+import Table, { type Column } from "../../../components/Table";
+import CreateEmployeeDialog from "../components/CreateEmployeeDialog";
+import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
+import useUsers, { type User } from "../hooks/useUsers";
+import {
+  companiesFilters,
+  storesFilters,
+  agentsFilters,
+  reviewsFilters,
+  workloadFilters,
+  statusFilters,
+} from "../mocks";
 
-const columns: Column[] = [
-  { title: "User", key: "user" },
-  { title: "Location", key: "location" },
-  { title: "Company", key: "company" },
-  { title: "Date", key: "date" },
-];
+const sizeSelect = "103px";
 
-interface Props {
-  rows: Record<string, string>[];
-}
+const TableSection = () => {
+  const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
+  const { users, isLoading } = useUsers();
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-const TableSection = ({ rows }: Props) => (
-  <Table
-    mainColumnWidth="20px"
-    rowWidth="20px"
-    mainRowWidth="20px"
-    TableCellWidth="20px"
-    columns={columns}
-    rows={rows}
-  />
-);
+  const [company, setCompany] = useState("all");
+  const [store, setStore] = useState("all");
+  const [agent, setAgent] = useState("all");
+  const [review, setReview] = useState("all");
+  const [workload, setWorkload] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const allSelected = users.length > 0 && selectedIds.size === users.length;
+
+  const toggleAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(users.map((u: User) => u.id)) : new Set());
+  };
+
+  const toggleOne = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const columns: Column[] = [
+    {
+      title: "",
+      key: "selected",
+      width: "50px",
+      complement: (
+        <TickBox
+          label=""
+          checked={allSelected}
+          onChange={(e) => toggleAll(e.target.checked)}
+        />
+      ),
+      render: (value: { id: number; checked: boolean }) => (
+        <TickBox
+          label=""
+          checked={value.checked}
+          onChange={(e) => toggleOne(value.id, e.target.checked)}
+        />
+      ),
+    },
+    { title: "ID", key: "id", width: "50px" },
+    { title: "Username", key: "username" },
+    { title: "Role", key: "role" },
+    { title: "Name", key: "name" },
+    { title: "Email", key: "email", width: "220px" },
+    {
+      title: "Active",
+      key: "active",
+      width: "80px",
+      render: (value: string) => (
+        <Box
+          sx={{
+            display: "inline-block",
+            px: "10px",
+            py: "2px",
+            borderRadius: "12px",
+            backgroundColor: value === "Yes" ? Colors.green : Colors.red,
+            color: Colors.white,
+            fontSize: "12px",
+            fontFamily: Fonts.main,
+            fontWeight: 600,
+          }}
+        >
+          {value}
+        </Box>
+      ),
+    },
+    {
+      title: "",
+      key: "assign",
+      width: "80px",
+      render: () => (
+        <Button sx={{ height: "20px" }} fontSize="12px" outfit>
+          ASSIGN
+        </Button>
+      ),
+    },
+  ];
+
+  const rows = useMemo(
+    () =>
+      users.map((user: User) => ({
+        selected: { id: user.id, checked: selectedIds.has(user.id) },
+        id: user.id,
+        username: user.username,
+        role:
+          user.roleID === ADMIN_ROLE
+            ? "Admin"
+            : user.roleID === AGENT_ROLE
+              ? "Agent"
+              : user.roleID === REVIEWER_ROLE
+                ? "Reviewer"
+                : String(user.roleID),
+        name: user.name,
+        email: user.email,
+        active: user.active ? "Yes" : "No",
+        assign: null,
+      })),
+    [users, selectedIds],
+  );
+
+  return (
+    <>
+      <Title title="Locations">
+        <Grid
+          container
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <TickBox
+            label="Show only Unassigned"
+            checked={showOnlyUnassigned}
+            onChange={(e) => setShowOnlyUnassigned(e.target.checked)}
+          />
+          <SelectComponent
+            filters={companiesFilters}
+            filter={company}
+            setFilter={setCompany}
+            size={sizeSelect}
+            padding="2px 4px"
+          />
+          <SelectComponent
+            filters={storesFilters}
+            filter={store}
+            setFilter={setStore}
+            size={sizeSelect}
+          />
+          <SelectComponent
+            filters={agentsFilters}
+            filter={agent}
+            setFilter={setAgent}
+            size={sizeSelect}
+          />
+          <SelectComponent
+            filters={reviewsFilters}
+            filter={review}
+            setFilter={setReview}
+            size={sizeSelect}
+          />
+          <SelectComponent
+            filters={workloadFilters}
+            filter={workload}
+            setFilter={setWorkload}
+            size={sizeSelect}
+          />
+          <SelectComponent
+            filters={statusFilters}
+            filter={status}
+            setFilter={setStatus}
+            size={sizeSelect}
+          />
+          <Button outfit onClick={() => setCreateDialogOpen(true)}>
+            <Box sx={{ display: "flex", alignItems: "center" }} mr={"4px"}>
+              <img src="./assets/plus.svg" alt="" />
+            </Box>
+            <span>Create a New Employee</span>
+          </Button>
+        </Grid>
+      </Title>
+      <Table
+        columns={columns}
+        rows={rows}
+        loading={isLoading}
+        mainColumnWidth="50px"
+        mainRowWidth="50px"
+        TableCellWidth="150px"
+        rowWidth="150px"
+      />
+      <CreateEmployeeDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      />
+    </>
+  );
+};
 
 export default TableSection;

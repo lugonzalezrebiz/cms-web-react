@@ -45,16 +45,16 @@ export interface Column {
   complement?: React.ReactNode;
   formatTooltip?: (value: any) => React.ReactNode;
   render?: (value: any) => React.ReactNode;
+  width?: string;
 }
 
 const MainColumn = styled(TableCell, {
   shouldForwardProp: (prop) => prop !== "mainColumnWidth",
 })<{ mainColumnWidth?: string }>(({ mainColumnWidth }) => ({
-    opacity: 0.7,
     fontFamily: Fonts.main,
     fontSize: "16px",
     fontWeight: 600,
-    color: "#212529",
+    color: Colors.dimGray,
     height: "23px",
     padding: "8px 10px",
     border: "none",
@@ -66,11 +66,10 @@ const MainColumn = styled(TableCell, {
 const TableCellStyled = styled(TableCell, {
   shouldForwardProp: (prop) => prop !== "TableCellWidth",
 })<{ TableCellWidth?: string }>(({ TableCellWidth }) => ({
-    opacity: 0.7,
     fontFamily: Fonts.main,
     fontSize: "16px",
     fontWeight: 600,
-    color: "#212529",
+    color: Colors.dimGray,
     height: "23px",
     padding: "8px 10px",
     border: "none",
@@ -80,10 +79,9 @@ const TableCellStyled = styled(TableCell, {
 );
 
 const Rows = styled(TableCell)<{ rowWidth?: string }>(({ rowWidth }) => ({
-  opacity: 0.7,
   fontFamily: Fonts.main,
   fontSize: "16px",
-  fontWeight: 600,
+  fontWeight: 400,
   color: Colors.dimGray,
   textAlign: "center",
   padding: "10px 8px",
@@ -112,7 +110,7 @@ const MainRow = styled(TableCell)<{
 }>(({ isClickable, mainRowWidth }) => ({
   fontFamily: Fonts.main,
   fontSize: "14px",
-  fontWeight: isClickable ? 500 : 700,
+  fontWeight: isClickable ? 500 : 400,
   color: isClickable ? Colors.main : Colors.lightBlack,
   padding: "10px 8px",
   border: "none",
@@ -160,15 +158,17 @@ const TableHeader = ({
         justifyContent={"flex-start"}
         height={"30px"}
       >
-        <p
-          style={{
-            margin: 0,
-            //whiteSpace: "nowrap",
-            textAlign: alignLeft ? "left" : "center",
-          }}
-        >
-          {title}
-        </p>
+        {title && (
+          <p
+            style={{
+              margin: 0,
+              //whiteSpace: "nowrap",
+              textAlign: alignLeft ? "left" : "center",
+            }}
+          >
+            {title}
+          </p>
+        )}
         {complement}
       </Box>
       <TableCellSubTitle>{subtitle}</TableCellSubTitle>
@@ -300,13 +300,13 @@ const Table = ({
                           ? "8px"
                           : 0,
                     }}
-                    TableCellWidth={TableCellWidth}
-                    mainColumnWidth={mainColumnWidth}
+                    TableCellWidth={col.width || TableCellWidth}
+                    mainColumnWidth={col.width || mainColumnWidth}
                   >
                     <TableHeader
                       title={col.title}
                       subtitle={col.subtitle}
-                      alignLeft={index === 0}
+                      alignLeft={index === 0 && !!col.title}
                       sort={col.sort ? direction || col.sort : undefined}
                       onSortClick={col.sort ? handleSortClick : undefined}
                       complement={col.complement}
@@ -350,21 +350,25 @@ const Table = ({
                         <MainRow
                           key={colIndex}
                           isClickable={clickableRows}
-                          mainRowWidth={mainRowWidth}
+                          mainRowWidth={col.width || mainRowWidth}
                           onClick={() => {
                             if (clickableRows && onRowClick) {
                               onRowClick(row.id || rowIndex);
                             }
                           }}
                         >
-                          {cellValue}
+                          {!col.title ? (
+                            <Box display="flex" justifyContent="center" alignItems="center">
+                              {col.render ? col.render(cellValue) : cellValue}
+                            </Box>
+                          ) : col.render ? col.render(cellValue) : cellValue}
                         </MainRow>
                       );
                     }
 
                     return (
                       <Rows
-                        rowWidth={rowWidth}
+                        rowWidth={col.width || rowWidth}
                         key={colIndex}
                         sx={{
                           backgroundColor:
@@ -378,7 +382,11 @@ const Table = ({
                               : 0,
                         }}
                       >
-                        {cellValue}
+                        {!col.title ? (
+                          <Box display="flex" justifyContent="center" alignItems="center">
+                            {col.render ? col.render(cellValue) : cellValue}
+                          </Box>
+                        ) : col.render ? col.render(cellValue) : cellValue}
                       </Rows>
                     );
                   })}

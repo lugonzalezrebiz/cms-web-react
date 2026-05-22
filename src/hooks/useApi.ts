@@ -157,6 +157,7 @@ export const usePost = <TData = unknown, TVariables = unknown>(
   const { token } = useAuth();
 
   return useMutation<TData, Error, TVariables>({
+    ...options,
     mutationFn: async (data: TVariables) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       const res = await apiClient.post<TData>(url, data, {
@@ -168,12 +169,11 @@ export const usePost = <TData = unknown, TVariables = unknown>(
       });
       return res.data;
     },
-    onSuccess: (data, variables, context, meta) => {
+    onSuccess: (data, variables, context) => {
       if (options?.invalidateKey) {
         queryClient.invalidateQueries({ queryKey: options.invalidateKey });
       }
-      options?.onSuccess?.(data, variables, context, meta);
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
   });
 };
