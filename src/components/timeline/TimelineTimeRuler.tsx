@@ -140,8 +140,8 @@ export const TimelineTimeRuler = ({
       sx={{
         height: 28,
         position: "relative",
-        borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
-        background: Colors.white,
+        // borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
+        background: Colors.softMistGray,
         cursor: zoom > 1 ? (isDragging ? "grabbing" : "grab") : "default",
         userSelect: "none",
       }}

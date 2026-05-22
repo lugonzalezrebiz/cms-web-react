@@ -12,7 +12,7 @@ import { SessionRow } from "./rows/SessionRow";
 import { GridLines } from "./rows/GridLines";
 import Card from "../Card";
 
-const ROW_HEIGHT = 44;
+const ROW_HEIGHT = 32.8;
 
 interface TimelineGridRowsProps {
   flatRows: FlatRow[];

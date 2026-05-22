@@ -56,7 +56,7 @@ const SmallSize = ({
       alignItems={"center"}
       sx={{
         background: Colors.white,
-        borderBlockEnd: `1px solid ${Colors.lightGrayishBlue}`,
+        //borderBlockEnd: `1px solid ${Colors.lightGrayishBlue}`,
         display: "flex",
         alignItems: "center",
         fontSize: "14px",
@@ -82,17 +82,17 @@ const SmallSize = ({
           <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
             <img src="../assets/layers-three-02.svg" alt="Layers" />
           </Box>
-          <Box onClick={() => {}}>
+          {/* <Box onClick={() => {}}>
             <img src="../assets/user-plus-01.svg" alt="Add user" />
-          </Box>
-          <Box
+          </Box> */}
+          {/* <Box
             position={"relative"}
             sx={{
               opacity: 0.5,
             }}
           >
             <img src="../assets/camera-02.svg" alt="Camera" />
-          </Box>
+          </Box> */}
         </Grid>
 
         <Grid
@@ -240,17 +240,17 @@ const SmallSize = ({
           justifyContent={"space-between"}
         >
           <Grid display={"flex"} justifyContent={"flex-end"}>
-            <Box onClick={() => {}}>
+            {/* <Box onClick={() => {}}>
               <img
                 style={{ opacity: 0.5 }}
                 src="../assets/dots-grid.svg"
                 alt="Grid options"
               />
-            </Box>
+            </Box> */}
           </Grid>
 
           <Grid display={"flex"} justifyContent={"flex-end"}>
-            <Box
+            {/* <Box
               sx={{
                 width: "87px",
                 height: "7px",
@@ -269,7 +269,7 @@ const SmallSize = ({
                   bgcolor: Colors.vividOrange,
                 }}
               />
-            </Box>
+            </Box> */}
           </Grid>
         </Grid>
 
@@ -279,14 +279,14 @@ const SmallSize = ({
           justifyContent={"space-between"}
           padding={"0 8px"}
         >
-          <Box onClick={() => {}}>
+          {/* <Box onClick={() => {}}>
             <img
               style={{ opacity: 0.5 }}
               src="../assets/search-sm.svg"
               alt="Search"
             />
-          </Box>
-          <Box
+          </Box> */}
+          {/* <Box
             sx={{
               width: "87px",
               height: "7px",
@@ -305,7 +305,7 @@ const SmallSize = ({
                 bgcolor: Colors.vividOrange,
               }}
             />
-          </Box>
+          </Box> */}
           <Box ml={"18px"} onClick={onPopOut} sx={{ cursor: "pointer" }}>
             {!expanded ? (
               <img
@@ -350,103 +350,257 @@ const NormalSize = ({
   const navPopover = usePopover();
 
   return (
-    <Grid
-      container
-      display={"flex"}
-      alignItems={"center"}
-      sx={{
-        background: Colors.white,
-        borderBlockEnd: `1px solid ${Colors.lightGrayishBlue}`,
-        display: "flex",
-        alignItems: "center",
-        fontSize: "14px",
-        padding: "4px 16px 4px 8px",
-        width: "100%",
-      }}
-    >
-      <Grid
-        size={{ md: 1.5, lg: 1.5, xl: 1 }}
-        container
-        spacing={"18px"}
-        alignItems={"center"}
-        justifyContent={"start"}
+    <Box display={"flex"} alignItems={"center"} bgcolor={Colors.white}>
+      <Box
+        sx={{
+          cursor: "pointer",
+          maxWidth: "232px",
+          width: "100%",
+          bgcolor: Colors.white,
+          ml: "6px",
+        }}
+        onClick={navPopover.handleOpen}
       >
-        <TimelineNavPopover
-          open={navPopover.open}
-          anchorEl={navPopover.anchorEl}
-          onClose={navPopover.handleClose}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
-        <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
-          <img src="../assets/layers-three-02.svg" alt="Layers" />
-        </Box>
-        <Box onClick={() => {}}>
-          <img src="../assets/user-plus-01.svg" alt="Add user" />
-        </Box>
-        <Box
-          position={"relative"}
-          sx={{
-            opacity: 0.5,
-          }}
-        >
-          <img src="../assets/camera-02.svg" alt="Camera" />
-        </Box>
-      </Grid>
-
+        <img src="../assets/layers-three-02.svg" alt="Layers" />
+      </Box>
+      <TimelineNavPopover
+        open={navPopover.open}
+        anchorEl={navPopover.anchorEl}
+        onClose={navPopover.handleClose}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
       <Grid
-        size={{ md: 2.5, lg: 2, xl: 1.5 }}
-        alignItems={"center"}
         container
-        spacing={"18px"}
-        justifyContent={"start"}
+        display={"flex"}
+        alignItems={"center"}
+        sx={{
+          background: Colors.white,
+          display: "flex",
+          alignItems: "center",
+          fontSize: "14px",
+          padding: "0px 16px 0px 8px",
+          width: "100%",
+          height: "24px",
+        }}
       >
-        <Box
-          onClick={canUndo ? onUndo : undefined}
-          sx={{ cursor: canUndo ? "pointer" : "default" }}
+        <Grid
+          size={{ md: 4, lg: 4, xl: 4 }}
+          alignItems={"center"}
+          container
+          spacing={"18px"}
+          justifyContent={"start"}
+          // bgcolor={"red"}
         >
-          <img
-            style={{ opacity: canUndo ? 1 : 0.5 }}
-            src="../assets/reverse-left.svg"
-            alt="Undo"
-          />
-        </Box>
-        <Box
-          onClick={canRedo ? onRedo : undefined}
-          sx={{ cursor: canRedo ? "pointer" : "default" }}
-        >
-          <img
-            style={{ opacity: canRedo ? 1 : 0.5 }}
-            src="../assets/reverse-right.svg"
-            alt="Redo"
-          />
-        </Box>
-        <Box
-          onClick={canDelete ? onDeleteEventPoint : undefined}
-          sx={{ cursor: canDelete ? "pointer" : "default" }}
-        >
-          <img
-            style={{ opacity: canDelete ? 1 : 0.5 }}
-            src="../assets/trash-02.svg"
-            alt="Delete"
-          />
-        </Box>
-        {/*
+          <Box
+            onClick={canUndo ? onUndo : undefined}
+            sx={{ display: "flex", cursor: canUndo ? "pointer" : "default" }}
+          >
+            <img
+              style={{ opacity: canUndo ? 1 : 0.5 }}
+              src="../assets/reverse-left.svg"
+              alt="Undo"
+            />
+          </Box>
+          <Box
+            onClick={canRedo ? onRedo : undefined}
+            sx={{ display: "flex", cursor: canRedo ? "pointer" : "default" }}
+          >
+            <img
+              style={{ opacity: canRedo ? 1 : 0.5 }}
+              src="../assets/reverse-right.svg"
+              alt="Redo"
+            />
+          </Box>
+          <Box
+            onClick={canDelete ? onDeleteEventPoint : undefined}
+            sx={{ display: "flex", cursor: canDelete ? "pointer" : "default" }}
+          >
+            <img
+              style={{ opacity: canDelete ? 1 : 0.5 }}
+              src="../assets/trash-02.svg"
+              alt="Delete"
+            />
+          </Box>
+          {/*
         <Box onClick={() => {}}>
           <img src="../assets/divider.svg" alt="Divider" />
         </Box>
          <Box onClick={() => {}}>
           <img src="../assets/link-02.svg" alt="Link" />
         </Box> */}
-      </Grid>
+        </Grid>
 
-      <Grid
-        size={{ md: 1, lg: 1, xl: 1.5 }}
+        <Grid
+          size={{ md: 4, lg: 3, xl: 2 }}
+          container
+          alignItems={"center"}
+          justifyContent={"center"}
+          // bgcolor={"yellow"}
+        >
+          <Box
+            mr={"4px"}
+            onClick={hasPrevEventPoint ? onGoPrevEventPoint : undefined}
+            sx={{
+              display: "flex",
+              cursor: hasPrevEventPoint ? "pointer" : "default",
+            }}
+          >
+            <img
+              style={{ opacity: hasPrevEventPoint ? 1 : 0.5 }}
+              src="../assets/align-left-01.svg"
+              alt="Previous event point"
+            />
+          </Box>
+          <Box
+            sx={{ display: "flex" }}
+            mr={"8px"}
+            onClick={() => onStepMarker(-600)}
+          >
+            <img
+              style={{ cursor: "pointer" }}
+              src="../assets/chevron-left.svg"
+              alt="Step backward"
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              background: Colors.blushWhite,
+              padding: "0px 4px",
+              borderRadius: "50px",
+              height: "20px",
+            }}
+          >
+            <Box sx={{ display: "flex" }} mr={"8px"} onClick={() => {}}>
+              <img src="../assets/clock.svg" alt="Clock" />
+            </Box>
+            <Box
+              sx={{
+                textAlign: "center",
+                color: Colors.vividOrange,
+                fontFamily: Fonts.main,
+                lineHeight: 1.43,
+                m: "0 8px 0px 0",
+              }}
+            >
+              {markerTimeSec !== null
+                ? secToTimeString(markerTimeSec)
+                : snapshot.timeline.times.start}
+            </Box>
+            <Box
+              onClick={onTogglePlay}
+              sx={{ display: "flex", cursor: "pointer" }}
+            >
+              <img
+                src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
+                alt={isPlaying ? "Pause" : "Play"}
+              />
+            </Box>
+          </Box>
+          <Box sx={{ display: "flex" }} onClick={() => onStepMarker(+600)}>
+            <img
+              style={{ cursor: "pointer" }}
+              src="../assets/chevron-right.svg"
+              alt="Step forward"
+            />
+          </Box>
+          <Box
+            onClick={hasNextEventPoint ? onGoNextEventPoint : undefined}
+            sx={{
+              display: "flex",
+              cursor: hasNextEventPoint ? "pointer" : "default",
+            }}
+          >
+            <img
+              style={{ opacity: hasNextEventPoint ? 1 : 0.5 }}
+              src="../assets/align-right-01.svg"
+              alt="Next event point"
+            />
+          </Box>
+        </Grid>
+
+        <Grid
+          size={{ md: 4, lg: 5, xl: 6 }}
+          container
+          display={"flex"}
+          alignItems={"center"}
+          justifyContent={"flex-end"}
+          padding={"0 8px"}
+          // bgcolor={"cadetblue"}
+        >
+          {/*<Grid display={"flex"} justifyContent={"flex-end"} size={4}>
+           <Box onClick={() => {}}>
+            <img
+              style={{ opacity: 0.5 }}
+              src="../assets/search-sm.svg"
+              alt="Search"
+            />
+          </Box> 
+        </Grid>*/}
+          <Grid justifyContent={"flex-end"} container alignItems={"center"}>
+            {/* <Box
+            sx={{
+              width: "87px",
+              height: "7px",
+              display: "flex",
+              justifyContent: "center",
+              borderRadius: "8px",
+              bgcolor: "#fef7f6",
+              mb: "4px",
+            }}
+          >
+            <Box
+              sx={{
+                width: "13px",
+                height: "7px",
+                borderRadius: "6px",
+                bgcolor: Colors.vividOrange,
+              }}
+            />
+          </Box> */}
+            <Box
+              ml={"18px"}
+              onClick={onPopOut}
+              sx={{ display: "flex", cursor: "pointer" }}
+            >
+              {!expanded ? (
+                <img
+                  style={{ opacity: 0.5 }}
+                  src="../assets/minimize.svg"
+                  alt="Minimize"
+                />
+              ) : (
+                <img
+                  style={{ opacity: 0.5 }}
+                  src="../assets/expand-06.svg"
+                  alt="Expand"
+                />
+              )}
+            </Box>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+};
+
+const TimelineToolbar = (props: Props) => {
+  const isSmall = useMediaQuery("(max-width: 900px)");
+  return isSmall ? <SmallSize {...props} /> : <NormalSize {...props} />;
+};
+
+export default TimelineToolbar;
+
+{
+  /* <Grid
+        size={{ md: 1, lg: 1, xl: 1 }}
         alignItems={"center"}
         container
         spacing={"8px"}
         justifyContent={"flex-start"}
+        bgcolor={"blue"}
       >
         {/*
          <Box onClick={() => {}} ml={"18px"}>
@@ -455,96 +609,24 @@ const NormalSize = ({
         <Box onClick={() => {}}>
           <img src="../assets/punch-out.svg" alt="Punch out" />
         </Box> 
-        */}
-      </Grid>
+        
+      </Grid> */
+}
 
-      <Grid
-        size={{ md: 2.5, lg: 3, xl: 4 }}
-        container
-        alignItems={"center"}
-        justifyContent={"center"}
-      >
-        <Box
-          mr={"4px"}
-          onClick={hasPrevEventPoint ? onGoPrevEventPoint : undefined}
-          sx={{ cursor: hasPrevEventPoint ? "pointer" : "default" }}
-        >
-          <img
-            style={{ opacity: hasPrevEventPoint ? 1 : 0.5 }}
-            src="../assets/align-left-01.svg"
-            alt="Previous event point"
-          />
-        </Box>
-        <Box mr={"8px"} onClick={() => onStepMarker(-600)}>
-          <img
-            style={{ cursor: "pointer" }}
-            src="../assets/chevron-left.svg"
-            alt="Step backward"
-          />
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            background: "#fef7f6",
-            padding: "0px 4px",
-            borderRadius: "50px",
-          }}
-        >
-          <Box mr={"8px"} onClick={() => {}}>
-            <img src="../assets/clock.svg" alt="Clock" />
-          </Box>
-          <Box
-            sx={{
-              textAlign: "center",
-              color: Colors.vividOrange,
-              fontFamily: Fonts.main,
-              lineHeight: 1.43,
-              m: "0 8px 2px 0",
-            }}
-          >
-            {markerTimeSec !== null
-              ? secToTimeString(markerTimeSec)
-              : snapshot.timeline.times.start}
-          </Box>
-          <Box onClick={onTogglePlay} sx={{ cursor: "pointer" }}>
-            <img
-              src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
-              alt={isPlaying ? "Pause" : "Play"}
-            />
-          </Box>
-        </Box>
-        <Box onClick={() => onStepMarker(+600)}>
-          <img
-            style={{ cursor: "pointer" }}
-            src="../assets/chevron-right.svg"
-            alt="Step forward"
-          />
-        </Box>
-        <Box
-          onClick={hasNextEventPoint ? onGoNextEventPoint : undefined}
-          sx={{ cursor: hasNextEventPoint ? "pointer" : "default" }}
-        >
-          <img
-            style={{ opacity: hasNextEventPoint ? 1 : 0.5 }}
-            src="../assets/align-right-01.svg"
-            alt="Next event point"
-          />
-        </Box>
-      </Grid>
-
-      <Grid
+{
+  /* <Grid
         size={{ md: 1.6, lg: 2, xl: 2 }}
         container
         alignItems={"center"}
         padding={"0 8px"}
+        bgcolor={"yellowgreen"}
       >
         <Grid
           size={{ md: 2, lg: 4 }}
           display={"flex"}
           justifyContent={"flex-end"}
         >
-          <Box onClick={() => {}}>
+          {/* <Box onClick={() => {}}>
             <img
               style={{ opacity: 0.5 }}
               src="../assets/dots-grid.svg"
@@ -558,7 +640,7 @@ const NormalSize = ({
           display={"flex"}
           justifyContent={"flex-end"}
         >
-          <Box
+          {/* <Box
             sx={{
               width: "87px",
               height: "7px",
@@ -577,77 +659,7 @@ const NormalSize = ({
                 bgcolor: Colors.vividOrange,
               }}
             />
-          </Box>
+          </Box> 
         </Grid>
-      </Grid>
-
-      <Grid
-        size={{ xs: 12, sm: 12, md: 2.9, lg: 2.5, xl: 2 }}
-        container
-        display={"flex"}
-        alignItems={"center"}
-        justifyContent={"space-between"}
-        padding={"0 8px"}
-      >
-        <Grid display={"flex"} justifyContent={"flex-end"} size={4}>
-          <Box onClick={() => {}}>
-            <img
-              style={{ opacity: 0.5 }}
-              src="../assets/search-sm.svg"
-              alt="Search"
-            />
-          </Box>
-        </Grid>
-        <Grid
-          size={8}
-          justifyContent={"flex-end"}
-          container
-          alignItems={"center"}
-        >
-          <Box
-            sx={{
-              width: "87px",
-              height: "7px",
-              display: "flex",
-              justifyContent: "center",
-              borderRadius: "8px",
-              bgcolor: "#fef7f6",
-              mb: "4px",
-            }}
-          >
-            <Box
-              sx={{
-                width: "13px",
-                height: "7px",
-                borderRadius: "6px",
-                bgcolor: Colors.vividOrange,
-              }}
-            />
-          </Box>
-          <Box ml={"18px"} onClick={onPopOut} sx={{ cursor: "pointer" }}>
-            {!expanded ? (
-              <img
-                style={{ opacity: 0.5 }}
-                src="../assets/minimize.svg"
-                alt="Minimize"
-              />
-            ) : (
-              <img
-                style={{ opacity: 0.5 }}
-                src="../assets/expand-06.svg"
-                alt="Expand"
-              />
-            )}
-          </Box>
-        </Grid>
-      </Grid>
-    </Grid>
-  );
-};
-
-const TimelineToolbar = (props: Props) => {
-  const isSmall = useMediaQuery("(max-width: 900px)");
-  return isSmall ? <SmallSize {...props} /> : <NormalSize {...props} />;
-};
-
-export default TimelineToolbar;
+      </Grid> */
+}
