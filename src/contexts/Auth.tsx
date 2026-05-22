@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext, type DecodedToken } from "./AuthContextDef";
+import { crashLogger } from "../services/CrashLogger";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setTokenState] = useState<string | null>(() =>
@@ -15,6 +16,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return null;
     }
   }, [token]);
+
+  useEffect(() => {
+    crashLogger.setUser({
+      userID: user?.id ?? null,
+      roleID: user?.roleID ?? null,
+      username: user?.username ?? null,
+      email: user?.email ?? null,
+    });
+  }, [user]);
 
   const setToken = (newToken: string) => {
     localStorage.setItem("token", newToken);

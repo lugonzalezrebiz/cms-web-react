@@ -78,7 +78,7 @@ const Login = () => {
       <Card sx={{ width: "500px", margin: "5%" }}>
         <Box padding={"20px"}>
           <Box display={"flex"} flexDirection={"column"} alignItems={"center"}>
-            <img height={72} src="../assets/rebiz-logo-1.svg" alt="Icon" />
+            <img height={72} src="./assets/rebiz-logo-1.svg" alt="Icon" />
             <Box margin={"33px 0 12px 0"}>
               <SubTitle>PLEASE LOG IN TO YOUR ACCOUNT</SubTitle>
             </Box>
@@ -157,7 +157,7 @@ const Login = () => {
             <LinkLabel style={{ margin: "0 6px 0 0", fontSize: "14px" }}>
               Powered by
             </LinkLabel>
-            <img height={11} src="../assets/rebiz-logo-1.svg" alt="rebiz" />
+            <img height={11} src="./assets/rebiz-logo-1.svg" alt="rebiz" />
           </Box>
         </Box>
       </Card>

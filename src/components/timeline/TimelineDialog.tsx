@@ -143,7 +143,7 @@ const TimelineDialog = ({ openDialog = false, dialogOnClose }: Props) => {
                   selected={selectedCamera === i}
                   onClick={() => setSelectedCamera(i)}
                 >
-                  <img src="../assets/webcam-01.svg" alt="Webcam" />
+                  <img src="./assets/webcam-01.svg" alt="Webcam" />
                 </CamaraIconContainer>
               ))}
             </Grid>
@@ -155,7 +155,7 @@ const TimelineDialog = ({ openDialog = false, dialogOnClose }: Props) => {
                     width: "100%",
                     backgroundColor: Colors.blushWhite,
                   }}
-                  src="../assets/camera/Cam thumbnail.svg"
+                  src="./assets/camera/Cam thumbnail.svg"
                   alt="Camera thumbnail"
                 />
               </Box>

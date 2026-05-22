@@ -191,8 +191,7 @@ export const CameraItem = ({
           </Typography>
           <img
             style={{ padding: "0 4px 0 0", cursor: "pointer" }}
-            src="../assets/chevron-down.svg"
-            onClick={() => {}}
+            src="./assets/chevron-down.svg"
             alt="Show camera options"
           />
         </Box>
@@ -309,7 +308,7 @@ export const CameraItem = ({
       >
         <img
           style={{ cursor: "pointer" }}
-          src={!isExpanded ? "../assets/expand-03.svg" : " "}
+          src={!isExpanded ? "./assets/expand-03.svg" : " "}
           alt={!isExpanded ? "Expand camera" : ""}
           onClick={(e) => {
             e.stopPropagation();

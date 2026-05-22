@@ -142,13 +142,13 @@ const AssignmentsHeader = ({
             <Box display={"flex"}>
               <StyledImg
                 onClick={notificationHeader.handleOpen}
-                src="../assets/notification.svg"
-                alt=""
+                src="./assets/notification.svg"
+                alt="Notifications"
               />
               <StyledImg
                 onClick={userPanelHeader.handleOpen}
-                src="../assets/user-circle.svg"
-                alt=""
+                src="./assets/user-circle.svg"
+                alt="Profile"
               />
             </Box>
           </Box>

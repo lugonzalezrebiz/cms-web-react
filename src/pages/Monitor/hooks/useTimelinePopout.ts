@@ -55,8 +55,14 @@ export const useTimelinePopout =(
       popoutRef.current.focus();
       return;
     }
+    const route = `/monitor/timeline?${searchParams.toString()}`;
+    const url =
+      window.location.protocol === "file:"
+        ? `${window.location.href.split("#")[0]}#${route}`
+        : route;
+      
     const win = window.open(
-      `/monitor/timeline?${searchParams.toString()}`,
+      url,
       "timeline-popout",
       "width=1400,height=500,resizable=yes",
     );

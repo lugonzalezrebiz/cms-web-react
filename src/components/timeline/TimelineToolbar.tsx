@@ -80,7 +80,7 @@ const SmallSize = ({
           />
 
           <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
-            <img src="../assets/layers-three-02.svg" alt="Layers" />
+            <img src="./assets/layers-three-02.svg" alt="Layers" />
           </Box>
           {/* <Box onClick={() => {}}>
             <img src="../assets/user-plus-01.svg" alt="Add user" />
@@ -107,7 +107,7 @@ const SmallSize = ({
           >
             <img
               style={{ opacity: canUndo ? 1 : 0.5 }}
-              src="../assets/reverse-left.svg"
+              src="./assets/reverse-left.svg"
               alt="Undo"
             />
           </Box>
@@ -117,7 +117,7 @@ const SmallSize = ({
           >
             <img
               style={{ opacity: canRedo ? 1 : 0.5 }}
-              src="../assets/reverse-right.svg"
+              src="./assets/reverse-right.svg"
               alt="Redo"
             />
           </Box>
@@ -127,7 +127,7 @@ const SmallSize = ({
           >
             <img
               style={{ opacity: canDelete ? 1 : 0.5 }}
-              src="../assets/trash-02.svg"
+              src="./assets/trash-02.svg"
               alt="Delete"
             />
           </Box>
@@ -170,14 +170,14 @@ const SmallSize = ({
         >
           <img
             style={{ opacity: hasPrevEventPoint ? 1 : 0.5 }}
-            src="../assets/align-left-01.svg"
+            src="./assets/align-left-01.svg"
             alt="Previous event point"
           />
         </Box>
         <Box mr={"8px"} onClick={() => onStepMarker(-600)}>
           <img
             style={{ cursor: "pointer" }}
-            src="../assets/chevron-left.svg"
+            src="./assets/chevron-left.svg"
             alt="Step backward"
           />
         </Box>
@@ -191,7 +191,7 @@ const SmallSize = ({
           }}
         >
           <Box mr={"8px"} onClick={() => {}}>
-            <img src="../assets/clock.svg" alt="Clock" />
+            <img src="./assets/clock.svg" alt="Clock" />
           </Box>
           <Box
             sx={{
@@ -208,7 +208,7 @@ const SmallSize = ({
           </Box>
           <Box onClick={onTogglePlay} sx={{ cursor: "pointer" }}>
             <img
-              src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
+              src={isPlaying ? "./assets/pause.svg" : "./assets/play.svg"}
               alt={isPlaying ? "Pause" : "Play"}
             />
           </Box>
@@ -216,7 +216,7 @@ const SmallSize = ({
         <Box onClick={() => onStepMarker(+600)}>
           <img
             style={{ cursor: "pointer" }}
-            src="../assets/chevron-right.svg"
+            src="./assets/chevron-right.svg"
             alt="Step forward"
           />
         </Box>
@@ -226,7 +226,7 @@ const SmallSize = ({
         >
           <img
             style={{ opacity: hasNextEventPoint ? 1 : 0.5 }}
-            src="../assets/align-right-01.svg"
+            src="./assets/align-right-01.svg"
             alt="Next event point"
           />
         </Box>
@@ -310,13 +310,13 @@ const SmallSize = ({
             {!expanded ? (
               <img
                 style={{ opacity: 0.5, cursor: "pointer" }}
-                src="../assets/minimize.svg"
+                src="./assets/minimize.svg"
                 alt="Minimize"
               />
             ) : (
               <img
                 style={{ opacity: 0.5 }}
-                src="../assets/expand-06.svg"
+                src="./assets/expand-06.svg"
                 alt="Expand"
               />
             )}
@@ -361,7 +361,7 @@ const NormalSize = ({
         }}
         onClick={navPopover.handleOpen}
       >
-        <img src="../assets/layers-three-02.svg" alt="Layers" />
+        <img src="./assets/layers-three-02.svg" alt="Layers" />
       </Box>
       <TimelineNavPopover
         open={navPopover.open}
@@ -398,7 +398,7 @@ const NormalSize = ({
           >
             <img
               style={{ opacity: canUndo ? 1 : 0.5 }}
-              src="../assets/reverse-left.svg"
+              src="./assets/reverse-left.svg"
               alt="Undo"
             />
           </Box>
@@ -408,7 +408,7 @@ const NormalSize = ({
           >
             <img
               style={{ opacity: canRedo ? 1 : 0.5 }}
-              src="../assets/reverse-right.svg"
+              src="./assets/reverse-right.svg"
               alt="Redo"
             />
           </Box>
@@ -418,7 +418,7 @@ const NormalSize = ({
           >
             <img
               style={{ opacity: canDelete ? 1 : 0.5 }}
-              src="../assets/trash-02.svg"
+              src="./assets/trash-02.svg"
               alt="Delete"
             />
           </Box>
@@ -448,7 +448,7 @@ const NormalSize = ({
           >
             <img
               style={{ opacity: hasPrevEventPoint ? 1 : 0.5 }}
-              src="../assets/align-left-01.svg"
+              src="./assets/align-left-01.svg"
               alt="Previous event point"
             />
           </Box>
@@ -459,7 +459,7 @@ const NormalSize = ({
           >
             <img
               style={{ cursor: "pointer" }}
-              src="../assets/chevron-left.svg"
+              src="./assets/chevron-left.svg"
               alt="Step backward"
             />
           </Box>
@@ -474,7 +474,7 @@ const NormalSize = ({
             }}
           >
             <Box sx={{ display: "flex" }} mr={"8px"} onClick={() => {}}>
-              <img src="../assets/clock.svg" alt="Clock" />
+              <img src="./assets/clock.svg" alt="Clock" />
             </Box>
             <Box
               sx={{
@@ -494,7 +494,7 @@ const NormalSize = ({
               sx={{ display: "flex", cursor: "pointer" }}
             >
               <img
-                src={isPlaying ? "../assets/pause.svg" : "../assets/play.svg"}
+                src={isPlaying ? "./assets/pause.svg" : "./assets/play.svg"}
                 alt={isPlaying ? "Pause" : "Play"}
               />
             </Box>
@@ -502,7 +502,7 @@ const NormalSize = ({
           <Box sx={{ display: "flex" }} onClick={() => onStepMarker(+600)}>
             <img
               style={{ cursor: "pointer" }}
-              src="../assets/chevron-right.svg"
+              src="./assets/chevron-right.svg"
               alt="Step forward"
             />
           </Box>
@@ -515,7 +515,7 @@ const NormalSize = ({
           >
             <img
               style={{ opacity: hasNextEventPoint ? 1 : 0.5 }}
-              src="../assets/align-right-01.svg"
+              src="./assets/align-right-01.svg"
               alt="Next event point"
             />
           </Box>
@@ -568,13 +568,13 @@ const NormalSize = ({
               {!expanded ? (
                 <img
                   style={{ opacity: 0.5 }}
-                  src="../assets/minimize.svg"
+                  src="./assets/minimize.svg"
                   alt="Minimize"
                 />
               ) : (
                 <img
                   style={{ opacity: 0.5 }}
-                  src="../assets/expand-06.svg"
+                  src="./assets/expand-06.svg"
                   alt="Expand"
                 />
               )}

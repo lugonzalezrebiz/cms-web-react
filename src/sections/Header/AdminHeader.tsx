@@ -88,12 +88,12 @@ const AdminHeader = ({
             <Box display={"flex"}>
               <StyledImg
                 onClick={notificationHeader.handleOpen}
-                src="../assets/notification.svg"
+                src="./assets/notification.svg"
                 alt=""
               />
               <StyledImg
                 onClick={userPanelHeader.handleOpen}
-                src="../assets/user-circle.svg"
+                src="./assets/user-circle.svg"
                 alt=""
               />
             </Box>

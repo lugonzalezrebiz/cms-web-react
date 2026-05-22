@@ -41,31 +41,31 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
   title: "Keyboard shortcuts",
   items: [
     {
-      keys: [{ type: "img", src: "../assets/arrow-narrow-left.svg" }],
+      keys: [{ type: "img", src: "./assets/arrow-narrow-left.svg" }],
       label: "Move marker back 5 sec",
     },
     {
-      keys: [{ type: "img", src: "../assets/arrow-narrow-right.svg" }],
+      keys: [{ type: "img", src: "./assets/arrow-narrow-right.svg" }],
       label: "Move marker forward 5 sec",
     },
     {
       keys: [
         { type: "text", label: mod, fontSize: "14px" },
-        { type: "img", src: "../assets/arrow-narrow-left.svg" },
+        { type: "img", src: "./assets/arrow-narrow-left.svg" },
       ],
       label: "Previous event point",
     },
     {
       keys: [
         { type: "text", label: mod, fontSize: "14px" },
-        { type: "img", src: "../assets/arrow-narrow-right.svg" },
+        { type: "img", src: "./assets/arrow-narrow-right.svg" },
       ],
       label: "Next event point",
     },
     {
       keys: [
         { type: "text", label: alt, fontSize: "12px" },
-        { type: "img", src: "../assets/arrow-narrow-left.svg" },
+        { type: "img", src: "./assets/arrow-narrow-left.svg" },
       ],
       label: "Go back",
     },
@@ -266,12 +266,12 @@ const SmallSize = ({
             <Box display={"flex"} alignItems="center" gap={1}>
               <StyledImg
                 onClick={keyboardMenu.handleOpen}
-                src="../assets/keyboard-02.svg"
+                src="./assets/keyboard-02.svg"
                 alt=""
               />
               <StyledImg
                 onClick={userPanelHeader.handleOpen}
-                src="../assets/user-circle.svg"
+                src="./assets/user-circle.svg"
                 alt=""
               />
 
@@ -452,12 +452,12 @@ const NormalSize = ({
             <Box display={"flex"} alignItems="center" gap={1}>
               <StyledImg
                 onClick={keyboardMenu.handleOpen}
-                src="../assets/keyboard-02.svg"
+                src="./assets/keyboard-02.svg"
                 alt=""
               />
               <StyledImg
                 onClick={userPanelHeader.handleOpen}
-                src="../assets/user-circle.svg"
+                src="./assets/user-circle.svg"
                 alt=""
               />
 
