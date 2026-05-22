@@ -3,7 +3,7 @@ import { Colors } from "../../../theme";
 
 import type { FlatRow } from "../types";
 
-const ROW_HEIGHT = 44;
+const ROW_HEIGHT = 32.8;
 
 // const toSeconds = (time: string) => {
 //   const [h, m, s] = time.split(":").map(Number);

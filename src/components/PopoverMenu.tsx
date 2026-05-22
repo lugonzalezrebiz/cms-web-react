@@ -60,7 +60,7 @@ const PopoverMenu = ({
             cursor: "pointer",
           }}
         >
-          <img src="../assets/x-close.svg" alt="Close" />
+          <img src="./assets/x-close.svg" alt="Close" />
         </Box>
         <Box>{children}</Box>
       </Box>

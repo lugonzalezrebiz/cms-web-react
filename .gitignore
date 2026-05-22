@@ -18,3 +18,4 @@ docker-compose.yml
 .env
 
 release
+cmsweb-app-react.zip

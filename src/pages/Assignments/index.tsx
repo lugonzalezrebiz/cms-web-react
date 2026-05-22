@@ -12,7 +12,7 @@ import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
 
-const activityIcon = "/assets/activity-other-icon.svg";
+const activityIcon = "./assets/activity-other-icon.svg";
 
 const dropdownOptions = (onOpen: () => void) => [
   { label: "See detail information", onClick: onOpen },

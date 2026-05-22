@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, Menu } from "electron";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
@@ -11,21 +11,196 @@ const { autoUpdater } = updater;
 config({ path: path.join(app.getAppPath(), ".env") });
 
 const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
+
+type CrashLogPayload = {
+    eventType: string;
+    severity: string;
+    message: string;
+    stack?: string;
+    componentStack?: string;
+    timestamp?: string;
+    appContext?: Record<string, unknown>;
+    userContext?: Record<string, unknown>;
+    workflowContext?: Record<string, unknown>;
+    breadcrumbs?: unknown[];
+};
+
+const trimWrappedQuotes = (value: string) =>
+    value.replace(/^[\'"]|[\'"]$/g, "");
+
+function getCrashLogEndpoint() {
+    const explicitUrl = process.env.CRASH_LOG_URL?.trim();
+    if (explicitUrl) return trimWrappedQuotes(explicitUrl);
+
+    const rawHost = process.env.VITE_HOST?.trim();
+    const rawApiUrl = process.env.VITE_URL_API?.trim() || "/api/";
+    const host = rawHost ? trimWrappedQuotes(rawHost).replace(/\/+$/, "") : "";
+    const apiUrl = trimWrappedQuotes(rawApiUrl);
+
+    if (/^https?:\/\//i.test(apiUrl)) {
+        return new URL(
+            "log/crash",
+            apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`,
+        ).toString();
+    }
+
+    if (!host) return null;
+
+    const normalizedApiPath = apiUrl.startsWith("/") ? apiUrl : `/${apiUrl}`;
+    return new URL(
+        "log/crash",
+        `${host}${normalizedApiPath.endsWith("/") ? normalizedApiPath : `${normalizedApiPath}/`}`,
+    ).toString();
+}
+
+function getMachineContext() {
+    return {
+        appVersion: app.getVersion(),
+        appName: app.getName(),
+        isPackaged: app.isPackaged,
+        platform: process.platform,
+        arch: process.arch,
+        osRelease: os.release(),
+        osType: os.type(),
+        hostname: os.hostname(),
+        cpuCount: os.cpus().length,
+        totalMemory: os.totalmem(),
+        freeMemory: os.freemem(),
+        electronVersion: process.versions.electron,
+        chromeVersion: process.versions.chrome,
+        nodeVersion: process.versions.node,
+    };
+}
+
+function flattenCrashPayload(payload: CrashLogPayload) {
+    const appContext = payload.appContext ?? {};
+    const userContext = payload.userContext ?? {};
+    const workflowContext = payload.workflowContext ?? {};
+
+    return {
+        userID: userContext.userID ?? null,
+        roleID: userContext.roleID ?? null,
+
+        appVersion: appContext.appVersion ?? app.getVersion(),
+        os: appContext.osType ?? appContext.platform ?? process.platform,
+
+        deviceInfo: {
+            appName: appContext.appName,
+            isPackaged: appContext.isPackaged,
+            platform: appContext.platform,
+            arch: appContext.arch,
+            osRelease: appContext.osRelease,
+            osType: appContext.osType,
+            hostname: appContext.hostname,
+            cpuCount: appContext.cpuCount,
+            totalMemory: appContext.totalMemory,
+            freeMemory: appContext.freeMemory,
+            electronVersion: appContext.electronVersion,
+            chromeVersion: appContext.chromeVersion,
+            nodeVersion: appContext.nodeVersion,
+            userAgent: appContext.userAgent,
+            viewport: appContext.viewport,
+        },
+
+        route: workflowContext.route ?? null,
+        workflow: workflowContext.workflow ?? workflowContext.screen ?? null,
+        monitoringID: workflowContext.monitoringID ?? null,
+        locationID:
+            workflowContext.locationID ?? workflowContext.storeID ?? null,
+
+        eventType: payload.eventType,
+        severity: payload.severity,
+        message: payload.message,
+        stack: payload.stack ?? payload.componentStack ?? null,
+
+        metadata: {
+            timestamp: payload.timestamp,
+            appContext,
+            userContext,
+            workflowContext,
+            breadcrumbs: payload.breadcrumbs ?? [],
+        },
+    };
+}
+
+async function sendCrashLog(payload: CrashLogPayload) {
+    const endpoint = getCrashLogEndpoint();
+    const finalPayload = {
+        ...payload,
+        timestamp: payload.timestamp ?? new Date().toISOString(),
+        appContext: {
+            ...getMachineContext(),
+            processType: "main",
+            ...(payload.appContext ?? {}),
+        },
+    };
+
+    if (!endpoint) {
+        console.error("Crash log endpoint is not configured", finalPayload);
+        return { ok: false, reason: "Crash log endpoint is not configured" };
+    }
+
+    try {
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(flattenCrashPayload(finalPayload)),
+        });
+
+        return { ok: response.ok, status: response.status };
+    } catch (error) {
+        console.error("Failed to send crash log", error);
+        return {
+            ok: false,
+            reason: error instanceof Error ? error.message : String(error),
+        };
+    }
+}
+
+function setupMainCrashHandlers() {
+    process.on("uncaughtException", (error) => {
+        void sendCrashLog({
+            eventType: "main-uncaught-exception",
+            severity: "fatal",
+            message: error.message,
+            stack: error.stack,
+        });
+    });
+
+    process.on("unhandledRejection", (reason) => {
+        const error =
+            reason instanceof Error ? reason : new Error(String(reason));
+        void sendCrashLog({
+            eventType: "main-unhandled-rejection",
+            severity: "fatal",
+            message: error.message,
+            stack: error.stack,
+        });
+    });
+}
+
 // Must be called before app.whenReady()
 protocol.registerSchemesAsPrivileged([
     {
         scheme: "dvr",
-        privileges: { secure: true, standard: true, supportFetchAPI: true, corsEnabled: true },
+        privileges: {
+            secure: true,
+            standard: true,
+            supportFetchAPI: true,
+            corsEnabled: true,
+        },
     },
 ]);
+
+setupMainCrashHandlers();
 
 function setupAutoUpdater(win: BrowserWindow) {
     if (!app.isPackaged) {
         return;
     }
 
-    autoUpdater.autoDownload = true;
-    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = false;
 
     autoUpdater.setFeedURL({
         provider: "generic",
@@ -55,10 +230,6 @@ function setupAutoUpdater(win: BrowserWindow) {
 
     autoUpdater.on("update-downloaded", (info) => {
         win.webContents.send("update:downloaded", info);
-
-        setTimeout(() => {
-            autoUpdater.quitAndInstall(false, true);
-        }, 1500);
     });
 
     autoUpdater.on("error", (error) => {
@@ -72,7 +243,11 @@ function setupAutoUpdater(win: BrowserWindow) {
         return autoUpdater.checkForUpdates();
     });
 
-    ipcMain.handle("update:restart", () => {
+    ipcMain.handle("update:download", async () => {
+        return autoUpdater.downloadUpdate();
+    });
+
+    ipcMain.handle("update:install", () => {
         autoUpdater.quitAndInstall(false, true);
     });
 
@@ -90,13 +265,23 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
-        frame: false,
+        frame: true,
         show: false,
+        autoHideMenuBar: true,
         icon: path.join(__dirname, "../../public/assets/rebiz-icon-1.png"),
         webPreferences: {
             preload: path.join(__dirname, "../preload/index.cjs"),
         },
     });
+
+    win.setMenuBarVisibility(false);
+    // show dev tools
+    if (
+        process.env.NODE_ENV === "development" ||
+        process.env.PRODUCTION === "false"
+    ) {
+        win.webContents.openDevTools();
+    }
 
     ipcMain.on("window:minimize", () => win.minimize());
     ipcMain.on("window:maximize", () => {
@@ -107,13 +292,68 @@ function createWindow() {
 
     ipcMain.handle("app:homedir", () => os.homedir());
     ipcMain.handle("dvr:basePath", () => DVR_BASE);
+    ipcMain.handle("crash:context", () => getMachineContext());
+    ipcMain.handle("crash:log", async (_, payload: CrashLogPayload) => {
+        return sendCrashLog({
+            ...payload,
+            appContext: {
+                ...(payload?.appContext ?? {}),
+                processType: "renderer",
+            },
+        });
+    });
+
+    win.webContents.on("unresponsive", () => {
+        void sendCrashLog({
+            eventType: "renderer-unresponsive",
+            severity: "warning",
+            message: "Renderer window became unresponsive",
+            appContext: {
+                processType: "renderer",
+                url: win.webContents.getURL(),
+            },
+        });
+    });
+
+    win.webContents.on("render-process-gone", (_, details) => {
+        void sendCrashLog({
+            eventType: "renderer-process-gone",
+            severity: details.reason === "crashed" ? "fatal" : "error",
+            message: `Renderer process ended: ${details.reason}`,
+            appContext: {
+                processType: "renderer",
+                url: win.webContents.getURL(),
+                reason: details.reason,
+                exitCode: details.exitCode,
+            },
+        });
+    });
 
     // Returns sorted array of seconds-since-midnight for every image in a camera folder.
     // Called once per camera per session — result is cached in the renderer.
     ipcMain.handle(
         "dvr:timestamps",
-        async (_, { company, location, date, camera }: { company: number; location: number; date: string; camera: number }) => {
-            const dir = path.join(DVR_BASE, String(company), String(location), String(date), String(camera));
+        async (
+            _,
+            {
+                company,
+                location,
+                date,
+                camera,
+            }: {
+                company: number;
+                location: number;
+                date: string;
+                camera: number;
+            },
+        ) => {
+            const dir = path.join(
+                DVR_BASE,
+                String(company),
+                String(location),
+                String(date),
+                String(camera),
+            );
             try {
                 const files = await fs.readdir(dir);
                 return files
@@ -130,8 +370,7 @@ function createWindow() {
                     })
                     .filter((t): t is number => t !== null)
                     .sort((a, b) => a - b);
-            } catch (error) {
-                console.log(`Failed to read timestamps from ${dir}`, error);
+            } catch {
                 return [];
             }
         },
@@ -139,13 +378,28 @@ function createWindow() {
 
     ipcMain.handle(
         "dvr:cameras",
-        async (_, { company, location, date }: { company: number; location: number; date: string }) => {
-            const dir = path.join(DVR_BASE, String(company), String(location), String(date));
+        async (
+            _,
+            {
+                company,
+                location,
+                date,
+            }: { company: number; location: number; date: string },
+        ) => {
+            const dir = path.join(
+                DVR_BASE,
+                String(company),
+                String(location),
+                String(date),
+            );
             try {
                 const entries = await fs.readdir(dir, { withFileTypes: true });
                 return entries
                     .filter((e) => e.isDirectory())
-                    .map((e) => ({ id: Number(e.name), name: `Camera ${e.name}` }))
+                    .map((e) => ({
+                        id: Number(e.name),
+                        name: `Camera ${e.name}`,
+                    }))
                     .sort((a, b) => a.id - b.id);
             } catch {
                 return [];
@@ -168,6 +422,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    Menu.setApplicationMenu(null); // Disable default menu
+
     // Register protocol BEFORE creating the window
     protocol.handle("dvr", async (request) => {
         const url = new URL(request.url);
@@ -176,14 +432,18 @@ app.whenReady().then(() => {
         const filePath = path.join(DVR_BASE, url.pathname);
         try {
             const data = await fs.readFile(filePath);
-            return new Response(data, { headers: { "content-type": "image/jpeg" } });
+            return new Response(data, {
+                headers: { "content-type": "image/jpeg" },
+            });
         } catch {
             return new Response(null, { status: 404 });
         }
     });
 
     if (process.platform === "darwin") {
-        app.dock?.setIcon(path.join(__dirname, "../../public/assets/rebiz-icon-1.png"));
+        app.dock?.setIcon(
+            path.join(__dirname, "../../public/assets/rebiz-icon-1.png"),
+        );
     }
 
     createWindow();

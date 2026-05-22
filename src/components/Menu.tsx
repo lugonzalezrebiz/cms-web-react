@@ -196,11 +196,11 @@ const Menu = ({
               margin: !mini ? "0" : "20px 0",
             }}
             onClick={() => {}}
-            src="../assets/rebiz-logo-1.svg"
+            src="./assets/rebiz-logo-1.svg"
             alt="Rebiz logo"
           />
           <img
-            src="../assets/Icon.svg"
+            src="./assets/Icon.svg"
             alt="Toggle menu"
             style={{
               cursor: "pointer",

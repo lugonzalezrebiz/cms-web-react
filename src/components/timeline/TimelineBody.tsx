@@ -120,7 +120,7 @@ const TimelineBody = ({
         display: "flex",
         flex: 1,
         minHeight: 0,
-        borderTop: `1px solid ${Colors.lightGrayishBlue}`,
+        //borderTop: `1px solid ${Colors.lightGrayishBlue}`,
         overflow: "hidden",
       }}
     >

@@ -4,8 +4,8 @@ import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 
-const ROW_HEIGHT = 44;
-const DIAMOND_SIZE = 14;
+const ROW_HEIGHT = 32.8;
+const DIAMOND_SIZE = 17;
 const BAR_HEIGHT = 15;
 const BAR_RADIUS = 8;
 const TRANSITION_MS = 150;

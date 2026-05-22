@@ -174,7 +174,7 @@ const TableHeader = ({
       <TableCellSubTitle>{subtitle}</TableCellSubTitle>
       {sort && (
         <img
-          src="../assets/sorting-arrows-down.svg"
+          src="./assets/sorting-arrows-down.svg"
           alt="sort"
           onClick={onSortClick}
           style={{

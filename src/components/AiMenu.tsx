@@ -97,7 +97,7 @@ const AiMenu = ({ anchorEl, open, handleClose }: Props) => {
               filter: "grayscale(30%)",
             }}
           >
-            <img style={{ height: "72px" }} src="../assets/ai.svg" alt="AI assistant" />
+            <img style={{ height: "72px" }} src="./assets/ai.svg" alt="AI assistant" />
           </Box>
 
           <Box
@@ -158,7 +158,7 @@ const AiMenu = ({ anchorEl, open, handleClose }: Props) => {
             sx={{ p: "4px", opacity: input.trim() ? 1 : 0.3 }}
           >
             <img
-              src="../assets/arrow-narrow-right.svg"
+              src="./assets/arrow-narrow-right.svg"
               alt="send"
               style={{ height: "18px" }}
             />

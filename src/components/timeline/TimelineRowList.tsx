@@ -6,6 +6,7 @@ import { Skeleton } from "@mui/material";
 
 interface RowItemProps {
   row: FlatRow;
+  index: number;
   isSelected: boolean;
   iTrackId: number | null;
   activeSessionStarts: Record<number, number>;
@@ -15,6 +16,7 @@ interface RowItemProps {
 
 const RowItem = ({
   row,
+  index,
   isSelected,
   iTrackId,
   activeSessionStarts,
@@ -44,20 +46,32 @@ const RowItem = ({
         }
       };
 
-  const bgColor = (() => {
+  const bgColor = () => {
     if (isEventSubRow)
       return isActive || isEventWithActiveParent
         ? Colors.blushWhite
         : "transparent";
     if (isActive) return Colors.vividOrange;
     return "transparent";
-  })();
+  };
+  const bgColorNumber = () => {
+    if (isEventSubRow)
+      return isActive || isEventWithActiveParent ? Colors.white : Colors.white;
+    if (isActive) return Colors.white;
+    return Colors.vividOrange;
+  };
 
-  const textColor = (() => {
+  const textColorNumber = () => {
+    if (isEventSubRow) return Colors.white;
+    if (isActive) return Colors.vividOrange;
+    return Colors.white;
+  };
+
+  const textColor = () => {
     if (isEventSubRow) return Colors.lightBlack;
     if (isActive) return Colors.white;
     return Colors.lightBlack;
-  })();
+  };
 
   return (
     <Box
@@ -72,11 +86,15 @@ const RowItem = ({
         cursor: "pointer",
         fontFamily: Fonts.main,
         fontSize: 14,
-        height: "32px",
+        height: "20px",
         lineHeight: 1.43,
         fontWeight: 400,
         backgroundColor: bgColor,
         color: textColor,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
       }}
     >
       {!isEventSubRow && !isActivityRow && (
@@ -93,13 +111,43 @@ const RowItem = ({
             alignItems: "center",
             fontWeight: 700,
             fontFamily: Fonts.main,
-            padding: 0,
+            padding: "0 10px 0 0",
           }}
         >
           <span style={{ marginTop: "2px" }}>{row.cameraNumber}</span>
         </Box>
       )}
-      {row.name}
+      <Box
+        sx={{
+          bgcolor: bgColorNumber,
+          color: textColorNumber,
+          height: "20px",
+          width: "20px",
+          textAlign: "center",
+          borderRadius: "50px",
+          fontSize: "12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWidth: 700,
+          lineHeight: 1.5,
+        }}
+      >
+        {index}
+      </Box>
+      <Box
+        component="span"
+        title={row.name}
+        sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {row.name}
+      </Box>
     </Box>
   );
 };
@@ -136,13 +184,15 @@ export const TimelineRowList = ({
   return (
     <Box
       sx={{
-        minWidth: 130,
-        maxWidth: 220,
+        width: "100%",
+        maxWidth: "245px",
         background: Colors.white,
-        borderRight: `1px solid ${Colors.lightGrayishBlue}`,
         display: "flex",
         flexDirection: "column",
         zIndex: 1,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
       }}
     >
       {/* Header */}
@@ -152,10 +202,11 @@ export const TimelineRowList = ({
           alignItems: "center",
           justifyContent: "space-between",
           height: "28px",
-          width: "90%",
-          maxWidth: "197px",
-          minWidth: "197px",
+          width: "100%",
+          maxWidth: "245px",
+          minWidth: "180px",
           padding: "0 4px 0 8px",
+          borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
         }}
       >
         <p
@@ -163,10 +214,11 @@ export const TimelineRowList = ({
             textTransform: "capitalize",
             fontFamily: Fonts.main,
             fontSize: 12,
-            color: Colors.lightBlack,
+            color: Colors.charcoalNavy,
             lineHeight: 1.5,
             margin: 0,
-            fontWeight: 700,
+            fontWeight: 500,
+            height: "18px",
           }}
         >
           {headerLabel ? (
@@ -178,7 +230,7 @@ export const TimelineRowList = ({
           )}
         </p>
         <Box sx={{ cursor: "pointer", ml: "3px" }} onClick={onOpenDialog}>
-          <img src="../assets/plus-1.svg" alt="Add row" />
+          {/* <img src="../assets/plus-1.svg" alt="Add row" /> */}
         </Box>
       </Box>
 
@@ -195,13 +247,13 @@ export const TimelineRowList = ({
           overflowY: "auto",
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" },
-          borderTop: `1px solid ${Colors.lightGrayishBlue}`,
         }}
       >
-        {flatRows.map((row) => (
+        {flatRows.map((row, i) => (
           <RowItem
             key={row.id}
             row={row}
+            index={i + 1}
             isSelected={selectedTracks.has(row.id)}
             iTrackId={iTrackId}
             activeSessionStarts={activeSessionStarts}
