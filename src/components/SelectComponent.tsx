@@ -10,6 +10,8 @@ interface Props {
   setFilter: (value: string) => void;
   size?: string;
   sizePaper?: string;
+  borderRadius?: string;
+  padding?: string;
 }
 
 const SelectComponent = ({
@@ -18,12 +20,13 @@ const SelectComponent = ({
   setFilter,
   size,
   sizePaper,
+  borderRadius,
+  padding,
 }: Props) => {
   return (
     <FormControl
       sx={{
         width: size ? size : "220px",
-        marginBottom: "10px",
       }}
     >
       <Select
@@ -72,10 +75,11 @@ const SelectComponent = ({
         sx={{
           width: "100%",
           height: "38px",
-          borderRadius: "4px",
+          borderRadius: borderRadius ? borderRadius : "4px",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",
+          p: padding ? padding : "auto",
 
           "& .MuiSelect-select": {
             display: "flex",
