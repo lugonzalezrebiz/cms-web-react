@@ -30,7 +30,7 @@ const PasswordChangedDialog = ({ open, onClose }: Props) => {
           gap: "20px",
         }}
       >
-        <img src="/assets/receipt-check.svg" alt="Success" width={88} height={80} />
+        <img src="./assets/receipt-check.svg" alt="Success" width={88} height={80} />
 
         <Message>
           Password changed successfully.

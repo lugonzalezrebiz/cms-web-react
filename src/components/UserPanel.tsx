@@ -171,7 +171,7 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
           <Divider sx={{ borderColor: Colors.paleGray, my: "4px" }} />
           <MenuRow onClick={() => setOpenResetPassword(true)}>
             <img
-              src="../assets/passcode.svg"
+              src="./assets/passcode.svg"
               alt="Reset Password"
               width={18}
               height={18}

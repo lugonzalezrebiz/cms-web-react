@@ -104,7 +104,7 @@ const ResetPasswordDialog = ({
   const eyeAdornment = (toggle: () => void, show: boolean) => (
     <InputAdornment position="end">
       <img
-        src={show ? "/assets/close-eye.svg" : "/assets/eye.svg"}
+        src={show ? "./assets/close-eye.svg" : "./assets/eye.svg"}
         alt="toggle visibility"
         onClick={toggle}
         style={{ cursor: "pointer", width: "20px", height: "20px" }}
@@ -158,7 +158,7 @@ const ResetPasswordDialog = ({
           }}
         >
           <img
-            src="../assets/x-close.svg"
+            src="./assets/x-close.svg"
             alt="Close"
             style={{ width: "24px", height: "24" }}
           />
@@ -219,7 +219,7 @@ const ResetPasswordDialog = ({
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {validLength ? (
               <img
-                src="/assets/check-circle.svg"
+                src="./assets/check-circle.svg"
                 alt="valid"
                 width={18}
                 height={18}
@@ -232,7 +232,7 @@ const ResetPasswordDialog = ({
           <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {validUpperCase ? (
               <img
-                src="/assets/check-circle.svg"
+                src="./assets/check-circle.svg"
                 alt="valid"
                 width={18}
                 height={18}
