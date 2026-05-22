@@ -54,7 +54,8 @@ const TableSection = () => {
     {
       title: "",
       key: "selected",
-      width: "50px",
+      width: "40px",
+      align: "right",
       complement: (
         <TickBox
           label=""
@@ -70,15 +71,25 @@ const TableSection = () => {
         />
       ),
     },
-    { title: "ID", key: "id", width: "50px" },
-    { title: "Username", key: "username" },
-    { title: "Role", key: "role" },
-    { title: "Name", key: "name" },
-    { title: "Email", key: "email", width: "220px" },
+    {
+      title: "User ID",
+      key: "id",
+      width: "80px",
+      align: "left",
+    },
+    {
+      title: "Username",
+      key: "username",
+      rowColor: Colors.vividOrange,
+      width: "80px",
+    },
+    { title: "Rol", key: "role" },
+    { title: "Name", key: "name", rowColor: Colors.vividOrange },
+    { title: "E-mail", key: "email", width: "220px" },
     {
       title: "Active",
       key: "active",
-      width: "80px",
+      // width: "80px",
       render: (value: string) => (
         <Box
           sx={{
@@ -100,9 +111,9 @@ const TableSection = () => {
     {
       title: "",
       key: "assign",
-      width: "80px",
+      // width: "80px",
       render: () => (
-        <Button sx={{ height: "20px" }} fontSize="12px" outfit>
+        <Button square sx={{ height: "20px" }} fontSize="12px" outfit>
           ASSIGN
         </Button>
       ),

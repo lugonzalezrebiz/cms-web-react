@@ -14,7 +14,7 @@ const Button = styled(MuiButton, {
     prop !== "outfit" && prop !== "square" && prop !== "selected",
 })<ButtonProps & Props>(
   ({ color, outfit, disabled, square, selected, fontSize }) => ({
-    borderRadius: square ? "0px" : "18px",
+    borderRadius: square ? "6px" : "18px",
     fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
     fontSize: fontSize ? fontSize : "16px",
     fontWeight: 500,

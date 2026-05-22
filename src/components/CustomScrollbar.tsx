@@ -26,6 +26,7 @@ const CustomScrollbar = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [hasScroll, setHasScroll] = useState(false);
   const dragStartY = useRef(0);
   const dragStartScrollTop = useRef(0);
 
@@ -33,9 +34,11 @@ const CustomScrollbar = ({
     const el = scrollRef.current;
     const track = trackRef.current;
     const thumb = thumbRef.current;
-    if (!el || !track || !thumb) return;
-    const trackHeight = track.clientHeight - thumbLength;
+    if (!el) return;
     const scrollable = el.scrollHeight - el.clientHeight;
+    setHasScroll(scrollable > 0);
+    if (!track || !thumb) return;
+    const trackHeight = track.clientHeight - thumbLength;
     const top = scrollable > 0 ? (el.scrollTop / scrollable) * trackHeight : 0;
     thumb.style.top = `${top}px`;
   }, [thumbLength]);
@@ -75,8 +78,8 @@ const CustomScrollbar = ({
         onScroll={updateThumb}
         sx={{
           height: "100%",
-          overflowY: "scroll",
-          pr: "20px",
+          overflowY: "auto",
+          pr: hasScroll ? "20px" : 0,
           scrollbarWidth: "none",
           "&::-webkit-scrollbar": { display: "none" },
           ...contentSx,
@@ -85,7 +88,7 @@ const CustomScrollbar = ({
         {children}
       </Box>
       {/* Track */}
-      <Box
+      {hasScroll && <Box
         ref={trackRef}
         sx={{
           position: "absolute",
@@ -121,7 +124,7 @@ const CustomScrollbar = ({
             boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
           }}
         />
-      </Box>
+      </Box>}
     </Box>
   );
 };
