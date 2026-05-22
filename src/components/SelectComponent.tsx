@@ -12,6 +12,7 @@ interface Props {
   sizePaper?: string;
   borderRadius?: string;
   padding?: string;
+  fontSize?: string;
 }
 
 const SelectComponent = ({
@@ -22,6 +23,7 @@ const SelectComponent = ({
   sizePaper,
   borderRadius,
   padding,
+  fontSize,
 }: Props) => {
   return (
     <FormControl
@@ -74,7 +76,7 @@ const SelectComponent = ({
         }}
         sx={{
           width: "100%",
-          height: "38px",
+          height: "36px",
           borderRadius: borderRadius ? borderRadius : "4px",
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -84,12 +86,12 @@ const SelectComponent = ({
           "& .MuiSelect-select": {
             display: "flex",
             alignItems: "center",
-            padding: "16px",
+            padding: "0px",
           },
 
           alignSelf: "stretch",
           fontFamily: Fonts.main,
-          fontSize: "16px",
+          fontSize: fontSize ? fontSize : "16px",
           fontWeight: "normal",
           lineHeight: "24px",
           color: Colors.dimGray,

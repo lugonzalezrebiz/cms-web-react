@@ -31,6 +31,7 @@ const TickBoxLabel = styled(FormControlLabel)({
 
 const TickBoxStyled = styled(Checkbox)({
   color: Colors.silverGrey,
+  backgroundColor: "transparent",
   transform: "scale(0.89)",
   borderRadius: "4px",
   padding: "0px",

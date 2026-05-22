@@ -1,33 +1,22 @@
 import { useState } from "react";
 import { Box } from "@mui/system";
-import {
-  OutlinedInput,
-  InputAdornment,
-  IconButton,
-  FormLabel,
-} from "@mui/material";
+import { OutlinedInput, FormLabel } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../../theme";
-import Dialog from "../../../components/Dialog";
+import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
 import EmployeeTypeRadioGroup from "./EmployeeTypeRadioGroup";
 import usePasswordValidation from "../../../hooks/usePasswordValidation";
 import useCreateUser from "../hooks/useCreateUser";
+import useCreateEmployeeForm from "../hooks/useCreateEmployeeForm";
+import { generatePassword } from "../../../utils/generatePassword";
+import PasswordInput from "../../../components/PasswordInput";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 
-const Title = styled("p")({
-  margin: 0,
-  fontFamily: Fonts.main,
-  fontSize: "20px",
-  fontWeight: 600,
-  color: Colors.charcoalNavy,
-  height: "30px",
-  lineHeight: 1.5,
-});
 
 const Label = styled(FormLabel)({
   fontFamily: Fonts.secondary,
@@ -64,77 +53,25 @@ const StyledInput = styled(OutlinedInput)({
   },
 });
 
-const HintText = styled("p")({
-  margin: 0,
+const ErrorText = styled("p")({
+  margin: "4px 0 0",
   fontFamily: Fonts.secondary,
   fontSize: "12px",
-  color: Colors.dimGray,
-  height: "16px",
+  color: Colors.red,
+  lineHeight: 1.4,
 });
-
-const HintDot = styled(Box)({
-  width: "16px",
-  height: "16px",
-  borderRadius: "50%",
-  backgroundColor: Colors.softSteelBlue,
-  flexShrink: 0,
-});
-
-const ValidationRule = ({
-  valid,
-  label,
-}: {
-  valid: boolean;
-  label: string;
-}) => {
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
-      {valid ? (
-        <img src="/assets/check-circle.svg" alt="" width={16} height={16} />
-      ) : (
-        <HintDot />
-      )}
-      <HintText>{label}</HintText>
-    </Box>
-  );
-};
 
 const CreateEmployeeDialog = ({ open, onClose }: Props) => {
   const [employeeType, setEmployeeType] = useState("monitoring_agent");
-  const [employeeName, setEmployeeName] = useState("");
-  const [email, setEmail] = useState("");
-  const [userName, setUserName] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const { fields, errors, isValid, setField, validate, reset } =
+    useCreateEmployeeForm();
+  const { employeeName, email, userName, password } = fields;
 
-  const generatePassword = () => {
-    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const lower = "abcdefghijklmnopqrstuvwxyz";
-    const digits = "0123456789";
-    const all = upper + lower + digits;
-    const length = Math.floor(Math.random() * 5) + 10; // 10–14 chars
-    const chars = [
-      upper[Math.floor(Math.random() * upper.length)],
-      ...Array.from(
-        { length: length - 1 },
-        () => all[Math.floor(Math.random() * all.length)],
-      ),
-    ];
-    setPassword(chars.sort(() => Math.random() - 0.5).join(""));
-    setShowPassword(true);
-  };
-
-  const { validLength, validUpperCase, isValid } = usePasswordValidation({
-    password,
-  });
+  const { validLength, validUpperCase } = usePasswordValidation({ password });
 
   const handleClose = () => {
     setEmployeeType("monitoring_agent");
-    setEmployeeName("");
-    setEmail("");
-    setUserName("");
-    setPassword("");
-    setShowPassword(false);
+    reset();
     onClose();
   };
 
@@ -143,7 +80,7 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
   });
 
   const handleCreate = () => {
-    if (!isValid) return;
+    if (!validate()) return;
     createUser({
       username: userName,
       password,
@@ -154,22 +91,8 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="400px" padding="16px">
-      <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Title>Create New Employee</Title>
-          <Box sx={{ position: "absolute", top: "14px", right: "14px" }}>
-            <img src="./assets/x-close.svg" alt="" />
-          </Box>
-        </Box>
-
-        <Box>
+    <FormDialog open={open} onClose={handleClose} title="Create New Employee">
+      <Box>
           <Label>Select type of employee</Label>
           <EmployeeTypeRadioGroup
             value={employeeType}
@@ -183,8 +106,10 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
             fullWidth
             size="small"
             value={employeeName}
-            onChange={(e) => setEmployeeName(e.target.value)}
+            onChange={(e) => setField("employeeName", e.target.value)}
+            error={!!errors.employeeName}
           />
+          {errors.employeeName && <ErrorText>{errors.employeeName}</ErrorText>}
         </Box>
 
         <Box>
@@ -194,8 +119,10 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
             size="small"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setField("email", e.target.value)}
+            error={!!errors.email}
           />
+          {errors.email && <ErrorText>{errors.email}</ErrorText>}
         </Box>
 
         <Box>
@@ -204,61 +131,25 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
             fullWidth
             size="small"
             value={userName}
-            onChange={(e) => setUserName(e.target.value)}
+            onChange={(e) => setField("userName", e.target.value)}
+            error={!!errors.userName}
           />
+          {errors.userName && <ErrorText>{errors.userName}</ErrorText>}
         </Box>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <Box>
-            <Label>Set password</Label>
-            <StyledInput
-              fullWidth
-              size="small"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              endAdornment={
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                    size="small"
-                    sx={{ color: Colors.main }}
-                  >
-                    <img
-                      src={
-                        showPassword
-                          ? "/assets/close-eye.svg"
-                          : "/assets/eye.svg"
-                      }
-                      alt=""
-                      width={20}
-                      height={20}
-                    />
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
-          </Box>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <Button
-              color="secondary"
-              onClick={generatePassword}
-              sx={{
-                alignSelf: "flex-end",
-                height: "20px",
-              }}
-              fontSize="12px"
-            >
-              Generate password
-            </Button>
-            <ValidationRule valid={validLength} label="8–20 characters" />
-            <ValidationRule
-              valid={validUpperCase}
-              label="At least one uppercase letter"
-            />
-          </Box>
+        <Box>
+          <Label>Password</Label>
+          <PasswordInput
+            value={password}
+            onChange={(value) => setField("password", value)}
+            error={!!errors.password}
+            errorText={errors.password}
+            onGenerate={() => setField("password", generatePassword())}
+            validations={[
+              { valid: validLength, label: "8–20 characters" },
+              { valid: validUpperCase, label: "At least one uppercase letter" },
+            ]}
+          />
         </Box>
         <Box
           sx={{
@@ -283,22 +174,20 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
           <Box
             sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}
           >
-            <Button color="secondary" onClick={handleClose} sx={{ px: "28px" }}>
+            <Button color="secondary" onClick={handleClose}>
               Cancel
             </Button>
             <Button
               color="primary"
               onClick={handleCreate}
               outfit
-              sx={{ px: "20px" }}
               disabled={!isValid || isPending}
             >
               Create New Employee
             </Button>
           </Box>
         </Box>
-      </Box>
-    </Dialog>
+    </FormDialog>
   );
 };
 

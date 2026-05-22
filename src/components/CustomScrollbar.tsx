@@ -7,6 +7,8 @@ interface CustomScrollbarProps {
   children: React.ReactNode;
   height: string | number;
   thumbLength?: number;
+  bottom?: number;
+  top?: number;
   sx?: SxProps;
   contentSx?: SxProps;
 }
@@ -17,6 +19,8 @@ const CustomScrollbar = ({
   thumbLength = 12,
   sx,
   contentSx,
+  top,
+  bottom,
 }: CustomScrollbarProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -86,8 +90,8 @@ const CustomScrollbar = ({
         sx={{
           position: "absolute",
           right: 0,
-          top: 0,
-          bottom: -7,
+          top: top ? top : 0,
+          bottom: bottom ? bottom : -7,
           width: 10,
           background: Colors.blushWhite,
           borderRadius: "8px",

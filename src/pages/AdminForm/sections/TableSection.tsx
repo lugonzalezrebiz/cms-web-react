@@ -18,7 +18,9 @@ import {
   statusFilters,
 } from "../mocks";
 
-const sizeSelect = "103px";
+const sizeSelect = "119px";
+const padding = "2px 4px";
+const fontSize = "12px";
 
 const TableSection = () => {
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
@@ -131,7 +133,7 @@ const TableSection = () => {
 
   return (
     <>
-      <Title title="Locations">
+      <Title title="Users">
         <Grid
           container
           sx={{
@@ -150,39 +152,55 @@ const TableSection = () => {
             filter={company}
             setFilter={setCompany}
             size={sizeSelect}
-            padding="2px 4px"
+            padding={padding}
+            fontSize={fontSize}
           />
           <SelectComponent
             filters={storesFilters}
             filter={store}
             setFilter={setStore}
             size={sizeSelect}
+            padding={padding}
+            fontSize={fontSize}
           />
           <SelectComponent
             filters={agentsFilters}
             filter={agent}
             setFilter={setAgent}
             size={sizeSelect}
+            padding={padding}
+            fontSize={fontSize}
           />
           <SelectComponent
             filters={reviewsFilters}
             filter={review}
             setFilter={setReview}
             size={sizeSelect}
+            padding={padding}
+            fontSize={fontSize}
           />
           <SelectComponent
             filters={workloadFilters}
             filter={workload}
             setFilter={setWorkload}
             size={sizeSelect}
+            padding={padding}
+            fontSize={fontSize}
           />
           <SelectComponent
             filters={statusFilters}
             filter={status}
             setFilter={setStatus}
             size={sizeSelect}
+            padding={padding}
+            fontSize={fontSize}
           />
-          <Button outfit onClick={() => setCreateDialogOpen(true)}>
+          <Button
+            sx={{ ml: "6px" }}
+            outfit
+            onClick={() => setCreateDialogOpen(true)}
+            fontSize="14px"
+          >
             <Box sx={{ display: "flex", alignItems: "center" }} mr={"4px"}>
               <img src="./assets/plus.svg" alt="" />
             </Box>
