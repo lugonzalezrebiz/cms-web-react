@@ -5,10 +5,8 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
-import HeaderInfoMenu, {
-  type HeaderInfo,
-} from "../../components/HeaderInfoMenu";
-import useAssignments from "../../hooks/useAssignments";
+import HeaderInfoMenu from "../../components/HeaderInfoMenu";
+import useAssignments, { type Assignment } from "../../hooks/useAssignments";
 import KeyboardMenu, {
   type KeyboardMenuData,
 } from "../../components/KeyboardMenu";
@@ -20,7 +18,6 @@ import useMonitorParams from "./hooks/useMonitorParams";
 import useNavigateWithQuery, {
   useLocationState,
 } from "../../hooks/useNavigate";
-import type { NavigationAssignment } from "../../pages/Assignments/hooks/useAssignmentNavigate";
 import {
   useMonitorState,
   useCameraGroup,
@@ -173,7 +170,7 @@ const SmallSize = ({
     locationID,
     monitoringID,
   } = useMonitorParams();
-  const navState = useLocationState<{ assignment: NavigationAssignment }>();
+  const navState = useLocationState<{ assignment: Assignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
     navState?.assignment ??
@@ -183,18 +180,6 @@ const SmallSize = ({
   const timeRange = assignment
     ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
     : "----";
-  const headerInfo: HeaderInfo | undefined = assignment
-    ? {
-        title: assignment.date,
-        state: assignment.state,
-        subTitle: {
-          store: `${assignment.store} (${assignment.location})`,
-          user: String(assignment.userID),
-        },
-        items: assignment.items,
-        commentsTex: assignment.commentsTex,
-      }
-    : undefined;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -303,7 +288,7 @@ const SmallSize = ({
           anchorEl={menuHeader.anchorEl}
           handleClose={menuHeader.handleClose}
           open={menuHeader.open}
-          info={headerInfo}
+          info={assignment ?? undefined}
         />
 
         <KeyboardMenu
@@ -349,7 +334,7 @@ const NormalSize = ({
     locationID,
     monitoringID,
   } = useMonitorParams();
-  const navState = useLocationState<{ assignment: NavigationAssignment }>();
+  const navState = useLocationState<{ assignment: Assignment }>();
   const { assignments } = useAssignments(companyID, locationID);
   const assignment =
     navState?.assignment ??
@@ -359,18 +344,6 @@ const NormalSize = ({
   const timeRange = assignment
     ? `${toHHmm(assignment.open)} - ${toHHmm(assignment.close)}`
     : "----";
-  const headerInfo: HeaderInfo | undefined = assignment
-    ? {
-        title: assignment.date,
-        state: assignment.state,
-        subTitle: {
-          store: `${assignment.store} (${assignment.location})`,
-          user: String(assignment.userID),
-        },
-        items: assignment.items,
-        commentsTex: assignment.commentsTex,
-      }
-    : undefined;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -474,7 +447,7 @@ const NormalSize = ({
           anchorEl={menuHeader.anchorEl}
           handleClose={menuHeader.handleClose}
           open={menuHeader.open}
-          info={headerInfo}
+          info={assignment ?? undefined}
         />
 
         <KeyboardMenu

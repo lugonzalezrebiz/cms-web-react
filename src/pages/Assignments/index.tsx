@@ -6,10 +6,10 @@ import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
 import { usePopover } from "../../components/timeline/hooks/usePopover";
 import DropDownMenu from "../../components/DropDownMenu";
-import type { Assignment } from "./components/InfoAssignment";
+import type { Assignment } from "../../hooks/useAssignments";
 import InfoAssignment from "./components/InfoAssignment";
 import OpenTicketDialog from "./components/OpenTicketDialog";
-import TicketSuccessDialog from "./components/TicketSuccessDialog";
+import SuccessDialog from "../../components/SuccessDialog";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
@@ -206,9 +206,10 @@ const Assignments = () => {
         />
       )}
 
-      <TicketSuccessDialog
+      <SuccessDialog
         open={ticketSuccessOpen}
         onClose={() => setTicketSuccessOpen(false)}
+        message={<>The ticket has been created successfully.<br />As soon as it gets resolved the assignment would be back on your dashboard.</>}
       />
     </Box>
   );

@@ -2,7 +2,9 @@ import { useRef } from "react";
 import { useNavigatePlain } from "../../../hooks/useNavigate";
 import { usePostCallback } from "../../../hooks/useApi";
 import { USE_STATIC_IDS, MONITORING_ID, ASSIGNMENT_COMPLETED } from "../../../config";
-import type { stateAssignments } from "../../Assignments/components/stateColors";
+import type { Assignment } from "../../../hooks/useAssignments";
+
+export type { Assignment as NavigationAssignment };
 
 const STATIC_REDIRECT = `/monitor?company=9001&location=222&date=20251224&monitoringID=${MONITORING_ID}`;
 
@@ -14,27 +16,12 @@ const buildRedirect = (
 ) =>
   `/monitor?company=${companyID}&location=${locationID}&date=${rawDate}&monitoringID=${monitoringID}`;
 
-export type NavigationAssignment = {
-  location: number;
-  store: number;
-  rawDate: string;
-  monitoringID: string;
-  statusName: string;
-  state: stateAssignments;
-  date: string;
-  userID: number;
-  open: string | null;
-  close: string | null;
-  items: { activity: string; complement: string }[];
-  commentsTex: string[];
-};
-
 export const useAssignmentNavigate = () => {
   const navigate = useNavigatePlain();
   const postCallback = usePostCallback();
   const navigating = useRef(false);
 
-  const handleNavigate = async (a: NavigationAssignment) => {
+  const handleNavigate = async (a: Assignment) => {
     if (navigating.current) return;
     navigating.current = true;
     try {
