@@ -208,14 +208,20 @@ const SmallSize = ({
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
   const { trackerOptions } = useTrackerOptions();
   const cameraGroups = [
-    { value: "0", title: "All" },
-    ...cameraGroupsBase,
     {
       value: "tracker",
       title: "Tracker",
       options: trackerOptions,
     },
+    ...cameraGroupsBase,
+    { value: "0", title: "All" },
   ];
+
+  useEffect(() => {
+    if (trackerOption === "" && trackerOptions.length > 0) {
+      setTrackerOption(trackerOptions[0].value);
+    }
+  }, [trackerOptions, trackerOption, setTrackerOption]);
 
   return (
     <>
@@ -384,14 +390,20 @@ const NormalSize = ({
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
   const { trackerOptions } = useTrackerOptions();
   const cameraGroups = [
-    { value: "0", title: "All" },
-    ...cameraGroupsBase,
     {
       value: "tracker",
       title: "Tracker",
       options: trackerOptions,
     },
+    ...cameraGroupsBase,
+    { value: "0", title: "All" },
   ];
+
+  useEffect(() => {
+    if (trackerOption === "" && trackerOptions.length > 0) {
+      setTrackerOption(trackerOptions[0].value);
+    }
+  }, [trackerOptions, trackerOption, setTrackerOption]);
 
   return (
     <>

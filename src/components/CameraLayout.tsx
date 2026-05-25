@@ -168,32 +168,38 @@ export const CameraItem = ({
             position: "absolute",
             top: 8,
             left: 8,
-            height: "22px",
             display: "flex",
             alignItems: "center",
             borderRadius: "4px",
             bgcolor: Colors.semiTransparentBlackTwo,
+            flexDirection: "column",
+            width: "80px",
           }}
         >
-          <Typography
-            variant="caption"
-            sx={{
-              padding: "2px 0px 2px 4px",
-              color: Colors.white,
-              borderRadius: 0.5,
-              fontSize: 12,
-              mr: "9px",
-              fontFamily: Fonts.main,
-              lineHeight: 1.5,
-            }}
-          >
-            Camera {cameraId ?? index + 1}
-          </Typography>
-          <img
-            style={{ padding: "0 4px 0 0", cursor: "pointer" }}
-            src="./assets/chevron-down.svg"
-            alt="Show camera options"
-          />
+          {[`Camera ${cameraId ?? index + 1}`, cameraName].map((label) => (
+            <Typography
+              key={label}
+              variant="caption"
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.title = el.scrollWidth > el.clientWidth ? (label ?? "") : "";
+              }}
+              sx={{
+                padding: "2px 0px 2px 4px",
+                color: Colors.white,
+                borderRadius: 0.5,
+                fontSize: 12,
+                fontFamily: Fonts.main,
+                lineHeight: 1.5,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                width: "90%",
+              }}
+            >
+              {label}
+            </Typography>
+          ))}
         </Box>
       )}
 
