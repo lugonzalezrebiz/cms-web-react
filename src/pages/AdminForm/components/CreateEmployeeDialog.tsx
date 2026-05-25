@@ -6,7 +6,7 @@ import { Colors, Fonts } from "../../../theme";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
 import EmployeeTypeRadioGroup from "./EmployeeTypeRadioGroup";
-import usePasswordValidation from "../../../hooks/usePasswordFormUserValidation";
+import usePasswordValidation from "../../../hooks/usePasswordValidation";
 import useCreateUser from "../hooks/useCreateUser";
 import useCreateEmployeeForm from "../hooks/useCreateEmployeeForm";
 import { generatePassword } from "../../../utils/generatePassword";

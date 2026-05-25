@@ -113,7 +113,7 @@ const ResetPasswordDialog = ({
   );
 
   const { validLength, validUpperCase, passwordsMatch, isValid } =
-    usePasswordValidation({ oldPassword, newPassword, confirmPassword });
+    usePasswordValidation({ password: newPassword, confirmPassword, oldPassword });
 
   const resetForm = () => {
     setOldPassword("");
