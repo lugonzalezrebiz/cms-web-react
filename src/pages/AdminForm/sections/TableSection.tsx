@@ -6,6 +6,7 @@ import TickBox from "../../../components/TickBox";
 import Button from "../../../components/Button";
 import Table, { type Column } from "../../../components/Table";
 import CreateEmployeeDialog from "../components/CreateEmployeeDialog";
+import AssignDialog from "../components/AssignDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import useUsers, { type User } from "../hooks/useUsers";
 
@@ -14,6 +15,8 @@ const TableSection = () => {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | undefined>(undefined);
 
   const allSelected = users.length > 0 && selectedIds.size === users.length;
 
@@ -69,7 +72,6 @@ const TableSection = () => {
     {
       title: "ACTIVE",
       key: "active",
-      // width: "80px",
       render: (value: string) => (
         <Box
           sx={{
@@ -91,9 +93,17 @@ const TableSection = () => {
     {
       title: "",
       key: "assign",
-      // width: "80px",
-      render: () => (
-        <Button square sx={{ height: "20px" }} fontSize="12px" outfit>
+      render: (value: number) => (
+        <Button
+          square
+          sx={{ height: "20px" }}
+          fontSize="12px"
+          outfit
+          onClick={() => {
+            setSelectedEmployeeId(value);
+            setAssignDialogOpen(true);
+          }}
+        >
           ASSIGN
         </Button>
       ),
@@ -117,7 +127,7 @@ const TableSection = () => {
         name: user.name,
         email: user.email,
         active: user.active ? "Yes" : "No",
-        assign: null,
+        assign: user.id,
       })),
     [users, selectedIds],
   );
@@ -159,6 +169,11 @@ const TableSection = () => {
       <CreateEmployeeDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
+      />
+      <AssignDialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        employeeId={selectedEmployeeId}
       />
     </>
   );
