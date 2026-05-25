@@ -66,6 +66,7 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
   const assignments = (data?.data ?? []).map((a) => ({
     state: parseStatusName(a.statusName),
     statusName: a.statusName,
+    statusID: a.statusID,
     location: a.companyID,
     store: a.locationID,
     userID: a.userID,

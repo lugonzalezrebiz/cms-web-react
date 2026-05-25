@@ -6,10 +6,12 @@ import { type stateAssignments, stateColors } from "./stateColors";
 
 export type Assignment = {
   state: stateAssignments;
+  statusID: number;
   location: number;
   store: number;
   date: string;
   comments: number;
+  monitoringID: string;
   items: { activity: string; complement: string }[];
   commentsTex: string[];
 };

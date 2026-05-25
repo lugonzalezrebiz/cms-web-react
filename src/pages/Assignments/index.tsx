@@ -8,14 +8,17 @@ import { usePopover } from "../../components/timeline/hooks/usePopover";
 import DropDownMenu from "../../components/DropDownMenu";
 import type { Assignment } from "./components/InfoAssignment";
 import InfoAssignment from "./components/InfoAssignment";
+import OpenTicketDialog from "./components/OpenTicketDialog";
+import TicketSuccessDialog from "./components/TicketSuccessDialog";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
 
 const activityIcon = "./assets/activity-other-icon.svg";
 
-const dropdownOptions = (onOpen: () => void) => [
-  { label: "See detail information", onClick: onOpen },
+const dropdownOptions = (onOpenTicket: () => void, onSeeDetail: () => void) => [
+  { label: "Open a ticket", onClick: onOpenTicket },
+  { label: "See detail information", onClick: onSeeDetail },
 ];
 
 const Assignments = () => {
@@ -50,6 +53,8 @@ const Assignments = () => {
 
   const cardMenu = usePopover();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [ticketSuccessOpen, setTicketSuccessOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] =
     useState<Assignment | null>(null);
 
@@ -60,6 +65,15 @@ const Assignments = () => {
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+  };
+
+  const handleOpenTicketDialog = () => {
+    setTicketDialogOpen(true);
+    cardMenu.handleClose();
+  };
+
+  const handleCloseTicketDialog = () => {
+    setTicketDialogOpen(false);
   };
 
   return (
@@ -173,7 +187,7 @@ const Assignments = () => {
       <DropDownMenu
         anchorEl={cardMenu.anchorEl}
         open={cardMenu.open}
-        options={dropdownOptions(handleOpenDialog)}
+        options={dropdownOptions(handleOpenTicketDialog, handleOpenDialog)}
         handleClose={cardMenu.handleClose}
       />
 
@@ -181,6 +195,20 @@ const Assignments = () => {
         handleCloseDialog={handleCloseDialog}
         dialogOpen={dialogOpen}
         selectedAssignment={selectedAssignment}
+      />
+
+      {selectedAssignment && (
+        <OpenTicketDialog
+          open={ticketDialogOpen}
+          onClose={handleCloseTicketDialog}
+          onSuccess={() => setTicketSuccessOpen(true)}
+          selectedAssignment={selectedAssignment}
+        />
+      )}
+
+      <TicketSuccessDialog
+        open={ticketSuccessOpen}
+        onClose={() => setTicketSuccessOpen(false)}
       />
     </Box>
   );
