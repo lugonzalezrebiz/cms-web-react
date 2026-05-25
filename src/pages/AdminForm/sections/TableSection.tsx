@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Colors, Fonts } from "../../../theme";
 import { Box, Grid } from "@mui/system";
-import SelectComponent from "../../../components/SelectComponent";
 import Title from "../../../components/Title";
 import TickBox from "../../../components/TickBox";
 import Button from "../../../components/Button";
@@ -9,30 +8,11 @@ import Table, { type Column } from "../../../components/Table";
 import CreateEmployeeDialog from "../components/CreateEmployeeDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import useUsers, { type User } from "../hooks/useUsers";
-import {
-  companiesFilters,
-  storesFilters,
-  agentsFilters,
-  reviewsFilters,
-  workloadFilters,
-  statusFilters,
-} from "../mocks";
-
-const sizeSelect = "119px";
-const padding = "2px 4px";
-const fontSize = "12px";
 
 const TableSection = () => {
-  const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
   const { users, isLoading } = useUsers();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  const [company, setCompany] = useState("all");
-  const [store, setStore] = useState("all");
-  const [agent, setAgent] = useState("all");
-  const [review, setReview] = useState("all");
-  const [workload, setWorkload] = useState("all");
-  const [status, setStatus] = useState("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const allSelected = users.length > 0 && selectedIds.size === users.length;
@@ -54,8 +34,8 @@ const TableSection = () => {
     {
       title: "",
       key: "selected",
-      width: "40px",
-      align: "right",
+      width: "36px",
+      align: "center",
       complement: (
         <TickBox
           label=""
@@ -72,22 +52,22 @@ const TableSection = () => {
       ),
     },
     {
-      title: "User ID",
+      title: "USER ID",
       key: "id",
-      width: "80px",
+      width: "50px",
       align: "left",
     },
     {
-      title: "Username",
+      title: "USERNAME",
       key: "username",
       rowColor: Colors.vividOrange,
       width: "80px",
     },
-    { title: "Rol", key: "role" },
-    { title: "Name", key: "name", rowColor: Colors.vividOrange },
-    { title: "E-mail", key: "email", width: "220px" },
+    { title: "ROL", key: "role" },
+    { title: "NAME", key: "name", rowColor: Colors.vividOrange },
+    { title: "E-MAIL", key: "email", width: "220px" },
     {
-      title: "Active",
+      title: "ACTIVE",
       key: "active",
       // width: "80px",
       render: (value: string) => (
@@ -96,7 +76,7 @@ const TableSection = () => {
             display: "inline-block",
             px: "10px",
             py: "2px",
-            borderRadius: "12px",
+            borderRadius: "6px",
             backgroundColor: value === "Yes" ? Colors.green : Colors.red,
             color: Colors.white,
             fontSize: "12px",
@@ -144,7 +124,7 @@ const TableSection = () => {
 
   return (
     <>
-      <Title title="Users">
+      <Title margin={false} title="Users" marginBottom="0">
         <Grid
           container
           sx={{
@@ -153,61 +133,7 @@ const TableSection = () => {
             gap: "10px",
           }}
         >
-          <TickBox
-            label="Show only Unassigned"
-            checked={showOnlyUnassigned}
-            onChange={(e) => setShowOnlyUnassigned(e.target.checked)}
-          />
-          <SelectComponent
-            filters={companiesFilters}
-            filter={company}
-            setFilter={setCompany}
-            size={sizeSelect}
-            padding={padding}
-            fontSize={fontSize}
-          />
-          <SelectComponent
-            filters={storesFilters}
-            filter={store}
-            setFilter={setStore}
-            size={sizeSelect}
-            padding={padding}
-            fontSize={fontSize}
-          />
-          <SelectComponent
-            filters={agentsFilters}
-            filter={agent}
-            setFilter={setAgent}
-            size={sizeSelect}
-            padding={padding}
-            fontSize={fontSize}
-          />
-          <SelectComponent
-            filters={reviewsFilters}
-            filter={review}
-            setFilter={setReview}
-            size={sizeSelect}
-            padding={padding}
-            fontSize={fontSize}
-          />
-          <SelectComponent
-            filters={workloadFilters}
-            filter={workload}
-            setFilter={setWorkload}
-            size={sizeSelect}
-            padding={padding}
-            fontSize={fontSize}
-          />
-          <SelectComponent
-            filters={statusFilters}
-            filter={status}
-            setFilter={setStatus}
-            size={sizeSelect}
-            padding={padding}
-            fontSize={fontSize}
-          />
           <Button
-            sx={{ ml: "6px" }}
             outfit
             onClick={() => setCreateDialogOpen(true)}
             fontSize="14px"
@@ -219,15 +145,17 @@ const TableSection = () => {
           </Button>
         </Grid>
       </Title>
-      <Table
-        columns={columns}
-        rows={rows}
-        loading={isLoading}
-        mainColumnWidth="50px"
-        mainRowWidth="50px"
-        TableCellWidth="150px"
-        rowWidth="150px"
-      />
+      <Box width={"100%"}>
+        <Table
+          columns={columns}
+          rows={rows}
+          loading={isLoading}
+          mainColumnWidth="50px"
+          mainRowWidth="50px"
+          TableCellWidth="150px"
+          rowWidth="150px"
+        />
+      </Box>
       <CreateEmployeeDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}

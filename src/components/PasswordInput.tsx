@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Box } from "@mui/system";
-import { OutlinedInput, InputAdornment, IconButton } from "@mui/material";
+import {
+  OutlinedInput,
+  InputAdornment,
+  IconButton,
+  FormLabel,
+} from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 
@@ -10,6 +15,7 @@ export interface PasswordValidation {
 }
 
 interface Props {
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   error?: boolean;
@@ -58,6 +64,16 @@ const HintText = styled("p")({
   height: "16px",
 });
 
+const StyledLabel = styled(FormLabel)({
+  fontFamily: Fonts.secondary,
+  fontSize: "14px",
+  fontWeight: 400,
+  color: Colors.charcoalNavy,
+  height: "20px",
+  lineHeight: 1.43,
+  "&.Mui-focused": { color: Colors.lightBlack },
+});
+
 const HintDot = styled(Box)({
   width: "16px",
   height: "16px",
@@ -78,6 +94,7 @@ const ValidationRule = ({ valid, label }: PasswordValidation) => (
 );
 
 const PasswordInput = ({
+  label,
   value,
   onChange,
   error,
@@ -93,10 +110,35 @@ const PasswordInput = ({
     setShowPassword(true);
   };
 
-  const hasExtras = onGenerate || (validations && validations.length > 0);
+  const hasExtras = validations && validations.length > 0;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      {(label || onGenerate) && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          {label && <StyledLabel>{label}</StyledLabel>}
+          {onGenerate && (
+            <Box
+              onClick={handleGenerate}
+              sx={{
+                fontSize: "12px",
+                fontWeight: 500,
+                color: Colors.vividOrange,
+                fontFamily: Fonts.secondary,
+                cursor: "pointer",
+              }}
+            >
+              Generate password
+            </Box>
+          )}
+        </Box>
+      )}
       <Box>
         <StyledInput
           fullWidth={fullWidth}
@@ -130,25 +172,7 @@ const PasswordInput = ({
 
       {hasExtras && (
         <Box sx={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {onGenerate && (
-            <Box
-              onClick={handleGenerate}
-              sx={{
-                alignSelf: "flex-end",
-                height: "20px",
-                fontSize: "12px",
-                fontWeight: 500,
-                color: Colors.vividOrange,
-                fontFamily: Fonts.secondary,
-                cursor: "pointer",
-              }}
-            >
-              Generate password
-            </Box>
-          )}
-          {validations?.map((v) => (
-            <ValidationRule key={v.label} {...v} />
-          ))}
+          {validations?.map((v) => <ValidationRule key={v.label} {...v} />)}
         </Box>
       )}
     </Box>

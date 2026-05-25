@@ -9,7 +9,7 @@ interface Props {
 const radioSx = {
   color: "#d0d5dd",
   "&.Mui-checked": { color: Colors.main },
-  p: "4px",
+  p: "4px 4px 4px 0",
   mr: "4px",
 };
 
@@ -27,7 +27,7 @@ const EmployeeTypeRadioGroup = ({ value, onChange }: Props) => (
     row
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    sx={{ gap: "16px" }}
+    sx={{ gap: "16px", ml: "-1px" }}
   >
     <FormControlLabel
       value="monitoring_agent"

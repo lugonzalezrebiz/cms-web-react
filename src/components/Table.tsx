@@ -56,11 +56,11 @@ const MainColumn = styled(TableCell, {
   shouldForwardProp: (prop) => prop !== "mainColumnWidth",
 })<{ mainColumnWidth?: string }>(({ mainColumnWidth }) => ({
   fontFamily: Fonts.main,
-  fontSize: "18px",
+  fontSize: "12px",
   fontWeight: 600,
   color: Colors.dimGray,
   height: "26px",
-  padding: "0 10px",
+  padding: "0 0px",
   border: "none",
   borderBottom: `1px solid ${Colors.paleGray}`,
   minWidth: mainColumnWidth ? mainColumnWidth : "200px",
@@ -71,7 +71,7 @@ const TableCellStyled = styled(TableCell, {
   shouldForwardProp: (prop) => prop !== "TableCellWidth",
 })<{ TableCellWidth?: string }>(({ TableCellWidth }) => ({
   fontFamily: Fonts.main,
-  fontSize: "18px",
+  fontSize: "12px",
   fontWeight: 600,
   color: Colors.dimGray,
   height: "26px",
@@ -98,6 +98,7 @@ const Rows = styled(TableCell)<{
   userSelect: "none",
   minWidth: rowWidth ? rowWidth : "90px",
   maxWidth: rowWidth ? rowWidth : "90px",
+  "tr:last-child &": { borderBottom: "none" },
 }));
 
 const ProgressBarRows = styled(TableCell)<{
@@ -115,6 +116,7 @@ const ProgressBarRows = styled(TableCell)<{
   userSelect: "none",
   maxWidth: "180px",
   minWidth: "180px",
+  "tr:last-child &": { borderBottom: "none" },
 }));
 
 const MainRow = styled(TableCell)<{
@@ -128,13 +130,15 @@ const MainRow = styled(TableCell)<{
   fontWeight: isClickable ? 500 : 400,
   color: rowColor ?? (isClickable ? Colors.main : Colors.lightBlack),
   textAlign: rowAlign ?? "left",
-  padding: "5px 8px",
+  //padding: "5px 8px",
+  padding: "5px 0px",
   border: "none",
   borderBottom: `1px solid ${Colors.paleGray}`,
   cursor: isClickable ? "pointer" : "default",
   userSelect: "none",
   minWidth: mainRowWidth ? mainRowWidth : "100px",
   maxWidth: mainRowWidth ? mainRowWidth : "100px",
+  "tr:last-child &": { borderBottom: "none" },
 }));
 
 const TableCellSubTitle = styled("span")({
@@ -225,9 +229,13 @@ const Table = ({
   rowWidth,
 }: Props) => {
   return (
-    <Box margin="0 14px 0 8px">
-      <TableContainer component={Paper} elevation={0}>
-        <TableMui stickyHeader>
+    <Box margin="0 0px 0 0px" width={"100%"}>
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{ borderRadius: "8px", width: "100%" }}
+      >
+        <TableMui stickyHeader sx={{ width: "100%" }}>
           <TableHead>
             {groups && (
               <TableRow>
@@ -315,7 +323,9 @@ const Table = ({
                   <CellComponent
                     key={index}
                     sx={{
-                      ...(!groups && { "&.MuiTableCell-stickyHeader": { paddingTop: "16px" } }),
+                      ...(!groups && {
+                        "&.MuiTableCell-stickyHeader": { paddingTop: "16px" },
+                      }),
                       backgroundColor: group?.backgroundColor || Colors.white,
                       borderTopLeftRadius:
                         group && group.columns[0] === col.key ? "8px" : 0,

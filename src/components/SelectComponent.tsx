@@ -10,9 +10,7 @@ interface Props {
   setFilter: (value: string) => void;
   size?: string;
   sizePaper?: string;
-  borderRadius?: string;
-  padding?: string;
-  fontSize?: string;
+  font?: "main" | "secondary";
 }
 
 const SelectComponent = ({
@@ -21,14 +19,14 @@ const SelectComponent = ({
   setFilter,
   size,
   sizePaper,
-  borderRadius,
-  padding,
-  fontSize,
+  font = "main",
 }: Props) => {
+  const fontFamily = Fonts[font];
   return (
     <FormControl
       sx={{
         width: size ? size : "220px",
+        marginBottom: "10px",
       }}
     >
       <Select
@@ -76,22 +74,21 @@ const SelectComponent = ({
         }}
         sx={{
           width: "100%",
-          height: "36px",
-          borderRadius: borderRadius ? borderRadius : "4px",
+          height: "38px",
+          borderRadius: "4px",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",
-          p: padding ? padding : "auto",
 
           "& .MuiSelect-select": {
             display: "flex",
             alignItems: "center",
-            padding: "0px",
+            padding: "16px",
           },
 
           alignSelf: "stretch",
-          fontFamily: Fonts.main,
-          fontSize: fontSize ? fontSize : "16px",
+          fontFamily,
+          fontSize: "16px",
           fontWeight: "normal",
           lineHeight: "24px",
           color: Colors.dimGray,
@@ -124,7 +121,7 @@ const SelectComponent = ({
             key={f.value}
             value={f.value}
             sx={{
-              fontFamily: Fonts.main,
+              fontFamily,
               fontSize: "16px",
               fontWeight: 400,
               color: Colors.dimGray,

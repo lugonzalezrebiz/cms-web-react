@@ -137,8 +137,8 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
       </Box>
 
       <Box>
-        <Label>Password</Label>
         <PasswordInput
+          label="Password"
           value={password}
           onChange={(value) => setField("password", value)}
           error={!!errors.password}
@@ -171,10 +171,17 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
           </span>
         )}
         <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-          <Button color="secondary" onClick={handleClose}>
+          <Button
+            fontSize="14px"
+            sx={{ height: "36px" }}
+            color="secondary"
+            onClick={handleClose}
+          >
             Cancel
           </Button>
           <Button
+            fontSize="14px"
+            sx={{ height: "36px" }}
             color="primary"
             onClick={handleCreate}
             outfit
