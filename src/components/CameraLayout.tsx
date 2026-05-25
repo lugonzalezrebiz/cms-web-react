@@ -173,7 +173,7 @@ export const CameraItem = ({
             borderRadius: "4px",
             bgcolor: Colors.semiTransparentBlackTwo,
             flexDirection: "column",
-            width: "80px",
+            width: "90px",
           }}
         >
           {[`Camera ${cameraId ?? index + 1}`, cameraName].map((label) => (
