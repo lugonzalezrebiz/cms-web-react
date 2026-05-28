@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { Box, Grid } from "@mui/system";
 import { HeaderCard } from "../../components/DashboardCards";
 import TableSection from "./sections/TableSection";
 import { CustomScrollbarY } from "../../components/CustomScrollbar";
 import { cards } from "./mocks";
+import TicketsDrawer from "./components/TicketsDrawer";
 
 const activityIcon = "./assets/activity-other-icon.svg";
 
 const AdminForm = () => {
+  const [ticketsOpen, setTicketsOpen] = useState(false);
+
   return (
     <CustomScrollbarY thumbLength={15} bottom={2} height="100%">
       <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -17,12 +21,18 @@ const AdminForm = () => {
                 title={card.title}
                 current={card.current}
                 image={activityIcon}
+                onClick={
+                  card.title === "Tickets"
+                    ? () => setTicketsOpen(true)
+                    : undefined
+                }
               />
             </Grid>
           ))}
         </Grid>
         <TableSection />
       </Box>
+      <TicketsDrawer open={ticketsOpen} onClose={() => setTicketsOpen(false)} />
     </CustomScrollbarY>
   );
 };

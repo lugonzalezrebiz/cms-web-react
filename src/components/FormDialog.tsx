@@ -3,14 +3,25 @@ import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import Dialog from "./Dialog";
+import type { stateAssignments } from "./stateColors";
+import { AssignmentHeader } from "./StateBadge";
+
+interface AssignmentInfo {
+  location: number;
+  store: number;
+  date: string;
+  state: stateAssignments;
+}
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   children: ReactNode;
   maxWidth?: string;
   gap?: string | number;
+  padding?: string;
+  assignment?: AssignmentInfo;
 }
 
 const Title = styled("p")({
@@ -23,9 +34,18 @@ const Title = styled("p")({
   lineHeight: 1.5,
 });
 
-const FormDialog = ({ open, onClose, title, children, maxWidth = "400px", gap = "16px" }: Props) => {
+const FormDialog = ({
+  open,
+  onClose,
+  title,
+  children,
+  maxWidth = "400px",
+  gap = "16px",
+  padding = "16px",
+  assignment,
+}: Props) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth={maxWidth} padding="16px">
+    <Dialog open={open} onClose={onClose} maxWidth={maxWidth} padding={padding}>
       <form>
         <Box sx={{ display: "flex", flexDirection: "column", gap }}>
           <Box
@@ -35,7 +55,10 @@ const FormDialog = ({ open, onClose, title, children, maxWidth = "400px", gap = 
               alignItems: "center",
             }}
           >
-            <Title>{title}</Title>
+            <Box>
+              {assignment && <AssignmentHeader {...assignment} />}
+              {title && <Title>{title}</Title>}
+            </Box>
             <Box
               sx={{
                 position: "absolute",

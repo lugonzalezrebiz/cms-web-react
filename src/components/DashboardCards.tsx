@@ -56,9 +56,10 @@ interface HeaderCardProps {
   title: string;
   image: string;
   current: number;
+  onClick?: () => void;
 }
 
-export const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
+export const HeaderCard = ({ title, current = 0, image, onClick }: HeaderCardProps) => {
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
   }, [current]);
 
   return (
-    <Card>
+    <Card onClick={onClick} sx={{ cursor: onClick ? "pointer" : "default" }}>
       <CardContainer>
         <CardTitleContainer sx={{ height: "24px" }}>
           <CardTitle>{title || "No data available"}</CardTitle>

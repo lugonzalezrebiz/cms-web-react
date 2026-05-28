@@ -137,8 +137,8 @@ const TableSection = () => {
   );
 
   return (
-    <>
-      <Title margin={false} title="Users" marginBottom="0">
+    <Box sx={{ overflow: "hidden" }}>
+      <Title margin={false} title="Users" marginBottom="16px">
         <Grid
           container
           sx={{
@@ -164,6 +164,7 @@ const TableSection = () => {
         height="580px"
         sx={{ width: "100%", bgcolor: Colors.white, borderRadius: "8px" }}
         bottom={0}
+        top={45}
         thumbLength={15}
         scrollX
         xThumbLength={15}
@@ -189,7 +190,7 @@ const TableSection = () => {
         onClose={() => setAssignDialogOpen(false)}
         employeeId={selectedEmployeeId}
       />
-    </>
+    </Box>
   );
 };
 
