@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Colors, Fonts } from "../../../theme";
 import { Box, Grid } from "@mui/system";
 import Title from "../../../components/Title";
 import TickBox from "../../../components/TickBox";
 import Button from "../../../components/Button";
 import Table, { type Column } from "../../../components/Table";
+import { CustomScrollbarY } from "../../../components/CustomScrollbar";
 import CreateEmployeeDialog from "../components/CreateEmployeeDialog";
 import AssignDialog from "../components/AssignDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
@@ -12,11 +13,14 @@ import useUsers, { type User } from "../hooks/useUsers";
 
 const TableSection = () => {
   const { users, isLoading } = useUsers();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | undefined>(undefined);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<
+    number | undefined
+  >(undefined);
 
   const allSelected = users.length > 0 && selectedIds.size === users.length;
 
@@ -155,7 +159,15 @@ const TableSection = () => {
           </Button>
         </Grid>
       </Title>
-      <Box width={"100%"}>
+      <CustomScrollbarY
+        ref={scrollContainerRef}
+        height="580px"
+        sx={{ width: "100%", bgcolor: Colors.white, borderRadius: "8px" }}
+        bottom={0}
+        thumbLength={15}
+        scrollX
+        xThumbLength={15}
+      >
         <Table
           columns={columns}
           rows={rows}
@@ -164,8 +176,10 @@ const TableSection = () => {
           mainRowWidth="50px"
           TableCellWidth="150px"
           rowWidth="150px"
+          scrollContainerRef={scrollContainerRef}
+          disableOverflow
         />
-      </Box>
+      </CustomScrollbarY>
       <CreateEmployeeDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}

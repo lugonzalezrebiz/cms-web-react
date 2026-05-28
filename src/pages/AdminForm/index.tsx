@@ -1,14 +1,14 @@
 import { Box, Grid } from "@mui/system";
 import { HeaderCard } from "../../components/DashboardCards";
 import TableSection from "./sections/TableSection";
-import CustomScrollbar from "../../components/CustomScrollbar";
+import { CustomScrollbarY } from "../../components/CustomScrollbar";
 import { cards } from "./mocks";
 
 const activityIcon = "./assets/activity-other-icon.svg";
 
 const AdminForm = () => {
   return (
-    <CustomScrollbar thumbLength={15} bottom={2} height="100%">
+    <CustomScrollbarY thumbLength={15} bottom={2} height="100%">
       <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
         <Grid container spacing={2}>
           {cards.map((card) => (
@@ -23,7 +23,7 @@ const AdminForm = () => {
         </Grid>
         <TableSection />
       </Box>
-    </CustomScrollbar>
+    </CustomScrollbarY>
   );
 };
 

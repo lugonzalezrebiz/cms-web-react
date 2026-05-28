@@ -8,6 +8,7 @@ import {
   Paper,
   Box,
 } from "@mui/material";
+import type { RefObject } from "react";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import ProgressBar from "./ProgressBar";
@@ -28,6 +29,8 @@ interface Props {
   mainRowWidth?: string; // Width of the main row (first column)
   mainColumnWidth?: string; // Width of the main column (first column header)
   rowWidth?: string; // Width of the rows (used for non-main columns)
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
+  disableOverflow?: boolean;
 }
 
 export interface Group {
@@ -53,7 +56,8 @@ export interface Column {
 }
 
 const MainColumn = styled(TableCell, {
-  shouldForwardProp: (prop) => prop !== "mainColumnWidth",
+  shouldForwardProp: (prop) =>
+    prop !== "mainColumnWidth" && prop !== "TableCellWidth",
 })<{ mainColumnWidth?: string }>(({ mainColumnWidth }) => ({
   fontFamily: Fonts.main,
   fontSize: "12px",
@@ -68,7 +72,8 @@ const MainColumn = styled(TableCell, {
 }));
 
 const TableCellStyled = styled(TableCell, {
-  shouldForwardProp: (prop) => prop !== "TableCellWidth",
+  shouldForwardProp: (prop) =>
+    prop !== "TableCellWidth" && prop !== "mainColumnWidth",
 })<{ TableCellWidth?: string }>(({ TableCellWidth }) => ({
   fontFamily: Fonts.main,
   fontSize: "12px",
@@ -82,7 +87,10 @@ const TableCellStyled = styled(TableCell, {
   maxWidth: TableCellWidth ? TableCellWidth : "100px",
 }));
 
-const Rows = styled(TableCell)<{
+const Rows = styled(TableCell, {
+  shouldForwardProp: (prop) =>
+    prop !== "rowWidth" && prop !== "rowColor" && prop !== "rowAlign",
+})<{
   rowWidth?: string;
   rowColor?: string;
   rowAlign?: "center" | "left" | "right";
@@ -101,7 +109,9 @@ const Rows = styled(TableCell)<{
   "tr:last-child &": { borderBottom: "none" },
 }));
 
-const ProgressBarRows = styled(TableCell)<{
+const ProgressBarRows = styled(TableCell, {
+  shouldForwardProp: (prop) => prop !== "rowColor" && prop !== "rowAlign",
+})<{
   rowColor?: string;
   rowAlign?: "center" | "left" | "right";
 }>(({ rowColor, rowAlign }) => ({
@@ -119,7 +129,13 @@ const ProgressBarRows = styled(TableCell)<{
   "tr:last-child &": { borderBottom: "none" },
 }));
 
-const MainRow = styled(TableCell)<{
+const MainRow = styled(TableCell, {
+  shouldForwardProp: (prop) =>
+    prop !== "isClickable" &&
+    prop !== "mainRowWidth" &&
+    prop !== "rowColor" &&
+    prop !== "rowAlign",
+})<{
   isClickable?: boolean;
   mainRowWidth?: string;
   rowColor?: string;
@@ -227,15 +243,21 @@ const Table = ({
   mainRowWidth,
   mainColumnWidth,
   rowWidth,
+  scrollContainerRef,
+  disableOverflow,
 }: Props) => {
   return (
-    <Box margin="0 0px 0 0px" width={"100%"}>
+    <Box margin="0 0px 0 0px" width={"100%"} borderRadius="8px">
       <TableContainer
         component={Paper}
         elevation={0}
-        sx={{ borderRadius: "8px", width: "100%" }}
+        sx={{
+          width: "100%",
+
+          ...(disableOverflow && { overflow: "visible" }),
+        }}
       >
-        <TableMui stickyHeader sx={{ width: "100%" }}>
+        <TableMui stickyHeader sx={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
           <TableHead>
             {groups && (
               <TableRow>
@@ -360,6 +382,7 @@ const Table = ({
               loadMore={loadMore}
               loading={loading}
               skeleton={<TableSkeleton columnCount={columns.length} />}
+              scrollContainerRef={scrollContainerRef}
             >
               {rows.map((row, rowIndex) => (
                 <TableRow key={rowIndex}>

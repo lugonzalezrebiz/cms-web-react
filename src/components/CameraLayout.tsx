@@ -11,7 +11,7 @@ import CameraOverlayMenu, {
   type CameraContextMenuItem,
 } from "./CameraOverlayMenu";
 import { usePopover } from "../hooks/usePopover";
-import CustomScrollbar from "./CustomScrollbar";
+import { CustomScrollbarY } from "./CustomScrollbar";
 
 export const TAG_TOLERANCE_SEC = 300;
 
@@ -648,10 +648,10 @@ const CameraLayout = ({
 
   if (scrollable) {
     return (
-      <CustomScrollbar
+      <CustomScrollbarY
         height={totalHeight}
         sx={{ width: "100%", m: "auto" }}
-        thumbLength={14}
+        thumbLength={15}
         contentSx={{
           display: "flex",
           flexDirection: "column",
@@ -669,7 +669,7 @@ const CameraLayout = ({
             {...sharedProps}
           />
         ))}
-      </CustomScrollbar>
+      </CustomScrollbarY>
     );
   }
 

@@ -3,7 +3,7 @@ export const cards = [
   { title: "Paused Assignments", current: 1 },
   { title: "Rejected Assignments", current: 1 },
   { title: "Open Tickets", current: 1 },
-  { title: "Unassigned", current: 9 },
+  { title: "unassigned", current: 9 },
 ];
 
 export const companiesFilters = [
