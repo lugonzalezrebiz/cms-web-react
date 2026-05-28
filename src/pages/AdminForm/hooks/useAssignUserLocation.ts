@@ -15,6 +15,7 @@ type FieldErrors = Partial<Record<keyof FormFields, string>>;
 interface AssignVariables {
   employeeId: number;
   storeId: string;
+  companyId: string;
 }
 
 const getErrorMessage = (error: unknown): string => {
@@ -43,13 +44,13 @@ const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
     schema.safeParse({ company, store }).success;
 
   const mutation = useMutation<unknown, Error, AssignVariables>({
-    mutationFn: ({ employeeId, storeId }) =>
-      post(`user-location/${storeId}/${employeeId}`),
+    mutationFn: ({ employeeId, companyId, storeId}) =>
+      post(`user-location/${companyId}/${employeeId}`, {locations: [storeId]}),
     onSuccess: options?.onSuccess,
   });
 
-  const assign = (employeeId: number, company: string, storeId: string) => {
-    const result = schema.safeParse({ company, store: storeId });
+  const assign = (employeeId: number, companyId: string, storeId: string) => {
+    const result = schema.safeParse({ company: companyId, store: storeId });
     if (!result.success) {
       const errors: FieldErrors = {};
       for (const issue of result.error.issues) {
@@ -59,7 +60,7 @@ const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
       setFieldErrors(errors);
       return;
     }
-    mutation.mutate({ employeeId, storeId });
+    mutation.mutate({ employeeId, storeId, companyId });
   };
 
   const reset = useCallback(() => setFieldErrors({}), []);
