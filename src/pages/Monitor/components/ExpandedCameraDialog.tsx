@@ -59,7 +59,7 @@ export const ExpandedCameraDialog = ({
           <Title
             smallText
             marginBottom="20px"
-            title={`Camera ${cameraId ?? Number(cameraIndex) + 1}`}
+            title={`Camera ${cameraId ?? Number(cameraIndex) + 1} (${cameraName})`}
           >
             <Box sx={{ cursor: "pointer", marginRight: "16px" }}>
               <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
@@ -99,7 +99,7 @@ export const ExpandedCameraDialog = ({
                   textOverflow: "ellipsis",
                   //justifyContent: "left",
                 }}
-                onClick={() => item.onClick(cameraIndex)}
+                onClick={() => item.onClick(cameraId ?? 0)}
               >
                 {item.name}
               </Button>

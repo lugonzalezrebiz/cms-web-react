@@ -5,14 +5,14 @@ import type { CameraContextMenuItem } from "../../../components/CameraOverlayMen
 export const useCameraMenuItems = (
   company: number,
   location: number,
-  openMenuCamera: number | null,
-  handleActivitySelect: (cameraIndex: number, activityLabel: string, mode: "POINT" | "RANGE") => void,
+  cameraId: number | null,
+  handleActivitySelect: (cameraId: number, activityLabel: string, mode: "POINT" | "RANGE") => void,
 ): CameraContextMenuItem[] => {
   const fetchedTrackers = useTrackersByCamera(
     company,
     location,
-    (openMenuCamera ?? 0) + 1,
-    openMenuCamera !== null,
+    cameraId ?? 0,
+    cameraId !== null,
   );
 
   return useMemo<CameraContextMenuItem[]>(

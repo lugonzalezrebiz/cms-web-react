@@ -72,7 +72,7 @@ export interface TimelineBodyProps {
   selectedTab?: string;
   cameraActivities?: {
     id: number;
-    cameraIndex: number;
+    cameraId: number;
     activityLabel: string;
   }[];
   cameraEventPoints?: CameraEventPoint[];

@@ -71,13 +71,13 @@ const Monitor = () => {
   const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
-    openMenuCamera,
+    openMenuCamera !== null ? (sortedCameras[openMenuCamera]?.id ?? null) : null,
     handleActivitySelect,
   );
   const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
     location,
-    expandedCamera,
+    expandedCamera !== null ? (sortedCameras[expandedCamera]?.id ?? null) : null,
     handleActivitySelect,
   );
 

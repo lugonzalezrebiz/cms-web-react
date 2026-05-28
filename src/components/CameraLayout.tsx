@@ -328,7 +328,7 @@ export const CameraItem = ({
           open={showMenu}
           onClose={closeMenu}
           items={contextMenuItems}
-          cameraIndex={index}
+          cameraId={cameraId ?? 0}
           title="Select a Compliance Violations"
         />
       )}
@@ -600,7 +600,7 @@ const CameraLayout = ({
     return cameraEventPoints
       .filter((ep) => {
         if (
-          ep.cameraId !== (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1)
+          ep.cameraId !== sortedCameras?.[cameraIndex]?.id
         )
           return false;
         const epStart = Math.min(ep.startSec, ep.timeSec);
