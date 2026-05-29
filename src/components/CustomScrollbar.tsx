@@ -65,7 +65,10 @@ export const CustomScrollbarY = forwardRef<
       const thumb = thumbRef.current;
       if (track && thumb) {
         const trackH = track.clientHeight - thumbLength;
-        const ratio = scrollable > 0 ? Math.min(1, Math.max(0, el.scrollTop / scrollable)) : 0;
+        const ratio =
+          scrollable > 0
+            ? Math.min(1, Math.max(0, el.scrollTop / scrollable))
+            : 0;
         thumb.style.top = `${ratio * trackH}px`;
       }
     }, [thumbLength]);
@@ -80,7 +83,10 @@ export const CustomScrollbarY = forwardRef<
       const thumb = xThumbRef.current;
       if (track && thumb) {
         const trackW = track.clientWidth - xThumbLength;
-        const ratio = scrollable > 0 ? Math.min(1, Math.max(0, el.scrollLeft / scrollable)) : 0;
+        const ratio =
+          scrollable > 0
+            ? Math.min(1, Math.max(0, el.scrollLeft / scrollable))
+            : 0;
         thumb.style.left = `${ratio * trackW}px`;
       }
     }, [scrollX, xThumbLength]);
@@ -186,7 +192,6 @@ export const CustomScrollbarY = forwardRef<
               width: 10,
               background: Colors.blushWhite,
               borderRadius: "8px",
-              zIndex: 2000,
               border: `1px solid ${Colors.charcoalNavy}`,
               overflow: "hidden",
             }}
@@ -229,7 +234,6 @@ export const CustomScrollbarY = forwardRef<
               height: 10,
               background: Colors.blushWhite,
               borderRadius: "8px",
-              zIndex: 2000,
               border: `1px solid ${Colors.charcoalNavy}`,
               overflow: "hidden",
             }}
