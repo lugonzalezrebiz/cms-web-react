@@ -64,9 +64,9 @@ export const CustomScrollbarY = forwardRef<
       const track = trackRef.current;
       const thumb = thumbRef.current;
       if (track && thumb) {
-        const inset = 0;
-        const trackH = track.offsetHeight - thumbLength - inset * 2;
-        thumb.style.top = `${inset + (scrollable > 0 ? (el.scrollTop / scrollable) * trackH : 0)}px`;
+        const trackH = track.clientHeight - thumbLength;
+        const ratio = scrollable > 0 ? Math.min(1, Math.max(0, el.scrollTop / scrollable)) : 0;
+        thumb.style.top = `${ratio * trackH}px`;
       }
     }, [thumbLength]);
 
@@ -79,9 +79,9 @@ export const CustomScrollbarY = forwardRef<
       const track = xTrackRef.current;
       const thumb = xThumbRef.current;
       if (track && thumb) {
-        const inset = 4;
-        const trackW = track.offsetWidth - xThumbLength - inset * 2;
-        thumb.style.left = `${inset + (scrollable > 0 ? (el.scrollLeft / scrollable) * trackW : 0)}px`;
+        const trackW = track.clientWidth - xThumbLength;
+        const ratio = scrollable > 0 ? Math.min(1, Math.max(0, el.scrollLeft / scrollable)) : 0;
+        thumb.style.left = `${ratio * trackW}px`;
       }
     }, [scrollX, xThumbLength]);
 
@@ -186,7 +186,9 @@ export const CustomScrollbarY = forwardRef<
               width: 10,
               background: Colors.blushWhite,
               borderRadius: "8px",
+              zIndex: 2000,
               border: `1px solid ${Colors.charcoalNavy}`,
+              overflow: "hidden",
             }}
           >
             <Box
@@ -227,7 +229,9 @@ export const CustomScrollbarY = forwardRef<
               height: 10,
               background: Colors.blushWhite,
               borderRadius: "8px",
+              zIndex: 2000,
               border: `1px solid ${Colors.charcoalNavy}`,
+              overflow: "hidden",
             }}
           >
             <Box
