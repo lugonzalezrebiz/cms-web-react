@@ -69,12 +69,15 @@ const OpenTicketDialog = ({
   const [file, setFile] = useState<File | null>(null);
   const [issueTypeTouched, setIssueTypeTouched] = useState(false);
   const [descriptionTouched, setDescriptionTouched] = useState(false);
+  const [fileTouched, setFileTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { issueTypeError, descriptionError, isValid } = useTicketValidation({
-    issueType,
-    description,
-  });
+  const { issueTypeError, descriptionError, fileError, isValid } =
+    useTicketValidation({
+      issueType,
+      description,
+      file,
+    });
 
   const handleClose = () => {
     setIssueType("");
@@ -82,12 +85,14 @@ const OpenTicketDialog = ({
     setFile(null);
     setIssueTypeTouched(false);
     setDescriptionTouched(false);
+    setFileTouched(false);
     clearError();
     onClose();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFile(e.target.files?.[0] ?? null);
+    setFileTouched(true);
   };
 
   const handleSubmit = async () => {
@@ -120,6 +125,7 @@ const OpenTicketDialog = ({
 
   const showIssueTypeError = issueTypeTouched && !!issueTypeError;
   const showDescriptionError = descriptionTouched && !!descriptionError;
+  const showFileError = fileTouched && !!fileError;
 
   return (
     <FormDialog
@@ -159,7 +165,6 @@ const OpenTicketDialog = ({
           <StyledTextarea
             minRows={4}
             maxRows={8}
-            placeholder="Select Option"
             value={description}
             onChange={handleDescriptionChange}
             hasError={showDescriptionError}
@@ -168,7 +173,7 @@ const OpenTicketDialog = ({
         </Box>
 
         <Box>
-          <FieldLabel>Attache files if needed</FieldLabel>
+          <FieldLabel>Attach a file</FieldLabel>
           <input
             ref={fileInputRef}
             type="file"
@@ -198,6 +203,7 @@ const OpenTicketDialog = ({
               </span>
             )}
           </Box>
+          {showFileError && <ErrorText>{fileError}</ErrorText>}
         </Box>
       </Box>
 
@@ -210,7 +216,9 @@ const OpenTicketDialog = ({
         }}
       >
         {submitError && (
-          <ErrorText style={{ margin: 0 }}>{submitError}</ErrorText>
+          <ErrorText style={{ textAlign: "left", width: "100%" }}>
+            {submitError}
+          </ErrorText>
         )}
         <Box sx={{ display: "flex", gap: "10px" }}>
           <Button
