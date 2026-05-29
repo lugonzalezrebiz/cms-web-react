@@ -1,14 +1,13 @@
 import { useRef, useMemo, useState } from "react";
-import { Drawer } from "@mui/material";
 import { Box } from "@mui/system";
 import { Colors } from "../../../theme";
-import Title from "../../../components/Title";
 import Table, { type Column } from "../../../components/Table";
 import Button from "../../../components/Button";
 import { CustomScrollbarY } from "../../../components/CustomScrollbar";
 import TicketDetailDialog from "./TicketDetailDialog";
 import { formatTicketDate } from "../utils/formatTicketDate";
 import type { stateAssignments } from "../../../components/stateColors";
+import Drawer from "../../../components/Drawer";
 
 interface Ticket {
   id: number;
@@ -110,6 +109,7 @@ const TicketsDrawer = ({
       title: "",
       key: "action",
       width: "140px",
+      align: "right",
       render: (ticketId: number) => (
         <Button
           square
@@ -145,32 +145,8 @@ const TicketsDrawer = ({
 
   return (
     <>
-      <Drawer
-        anchor="right"
-        open={open}
-        onClose={onClose}
-        slotProps={{
-          paper: {
-            sx: {
-              width: "661px",
-              bgcolor: Colors.white,
-              padding: "16px",
-            },
-          },
-        }}
-      >
+      <Drawer open={open} onClose={onClose} title="Tickets">
         <Box height={"91%"}>
-          <Box
-            position={"absolute"}
-            top={20}
-            right={20}
-            onClick={onClose}
-            sx={{ cursor: "pointer" }}
-          >
-            <img src="./assets/x-close.svg" alt="" />
-          </Box>
-          <Title marginBottom="0" title="Tickets" />
-
           <CustomScrollbarY
             ref={scrollContainerRef}
             height="100%"
