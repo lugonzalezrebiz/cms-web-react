@@ -185,12 +185,12 @@ export const CameraItem = ({
                 el.title = el.scrollWidth > el.clientWidth ? (label ?? "") : "";
               }}
               sx={{
-                padding: "2px 0px 2px 4px",
+                padding: "0px 0px 0px 4px",
                 color: Colors.white,
                 borderRadius: 0.5,
                 fontSize: 12,
                 fontFamily: Fonts.main,
-                lineHeight: 1.5,
+                lineHeight: 1.3,
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -599,10 +599,7 @@ const CameraLayout = ({
     const seen = new Set<string>();
     return cameraEventPoints
       .filter((ep) => {
-        if (
-          ep.cameraId !== sortedCameras?.[cameraIndex]?.id
-        )
-          return false;
+        if (ep.cameraId !== sortedCameras?.[cameraIndex]?.id) return false;
         const epStart = Math.min(ep.startSec, ep.timeSec);
         const hasRange = ep.endSec > epStart;
         const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;

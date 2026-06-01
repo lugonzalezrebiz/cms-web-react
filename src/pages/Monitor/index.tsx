@@ -2,7 +2,7 @@ import { Box } from "@mui/system";
 import { useState, useMemo } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout from "../../components/CameraLayout";
+import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
@@ -43,10 +43,6 @@ const Monitor = () => {
     groupID,
     trackerID,
   );
-  const sortedCameras = useMemo(
-    () => [...cameras].sort((a, b) => a.id - b.id),
-    [cameras],
-  );
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
 
@@ -67,6 +63,45 @@ const Monitor = () => {
     canRedo,
     cleanUp,
   } = useCameraEventPoints(monitoringID);
+
+  const {
+    snapshot,
+    eventPoints: preloadedEventPoints,
+    rangeSessions,
+    cameras: monitoringCameras,
+    loading: isMonitoringLoading,
+  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
+  const allEventPoints = useMemo(
+    () => [...cameraEventPoints, ...preloadedEventPoints],
+    [cameraEventPoints, preloadedEventPoints],
+  );
+
+  const filteredEventPoints = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return allEventPoints;
+    const tracker = trackers.find((t) => t.id === Number(trackerOption));
+    if (!tracker) return allEventPoints;
+    return allEventPoints.filter((ep) => ep.label === tracker.name);
+  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
+
+  const activeCameras = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return cameras;
+    // When a tracker is selected, source cameras from the monitoring data (load2)
+    // which guarantees camera IDs match those in the event points.
+    return monitoringCameras.filter((camera) =>
+      filteredEventPoints.some((ep) => {
+        if (ep.cameraId !== camera.id) return false;
+        const epStart = Math.min(ep.startSec, ep.timeSec);
+        const hasRange = ep.endSec > epStart;
+        const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
+        return markerSec >= epStart && markerSec <= epEnd;
+      }),
+    );
+  }, [cameras, monitoringCameras, filteredEventPoints, markerSec, isTrackerTab, trackerOption]);
+
+  const sortedCameras = useMemo(
+    () => [...activeCameras].sort((a, b) => a.id - b.id),
+    [activeCameras],
+  );
 
   const allCameraMenuItems = useCameraMenuItems(
     company,
@@ -97,24 +132,6 @@ const Monitor = () => {
     () => trackerMenuFilter(allExpandedCameraMenuItems),
     [trackerMenuFilter, allExpandedCameraMenuItems],
   );
-
-  const {
-    snapshot,
-    eventPoints: preloadedEventPoints,
-    rangeSessions,
-    loading: isMonitoringLoading,
-  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-  const allEventPoints = useMemo(
-    () => [...cameraEventPoints, ...preloadedEventPoints],
-    [cameraEventPoints, preloadedEventPoints],
-  );
-
-  const filteredEventPoints = useMemo(() => {
-    if (!isTrackerTab || !trackerOption) return allEventPoints;
-    const tracker = trackers.find((t) => t.id === Number(trackerOption));
-    if (!tracker) return allEventPoints;
-    return allEventPoints.filter((ep) => ep.label === tracker.name);
-  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
 
   const { handleDeleteEventPoint, handleConvertEventPoint } =
     useDeleteEventPoint(
@@ -251,7 +268,7 @@ const Monitor = () => {
     >
       <Box sx={{ flex: 9, minHeight: 0, height: 0 }}>
         <CameraLayout
-          count={cameras.length}
+          count={activeCameras.length}
           media="/assets/camera/Cam thumbnail.svg"
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
@@ -259,7 +276,7 @@ const Monitor = () => {
           cameraEventPoints={filteredEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleDeleteEventPoint}
-          cameras={cameras}
+          cameras={activeCameras}
           company={company}
           location={location}
           date={date}
