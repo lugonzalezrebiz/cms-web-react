@@ -600,10 +600,9 @@ const CameraLayout = ({
     return cameraEventPoints
       .filter((ep) => {
         if (ep.cameraId !== sortedCameras?.[cameraIndex]?.id) return false;
-        const epStart = Math.min(ep.startSec, ep.timeSec);
-        const hasRange = ep.endSec > epStart;
-        const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
-        return markerSec >= epStart && markerSec <= epEnd;
+        const hasRange = ep.endSec > ep.startSec;
+        if (hasRange) return markerSec >= ep.startSec && markerSec <= ep.endSec;
+        return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
       })
       .sort(
         (a, b) =>

@@ -2,7 +2,7 @@ import { Box } from "@mui/system";
 import { useState, useMemo } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
+import CameraLayout from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
@@ -85,18 +85,23 @@ const Monitor = () => {
 
   const activeCameras = useMemo(() => {
     if (!isTrackerTab || !trackerOption) return cameras;
-    // When a tracker is selected, source cameras from the monitoring data (load2)
-    // which guarantees camera IDs match those in the event points.
+    // Source cameras from monitoring data so IDs match event points from load2.
     return monitoringCameras.filter((camera) =>
       filteredEventPoints.some((ep) => {
         if (ep.cameraId !== camera.id) return false;
-        const epStart = Math.min(ep.startSec, ep.timeSec);
-        const hasRange = ep.endSec > epStart;
-        const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
-        return markerSec >= epStart && markerSec <= epEnd;
+        const hasRange = ep.endSec > ep.startSec;
+        if (hasRange) return markerSec >= ep.startSec && markerSec <= ep.endSec;
+        return Math.abs(markerSec - ep.timeSec) <= 125;
       }),
     );
-  }, [cameras, monitoringCameras, filteredEventPoints, markerSec, isTrackerTab, trackerOption]);
+  }, [
+    cameras,
+    monitoringCameras,
+    filteredEventPoints,
+    markerSec,
+    isTrackerTab,
+    trackerOption,
+  ]);
 
   const sortedCameras = useMemo(
     () => [...activeCameras].sort((a, b) => a.id - b.id),
@@ -106,13 +111,17 @@ const Monitor = () => {
   const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
-    openMenuCamera !== null ? (sortedCameras[openMenuCamera]?.id ?? null) : null,
+    openMenuCamera !== null
+      ? (sortedCameras[openMenuCamera]?.id ?? null)
+      : null,
     handleActivitySelect,
   );
   const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
     location,
-    expandedCamera !== null ? (sortedCameras[expandedCamera]?.id ?? null) : null,
+    expandedCamera !== null
+      ? (sortedCameras[expandedCamera]?.id ?? null)
+      : null,
     handleActivitySelect,
   );
 
