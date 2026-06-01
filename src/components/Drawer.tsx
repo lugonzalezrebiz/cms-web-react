@@ -23,6 +23,9 @@ const Drawer = ({ open, onClose, children, title }: Props) => {
             width: "661px",
             bgcolor: Colors.white,
             padding: "16px",
+            borderTopLeftRadius: "16px",
+            borderBottomLeftRadius: "16px",
+            height: "calc(100% - 32px)",
           },
         },
       }}

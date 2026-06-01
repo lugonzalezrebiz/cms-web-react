@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
 import SelectComponent from "../../../components/SelectComponent";
+import SuccessDialog from "../../../components/SuccessDialog";
 import useCompanies from "../../../hooks/useCompanies";
 import useAssignUserLocation from "../hooks/useAssignUserLocation";
 import { useState } from "react";
@@ -38,6 +39,7 @@ interface AssignDialogProps {
 const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
   const { companyFilters, getStoreFilters } = useCompanies();
 
   const clearForm = () => {
@@ -45,13 +47,20 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
     setStore("");
   };
 
-  const { assign, validateField, fieldErrors, isFormValid, reset, isPending, errorMessage } =
-    useAssignUserLocation({
-      onSuccess: () => {
-        clearForm();
-        onClose();
-      },
-    });
+  const {
+    assign,
+    validateField,
+    fieldErrors,
+    isFormValid,
+    reset,
+    isPending,
+    errorMessage,
+  } = useAssignUserLocation({
+    onSuccess: () => {
+      clearForm();
+      setShowSuccess(true);
+    },
+  });
 
   const effectiveCompany = company || companyFilters[0]?.value || "";
 
@@ -77,8 +86,19 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
     assign(employeeId, effectiveCompany, store);
   };
 
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    onClose();
+  };
+
   return (
-    <FormDialog title="Assign Assignment" open={open} onClose={handleClose}>
+    <>
+    <SuccessDialog
+      open={showSuccess}
+      onClose={handleSuccessClose}
+      message="User assigned successfully."
+    />
+    <FormDialog title="Assign Assignment" open={open && !showSuccess} onClose={handleClose}>
       <Box>
         <Label>Selected Company</Label>
         <SelectComponent
@@ -100,7 +120,9 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
         {fieldErrors.store && <ErrorText>{fieldErrors.store}</ErrorText>}
       </Box>
       {errorMessage && (
-        <Box sx={{ color: Colors.red, fontSize: "12px", fontFamily: Fonts.main }}>
+        <Box
+          sx={{ color: Colors.red, fontSize: "12px", fontFamily: Fonts.main }}
+        >
           {errorMessage}
         </Box>
       )}
@@ -110,6 +132,7 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
           sx={{ height: "36px" }}
           color="secondary"
           onClick={handleClose}
+          outfit
         >
           Cancel
         </Button>
@@ -118,13 +141,18 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
           sx={{ height: "36px", width: "100px" }}
           color="primary"
           onClick={handleAssign}
-          disabled={isPending || employeeId === undefined || !isFormValid(effectiveCompany, store)}
+          disabled={
+            isPending ||
+            employeeId === undefined ||
+            !isFormValid(effectiveCompany, store)
+          }
           outfit
         >
           {isPending ? "Assigning..." : "Assign"}
         </Button>
       </Box>
     </FormDialog>
+    </>
   );
 };
 

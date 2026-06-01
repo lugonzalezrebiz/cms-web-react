@@ -21,8 +21,9 @@ interface AssignVariables {
 const getErrorMessage = (error: unknown): string => {
   if (isAxiosError(error)) {
     switch (error.response?.status) {
-      case 401: return "Unauthorized.";
-      case 500: return "Failed to assign locations.";
+      case 400: return "Invalid request payload.";
+      case 401: return "Unauthorized. Only supervisor role or above can assign locations.";
+      case 404: return "User, company, or location not found.";
     }
   }
   return "An unexpected error occurred.";
@@ -44,8 +45,10 @@ const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
     schema.safeParse({ company, store }).success;
 
   const mutation = useMutation<unknown, Error, AssignVariables>({
-    mutationFn: ({ employeeId, companyId, storeId}) =>
-      post(`user-location/${companyId}/${employeeId}`, {locations: [storeId]}),
+    mutationFn: ({ employeeId, companyId, storeId }) =>
+      post(`user/${employeeId}/associate`, {
+        assignments: [{ companyID: companyId, locationIDs: [storeId] }],
+      }),
     onSuccess: options?.onSuccess,
   });
 

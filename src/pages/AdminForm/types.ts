@@ -1,3 +1,5 @@
+import type { stateAssignments } from "../../components/stateColors";
+
 export interface User {
   id: number;
   username: string;
@@ -12,4 +14,15 @@ export interface User {
 export interface UsersResponse {
   success: boolean;
   users: User[];
+}
+
+export interface Ticket {
+  id: number;
+  location: number;
+  store: number;
+  reported: string;
+  issueType: string;
+  createdBy: string;
+  description: string;
+  status: stateAssignments;
 }
