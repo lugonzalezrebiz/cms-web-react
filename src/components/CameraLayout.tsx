@@ -13,7 +13,7 @@ import CameraOverlayMenu, {
 import { usePopover } from "../hooks/usePopover";
 import CustomScrollbar from "./CustomScrollbar";
 
-export const TAG_TOLERANCE_SEC = 300;
+export const TAG_TOLERANCE_SEC = 125;
 
 interface CameraItemProps {
   index: number;
