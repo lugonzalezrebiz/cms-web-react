@@ -8,7 +8,6 @@ import Card from "../../../components/Card";
 import Divider from "../../../components/Divider";
 import { type stateAssignments, stateColors } from "./stateColors";
 
-
 const Current = styled("p")({
   fontFamily: Fonts.main,
   fontSize: "36px",
@@ -154,8 +153,7 @@ export const NewAssignmentsCard = ({
       borderRadius={"16px"}
       onClick={onClick}
       sx={{
-        cursor:
-          onClick && !isCompleted ? "pointer" : "default",
+        cursor: onClick && !isCompleted ? "pointer" : "default",
       }}
     >
       <Box
@@ -184,7 +182,7 @@ export const NewAssignmentsCard = ({
             position: "absolute",
             right: "5px",
             cursor: "pointer",
-            //padding: "1px 4px",
+            padding: "2px",
           }}
           src="./assets/dots-vertical.svg"
           alt="More options"
