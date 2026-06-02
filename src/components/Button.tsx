@@ -14,13 +14,14 @@ const Button = styled(MuiButton, {
     prop !== "outfit" && prop !== "square" && prop !== "selected",
 })<ButtonProps & Props>(
   ({ color, outfit, disabled, square, selected, fontSize }) => ({
-    borderRadius: square ? "0px" : "18px",
+    borderRadius: square ? "6px" : "50px",
     fontFamily: outfit ? Fonts.buttonFont : Fonts.secondary,
     fontSize: fontSize ? fontSize : "16px",
-    fontWeight: "500",
+    fontWeight: 600,
     textTransform: "none",
-    boxShadow: "none",
-    padding: "6px 20px",
+    boxShadow: "0 1px 2px 0 rgba(16, 24, 40, 0.05)",
+    padding: "8px 12px",
+    border: `1px solid ${Colors.main}`,
     ...(color === "primary" || !color
       ? {
           backgroundColor: theme.palette.primary.main,
@@ -43,10 +44,10 @@ const Button = styled(MuiButton, {
       : {}),
     ...(disabled
       ? {
+          cursor: "not-allowed",
           backgroundColor: Colors.lightGray,
           border: `1px solid ${Colors.silverGrey}`,
           color: Colors.silverGrey,
-          cursor: "not-allowed",
         }
       : {}),
   }),

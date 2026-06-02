@@ -69,15 +69,14 @@ const OpenTicketDialog = ({
   const [file, setFile] = useState<File | null>(null);
   const [issueTypeTouched, setIssueTypeTouched] = useState(false);
   const [descriptionTouched, setDescriptionTouched] = useState(false);
-  const [fileTouched, setFileTouched] = useState(false);
+  const [_fileTouched, setFileTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { issueTypeError, descriptionError, fileError, isValid } =
-    useTicketValidation({
-      issueType,
-      description,
-      file,
-    });
+  const { issueTypeError, descriptionError, isValid } = useTicketValidation({
+    issueType,
+    description,
+    file,
+  });
 
   const handleClose = () => {
     setIssueType("");
@@ -125,7 +124,6 @@ const OpenTicketDialog = ({
 
   const showIssueTypeError = issueTypeTouched && !!issueTypeError;
   const showDescriptionError = descriptionTouched && !!descriptionError;
-  const showFileError = fileTouched && !!fileError;
 
   return (
     <FormDialog
@@ -203,7 +201,6 @@ const OpenTicketDialog = ({
               </span>
             )}
           </Box>
-          {showFileError && <ErrorText>{fileError}</ErrorText>}
         </Box>
       </Box>
 
@@ -226,7 +223,7 @@ const OpenTicketDialog = ({
             outfit
             color="secondary"
             onClick={handleClose}
-            sx={{ height: "32px" }}
+            sx={{ height: "36px" }}
           >
             Cancel
           </Button>
@@ -236,7 +233,7 @@ const OpenTicketDialog = ({
             color="primary"
             disabled={!isValid || isPending}
             onClick={handleSubmit}
-            sx={{ height: "32px" }}
+            sx={{ height: "36px" }}
           >
             Submit Ticket
           </Button>

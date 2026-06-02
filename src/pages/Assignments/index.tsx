@@ -78,7 +78,7 @@ const Assignments = () => {
 
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} mb={2}>
         {cards.map((card) => (
           <Grid key={card.title} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
             <HeaderCard
@@ -90,7 +90,7 @@ const Assignments = () => {
         ))}
       </Grid>
 
-      <Title title="Assignments">
+      <Title margin={false} title="Assignments">
         <Grid
           container
           sx={{
@@ -111,7 +111,7 @@ const Assignments = () => {
           />
         </Grid>
       </Title>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} mb={2}>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
@@ -140,7 +140,7 @@ const Assignments = () => {
             ))
         )}
       </Grid>
-      <Title title="Rejected Assignments"></Title>
+      <Title margin={false} title="Rejected Assignments"></Title>
       <Grid container spacing={2}>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
@@ -209,7 +209,14 @@ const Assignments = () => {
       <SuccessDialog
         open={ticketSuccessOpen}
         onClose={() => setTicketSuccessOpen(false)}
-        message={<>The ticket has been created successfully.<br />As soon as it gets resolved the assignment would be back on your dashboard.</>}
+        message={
+          <>
+            The ticket has been created successfully.
+            <br />
+            As soon as it gets resolved the assignment would be back on your
+            dashboard.
+          </>
+        }
       />
     </Box>
   );

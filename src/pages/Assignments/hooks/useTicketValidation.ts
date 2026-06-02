@@ -4,7 +4,7 @@ import { z } from "zod";
 const schema = z.object({
   issueType: z.string().min(1, "Please select an issue type"),
   description: z.string().min(1, "Please provide a description"),
-  file: z.instanceof(File, { message: "Please attach a file" }),
+  file: z.instanceof(File).nullable().optional(),
 });
 
 interface TicketValues {
@@ -21,12 +21,16 @@ const useTicketValidation = ({ issueType, description, file }: TicketValues) =>
       return { issueTypeError: null, descriptionError: null, fileError: null, isValid: true };
     }
 
-    const errors = result.error.flatten().fieldErrors;
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0] as string;
+      if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+    }
 
     return {
-      issueTypeError: errors.issueType?.[0] ?? null,
-      descriptionError: errors.description?.[0] ?? null,
-      fileError: errors.file?.[0] ?? null,
+      issueTypeError: fieldErrors.issueType ?? null,
+      descriptionError: fieldErrors.description ?? null,
+      fileError: fieldErrors.file ?? null,
       isValid: false,
     };
   }, [issueType, description, file]);

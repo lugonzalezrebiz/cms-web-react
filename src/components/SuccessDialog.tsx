@@ -42,9 +42,9 @@ const SuccessDialog = ({ open, onClose, message }: Props) => (
 
       <Button
         fontSize="16px"
-        outfit
-        sx={{ height: "44px" }}
+        sx={{ height: "44px", p: "10px 24px", width: "90px" }}
         color="primary"
+        outfit
         onClick={onClose}
       >
         Close
