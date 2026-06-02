@@ -91,7 +91,7 @@ const Monitor = () => {
         if (ep.cameraId !== camera.id) return false;
         const hasRange = ep.endSec > ep.startSec;
         if (hasRange)
-          return markerSec >= ep.startSec - 60 && markerSec <= ep.endSec + 60;
+          return markerSec >= ep.timeSec - 60 && markerSec <= ep.endSec + 60;
         return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
       }),
     );

@@ -154,7 +154,7 @@ export const CameraItem = ({
               opacity: 0.6,
             }}
           >
-            Camera doesn't work
+            No cameras available
           </Typography>
         </Box>
       )}
@@ -616,7 +616,7 @@ const CameraLayout = ({
         const hasRange = ep.endSec > ep.startSec;
         if (hasRange)
           return (
-            markerSec >= ep.startSec - TAG_TOLERANCE_SEC &&
+            markerSec >= ep.timeSec - TAG_TOLERANCE_SEC &&
             markerSec <= ep.endSec + TAG_TOLERANCE_SEC
           );
         return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
