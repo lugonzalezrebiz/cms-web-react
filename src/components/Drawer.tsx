@@ -40,7 +40,7 @@ const Drawer = ({ open, onClose, children, title }: Props) => {
         >
           <img src="./assets/x-close.svg" alt="" />
         </Box>
-        <Title marginBottom="0" title={title} />
+        <Title margin={false} marginBottom="0" title={title} />
       </Box>
       <Box height={"100%"}>{children}</Box>
     </DrawerMUI>
