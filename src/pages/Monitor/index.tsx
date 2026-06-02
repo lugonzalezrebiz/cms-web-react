@@ -1,8 +1,8 @@
 import { Box } from "@mui/system";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout from "../../components/CameraLayout";
+import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
@@ -90,8 +90,9 @@ const Monitor = () => {
       filteredEventPoints.some((ep) => {
         if (ep.cameraId !== camera.id) return false;
         const hasRange = ep.endSec > ep.startSec;
-        if (hasRange) return markerSec >= ep.startSec && markerSec <= ep.endSec;
-        return Math.abs(markerSec - ep.timeSec) <= 125;
+        if (hasRange)
+          return markerSec >= ep.startSec - 60 && markerSec <= ep.endSec + 60;
+        return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
       }),
     );
   }, [
@@ -107,6 +108,31 @@ const Monitor = () => {
     () => [...activeCameras].sort((a, b) => a.id - b.id),
     [activeCameras],
   );
+
+  const expandedCameraIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (expandedCamera === null) {
+      expandedCameraIdRef.current = null;
+    } else {
+      const id = sortedCameras[expandedCamera]?.id;
+      if (id !== undefined) expandedCameraIdRef.current = id;
+    }
+  }, [expandedCamera, sortedCameras]);
+
+  useEffect(() => {
+    if (!isTrackerTab || !trackerOption || expandedCamera === null) return;
+    const id = expandedCameraIdRef.current;
+    if (id !== null && !activeCameras.some((c) => c.id === id)) {
+      handleExpandCamera(expandedCamera);
+    }
+  }, [
+    activeCameras,
+    isTrackerTab,
+    trackerOption,
+    expandedCamera,
+    handleExpandCamera,
+  ]);
 
   const allCameraMenuItems = useCameraMenuItems(
     company,
@@ -275,10 +301,9 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box sx={{ flex: 9, minHeight: 0, height: 0 }}>
+      <Box mt={"10px"} sx={{ flex: 9, minHeight: 0, height: 0 }}>
         <CameraLayout
           count={activeCameras.length}
-          media="/assets/camera/Cam thumbnail.svg"
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
           onMenuOpen={setOpenMenuCamera}
@@ -313,7 +338,6 @@ const Monitor = () => {
           expandedCamera !== null && handleExpandCamera(expandedCamera)
         }
         cameraIndex={expandedCamera ?? 0}
-        media="/assets/camera/Cam thumbnail.svg"
         expandCamera={handleExpandCamera}
         tags={expandedCameraTags}
         contextMenuItems={expandedCameraMenuItems}

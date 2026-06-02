@@ -155,7 +155,7 @@ const TimelineDialog = ({ openDialog = false, dialogOnClose }: Props) => {
                     width: "100%",
                     backgroundColor: Colors.blushWhite,
                   }}
-                  src="./assets/camera/Cam thumbnail.svg"
+                  src=""
                   alt="Camera thumbnail"
                 />
               </Box>

@@ -44,7 +44,6 @@ const MonitorTest = () => {
       <Box sx={{ flex: 7, minHeight: 0, height: 0, position: "relative" }}>
         <CameraLayout
           count={MOCK_CAMERAS.length}
-          media="/assets/camera/Cam thumbnail.svg"
           maxHeight="100%"
           contextMenuItems={[]}
           cameraEventPoints={MOCK_EVENT_POINTS}
