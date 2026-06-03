@@ -30,9 +30,9 @@ interface AssignmentItem {
   userID: number;
   date: string;
   locationID: number;
-  locationName: string;
+  locationName: string | null;
   companyID: number;
-  companyName: string;
+  companyName: string | null;
   statusID: number;
   statusName: string;
   details: AssignmentDetails;
@@ -43,22 +43,29 @@ interface AssignmentsResponse {
   data: AssignmentItem[];
 }
 
-interface AssignmentsPayload {
-  companyID: number;
-  locationID?: number;
-}
+type AssignmentsParams =
+  | { mode: "company"; companyID: number | null; locationID?: number | null }
+  | { mode: "user"; userID: number | null };
 
-const useAssignments = (companyID: number | null, locationID?: number | null) => {
-  const body: AssignmentsPayload = { companyID: companyID ?? 0 };
-  if (locationID) body.locationID = locationID;
+type AssignmentsPayload = { companyID: number; locationID?: number } | { userID: number };
+
+const useAssignments = (params: AssignmentsParams) => {
+  const isCompany = params.mode === "company";
+
+  const body: AssignmentsPayload = isCompany
+    ? { companyID: params.companyID ?? 0, ...(params.locationID ? { locationID: params.locationID } : {}) }
+    : { userID: params.userID ?? 0 };
+
+  const queryKey = isCompany
+    ? ["location/assignments", params.companyID, params.locationID ?? null]
+    : ["location/assignments", "user", params.userID];
+
+  const enabled = isCompany ? params.companyID !== null : params.userID !== null;
 
   const { data, isLoading, isPending, isError } = usePostQuery<AssignmentsResponse, AssignmentsPayload>(
     "location/assignments",
     body,
-    {
-      queryKey: ["location/assignments", companyID, locationID ?? null],
-      enabled: companyID !== null,
-    }
+    { queryKey, enabled }
   );
 
   const formatTime = (time: string | null) => (time ? time.slice(0, 5) : "-");
@@ -67,7 +74,9 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
     state: parseStatusName(a.statusName),
     statusName: a.statusName,
     location: a.companyID,
+    locationName: a.locationName,
     store: a.locationID,
+    companyName: a.companyName,
     userID: a.userID,
     date: dayjs.utc(a.date).format("MMMM DD - YYYY"),
     rawDate: dayjs.utc(a.date).format("YYYYMMDD"),

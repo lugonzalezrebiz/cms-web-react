@@ -8,6 +8,7 @@ import Table, { type Column } from "../../../components/Table";
 import { CustomScrollbarY } from "../../../components/CustomScrollbar";
 import CreateEmployeeDialog from "../components/CreateEmployeeDialog";
 import AssignDialog from "../components/AssignDialog";
+import ViewAssignmentsDialog from "../components/ViewAssignmentsDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import useUsers, { type User } from "../hooks/useUsers";
 
@@ -18,6 +19,7 @@ const TableSection = () => {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<
     number | undefined
   >(undefined);
@@ -97,6 +99,7 @@ const TableSection = () => {
     {
       title: "",
       key: "assign",
+      width: "40px",
       render: (value: number) => (
         <Button
           square
@@ -109,6 +112,25 @@ const TableSection = () => {
           }}
         >
           ASSIGN
+        </Button>
+      ),
+    },
+    {
+      title: "",
+      key: "view",
+      render: (value: number) => (
+        <Button
+          square
+          sx={{ height: "20px" }}
+          fontSize="12px"
+          color="secondary"
+          outfit
+          onClick={() => {
+            setSelectedEmployeeId(value);
+            setViewDialogOpen(true);
+          }}
+        >
+          VIEW
         </Button>
       ),
     },
@@ -132,6 +154,7 @@ const TableSection = () => {
         email: user.email,
         active: user.active ? "Yes" : "No",
         assign: user.id,
+        view: user.id,
       })),
     [users, selectedIds],
   );
@@ -188,6 +211,11 @@ const TableSection = () => {
       <AssignDialog
         open={assignDialogOpen}
         onClose={() => setAssignDialogOpen(false)}
+        employeeId={selectedEmployeeId}
+      />
+      <ViewAssignmentsDialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
         employeeId={selectedEmployeeId}
       />
     </Box>

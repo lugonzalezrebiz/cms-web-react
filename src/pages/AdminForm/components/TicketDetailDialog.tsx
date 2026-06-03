@@ -8,17 +8,7 @@ import {
   formatTicketDate,
 } from "../utils/formatTicketDate";
 import type { stateAssignments } from "../../../components/stateColors";
-
-interface Ticket {
-  id: number;
-  location: number;
-  store: number;
-  reported: string;
-  issueType: string;
-  createdBy: string;
-  description: string;
-  status: stateAssignments;
-}
+import type { Ticket } from "../types";
 
 interface Props {
   open: boolean;
@@ -63,6 +53,13 @@ const DescriptionText = styled("p")({
   lineHeight: 1.43,
 });
 
+const ticketStatusMap: Record<string, stateAssignments> = {
+  open: "Open Ticket",
+  closed: "Completed",
+  paused: "Paused",
+  error: "Error",
+};
+
 const TicketDetailDialog = ({
   open,
   onClose,
@@ -76,10 +73,10 @@ const TicketDetailDialog = ({
       maxWidth="364px"
       padding="24px"
       assignment={{
-        location: ticket.location,
-        store: ticket.store,
-        date: formatTicketDate(ticket.reported),
-        state: ticket.status,
+        location: ticket.locationID,
+        store: ticket.companyID,
+        date: formatTicketDate(ticket.createDate),
+        state: ticketStatusMap[ticket.status] ?? "Open Ticket",
       }}
     >
       <Box>
@@ -92,7 +89,7 @@ const TicketDetailDialog = ({
           }}
         >
           <RowLabel>Issue Type</RowLabel>
-          <RowValue>{ticket.issueType}</RowValue>
+          <RowValue>{ticket.issueTypeName}</RowValue>
         </Box>
 
         <Box
@@ -104,7 +101,7 @@ const TicketDetailDialog = ({
           }}
         >
           <RowLabel>Reported</RowLabel>
-          <RowValue>{formatTicketDateWithTime(ticket.reported)}</RowValue>
+          <RowValue>{formatTicketDateWithTime(ticket.createDate)}</RowValue>
         </Box>
       </Box>
 

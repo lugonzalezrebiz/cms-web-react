@@ -8,30 +8,30 @@ import TicketDetailDialog from "./TicketDetailDialog";
 import { formatTicketDate } from "../utils/formatTicketDate";
 import Drawer from "../../../components/Drawer";
 import type { Ticket } from "../types";
-import { MOCK_TICKETS } from "../mocks";
+import { useTickets } from "../hooks/useTickets";
 
 interface TicketsDrawerProps {
   open: boolean;
   onClose: () => void;
-  tickets?: Ticket[];
   onMarkAsResolved?: (ticketId: number) => void;
 }
 
 const TicketsDrawer = ({
   open,
   onClose,
-  tickets = MOCK_TICKETS,
   onMarkAsResolved,
 }: TicketsDrawerProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  const { tickets } = useTickets();
+
   const columns: Column[] = [
-    { title: "ID", key: "id", width: "20px", align: "center" },
-    { title: "LOCATION", key: "location", width: "40px", align: "center" },
-    { title: "STORE", key: "store", width: "40px" },
+    { title: "CREATED BY", key: "createdBy", width: "120px", align: "center" },
+    { title: "COMPANY", key: "company", width: "40px" },
+    { title: "STORE", key: "location", width: "40px", align: "center" },
     {
-      title: "REPORTED AT",
+      title: "CREATED AT",
       key: "reported",
       width: "90px",
       rowColor: Colors.vividOrange,
@@ -60,11 +60,11 @@ const TicketsDrawer = ({
     () =>
       tickets.map((ticket) => ({
         id: ticket.id,
-        location: ticket.location,
-        store: ticket.store,
-        reported: formatTicketDate(ticket.reported),
-        issue: ticket.issueType,
-        createdBy: ticket.createdBy,
+        location: ticket.locationID,
+        company: ticket.companyID,
+        reported: formatTicketDate(ticket.createDate),
+        issue: ticket.issueTypeName,
+        createdBy: ticket.createdByName,
         action: ticket.id,
       })),
     [tickets],

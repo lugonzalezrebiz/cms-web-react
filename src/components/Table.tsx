@@ -106,6 +106,9 @@ const Rows = styled(TableCell, {
   userSelect: "none",
   minWidth: rowWidth ? rowWidth : "90px",
   maxWidth: rowWidth ? rowWidth : "90px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   "tr:last-child &": { borderBottom: "none" },
 }));
 
@@ -154,6 +157,9 @@ const MainRow = styled(TableCell, {
   userSelect: "none",
   minWidth: mainRowWidth ? mainRowWidth : "100px",
   maxWidth: mainRowWidth ? mainRowWidth : "100px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   "tr:last-child &": { borderBottom: "none" },
 }));
 

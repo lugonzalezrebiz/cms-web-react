@@ -1,5 +1,3 @@
-import type { stateAssignments } from "../../components/stateColors";
-
 export interface User {
   id: number;
   username: string;
@@ -18,11 +16,33 @@ export interface UsersResponse {
 
 export interface Ticket {
   id: number;
-  location: number;
-  store: number;
-  reported: string;
-  issueType: string;
-  createdBy: string;
+  companyID: number;
+  locationID: number;
+  monitoringID: string;
+  monitoringStatus: number;
+  issueTypeID: number;
+  issueTypeCode: string;
+  issueTypeName: string;
+  subject: string;
   description: string;
-  status: stateAssignments;
+  status: string;
+  priority: string;
+  assignedTo: number | null;
+  assignedToName: string | null;
+  firstResponseDate: string | null;
+  resolvedDate: string | null;
+  closedDate: string | null;
+  slaDueDate: string | null;
+  slaBreached: boolean;
+  rca: string | null;
+  createdBy: number;
+  createdByName: string;
+  modifyUser: number | null;
+  createDate: string;
+  modifyDate: string | null;
+}
+
+export interface TicketsResponse {
+  success: boolean;
+  tickets: Ticket[];
 }

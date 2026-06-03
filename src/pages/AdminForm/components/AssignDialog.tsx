@@ -93,65 +93,70 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
 
   return (
     <>
-    <SuccessDialog
-      open={showSuccess}
-      onClose={handleSuccessClose}
-      message="User assigned successfully."
-    />
-    <FormDialog title="Assign Assignment" open={open && !showSuccess} onClose={handleClose}>
-      <Box>
-        <Label>Selected Company</Label>
-        <SelectComponent
-          filters={companyFilters}
-          filter={effectiveCompany}
-          setFilter={handleSetCompany}
-          size="100%"
-        />
-        {fieldErrors.company && <ErrorText>{fieldErrors.company}</ErrorText>}
-      </Box>
-      <Box>
-        <Label>Selected Store</Label>
-        <SelectComponent
-          filters={getStoreFilters(effectiveCompany)}
-          filter={store}
-          setFilter={handleSetStore}
-          size="100%"
-        />
-        {fieldErrors.store && <ErrorText>{fieldErrors.store}</ErrorText>}
-      </Box>
-      {errorMessage && (
-        <Box
-          sx={{ color: Colors.red, fontSize: "12px", fontFamily: Fonts.main }}
-        >
-          {errorMessage}
+      <SuccessDialog
+        open={showSuccess}
+        onClose={handleSuccessClose}
+        message="User assigned successfully."
+      />
+      <FormDialog
+        title="Assign Assignment"
+        open={open && !showSuccess}
+        onClose={handleClose}
+        gap={"12px"}
+      >
+        <Box>
+          <Label>Company</Label>
+          <SelectComponent
+            filters={companyFilters}
+            filter={effectiveCompany}
+            setFilter={handleSetCompany}
+            size="100%"
+          />
+          {fieldErrors.company && <ErrorText>{fieldErrors.company}</ErrorText>}
         </Box>
-      )}
-      <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-        <Button
-          fontSize="14px"
-          sx={{ height: "36px" }}
-          color="secondary"
-          onClick={handleClose}
-          outfit
-        >
-          Cancel
-        </Button>
-        <Button
-          fontSize="14px"
-          sx={{ height: "36px", width: "100px" }}
-          color="primary"
-          onClick={handleAssign}
-          disabled={
-            isPending ||
-            employeeId === undefined ||
-            !isFormValid(effectiveCompany, store)
-          }
-          outfit
-        >
-          {isPending ? "Assigning..." : "Assign"}
-        </Button>
-      </Box>
-    </FormDialog>
+        <Box>
+          <Label>Store</Label>
+          <SelectComponent
+            filters={getStoreFilters(effectiveCompany)}
+            filter={store}
+            setFilter={handleSetStore}
+            size="100%"
+          />
+          {fieldErrors.store && <ErrorText>{fieldErrors.store}</ErrorText>}
+        </Box>
+        {errorMessage && (
+          <Box
+            sx={{ color: Colors.red, fontSize: "12px", fontFamily: Fonts.main }}
+          >
+            {errorMessage}
+          </Box>
+        )}
+        <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+          <Button
+            fontSize="14px"
+            sx={{ height: "36px" }}
+            color="secondary"
+            onClick={handleClose}
+            outfit
+          >
+            Cancel
+          </Button>
+          <Button
+            fontSize="14px"
+            sx={{ height: "36px", width: "100px" }}
+            color="primary"
+            onClick={handleAssign}
+            disabled={
+              isPending ||
+              employeeId === undefined ||
+              !isFormValid(effectiveCompany, store)
+            }
+            outfit
+          >
+            {isPending ? "Assigning..." : "Assign"}
+          </Button>
+        </Box>
+      </FormDialog>
     </>
   );
 };
