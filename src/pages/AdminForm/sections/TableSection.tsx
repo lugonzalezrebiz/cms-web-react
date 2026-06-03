@@ -74,11 +74,11 @@ const TableSection = () => {
     },
     { title: "ROL", key: "role" },
     { title: "NAME", key: "name", rowColor: Colors.vividOrange },
-    { title: "E-MAIL", key: "email", width: "220px" },
+    { title: "E-MAIL", key: "email", width: "230px" },
     {
       title: "ACTIVE",
       key: "active",
-      width: "80px",
+      width: "50px",
       align: "left",
       render: (value: string) => (
         <Box
@@ -101,7 +101,7 @@ const TableSection = () => {
     {
       title: "",
       key: "assign",
-      width: "60px",
+      width: "40px",
       align: "left",
       render: (value: number) => (
         <Button
