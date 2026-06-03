@@ -78,6 +78,8 @@ const TableSection = () => {
     {
       title: "ACTIVE",
       key: "active",
+      width: "80px",
+      align: "left",
       render: (value: string) => (
         <Box
           sx={{
@@ -99,7 +101,8 @@ const TableSection = () => {
     {
       title: "",
       key: "assign",
-      width: "40px",
+      width: "60px",
+      align: "left",
       render: (value: number) => (
         <Button
           square
@@ -118,6 +121,8 @@ const TableSection = () => {
     {
       title: "",
       key: "view",
+      align: "center",
+      width: "60px",
       render: (value: number) => (
         <Button
           square
