@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import usePopover from "../../../hooks/usePopover";
 import { Box } from "@mui/system";
 import FormDialog from "../../../components/FormDialog";
 import Table, { type Column } from "../../../components/Table";
@@ -7,9 +6,8 @@ import { CustomScrollbarY } from "../../../components/CustomScrollbar";
 import useAssignments from "../../../hooks/useAssignments";
 import useDissociateAssignment from "../hooks/useDissociateAssignment";
 import { Colors, Fonts } from "../../../theme";
-import AssignmentsDetailPopover, {
-  type AssignmentDetail,
-} from "./AssignmentsDetailPopover";
+import StateBadge from "../../../components/StateBadge";
+import type { AssignmentDetail } from "./AssignmentsDetailPopover";
 
 interface Props {
   open: boolean;
@@ -27,7 +25,6 @@ interface GroupedAssignment {
 
 const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const popover = usePopover();
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
   const { assignments, isLoading } = useAssignments({
@@ -83,34 +80,29 @@ const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
       align: "center",
       rowColor: Colors.vividOrange,
       render: (value: { key: string; details: AssignmentDetail[] }) => (
-        <>
-          <Box
-            onClick={(e: React.MouseEvent<HTMLElement>) => {
-              popover.handleOpen(e);
-              setActiveKey(value.key);
+        <Box
+          onClick={() =>
+            setActiveKey((prev) => (prev === value.key ? null : value.key))
+          }
+          sx={{
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          {value.details.length}{" "}
+          {value.details.length === 1 ? "assignment" : "assignments"}
+          <img
+            src="./assets/chevron-down-2.svg"
+            alt="Expand"
+            style={{
+              transform: activeKey === value.key ? "rotate(180deg)" : "none",
+              transition: "transform 0.2s ease",
             }}
-            sx={{
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            {value.details.length}{" "}
-            {value.details.length === 1 ? "assignment" : "assignments"}
-            <img src="./assets/chevron-down-2.svg" alt="Expand" />
-          </Box>
-          <AssignmentsDetailPopover
-            open={popover.open && activeKey === value.key}
-            anchorEl={popover.anchorEl}
-            onClose={() => {
-              popover.handleClose();
-              setActiveKey(null);
-            }}
-            details={value.details}
           />
-        </>
+        </Box>
       ),
     },
     {
@@ -185,6 +177,70 @@ const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
               scrollContainerRef={scrollContainerRef}
               disableOverflow
               loading={isLoading}
+              getExpandedContent={(row) => {
+                const detail = row.detail as {
+                  key: string;
+                  details: AssignmentDetail[];
+                };
+                const isExpanded = activeKey === detail.key;
+                return (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateRows: isExpanded ? "1fr" : "0fr",
+                      transition: "grid-template-rows 0.25s ease",
+                    }}
+                  >
+                    <Box sx={{ overflow: "hidden" }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          padding: "8px 12px",
+                          backgroundColor: "#f7f8fa",
+                          borderBottom: `1px solid ${Colors.paleGray}`,
+                        }}
+                      >
+                        {detail.details.map((item, i) => (
+                          <Box
+                            key={i}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              borderBottom:
+                                i !== detail.details.length - 1
+                                  ? `1px solid ${Colors.paleGray}`
+                                  : "none",
+                              padding: "6px 16px",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                fontFamily: Fonts.main,
+                                fontSize: "14px",
+                                color: Colors.lightBlack,
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {item.date}
+                            </Box>
+                            <Box
+                              sx={{
+                                minWidth: "110px",
+                                display: "flex",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <StateBadge state={item.state} />
+                            </Box>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  </Box>
+                );
+              }}
             />
             {errorMessage && (
               <Box

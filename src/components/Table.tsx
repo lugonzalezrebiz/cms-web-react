@@ -8,6 +8,7 @@ import {
   Paper,
   Box,
 } from "@mui/material";
+import { Fragment } from "react";
 import type { RefObject } from "react";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
@@ -31,6 +32,7 @@ interface Props {
   rowWidth?: string; // Width of the rows (used for non-main columns)
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   disableOverflow?: boolean;
+  getExpandedContent?: (row: Record<string, unknown>, rowIndex: number) => React.ReactNode | null;
 }
 
 export interface Group {
@@ -251,6 +253,7 @@ const Table = ({
   rowWidth,
   scrollContainerRef,
   disableOverflow,
+  getExpandedContent,
 }: Props) => {
   return (
     <Box margin="0 0px 0 0px" width={"100%"} borderRadius="8px">
@@ -390,8 +393,11 @@ const Table = ({
               skeleton={<TableSkeleton columnCount={columns.length} />}
               scrollContainerRef={scrollContainerRef}
             >
-              {rows.map((row, rowIndex) => (
-                <TableRow key={rowIndex}>
+              {rows.map((row, rowIndex) => {
+                const expandedContent = getExpandedContent?.(row, rowIndex);
+                return (
+                <Fragment key={rowIndex}>
+                <TableRow>
                   {columns.map((col, colIndex) => {
                     const group = groups?.find((group) =>
                       group.columns.includes(col.key),
@@ -500,7 +506,19 @@ const Table = ({
                     );
                   })}
                 </TableRow>
-              ))}
+                {getExpandedContent && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      sx={{ padding: 0, border: "none" }}
+                    >
+                      {expandedContent}
+                    </TableCell>
+                  </TableRow>
+                )}
+                </Fragment>
+                );
+              })}
             </LazyLoading>
           </TableBody>
         </TableMui>
