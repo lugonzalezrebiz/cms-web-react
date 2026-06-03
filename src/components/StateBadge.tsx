@@ -20,7 +20,7 @@ const StateBadge = ({ state, sx }: StateBadgeProps) => (
       fontFamily: Fonts.main,
       fontSize: "12px",
       fontWeight: 700,
-      display: "flex",
+      display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
       ...sx,

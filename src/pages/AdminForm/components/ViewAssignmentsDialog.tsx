@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import usePopover from "../../../hooks/usePopover";
 import { Box } from "@mui/system";
 import FormDialog from "../../../components/FormDialog";
 import Table, { type Column } from "../../../components/Table";
@@ -6,8 +7,9 @@ import { CustomScrollbarY } from "../../../components/CustomScrollbar";
 import useAssignments from "../../../hooks/useAssignments";
 import useDissociateAssignment from "../hooks/useDissociateAssignment";
 import { Colors, Fonts } from "../../../theme";
-import StateBadge from "../../../components/StateBadge";
-import type { stateAssignments } from "../../../components/stateColors";
+import AssignmentsDetailPopover, {
+  type AssignmentDetail,
+} from "./AssignmentsDetailPopover";
 
 interface Props {
   open: boolean;
@@ -15,8 +17,18 @@ interface Props {
   employeeId?: number;
 }
 
+interface GroupedAssignment {
+  companyDisplay: string;
+  locationDisplay: string;
+  companyID: number;
+  locationID: number;
+  details: AssignmentDetail[];
+}
+
 const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const popover = usePopover();
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
   const { assignments, isLoading } = useAssignments({
     mode: "user",
@@ -26,11 +38,35 @@ const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
   const { dissociate, isPending, errorMessage } =
     useDissociateAssignment(employeeId);
 
+  const grouped = assignments.reduce<Record<string, GroupedAssignment>>(
+    (acc, a) => {
+      const key = `${a.location}-${a.store}`;
+      if (!acc[key]) {
+        acc[key] = {
+          companyDisplay: a.companyName
+            ? `${a.companyName} (${a.location})`
+            : String(a.location),
+          locationDisplay: a.locationName
+            ? `${a.locationName} (${a.store})`
+            : String(a.store),
+          companyID: a.location,
+          locationID: a.store,
+          details: [],
+        };
+      }
+      acc[key].details.push({ date: a.date, state: a.state });
+      return acc;
+    },
+    {},
+  );
+
+  const groupedList = Object.values(grouped);
+
   const columns: Column[] = [
     {
       title: "COMPANY",
       key: "company",
-      width: "80px",
+      width: "90px",
       align: "center",
       rowColor: Colors.vividOrange,
     },
@@ -41,11 +77,41 @@ const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
       align: "center",
     },
     {
-      title: "STATUS",
-      key: "state",
+      title: "",
+      key: "detail",
       width: "60px",
       align: "center",
-      render: (value: stateAssignments) => <StateBadge state={value} />,
+      rowColor: Colors.vividOrange,
+      render: (value: { key: string; details: AssignmentDetail[] }) => (
+        <>
+          <Box
+            onClick={(e: React.MouseEvent<HTMLElement>) => {
+              popover.handleOpen(e);
+              setActiveKey(value.key);
+            }}
+            sx={{
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            {value.details.length}{" "}
+            {value.details.length === 1 ? "assignment" : "assignments"}
+            <img src="./assets/chevron-down-2.svg" alt="Expand" />
+          </Box>
+          <AssignmentsDetailPopover
+            open={popover.open && activeKey === value.key}
+            anchorEl={popover.anchorEl}
+            onClose={() => {
+              popover.handleClose();
+              setActiveKey(null);
+            }}
+            details={value.details}
+          />
+        </>
+      ),
     },
     {
       title: "",
@@ -70,15 +136,11 @@ const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
     },
   ];
 
-  const rows = assignments.map((a) => ({
-    company: a.companyName
-      ? `${a.companyName} (${a.location})`
-      : String(a.location),
-    location: a.locationName
-      ? `${a.locationName} (${a.store})`
-      : String(a.store),
-    state: a.state,
-    delete: { locationID: a.store, companyID: a.location },
+  const rows = groupedList.map((g) => ({
+    company: g.companyDisplay,
+    location: g.locationDisplay,
+    detail: { key: `${g.companyID}-${g.locationID}`, details: g.details },
+    delete: { locationID: g.locationID, companyID: g.companyID },
   }));
 
   return (

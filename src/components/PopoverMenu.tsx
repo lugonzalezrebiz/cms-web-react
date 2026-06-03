@@ -1,4 +1,5 @@
 import { Popover } from "@mui/material";
+import type { PopoverOrigin } from "@mui/material";
 import { Colors } from "../theme";
 import { Box } from "@mui/system";
 import type { ReactNode } from "react";
@@ -11,6 +12,8 @@ interface PopoverMenuProps {
   height?: string;
   maxWidth?: string;
   padding?: string;
+  anchorOrigin?: PopoverOrigin;
+  transformOrigin?: PopoverOrigin;
 }
 
 const PopoverMenu = ({
@@ -21,14 +24,16 @@ const PopoverMenu = ({
   height,
   maxWidth,
   padding,
+  anchorOrigin = { vertical: "bottom", horizontal: "left" },
+  transformOrigin = { vertical: "top", horizontal: "left" },
 }: PopoverMenuProps) => {
   return (
     <Popover
       open={open}
       anchorEl={anchorEl}
       onClose={() => setAnchorEl()}
-      anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-      transformOrigin={{ vertical: "top", horizontal: "left" }}
+      anchorOrigin={anchorOrigin}
+      transformOrigin={transformOrigin}
       slotProps={{
         paper: {
           sx: {
