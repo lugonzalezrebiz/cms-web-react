@@ -10,7 +10,7 @@ export interface CameraContextMenuItem {
   icon?: string;
   shortcut?: string;
   dividerAfter?: boolean;
-  onClick: (cameraIndex: number) => void;
+  onClick: (cameraId: number) => void;
 }
 
 const EventMenu = ({

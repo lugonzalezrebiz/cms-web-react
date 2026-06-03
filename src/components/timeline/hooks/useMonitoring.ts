@@ -128,6 +128,7 @@ export function useMonitoring(
   snapshot: TimelineSnapshot;
   eventPoints: CameraEventPoint[];
   rangeSessions: RangeSessions;
+  cameras: { id: number; name: string }[];
   loading: boolean;
   error: string | null;
 } {
@@ -181,5 +182,10 @@ export function useMonitoring(
     return sessions;
   }, [monitoring]);
 
-  return { snapshot, eventPoints, rangeSessions, loading, error };
+  const cameras = useMemo(
+    () => (monitoring?.cameras ?? []).map((c) => ({ id: c.id, name: c.name })),
+    [monitoring],
+  );
+
+  return { snapshot, eventPoints, rangeSessions, cameras, loading, error };
 }

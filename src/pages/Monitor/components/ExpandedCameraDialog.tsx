@@ -9,7 +9,6 @@ export interface ExpandedCameraDialogProps {
   open: boolean;
   onClose: () => void;
   cameraIndex: number;
-  media: string;
   expandCamera: (index: number) => void;
   tags: CameraContextMenuItem[];
   contextMenuItems: CameraContextMenuItem[];
@@ -26,7 +25,6 @@ export const ExpandedCameraDialog = ({
   open,
   onClose,
   cameraIndex,
-  media,
   expandCamera,
   tags,
   contextMenuItems,
@@ -45,7 +43,7 @@ export const ExpandedCameraDialog = ({
       onClose={onClose}
       maxWidth="100%"
       align="flex-start"
-      customHeight="65%"
+      customHeight="70%"
     >
       {open && (
         <Box
@@ -59,7 +57,7 @@ export const ExpandedCameraDialog = ({
           <Title
             smallText
             marginBottom="20px"
-            title={`Camera ${cameraId ?? Number(cameraIndex) + 1}`}
+            title={`Camera ${cameraId ?? Number(cameraIndex) + 1} (${cameraName})`}
           >
             <Box sx={{ cursor: "pointer", marginRight: "16px" }}>
               <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
@@ -68,7 +66,6 @@ export const ExpandedCameraDialog = ({
           <Box sx={{ flex: 100, minHeight: 0, position: "relative" }}>
             <CameraItem
               index={cameraIndex}
-              media={media}
               expandCamera={expandCamera}
               isExpanded
               tags={tags}
@@ -99,7 +96,7 @@ export const ExpandedCameraDialog = ({
                   textOverflow: "ellipsis",
                   //justifyContent: "left",
                 }}
-                onClick={() => item.onClick(cameraIndex)}
+                onClick={() => item.onClick(cameraId ?? 0)}
               >
                 {item.name}
               </Button>
