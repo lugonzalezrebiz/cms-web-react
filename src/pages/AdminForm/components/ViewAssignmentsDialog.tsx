@@ -10,7 +10,7 @@ import useUserAssignments, {
 import useDissociateAssignment from "../hooks/useDissociateAssignment";
 import { Colors, Fonts } from "../../../theme";
 import StateBadge from "../../../components/StateBadge";
-//import styled from "@emotion/styled";
+import styled from "@emotion/styled";
 
 interface Props {
   open: boolean;
@@ -21,15 +21,15 @@ interface Props {
   onResetPassword?: () => void;
 }
 
-// const Title = styled("p")({
-//   margin: 0,
-//   fontFamily: Fonts.main,
-//   fontSize: "20px",
-//   fontWeight: 600,
-//   color: Colors.charcoalNavy,
-//   height: "30px",
-//   lineHeight: 1.5,
-// });
+const Title = styled("p")({
+  margin: 0,
+  fontFamily: Fonts.main,
+  fontSize: "20px",
+  fontWeight: 600,
+  color: Colors.charcoalNavy,
+  height: "30px",
+  lineHeight: 1.5,
+});
 
 const EmployeeDrawerHeader = ({
   name,
@@ -319,15 +319,10 @@ const ViewAssignmentsDialog = ({
         />
       }
     >
-      <Box
-        //mt="20px"
-        display="flex"
-        flexDirection="column"
-        height="99%"
-      >
-        {/* <Box mb="4px">
+      <Box mt="20px" display="flex" flexDirection="column" height="99%">
+        <Box mb="4px">
           <Title>Assignments</Title>
-        </Box> */}
+        </Box>
         {!isLoading && rows.length === 0 ? (
           <Box
             sx={{
