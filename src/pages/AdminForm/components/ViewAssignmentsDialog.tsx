@@ -1,69 +1,257 @@
 import { useRef, useState } from "react";
 import { Box } from "@mui/system";
-import FormDialog from "../../../components/FormDialog";
+import Drawer from "../../../components/Drawer";
+import Divider from "../../../components/Divider";
 import Table, { type Column } from "../../../components/Table";
 import { CustomScrollbarY } from "../../../components/CustomScrollbar";
-import useAssignments from "../../../hooks/useAssignments";
+import useUserAssignments, {
+  type AssignmentDetail,
+} from "../../../hooks/useUserAssignments";
 import useDissociateAssignment from "../hooks/useDissociateAssignment";
 import { Colors, Fonts } from "../../../theme";
 import StateBadge from "../../../components/StateBadge";
-import type { AssignmentDetail } from "./AssignmentsDetailPopover";
+//import styled from "@emotion/styled";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   employeeId?: number;
+  name?: string;
+  role?: string;
+  onResetPassword?: () => void;
 }
 
-interface GroupedAssignment {
-  companyDisplay: string;
-  locationDisplay: string;
+// const Title = styled("p")({
+//   margin: 0,
+//   fontFamily: Fonts.main,
+//   fontSize: "20px",
+//   fontWeight: 600,
+//   color: Colors.charcoalNavy,
+//   height: "30px",
+//   lineHeight: 1.5,
+// });
+
+const EmployeeDrawerHeader = ({
+  name,
+  role,
+  onResetPassword,
+}: {
+  name?: string;
+  role?: string;
+  onResetPassword?: () => void;
+}) => {
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          p: "8px 0 ",
+        }}
+      >
+        <Box p={"4px 8px"}>
+          <img
+            src="./assets/user-03.svg"
+            alt="user"
+            style={{ width: 34, height: 34, marginTop: "4px" }}
+          />
+        </Box>
+        <Box>
+          <Box
+            sx={{
+              fontFamily: Fonts.main,
+              fontSize: "16px",
+              fontWeight: 600,
+              color: Colors.lightBlack,
+              lineHeight: 1.5,
+            }}
+          >
+            {name}
+          </Box>
+          <Box
+            sx={{
+              fontFamily: Fonts.main,
+              fontSize: "14px",
+              fontWeight: 500,
+              color: Colors.dimGray,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              lineHeight: 1.43,
+            }}
+          >
+            {role} Agent -
+            <Box
+              component="span"
+              onClick={onResetPassword}
+              sx={{
+                color: Colors.vividOrange,
+                fontWeight: 500,
+                cursor: "pointer",
+                textDecoration: "underline",
+                lineHeight: 1.43,
+              }}
+            >
+              Reset Password
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+      <Divider marginBottom="0px" />
+    </Box>
+  );
+};
+
+const AssignmentToggle = ({
+  details,
+  activeKey,
+  rowKey,
+  onToggle,
+}: {
+  details: AssignmentDetail[];
+  activeKey: string | null;
+  rowKey: string;
+  onToggle: (key: string) => void;
+}) => {
+  return (
+    <Box
+      onClick={() => onToggle(rowKey)}
+      sx={{
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+      }}
+    >
+      {details.length} {details.length === 1 ? "assignment" : "assignments"}
+      <img
+        src="./assets/chevron-down-2.svg"
+        alt="Expand"
+        style={{
+          transform: activeKey === rowKey ? "rotate(180deg)" : "none",
+          transition: "transform 0.2s ease",
+        }}
+      />
+    </Box>
+  );
+};
+
+const DeleteButton = ({
+  companyID,
+  locationID,
+  isPending,
+  onDelete,
+}: {
   companyID: number;
   locationID: number;
-  details: AssignmentDetail[];
-}
+  isPending: boolean;
+  onDelete: (companyID: number, locationID: number) => void;
+}) => {
+  return (
+    <Box
+      component="img"
+      src="./assets/trash-03.svg"
+      alt="delete"
+      sx={{
+        cursor: isPending ? "not-allowed" : "pointer",
+        display: "block",
+        opacity: isPending ? 0.4 : 1,
+      }}
+      onClick={() => !isPending && onDelete(companyID, locationID)}
+    />
+  );
+};
 
-const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
+const ExpandedDetails = ({
+  details,
+  isExpanded,
+}: {
+  details: AssignmentDetail[];
+  isExpanded: boolean;
+}) => {
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateRows: isExpanded ? "1fr" : "0fr",
+        transition: "grid-template-rows 0.25s ease",
+      }}
+    >
+      <Box sx={{ overflow: "hidden" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            padding: "8px 12px",
+            borderBottom: `1px solid ${Colors.paleGray}`,
+          }}
+        >
+          {details.map((item, i) => (
+            <Box
+              key={i}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                borderBottom:
+                  i !== details.length - 1
+                    ? `1px solid ${Colors.paleGray}`
+                    : "none",
+                padding: "6px 16px",
+              }}
+            >
+              <Box
+                sx={{
+                  fontFamily: Fonts.main,
+                  fontSize: "14px",
+                  color: Colors.lightBlack,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.date}
+              </Box>
+              <Box
+                sx={{
+                  minWidth: "110px",
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              >
+                <StateBadge state={item.state} />
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+const ViewAssignmentsDialog = ({
+  open,
+  onClose,
+  employeeId,
+  name,
+  role,
+  onResetPassword,
+}: Props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const { assignments, isLoading } = useAssignments({
-    mode: "user",
+  const { groupedList, isLoading } = useUserAssignments({
     userID: employeeId ?? null,
   });
 
   const { dissociate, isPending, errorMessage } =
     useDissociateAssignment(employeeId);
 
-  const grouped = assignments.reduce<Record<string, GroupedAssignment>>(
-    (acc, a) => {
-      const key = `${a.location}-${a.store}`;
-      if (!acc[key]) {
-        acc[key] = {
-          companyDisplay: a.companyName
-            ? `${a.companyName} (${a.location})`
-            : String(a.location),
-          locationDisplay: a.locationName
-            ? `${a.locationName} (${a.store})`
-            : String(a.store),
-          companyID: a.location,
-          locationID: a.store,
-          details: [],
-        };
-      }
-      acc[key].details.push({ date: a.date, state: a.state });
-      return acc;
-    },
-    {},
-  );
-
-  const groupedList = Object.values(grouped);
-
   const columns: Column[] = [
     {
       title: "COMPANY",
       key: "company",
-      width: "90px",
+      width: "70px",
       align: "center",
       rowColor: Colors.vividOrange,
     },
@@ -80,185 +268,119 @@ const ViewAssignmentsDialog = ({ open, onClose, employeeId }: Props) => {
       align: "center",
       rowColor: Colors.vividOrange,
       render: (value: { key: string; details: AssignmentDetail[] }) => (
-        <Box
-          onClick={() =>
-            setActiveKey((prev) => (prev === value.key ? null : value.key))
+        <AssignmentToggle
+          details={value.details}
+          activeKey={activeKey}
+          rowKey={value.key}
+          onToggle={(key) =>
+            setActiveKey((prev) => (prev === key ? null : key))
           }
-          sx={{
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          {value.details.length}{" "}
-          {value.details.length === 1 ? "assignment" : "assignments"}
-          <img
-            src="./assets/chevron-down-2.svg"
-            alt="Expand"
-            style={{
-              transform: activeKey === value.key ? "rotate(180deg)" : "none",
-              transition: "transform 0.2s ease",
-            }}
-          />
-        </Box>
+        />
       ),
     },
     {
       title: "",
       key: "delete",
-      width: "40px",
-      align: "center",
+      width: "15px",
+      align: "right",
       render: (value: { locationID: number; companyID: number }) => (
-        <Box
-          component="img"
-          src="./assets/trash-03.svg"
-          alt="delete"
-          sx={{
-            cursor: isPending ? "not-allowed" : "pointer",
-            display: "block",
-            opacity: isPending ? 0.4 : 1,
-          }}
-          onClick={() =>
-            !isPending && dissociate(value.companyID, value.locationID)
-          }
+        <DeleteButton
+          companyID={value.companyID}
+          locationID={value.locationID}
+          isPending={isPending}
+          onDelete={dissociate}
         />
       ),
     },
   ];
 
-  const rows = groupedList.map((g) => ({
-    company: g.companyDisplay,
-    location: g.locationDisplay,
-    detail: { key: `${g.companyID}-${g.locationID}`, details: g.details },
-    delete: { locationID: g.locationID, companyID: g.companyID },
-  }));
+  const rows = groupedList.map((g) => {
+    const key = `${g.companyID}-${g.locationID}`;
+    const isExpanded = activeKey === key;
+    return {
+      company: g.companyDisplay,
+      location: g.locationDisplay,
+      detail: { key, details: g.details },
+      delete: { locationID: g.locationID, companyID: g.companyID },
+      content: <ExpandedDetails details={g.details} isExpanded={isExpanded} />,
+    };
+  });
 
   return (
-    <FormDialog
-      title="Assignment"
+    <Drawer
       open={open}
       onClose={onClose}
-      gap="12px"
-      maxWidth="450px"
+      width={450}
+      header={
+        <EmployeeDrawerHeader
+          name={name}
+          role={role}
+          onResetPassword={onResetPassword}
+        />
+      }
     >
-      {!isLoading && rows.length === 0 ? (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "120px",
-            color: Colors.dimGray,
-            fontFamily: Fonts.main,
-            fontSize: "14px",
-          }}
-        >
-          No assignments found for this employee
-        </Box>
-      ) : (
-        <CustomScrollbarY
-          ref={scrollContainerRef}
-          height="320px"
-          thumbLength={15}
-          scrollX
-          xThumbLength={15}
-          sx={{ width: "100%" }}
-        >
-          <Box p="0px 0px 12px 0px">
-            <Table
-              columns={columns}
-              rows={rows}
-              mainColumnWidth="120px"
-              mainRowWidth="120px"
-              TableCellWidth="120px"
-              rowWidth="120px"
-              scrollContainerRef={scrollContainerRef}
-              disableOverflow
-              loading={isLoading}
-              getExpandedContent={(row) => {
-                const detail = row.detail as {
-                  key: string;
-                  details: AssignmentDetail[];
-                };
-                const isExpanded = activeKey === detail.key;
-                return (
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateRows: isExpanded ? "1fr" : "0fr",
-                      transition: "grid-template-rows 0.25s ease",
-                    }}
-                  >
-                    <Box sx={{ overflow: "hidden" }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          padding: "8px 12px",
-                          backgroundColor: "#f7f8fa",
-                          borderBottom: `1px solid ${Colors.paleGray}`,
-                        }}
-                      >
-                        {detail.details.map((item, i) => (
-                          <Box
-                            key={i}
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              borderBottom:
-                                i !== detail.details.length - 1
-                                  ? `1px solid ${Colors.paleGray}`
-                                  : "none",
-                              padding: "6px 16px",
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                fontFamily: Fonts.main,
-                                fontSize: "14px",
-                                color: Colors.lightBlack,
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {item.date}
-                            </Box>
-                            <Box
-                              sx={{
-                                minWidth: "110px",
-                                display: "flex",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <StateBadge state={item.state} />
-                            </Box>
-                          </Box>
-                        ))}
-                      </Box>
-                    </Box>
-                  </Box>
-                );
-              }}
-            />
-            {errorMessage && (
-              <Box
-                sx={{
-                  mt: "8px",
-                  px: "8px",
-                  color: Colors.red,
-                  fontFamily: Fonts.main,
-                  fontSize: "12px",
-                }}
-              >
-                {errorMessage}
-              </Box>
-            )}
+      <Box
+        //mt="20px"
+        display="flex"
+        flexDirection="column"
+        height="99%"
+      >
+        {/* <Box mb="4px">
+          <Title>Assignments</Title>
+        </Box> */}
+        {!isLoading && rows.length === 0 ? (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "120px",
+              color: Colors.dimGray,
+              fontFamily: Fonts.main,
+              fontSize: "14px",
+            }}
+          >
+            No assignments found for this employee
           </Box>
-        </CustomScrollbarY>
-      )}
-    </FormDialog>
+        ) : (
+          <CustomScrollbarY
+            ref={scrollContainerRef}
+            height="95%"
+            thumbLength={15}
+            scrollX
+            xThumbLength={15}
+            sx={{ width: "100%", height: "100%" }}
+          >
+            <Box p="0px 0px 12px 0px">
+              <Table
+                columns={columns}
+                rows={rows}
+                mainColumnWidth="120px"
+                mainRowWidth="120px"
+                TableCellWidth="120px"
+                rowWidth="120px"
+                scrollContainerRef={scrollContainerRef}
+                disableOverflow
+                loading={isLoading}
+              />
+              {errorMessage && (
+                <Box
+                  sx={{
+                    mt: "8px",
+                    px: "8px",
+                    color: Colors.red,
+                    fontFamily: Fonts.main,
+                    fontSize: "12px",
+                  }}
+                >
+                  {errorMessage}
+                </Box>
+              )}
+            </Box>
+          </CustomScrollbarY>
+        )}
+      </Box>
+    </Drawer>
   );
 };
 

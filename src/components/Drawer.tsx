@@ -8,10 +8,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
-  title: string;
+  title?: string;
+  header?: ReactNode;
+  width?: number | string;
 }
 
-const Drawer = ({ open, onClose, children, title }: Props) => {
+const Drawer = ({ open, onClose, children, title, header, width = 661 }: Props) => {
   return (
     <DrawerMUI
       anchor="right"
@@ -20,7 +22,7 @@ const Drawer = ({ open, onClose, children, title }: Props) => {
       slotProps={{
         paper: {
           sx: {
-            width: "661px",
+            width,
             bgcolor: Colors.white,
             padding: "16px",
             borderTopLeftRadius: "16px",
@@ -40,7 +42,7 @@ const Drawer = ({ open, onClose, children, title }: Props) => {
         >
           <img src="./assets/x-close.svg" alt="" />
         </Box>
-        <Title margin={false} marginBottom="0" title={title} />
+        {header ?? (title && <Title margin={false} marginBottom="0" title={title} />)}
       </Box>
       <Box height={"100%"}>{children}</Box>
     </DrawerMUI>

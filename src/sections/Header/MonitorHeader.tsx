@@ -174,7 +174,7 @@ const SmallSize = ({
     monitoringID,
   } = useMonitorParams();
   const navState = useLocationState<{ assignment: NavigationAssignment }>();
-  const { assignments } = useAssignments({ mode: "company", companyID, locationID });
+  const { assignments } = useAssignments({ companyID, locationID });
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??
@@ -350,7 +350,7 @@ const NormalSize = ({
     monitoringID,
   } = useMonitorParams();
   const navState = useLocationState<{ assignment: NavigationAssignment }>();
-  const { assignments } = useAssignments({ mode: "company", companyID, locationID });
+  const { assignments } = useAssignments({ companyID, locationID });
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??

@@ -17,7 +17,7 @@ import LazyLoading from "./LazyLoading";
 import TableSkeleton from "./TableSkeleton";
 
 interface Props {
-  clickableRows?: boolean; // Indicates if rows are clickable
+  clickableRows?: "mainRow" | "allRow"; // Indicates if rows are clickable and which cells trigger the click
   columns: Column[];
   rows: Record<string, unknown>[];
   onRowClick?: (rowIndex: number) => void; // Callback for row click events
@@ -32,7 +32,6 @@ interface Props {
   rowWidth?: string; // Width of the rows (used for non-main columns)
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   disableOverflow?: boolean;
-  getExpandedContent?: (row: Record<string, unknown>, rowIndex: number) => React.ReactNode | null;
 }
 
 export interface Group {
@@ -240,7 +239,7 @@ const TableHeader = ({
 const Table = ({
   loading,
   loadMore,
-  clickableRows = false,
+  clickableRows = "mainRow",
   rows,
   onRowClick,
   columns,
@@ -253,7 +252,6 @@ const Table = ({
   rowWidth,
   scrollContainerRef,
   disableOverflow,
-  getExpandedContent,
 }: Props) => {
   return (
     <Box margin="0 0px 0 0px" width={"100%"} borderRadius="8px">
@@ -394,10 +392,13 @@ const Table = ({
               scrollContainerRef={scrollContainerRef}
             >
               {rows.map((row, rowIndex) => {
-                const expandedContent = getExpandedContent?.(row, rowIndex);
+                const content = row.content as React.ReactNode;
                 return (
                 <Fragment key={rowIndex}>
-                <TableRow>
+                <TableRow
+                  onClick={clickableRows === "allRow" && onRowClick ? () => onRowClick((row.id as number | undefined) ?? rowIndex) : undefined}
+                  sx={{ cursor: clickableRows === "allRow" ? "pointer" : "default" }}
+                >
                   {columns.map((col, colIndex) => {
                     const group = groups?.find((group) =>
                       group.columns.includes(col.key),
@@ -426,12 +427,12 @@ const Table = ({
                       return (
                         <MainRow
                           key={colIndex}
-                          isClickable={clickableRows}
+                          isClickable={clickableRows === "mainRow"}
                           mainRowWidth={col.width || mainRowWidth}
                           rowColor={col.rowColor}
                           rowAlign={col.align}
                           onClick={() => {
-                            if (clickableRows && onRowClick) {
+                            if (clickableRows === "mainRow" && onRowClick) {
                               onRowClick(
                                 (row.id as number | undefined) ?? rowIndex,
                               );
@@ -506,13 +507,13 @@ const Table = ({
                     );
                   })}
                 </TableRow>
-                {getExpandedContent && (
+                {content && (
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
                       sx={{ padding: 0, border: "none" }}
                     >
-                      {expandedContent}
+                      {content}
                     </TableCell>
                   </TableRow>
                 )}

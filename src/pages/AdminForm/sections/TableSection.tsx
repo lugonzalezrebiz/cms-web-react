@@ -20,8 +20,13 @@ const TableSection = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<
-    number | undefined
+  const [selectedEmployee, setSelectedEmployee] = useState<
+    | {
+        id: number;
+        name: string;
+        role: string;
+      }
+    | undefined
   >(undefined);
 
   const allSelected = users.length > 0 && selectedIds.size === users.length;
@@ -37,6 +42,22 @@ const TableSection = () => {
       else next.delete(id);
       return next;
     });
+  };
+
+  const handleRowClick = (id: number) => {
+    const user = users.find((u: User) => u.id === id);
+    if (user) {
+      const role =
+        user.roleID === ADMIN_ROLE
+          ? "Admin"
+          : user.roleID === AGENT_ROLE
+            ? "Agent"
+            : user.roleID === REVIEWER_ROLE
+              ? "Reviewer"
+              : String(user.roleID);
+      setSelectedEmployee({ id: user.id, name: user.name, role });
+      setViewDialogOpen(true);
+    }
   };
 
   const columns: Column[] = [
@@ -110,32 +131,11 @@ const TableSection = () => {
           fontSize="12px"
           outfit
           onClick={() => {
-            setSelectedEmployeeId(value);
+            setSelectedEmployee({ id: value, name: "", role: "" });
             setAssignDialogOpen(true);
           }}
         >
           ASSIGN
-        </Button>
-      ),
-    },
-    {
-      title: "",
-      key: "view",
-      align: "center",
-      width: "60px",
-      render: (value: number) => (
-        <Button
-          square
-          sx={{ height: "20px" }}
-          fontSize="12px"
-          color="secondary"
-          outfit
-          onClick={() => {
-            setSelectedEmployeeId(value);
-            setViewDialogOpen(true);
-          }}
-        >
-          VIEW
         </Button>
       ),
     },
@@ -159,7 +159,6 @@ const TableSection = () => {
         email: user.email,
         active: user.active ? "Yes" : "No",
         assign: user.id,
-        view: user.id,
       })),
     [users, selectedIds],
   );
@@ -207,6 +206,8 @@ const TableSection = () => {
           rowWidth="150px"
           scrollContainerRef={scrollContainerRef}
           disableOverflow
+          clickableRows="allRow"
+          onRowClick={handleRowClick}
         />
       </CustomScrollbarY>
       <CreateEmployeeDialog
@@ -216,12 +217,14 @@ const TableSection = () => {
       <AssignDialog
         open={assignDialogOpen}
         onClose={() => setAssignDialogOpen(false)}
-        employeeId={selectedEmployeeId}
+        employeeId={selectedEmployee?.id}
       />
       <ViewAssignmentsDialog
         open={viewDialogOpen}
         onClose={() => setViewDialogOpen(false)}
-        employeeId={selectedEmployeeId}
+        employeeId={selectedEmployee?.id}
+        name={selectedEmployee?.name}
+        role={selectedEmployee?.role}
       />
     </Box>
   );

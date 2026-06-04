@@ -43,30 +43,25 @@ interface AssignmentsResponse {
   data: AssignmentItem[];
 }
 
-type AssignmentsParams =
-  | { mode: "company"; companyID: number | null; locationID?: number | null }
-  | { mode: "user"; userID: number | null };
+const useAssignments = ({
+  companyID,
+  locationID,
+}: {
+  companyID: number | null;
+  locationID?: number | null;
+}) => {
+  const body = {
+    companyID: companyID ?? 0,
+    ...(locationID ? { locationID } : {}),
+  };
 
-type AssignmentsPayload = { companyID: number; locationID?: number } | { userID: number };
-
-const useAssignments = (params: AssignmentsParams) => {
-  const isCompany = params.mode === "company";
-
-  const body: AssignmentsPayload = isCompany
-    ? { companyID: params.companyID ?? 0, ...(params.locationID ? { locationID: params.locationID } : {}) }
-    : { userID: params.userID ?? 0 };
-
-  const queryKey = isCompany
-    ? ["location/assignments", params.companyID, params.locationID ?? null]
-    : ["location/assignments", "user", params.userID];
-
-  const enabled = isCompany ? params.companyID !== null : params.userID !== null;
-
-  const { data, isLoading, isPending, isError } = usePostQuery<AssignmentsResponse, AssignmentsPayload>(
-    "location/assignments",
-    body,
-    { queryKey, enabled }
-  );
+  const { data, isLoading, isPending, isError } = usePostQuery<
+    AssignmentsResponse,
+    typeof body
+  >("location/assignments", body, {
+    queryKey: ["location/assignments", companyID, locationID ?? null],
+    enabled: companyID !== null,
+  });
 
   const formatTime = (time: string | null) => (time ? time.slice(0, 5) : "-");
 

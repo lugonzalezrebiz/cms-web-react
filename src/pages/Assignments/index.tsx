@@ -25,7 +25,6 @@ const Assignments = () => {
   const { companyFilters, getStoreFilters } = useCompanies();
   const effectiveCompany = company || companyFilters[1]?.value || "";
   const { assignments, isPending: isLoading } = useAssignments({
-    mode: "company",
     companyID: effectiveCompany ? Number(effectiveCompany) : null,
     locationID: store ? Number(store) : null,
   });

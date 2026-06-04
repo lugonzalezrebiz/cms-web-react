@@ -89,7 +89,7 @@ const TicketsDrawer = ({
             xThumbLength={15}
           >
             <Table
-              clickableRows
+              clickableRows="mainRow"
               columns={columns}
               rows={rows}
               onRowClick={handleRowClick}
