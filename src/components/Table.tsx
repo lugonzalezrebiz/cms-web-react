@@ -431,6 +431,7 @@ const Table = ({
                           mainRowWidth={col.width || mainRowWidth}
                           rowColor={col.rowColor}
                           rowAlign={col.align}
+                          title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
                           onClick={() => {
                             if (clickableRows === "mainRow" && onRowClick) {
                               onRowClick(
@@ -470,6 +471,7 @@ const Table = ({
                         rowColor={col.rowColor}
                         rowAlign={col.align}
                         key={colIndex}
+                        title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
                         sx={{
                           backgroundColor:
                             group?.backgroundColor || Colors.white,

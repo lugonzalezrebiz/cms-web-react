@@ -52,6 +52,7 @@ const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
       }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["location/assignments", "user", variables.employeeId] });
+      queryClient.invalidateQueries({ queryKey: [`user/${variables.employeeId}/location`] });
       options?.onSuccess?.();
     },
   });

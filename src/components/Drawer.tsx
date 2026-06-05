@@ -1,4 +1,4 @@
-import { Drawer as DrawerMUI } from "@mui/material";
+import { Divider, Drawer as DrawerMUI } from "@mui/material";
 import { Box } from "@mui/system";
 import Title from "./Title";
 import { Colors } from "../theme";
@@ -13,7 +13,14 @@ interface Props {
   width?: number | string;
 }
 
-const Drawer = ({ open, onClose, children, title, header, width = 661 }: Props) => {
+const Drawer = ({
+  open,
+  onClose,
+  children,
+  title,
+  header,
+  width = 500,
+}: Props) => {
   return (
     <DrawerMUI
       anchor="right"
@@ -38,13 +45,28 @@ const Drawer = ({ open, onClose, children, title, header, width = 661 }: Props) 
           top={20}
           right={20}
           onClick={onClose}
-          sx={{ cursor: "pointer" }}
+          sx={{ cursor: "pointer", visibility: "hidden" }}
         >
           <img src="./assets/x-close.svg" alt="" />
         </Box>
-        {header ?? (title && <Title margin={false} marginBottom="0" title={title} />)}
+        {header ??
+          (title && (
+            <Box>
+              <Box p={"10px 0 "}>
+                <Title
+                  showDivider={false}
+                  margin={false}
+                  marginBottom="0"
+                  title={title}
+                />
+              </Box>
+              <Divider />
+            </Box>
+          ))}
       </Box>
-      <Box height={"100%"}>{children}</Box>
+      <Box height={"100%"}>
+        <Box height={"99%"}>{children}</Box>
+      </Box>
     </DrawerMUI>
   );
 };

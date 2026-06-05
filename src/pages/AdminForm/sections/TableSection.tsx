@@ -123,20 +123,23 @@ const TableSection = () => {
       title: "",
       key: "assign",
       width: "40px",
-      align: "left",
+      align: "center",
       render: (value: number) => (
-        <Button
-          square
-          sx={{ height: "20px" }}
-          fontSize="12px"
-          outfit
-          onClick={() => {
-            setSelectedEmployee({ id: value, name: "", role: "" });
-            setAssignDialogOpen(true);
-          }}
-        >
-          ASSIGN
-        </Button>
+        <Box>
+          <Button
+            square
+            sx={{ height: "20px" }}
+            fontSize="12px"
+            outfit
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedEmployee({ id: value, name: "", role: "" });
+              setAssignDialogOpen(true);
+            }}
+          >
+            ASSIGN
+          </Button>
+        </Box>
       ),
     },
   ];
@@ -164,8 +167,20 @@ const TableSection = () => {
   );
 
   return (
-    <Box sx={{ overflow: "hidden" }}>
-      <Title margin={false} title="Users" marginBottom="16px">
+    <Box
+      sx={{
+        overflow: "hidden",
+        gap: "26px",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Title
+        margin={false}
+        showDivider={false}
+        title="Users"
+        marginBottom="16px"
+      >
         <Grid
           container
           sx={{

@@ -50,11 +50,16 @@ const EmployeeDrawerHeader = ({
           p: "8px 0 ",
         }}
       >
-        <Box p={"4px 8px"}>
+        <Box p={"4px 8px 4px 0"}>
           <img
             src="./assets/user-03.svg"
             alt="user"
-            style={{ width: 34, height: 34, marginTop: "4px" }}
+            style={{
+              width: 34,
+              height: 34,
+              marginTop: "4px",
+              marginLeft: "-4px",
+            }}
           />
         </Box>
         <Box>
@@ -114,11 +119,12 @@ const AssignmentToggle = ({
   rowKey: string;
   onToggle: (key: string) => void;
 }) => {
+  const hasDetails = details.length > 0;
   return (
     <Box
-      onClick={() => onToggle(rowKey)}
+      onClick={() => hasDetails && onToggle(rowKey)}
       sx={{
-        cursor: "pointer",
+        cursor: hasDetails ? "pointer" : "default",
         whiteSpace: "nowrap",
         display: "flex",
         alignItems: "center",
@@ -126,14 +132,16 @@ const AssignmentToggle = ({
       }}
     >
       {details.length} {details.length === 1 ? "assignment" : "assignments"}
-      <img
-        src="./assets/chevron-down-2.svg"
-        alt="Expand"
-        style={{
-          transform: activeKey === rowKey ? "rotate(180deg)" : "none",
-          transition: "transform 0.2s ease",
-        }}
-      />
+      {hasDetails && (
+        <img
+          src="./assets/chevron-down-2.svg"
+          alt="Expand"
+          style={{
+            transform: activeKey === rowKey ? "rotate(180deg)" : "none",
+            transition: "transform 0.2s ease",
+          }}
+        />
+      )}
     </Box>
   );
 };
@@ -184,7 +192,7 @@ const ExpandedDetails = ({
           sx={{
             display: "flex",
             flexDirection: "column",
-            padding: "8px 12px",
+            padding: "8px 90px 8px 6px",
             borderBottom: `1px solid ${Colors.paleGray}`,
           }}
         >
@@ -265,7 +273,7 @@ const ViewAssignmentsDialog = ({
       title: "",
       key: "detail",
       width: "60px",
-      align: "center",
+      align: "left",
       rowColor: Colors.vividOrange,
       render: (value: { key: string; details: AssignmentDetail[] }) => (
         <AssignmentToggle
@@ -310,7 +318,6 @@ const ViewAssignmentsDialog = ({
     <Drawer
       open={open}
       onClose={onClose}
-      width={450}
       header={
         <EmployeeDrawerHeader
           name={name}
@@ -346,7 +353,7 @@ const ViewAssignmentsDialog = ({
             xThumbLength={15}
             sx={{ width: "100%", height: "100%" }}
           >
-            <Box p="0px 0px 12px 0px">
+            <Box height={"100%"}>
               <Table
                 columns={columns}
                 rows={rows}

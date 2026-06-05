@@ -29,6 +29,7 @@ const useDissociateAssignment = (userID: number | null | undefined) => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["location/assignments", "user", userID] });
+      queryClient.invalidateQueries({ queryKey: [`user/${userID}/location`] });
     },
   });
 

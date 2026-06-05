@@ -6,10 +6,11 @@ import { stateColors, type stateAssignments } from "./stateColors";
 
 interface StateBadgeProps {
   state: stateAssignments;
+  label?: string;
   sx?: SxProps;
 }
 
-const StateBadge = ({ state, sx }: StateBadgeProps) => (
+const StateBadge = ({ state, label, sx }: StateBadgeProps) => (
   <Box
     sx={{
       p: "4px 16px",
@@ -26,7 +27,7 @@ const StateBadge = ({ state, sx }: StateBadgeProps) => (
       ...sx,
     }}
   >
-    {state}
+    {label ?? state}
   </Box>
 );
 

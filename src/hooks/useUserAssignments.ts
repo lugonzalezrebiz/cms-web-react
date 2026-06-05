@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { usePostQuery } from "./useApi";
+import { useGet, usePostQuery } from "./useApi";
 import type { stateAssignments } from "../pages/Assignments/components/stateColors";
 import utc from "dayjs/plugin/utc";
 
@@ -56,32 +56,41 @@ interface AssignmentsResponse {
   data: AssignmentItem[];
 }
 
-const useUserAssignments = ({ userID }: { userID: number | null }) => {
-  const { data, isLoading, isPending, isError } = usePostQuery<
-    AssignmentsResponse,
-    { userID: number }
-  >("location/assignments", { userID: userID ?? 0 }, {
-    queryKey: ["location/assignments", "user", userID],
-    enabled: userID !== null,
-  });
+interface LocationEntry {
+  companyID: number;
+  locationIDs: number[];
+}
 
-  const grouped = (data?.data ?? []).reduce<Record<string, GroupedAssignment>>(
+interface UserLocationResponse {
+  success: boolean;
+  userID: number;
+  assignments: LocationEntry[];
+}
+
+export const userLocationQueryKey = (userID: number) => [`user/${userID}/location`];
+
+const useUserAssignments = ({ userID }: { userID: number | null }) => {
+  const enabled = userID !== null;
+
+  const { data: locationData, isLoading: locationsLoading, isError: locationsError } =
+    useGet<UserLocationResponse>(
+      `user/${userID ?? 0}/location`,
+      undefined,
+      { enabled },
+    );
+
+  const { data: assignmentsData, isLoading: assignmentsLoading, isError: assignmentsError } =
+    usePostQuery<AssignmentsResponse, { userID: number }>(
+      "location/assignments",
+      { userID: userID ?? 0 },
+      { queryKey: ["location/assignments", "user", userID], enabled },
+    );
+
+  const detailsMap = (assignmentsData?.data ?? []).reduce<Record<string, AssignmentDetail[]>>(
     (acc, a) => {
       const key = `${a.companyID}-${a.locationID}`;
-      if (!acc[key]) {
-        acc[key] = {
-          companyDisplay: a.companyName
-            ? `${a.companyName} (${a.companyID})`
-            : String(a.companyID),
-          locationDisplay: a.locationName
-            ? `${a.locationName} (${a.locationID})`
-            : String(a.locationID),
-          companyID: a.companyID,
-          locationID: a.locationID,
-          details: [],
-        };
-      }
-      acc[key].details.push({
+      if (!acc[key]) acc[key] = [];
+      acc[key].push({
         date: dayjs.utc(a.date).format("MMMM DD - YYYY"),
         state: parseStatusName(a.statusName),
       });
@@ -90,9 +99,45 @@ const useUserAssignments = ({ userID }: { userID: number | null }) => {
     {},
   );
 
-  const groupedList = Object.values(grouped);
+  const companyNameMap = (assignmentsData?.data ?? []).reduce<Record<number, string | null>>(
+    (acc, a) => {
+      if (!(a.companyID in acc)) acc[a.companyID] = a.companyName;
+      return acc;
+    },
+    {},
+  );
 
-  return { groupedList, isLoading, isPending, isError };
+  const locationNameMap = (assignmentsData?.data ?? []).reduce<Record<string, string | null>>(
+    (acc, a) => {
+      const key = `${a.companyID}-${a.locationID}`;
+      if (!(key in acc)) acc[key] = a.locationName;
+      return acc;
+    },
+    {},
+  );
+
+  const groupedList: GroupedAssignment[] = (locationData?.assignments ?? []).flatMap(
+    ({ companyID, locationIDs }) =>
+      locationIDs.map((locationID) => {
+        const key = `${companyID}-${locationID}`;
+        const companyName = companyNameMap[companyID] ?? null;
+        const locationName = locationNameMap[key] ?? null;
+        return {
+          companyDisplay: companyName ? `${companyName} (${companyID})` : String(companyID),
+          locationDisplay: locationName ? `${locationName} (${locationID})` : String(locationID),
+          companyID,
+          locationID,
+          details: detailsMap[key] ?? [],
+        };
+      }),
+  );
+
+  return {
+    groupedList,
+    isLoading: locationsLoading || assignmentsLoading,
+    isPending: locationsLoading || assignmentsLoading,
+    isError: locationsError || assignmentsError,
+  };
 };
 
 export default useUserAssignments;

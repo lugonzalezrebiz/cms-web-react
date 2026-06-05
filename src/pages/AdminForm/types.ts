@@ -46,3 +46,15 @@ export interface TicketsResponse {
   success: boolean;
   tickets: Ticket[];
 }
+
+export interface AssignmentCountItem {
+  type: string;
+  count: number;
+}
+
+export interface AssignmentCountResponse {
+  success: boolean;
+  scope: string;
+  user: null;
+  data: AssignmentCountItem[];
+}

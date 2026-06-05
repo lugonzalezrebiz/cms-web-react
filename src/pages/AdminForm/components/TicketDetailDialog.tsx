@@ -1,5 +1,6 @@
 import { Box } from "@mui/material";
 import styled from "@emotion/styled";
+import { useMarkTicketResolved } from "../hooks/useMarkTicketResolved";
 import { Colors, Fonts } from "../../../theme";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
@@ -7,14 +8,13 @@ import {
   formatTicketDateWithTime,
   formatTicketDate,
 } from "../utils/formatTicketDate";
-import type { stateAssignments } from "../../../components/stateColors";
+import { normalizeTicketState } from "../../../components/stateColors";
 import type { Ticket } from "../types";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   ticket: Ticket;
-  onMarkAsResolved?: (ticketId: number) => void;
 }
 
 const RowLabel = styled("p")({
@@ -53,19 +53,8 @@ const DescriptionText = styled("p")({
   lineHeight: 1.43,
 });
 
-const ticketStatusMap: Record<string, stateAssignments> = {
-  open: "Open Ticket",
-  closed: "Completed",
-  paused: "Paused",
-  error: "Error",
-};
-
-const TicketDetailDialog = ({
-  open,
-  onClose,
-  ticket,
-  onMarkAsResolved,
-}: Props) => {
+const TicketDetailDialog = ({ open, onClose, ticket }: Props) => {
+  const { markAsResolved } = useMarkTicketResolved();
   return (
     <FormDialog
       open={open}
@@ -76,7 +65,7 @@ const TicketDetailDialog = ({
         location: ticket.locationID,
         store: ticket.companyID,
         date: formatTicketDate(ticket.createDate),
-        state: ticketStatusMap[ticket.status] ?? "Open Ticket",
+        state: normalizeTicketState(ticket.status ?? ""),
       }}
     >
       <Box>
@@ -110,20 +99,22 @@ const TicketDetailDialog = ({
         <DescriptionText>{ticket.description}</DescriptionText>
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button
-          fontSize="14px"
-          sx={{ height: "40px", borderRadius: "20px", px: "24px" }}
-          color="primary"
-          outfit
-          onClick={() => {
-            onMarkAsResolved?.(ticket.id);
-            onClose();
-          }}
-        >
-          Mark as Resolved
-        </Button>
-      </Box>
+      {ticket.status?.toLowerCase() !== "resolved" && (
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            fontSize="14px"
+            sx={{ height: "40px", borderRadius: "20px", px: "24px" }}
+            color="primary"
+            outfit
+            onClick={() => {
+              markAsResolved(ticket.id);
+              onClose();
+            }}
+          >
+            Mark as Resolved
+          </Button>
+        </Box>
+      )}
     </FormDialog>
   );
 };

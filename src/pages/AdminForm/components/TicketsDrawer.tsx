@@ -9,50 +9,74 @@ import { formatTicketDate } from "../utils/formatTicketDate";
 import Drawer from "../../../components/Drawer";
 import type { Ticket } from "../types";
 import { useTickets } from "../hooks/useTickets";
+import { useMarkTicketResolved } from "../hooks/useMarkTicketResolved";
+import StateBadge from "../../../components/StateBadge";
+import { normalizeTicketState } from "../../../components/stateColors";
+
+const formatStatusLabel = (status: string) => {
+  const label =
+    status.toLowerCase() === "pending_reporter" ||
+    status.toLowerCase() === "pending_support"
+      ? "Pending"
+      : status;
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+};
 
 interface TicketsDrawerProps {
   open: boolean;
   onClose: () => void;
-  onMarkAsResolved?: (ticketId: number) => void;
 }
 
-const TicketsDrawer = ({
-  open,
-  onClose,
-  onMarkAsResolved,
-}: TicketsDrawerProps) => {
+const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const { tickets } = useTickets();
+  const { markAsResolved } = useMarkTicketResolved();
 
   const columns: Column[] = [
-    { title: "CREATED BY", key: "createdBy", width: "120px", align: "center" },
-    { title: "COMPANY", key: "company", width: "40px" },
-    { title: "STORE", key: "location", width: "40px", align: "center" },
+    { title: "CREATED BY", key: "createdBy", width: "90px", align: "center" },
     {
-      title: "CREATED AT",
+      title: "CREATED ON",
       key: "reported",
-      width: "90px",
+      width: "67px",
       rowColor: Colors.vividOrange,
     },
-    { title: "ISSUE", key: "issue", width: "120px" },
+    {
+      title: "STATUS",
+      key: "status",
+      width: "70px",
+      align: "center",
+      render: (status: string) => (
+        <Box>
+          <StateBadge
+            sx={{ p: "2px 16px", fontSize: "10px" }}
+            state={normalizeTicketState(status)}
+            label={formatStatusLabel(status)}
+          />
+        </Box>
+      ),
+    },
+    { title: "ISSUE", key: "issue", width: "110px" },
     {
       title: "",
       key: "action",
-      width: "140px",
+      width: "70px",
       align: "right",
-      render: (ticketId: number) => (
-        <Button
-          square
-          sx={{ height: "20px", whiteSpace: "nowrap" }}
-          fontSize="11px"
-          outfit
-          onClick={() => onMarkAsResolved?.(ticketId)}
-        >
-          MARK AS RESOLVED
-        </Button>
-      ),
+      render: ({ id, status }: { id: number; status: string }) =>
+        status.toLowerCase() === "resolved" ? null : (
+          <Box>
+            <Button
+              square
+              sx={{ height: "20px", whiteSpace: "nowrap" }}
+              fontSize="11px"
+              outfit
+              onClick={() => markAsResolved(id)}
+            >
+              RESOLVED
+            </Button>
+          </Box>
+        ),
     },
   ];
 
@@ -65,7 +89,8 @@ const TicketsDrawer = ({
         reported: formatTicketDate(ticket.createDate),
         issue: ticket.issueTypeName,
         createdBy: ticket.createdByName,
-        action: ticket.id,
+        status: ticket.status,
+        action: { id: ticket.id, status: ticket.status },
       })),
     [tickets],
   );
@@ -78,11 +103,14 @@ const TicketsDrawer = ({
   return (
     <>
       <Drawer open={open} onClose={onClose} title="Tickets">
-        <Box height={"91%"}>
+        <Box mt={"4px"} height={"100%"}>
           <CustomScrollbarY
             ref={scrollContainerRef}
             height="100%"
-            sx={{ width: "100%", bgcolor: Colors.white, borderRadius: "8px" }}
+            sx={{
+              width: "100%",
+              borderRadius: "8px",
+            }}
             bottom={0}
             thumbLength={15}
             scrollX
@@ -109,7 +137,6 @@ const TicketsDrawer = ({
           open={!!selectedTicket}
           onClose={() => setSelectedTicket(null)}
           ticket={selectedTicket}
-          onMarkAsResolved={onMarkAsResolved}
         />
       )}
     </>
