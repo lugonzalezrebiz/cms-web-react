@@ -1,13 +1,12 @@
+import { useState } from "react";
 import { Box } from "@mui/material";
 import styled from "@emotion/styled";
 import { useMarkTicketResolved } from "../hooks/useMarkTicketResolved";
 import { Colors, Fonts } from "../../../theme";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
-import {
-  formatTicketDateWithTime,
-  formatTicketDate,
-} from "../utils/formatTicketDate";
+import SuccessDialog from "../../../components/SuccessDialog";
+import { formatTicketDate } from "../utils/formatTicketDate";
 import { normalizeTicketState } from "../../../components/stateColors";
 import type { Ticket } from "../types";
 
@@ -54,68 +53,82 @@ const DescriptionText = styled("p")({
 });
 
 const TicketDetailDialog = ({ open, onClose, ticket }: Props) => {
-  const { markAsResolved } = useMarkTicketResolved();
+  const [successOpen, setSuccessOpen] = useState(false);
+  const { markAsResolved, isTicketPending } = useMarkTicketResolved();
+
+  const handleSuccess = () => setSuccessOpen(true);
+  const handleSuccessClose = () => {
+    setSuccessOpen(false);
+    onClose();
+  };
+
   return (
-    <FormDialog
-      open={open}
-      onClose={onClose}
-      maxWidth="364px"
-      padding="24px"
-      assignment={{
-        location: ticket.locationID,
-        store: ticket.companyID,
-        date: formatTicketDate(ticket.createDate),
-        state: normalizeTicketState(ticket.status ?? ""),
-      }}
-    >
-      <Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            p: "8px 0",
-          }}
-        >
-          <RowLabel>Issue Type</RowLabel>
-          <RowValue>{ticket.issueTypeName}</RowValue>
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            p: "8px 0",
-          }}
-        >
-          <RowLabel>Reported</RowLabel>
-          <RowValue>{formatTicketDateWithTime(ticket.createDate)}</RowValue>
-        </Box>
-      </Box>
-
-      <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <DescriptionTitle>Description Provided</DescriptionTitle>
-        <DescriptionText>{ticket.description}</DescriptionText>
-      </Box>
-
-      {ticket.status?.toLowerCase() !== "resolved" && (
-        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            fontSize="14px"
-            sx={{ height: "40px", borderRadius: "20px", px: "24px" }}
-            color="primary"
-            outfit
-            onClick={() => {
-              markAsResolved(ticket.id);
-              onClose();
+    <>
+      <FormDialog
+        open={open && !successOpen}
+        onClose={onClose}
+        maxWidth="364px"
+        padding="24px"
+        assignment={{
+          location: ticket.locationID,
+          store: ticket.companyID,
+          date: formatTicketDate(ticket.createDate),
+          state: normalizeTicketState(ticket.status ?? ""),
+        }}
+      >
+        <Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: "8px 0",
             }}
           >
-            Mark as Resolved
-          </Button>
+            <RowLabel>Issue Type</RowLabel>
+            <RowValue>{ticket.issueTypeName}</RowValue>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              p: "8px 0",
+            }}
+          >
+            <RowLabel>Reported</RowLabel>
+            <RowValue>{formatTicketDate(ticket.createDate)}</RowValue>
+          </Box>
         </Box>
-      )}
-    </FormDialog>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <DescriptionTitle>Description Provided</DescriptionTitle>
+          <DescriptionText>{ticket.description}</DescriptionText>
+        </Box>
+
+        {ticket.status?.toLowerCase() !== "resolved" && (
+          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+            <Button
+              fontSize="14px"
+              sx={{ height: "40px", borderRadius: "20px", px: "24px" }}
+              color="primary"
+              outfit
+              disabled={isTicketPending(ticket.id)}
+              onClick={() => markAsResolved(ticket.id, handleSuccess)}
+            >
+              {isTicketPending(ticket.id) ? "Loading..." : "Mark as Resolved"}
+            </Button>
+          </Box>
+        )}
+      </FormDialog>
+
+      <SuccessDialog
+        open={successOpen}
+        onClose={handleSuccessClose}
+        message="Ticket has been marked as resolved successfully."
+      />
+    </>
   );
 };
 

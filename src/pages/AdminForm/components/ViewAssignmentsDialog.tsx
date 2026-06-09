@@ -8,9 +8,11 @@ import useUserAssignments, {
   type AssignmentDetail,
 } from "../../../hooks/useUserAssignments";
 import useDissociateAssignment from "../hooks/useDissociateAssignment";
+import useResetPassword from "../hooks/useResetPassword";
 import { Colors, Fonts } from "../../../theme";
 import StateBadge from "../../../components/StateBadge";
 import styled from "@emotion/styled";
+import ResetPasswordDialog from "./ResetPasswordDialog";
 
 interface Props {
   open: boolean;
@@ -18,7 +20,6 @@ interface Props {
   employeeId?: number;
   name?: string;
   role?: string;
-  onResetPassword?: () => void;
 }
 
 const Title = styled("p")({
@@ -149,14 +150,15 @@ const AssignmentToggle = ({
 const DeleteButton = ({
   companyID,
   locationID,
-  isPending,
+  pendingKey,
   onDelete,
 }: {
   companyID: number;
   locationID: number;
-  isPending: boolean;
+  pendingKey: string | null;
   onDelete: (companyID: number, locationID: number) => void;
 }) => {
+  const isPending = pendingKey === `${companyID}-${locationID}`;
   return (
     <Box
       component="img"
@@ -190,10 +192,11 @@ const ExpandedDetails = ({
       <Box sx={{ overflow: "hidden" }}>
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            padding: "8px 90px 8px 6px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            padding: "8px 6px",
             borderBottom: `1px solid ${Colors.paleGray}`,
+            gap: "1px",
           }}
         >
           {details.map((item, i) => (
@@ -201,13 +204,13 @@ const ExpandedDetails = ({
               key={i}
               sx={{
                 display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
                 borderBottom:
-                  i !== details.length - 1
+                  i < details.length - (details.length % 2 === 0 ? 2 : 1)
                     ? `1px solid ${Colors.paleGray}`
                     : "none",
                 padding: "6px 16px",
+                gap: "8px",
               }}
             >
               <Box
@@ -216,18 +219,13 @@ const ExpandedDetails = ({
                   fontSize: "14px",
                   color: Colors.lightBlack,
                   whiteSpace: "nowrap",
+                  flex: 1,
                 }}
               >
                 {item.date}
               </Box>
-              <Box
-                sx={{
-                  minWidth: "110px",
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <StateBadge state={item.state} />
+              <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                <StateBadge state={item.state} size="md" />
               </Box>
             </Box>
           ))}
@@ -243,16 +241,23 @@ const ViewAssignmentsDialog = ({
   employeeId,
   name,
   role,
-  onResetPassword,
 }: Props) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   const { groupedList, isLoading } = useUserAssignments({
     userID: employeeId ?? null,
+    dateFormat: "short",
   });
 
-  const { dissociate, isPending, errorMessage } =
+  const {
+    resetPassword,
+    isPending: resetPending,
+    errorMessage: resetError,
+  } = useResetPassword(employeeId);
+
+  const { dissociate, pendingKey, errorMessage } =
     useDissociateAssignment(employeeId);
 
   const columns: Column[] = [
@@ -295,7 +300,7 @@ const ViewAssignmentsDialog = ({
         <DeleteButton
           companyID={value.companyID}
           locationID={value.locationID}
-          isPending={isPending}
+          pendingKey={pendingKey}
           onDelete={dissociate}
         />
       ),
@@ -315,74 +320,84 @@ const ViewAssignmentsDialog = ({
   });
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      header={
-        <EmployeeDrawerHeader
-          name={name}
-          role={role}
-          onResetPassword={onResetPassword}
-        />
-      }
-    >
-      <Box mt="20px" display="flex" flexDirection="column" height="99%">
-        <Box mb="4px">
-          <Title>Assignments</Title>
-        </Box>
-        {!isLoading && rows.length === 0 ? (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "120px",
-              color: Colors.dimGray,
-              fontFamily: Fonts.main,
-              fontSize: "14px",
-            }}
-          >
-            No assignments found for this employee
+    <>
+      <Drawer
+        open={open}
+        onClose={onClose}
+        header={
+          <EmployeeDrawerHeader
+            name={name}
+            role={role}
+            onResetPassword={() => setResetPasswordOpen(true)}
+          />
+        }
+      >
+        <Box mt="20px" display="flex" flexDirection="column" height="99%">
+          <Box mb="4px">
+            <Title>Assignments</Title>
           </Box>
-        ) : (
-          <CustomScrollbarY
-            ref={scrollContainerRef}
-            height="95%"
-            thumbLength={15}
-            scrollX
-            xThumbLength={15}
-            sx={{ width: "100%", height: "100%" }}
-          >
-            <Box height={"100%"}>
-              <Table
-                columns={columns}
-                rows={rows}
-                mainColumnWidth="120px"
-                mainRowWidth="120px"
-                TableCellWidth="120px"
-                rowWidth="120px"
-                scrollContainerRef={scrollContainerRef}
-                disableOverflow
-                loading={isLoading}
-              />
-              {errorMessage && (
-                <Box
-                  sx={{
-                    mt: "8px",
-                    px: "8px",
-                    color: Colors.red,
-                    fontFamily: Fonts.main,
-                    fontSize: "12px",
-                  }}
-                >
-                  {errorMessage}
-                </Box>
-              )}
+          {!isLoading && rows.length === 0 ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "120px",
+                color: Colors.dimGray,
+                fontFamily: Fonts.main,
+                fontSize: "14px",
+              }}
+            >
+              No assignments found for this employee
             </Box>
-          </CustomScrollbarY>
-        )}
-      </Box>
-    </Drawer>
+          ) : (
+            <CustomScrollbarY
+              ref={scrollContainerRef}
+              height="95%"
+              thumbLength={15}
+              scrollX
+              xThumbLength={15}
+              sx={{ width: "100%", height: "100%" }}
+            >
+              <Box height={"100%"}>
+                <Table
+                  columns={columns}
+                  rows={rows}
+                  mainColumnWidth="120px"
+                  mainRowWidth="120px"
+                  TableCellWidth="120px"
+                  rowWidth="120px"
+                  scrollContainerRef={scrollContainerRef}
+                  disableOverflow
+                  loading={isLoading}
+                />
+                {errorMessage && (
+                  <Box
+                    sx={{
+                      mt: "8px",
+                      px: "8px",
+                      color: Colors.red,
+                      fontFamily: Fonts.main,
+                      fontSize: "12px",
+                    }}
+                  >
+                    {errorMessage}
+                  </Box>
+                )}
+              </Box>
+            </CustomScrollbarY>
+          )}
+        </Box>
+      </Drawer>
+
+      <ResetPasswordDialog
+        open={resetPasswordOpen}
+        onClose={() => setResetPasswordOpen(false)}
+        onSubmit={resetPassword}
+        isPending={resetPending}
+        errorMessage={resetError}
+      />
+    </>
   );
 };
 

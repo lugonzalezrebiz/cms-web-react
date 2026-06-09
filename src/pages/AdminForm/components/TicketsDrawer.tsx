@@ -32,7 +32,7 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const { tickets } = useTickets();
-  const { markAsResolved } = useMarkTicketResolved();
+  const { markAsResolved, isTicketPending } = useMarkTicketResolved();
 
   const columns: Column[] = [
     { title: "CREATED BY", key: "createdBy", width: "90px", align: "center" },
@@ -50,7 +50,6 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
       render: (status: string) => (
         <Box>
           <StateBadge
-            sx={{ p: "2px 16px", fontSize: "10px" }}
             state={normalizeTicketState(status)}
             label={formatStatusLabel(status)}
           />
@@ -63,7 +62,15 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
       key: "action",
       width: "70px",
       align: "right",
-      render: ({ id, status }: { id: number; status: string }) =>
+      render: ({
+        id,
+        status,
+        isTicketPending,
+      }: {
+        id: number;
+        status: string;
+        isTicketPending: (id: number) => boolean;
+      }) =>
         status.toLowerCase() === "resolved" ? null : (
           <Box>
             <Button
@@ -71,9 +78,10 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
               sx={{ height: "20px", whiteSpace: "nowrap" }}
               fontSize="11px"
               outfit
+              disabled={isTicketPending(id)}
               onClick={() => markAsResolved(id)}
             >
-              RESOLVED
+              {isTicketPending(id) ? "LOADING..." : "RESOLVE"}
             </Button>
           </Box>
         ),
@@ -90,9 +98,9 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
         issue: ticket.issueTypeName,
         createdBy: ticket.createdByName,
         status: ticket.status,
-        action: { id: ticket.id, status: ticket.status },
+        action: { id: ticket.id, status: ticket.status, isTicketPending },
       })),
-    [tickets],
+    [tickets, isTicketPending],
   );
 
   const handleRowClick = (ticketId: number) => {

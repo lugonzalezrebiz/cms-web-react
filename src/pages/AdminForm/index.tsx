@@ -20,7 +20,7 @@ const AdminForm = () => {
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => (
                 <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                  <CardSkeleton variant="header" />
+                  <CardSkeleton variant="header" title={cards[i]?.title} />
                 </Grid>
               ))
             : cards.map((card) => (

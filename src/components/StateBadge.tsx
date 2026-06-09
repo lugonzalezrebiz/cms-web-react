@@ -4,32 +4,47 @@ import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import { stateColors, type stateAssignments } from "./stateColors";
 
+type BadgeSize = "sm" | "md" | "lg";
+
+const sizeStyles: Record<BadgeSize, { p: string; fontSize: string; borderRadius: string }> = {
+  sm: { p: "2px 8px",  fontSize: "11px", borderRadius: "6px"  },
+  md: { p: "2px 16px", fontSize: "12px", borderRadius: "20px" },
+  lg: { p: "4px 16px", fontSize: "12px", borderRadius: "20px" },
+};
+
 interface StateBadgeProps {
-  state: stateAssignments;
+  state?: stateAssignments;
   label?: string;
+  size?: BadgeSize;
   sx?: SxProps;
 }
 
-const StateBadge = ({ state, label, sx }: StateBadgeProps) => (
-  <Box
-    sx={{
-      p: "4px 16px",
-      border: `1px solid ${stateColors[state].border}`,
-      borderRadius: "20px",
-      bgcolor: stateColors[state].bg,
-      color: stateColors[state].color,
-      fontFamily: Fonts.main,
-      fontSize: "12px",
-      fontWeight: 700,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      ...sx,
-    }}
-  >
-    {label ?? state}
-  </Box>
-);
+const StateBadge = ({ state, label, size = "md", sx }: StateBadgeProps) => {
+  const colorStyles = state
+    ? {
+        border: `1px solid ${stateColors[state].border}`,
+        bgcolor: stateColors[state].bg,
+        color: stateColors[state].color,
+      }
+    : {};
+
+  return (
+    <Box
+      sx={{
+        ...sizeStyles[size],
+        ...colorStyles,
+        fontFamily: Fonts.main,
+        fontWeight: 700,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        ...sx,
+      }}
+    >
+      {label ?? state}
+    </Box>
+  );
+};
 
 const AssignmentSubText = styled("p")({
   fontFamily: Fonts.main,

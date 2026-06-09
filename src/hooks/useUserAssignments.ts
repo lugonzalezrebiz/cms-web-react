@@ -61,7 +61,7 @@ interface LocationEntry {
   locationIDs: number[];
 }
 
-interface UserLocationResponse {
+export interface UserLocationResponse {
   success: boolean;
   userID: number;
   assignments: LocationEntry[];
@@ -69,7 +69,20 @@ interface UserLocationResponse {
 
 export const userLocationQueryKey = (userID: number) => [`user/${userID}/location`];
 
-const useUserAssignments = ({ userID }: { userID: number | null }) => {
+const DATE_FORMATS = {
+  full: "MMMM DD - YYYY",
+  short: "MMM DD, YY",
+} as const;
+
+export type AssignmentDateFormat = keyof typeof DATE_FORMATS;
+
+const useUserAssignments = ({
+  userID,
+  dateFormat = "full",
+}: {
+  userID: number | null;
+  dateFormat?: AssignmentDateFormat;
+}) => {
   const enabled = userID !== null;
 
   const { data: locationData, isLoading: locationsLoading, isError: locationsError } =
@@ -91,7 +104,7 @@ const useUserAssignments = ({ userID }: { userID: number | null }) => {
       const key = `${a.companyID}-${a.locationID}`;
       if (!acc[key]) acc[key] = [];
       acc[key].push({
-        date: dayjs.utc(a.date).format("MMMM DD - YYYY"),
+        date: dayjs.utc(a.date).format(DATE_FORMATS[dateFormat]),
         state: parseStatusName(a.statusName),
       });
       return acc;

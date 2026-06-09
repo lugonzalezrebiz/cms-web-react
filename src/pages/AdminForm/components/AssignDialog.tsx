@@ -153,7 +153,7 @@ const AssignDialog = ({ open, onClose, employeeId }: AssignDialogProps) => {
             }
             outfit
           >
-            {isPending ? "Assigning..." : "Assign"}
+            {isPending ? "Loading..." : "Assign"}
           </Button>
         </Box>
       </FormDialog>

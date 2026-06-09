@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Colors, Fonts } from "../../../theme";
+import { Colors } from "../../../theme";
 import { Box, Grid } from "@mui/system";
 import Title from "../../../components/Title";
 import TickBox from "../../../components/TickBox";
@@ -11,6 +11,7 @@ import AssignDialog from "../components/AssignDialog";
 import ViewAssignmentsDialog from "../components/ViewAssignmentsDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import useUsers, { type User } from "../hooks/useUsers";
+import StateBadge from "../../../components/StateBadge";
 
 const TableSection = () => {
   const { users, isLoading } = useUsers();
@@ -64,21 +65,25 @@ const TableSection = () => {
     {
       title: "",
       key: "selected",
-      width: "36px",
-      align: "center",
+      width: "48px",
+      align: "right",
       complement: (
-        <TickBox
-          label=""
-          checked={allSelected}
-          onChange={(e) => toggleAll(e.target.checked)}
-        />
+        <Box width="70px" display="flex" justifyContent="center">
+          <TickBox
+            label=""
+            checked={allSelected}
+            onChange={(e) => toggleAll(e.target.checked)}
+          />
+        </Box>
       ),
       render: (value: { id: number; checked: boolean }) => (
-        <TickBox
-          label=""
-          checked={value.checked}
-          onChange={(e) => toggleOne(value.id, e.target.checked)}
-        />
+        <Box width="70px" display="flex" justifyContent="center">
+          <TickBox
+            label=""
+            checked={value.checked}
+            onChange={(e) => toggleOne(value.id, e.target.checked)}
+          />
+        </Box>
       ),
     },
     {
@@ -102,30 +107,24 @@ const TableSection = () => {
       width: "50px",
       align: "left",
       render: (value: string) => (
-        <Box
+        <StateBadge
+          size="sm"
+          label={value}
           sx={{
-            display: "inline-block",
-            px: "10px",
-            py: "2px",
-            borderRadius: "6px",
-            backgroundColor: value === "Yes" ? Colors.green : Colors.red,
+            bgcolor: value === "Yes" ? Colors.green : Colors.red,
             color: Colors.white,
-            fontSize: "12px",
-            fontFamily: Fonts.main,
-            fontWeight: 600,
+            border: "none",
           }}
-        >
-          {value}
-        </Box>
+        />
       ),
     },
     {
       title: "",
       key: "assign",
-      width: "40px",
-      align: "center",
+      width: "46px",
+      align: "left",
       render: (value: number) => (
-        <Box>
+        <Box display="flex" justifyContent="center" width="70px">
           <Button
             square
             sx={{ height: "20px" }}

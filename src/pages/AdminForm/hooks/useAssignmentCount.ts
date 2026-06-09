@@ -2,7 +2,7 @@ import { usePostQuery } from "../../../hooks/useApi";
 import type { AssignmentCountResponse } from "../types";
 
 const CARD_TYPES = [
-  { type: "assigned", title: "Assigned" },
+  { type: "assigned", title: "Assignments" },
   { type: "started", title: "Started Assignments" },
   { type: "paused", title: "Paused Assignments" },
   { type: "completed-this-month", title: "Completed This Month" },
