@@ -14,6 +14,7 @@ import InfoAssignment from "./components/InfoAssignment";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
+import { useAssignmentCount } from "../AdminForm/hooks/useAssignmentCount";
 
 const activityIcon = "./assets/activity-other-icon.svg";
 
@@ -31,20 +32,7 @@ const Assignments = () => {
     companyID: effectiveCompany ? Number(effectiveCompany) : null,
     locationID: store ? Number(store) : null,
   });
-
-  const cards = [
-    { title: "Assignments", current: assignments.length },
-    {
-      title: "Started Assignments",
-      current: assignments.filter((a) => a.state === "Error").length,
-    },
-    {
-      title: "Paused Assignments",
-      current: assignments.filter((a) => a.state === "Paused").length,
-    },
-    { title: "Completed This Month", current: 0 },
-    { title: "Tickets", current: 0 },
-  ];
+  const { cards, isLoading: isCardsLoading } = useAssignmentCount();
 
   const handleSetCompany = (value: string) => {
     setCompany(value);
@@ -68,15 +56,21 @@ const Assignments = () => {
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
       <Grid container spacing={2}>
-        {cards.map((card) => (
-          <Grid key={card.title} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-            <HeaderCard
-              title={card.title}
-              current={card.current}
-              image={activityIcon}
-            />
-          </Grid>
-        ))}
+        {isCardsLoading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <CardSkeleton variant="header" title={cards[i]?.title} />
+              </Grid>
+            ))
+          : cards.map((card) => (
+              <Grid key={card.title} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <HeaderCard
+                  title={card.title}
+                  current={card.current}
+                  image={activityIcon}
+                />
+              </Grid>
+            ))}
       </Grid>
 
       <Title title="Assignments">
