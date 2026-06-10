@@ -35,7 +35,6 @@ const useOpenTicket = () => {
       form.append("monitoringID", String(payload.monitoringID));
       form.append("monitoringStatus", String(payload.statusID));
       form.append("issueTypeID", String(payload.issueTypeID));
-      form.append("subject", "Camera quality issue");
       form.append("description", payload.description);
       form.append("priority", "normal");
       if (payload.file) {
