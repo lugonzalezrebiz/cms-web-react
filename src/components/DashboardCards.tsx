@@ -1,11 +1,14 @@
 import type React from "react";
 import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
-import { Box, Skeleton } from "@mui/material";
-import { Colors, Fonts } from "../../../theme";
-import Card from "../../../components/Card";
-import Divider from "../../../components/Divider";
-import { type stateAssignments, stateColors } from "./stateColors";
+import { Box } from "@mui/material";
+import { Colors, Fonts } from "../theme";
+import Card from "./Card";
+import Divider from "./Divider";
+import {
+  stateColors,
+  type stateAssignments,
+} from "../pages/Assignments/components/stateColors";
 
 const Current = styled("p")({
   fontFamily: Fonts.main,
@@ -174,7 +177,6 @@ export const NewAssignmentsCard = ({
             position: "absolute",
             right: "5px",
             cursor: "pointer",
-            padding: "2px",
           }}
           src="./assets/dots-vertical.svg"
           alt="More options"
