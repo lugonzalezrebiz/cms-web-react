@@ -12,7 +12,7 @@ export const MonitorProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const setState = useCallback((s: typeof state) => setStateInternal(s), []);
-  const [cameraGroup, setCameraGroup] = useState("0");
+  const [cameraGroup, setCameraGroup] = useState("tracker");
   const [trackerOption, setTrackerOption] = useState("");
 
   return (
