@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Colors, Fonts } from "../../../theme";
+import { Colors } from "../../../theme";
 import { Box, Grid } from "@mui/system";
 import Title from "../../../components/Title";
 import TickBox from "../../../components/TickBox";
@@ -8,8 +8,10 @@ import Table, { type Column } from "../../../components/Table";
 import { CustomScrollbarY } from "../../../components/CustomScrollbar";
 import CreateEmployeeDialog from "../components/CreateEmployeeDialog";
 import AssignDialog from "../components/AssignDialog";
+import ViewAssignmentsDialog from "../components/ViewAssignmentsDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import useUsers, { type User } from "../hooks/useUsers";
+import StateBadge from "../../../components/StateBadge";
 
 const TableSection = () => {
   const { users, isLoading } = useUsers();
@@ -18,8 +20,14 @@ const TableSection = () => {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<
-    number | undefined
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<
+    | {
+        id: number;
+        name: string;
+        role: string;
+      }
+    | undefined
   >(undefined);
 
   const allSelected = users.length > 0 && selectedIds.size === users.length;
@@ -37,25 +45,45 @@ const TableSection = () => {
     });
   };
 
+  const handleRowClick = (id: number) => {
+    const user = users.find((u: User) => u.id === id);
+    if (user) {
+      const role =
+        user.roleID === ADMIN_ROLE
+          ? "Admin"
+          : user.roleID === AGENT_ROLE
+            ? "Agent"
+            : user.roleID === REVIEWER_ROLE
+              ? "Reviewer"
+              : String(user.roleID);
+      setSelectedEmployee({ id: user.id, name: user.name, role });
+      setViewDialogOpen(true);
+    }
+  };
+
   const columns: Column[] = [
     {
       title: "",
       key: "selected",
-      width: "36px",
-      align: "center",
+      width: "48px",
+      align: "right",
       complement: (
-        <TickBox
-          label=""
-          checked={allSelected}
-          onChange={(e) => toggleAll(e.target.checked)}
-        />
+        <Box width="70px" display="flex" justifyContent="center">
+          <TickBox
+            label=""
+            checked={allSelected}
+            onChange={(e) => toggleAll(e.target.checked)}
+          />
+        </Box>
       ),
       render: (value: { id: number; checked: boolean }) => (
-        <TickBox
-          label=""
-          checked={value.checked}
-          onChange={(e) => toggleOne(value.id, e.target.checked)}
-        />
+        <Box width="70px" display="flex" justifyContent="center">
+          <TickBox
+            label=""
+            checked={value.checked}
+            onChange={(e) => toggleOne(value.id, e.target.checked)}
+          />
+        </Box>
       ),
     },
     {
@@ -72,44 +100,45 @@ const TableSection = () => {
     },
     { title: "ROL", key: "role" },
     { title: "NAME", key: "name", rowColor: Colors.vividOrange },
-    { title: "E-MAIL", key: "email", width: "220px" },
+    { title: "E-MAIL", key: "email", width: "230px" },
     {
       title: "ACTIVE",
       key: "active",
+      width: "50px",
+      align: "left",
       render: (value: string) => (
-        <Box
+        <StateBadge
+          size="sm"
+          label={value}
           sx={{
-            display: "inline-block",
-            px: "10px",
-            py: "2px",
-            borderRadius: "6px",
-            backgroundColor: value === "Yes" ? Colors.green : Colors.red,
+            bgcolor: value === "Yes" ? Colors.green : Colors.red,
             color: Colors.white,
-            fontSize: "12px",
-            fontFamily: Fonts.main,
-            fontWeight: 600,
+            border: "none",
           }}
-        >
-          {value}
-        </Box>
+        />
       ),
     },
     {
       title: "",
       key: "assign",
+      width: "46px",
+      align: "left",
       render: (value: number) => (
-        <Button
-          square
-          sx={{ height: "20px" }}
-          fontSize="12px"
-          outfit
-          onClick={() => {
-            setSelectedEmployeeId(value);
-            setAssignDialogOpen(true);
-          }}
-        >
-          ASSIGN
-        </Button>
+        <Box display="flex" justifyContent="center" width="70px">
+          <Button
+            square
+            sx={{ height: "20px" }}
+            fontSize="12px"
+            outfit
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedEmployee({ id: value, name: "", role: "" });
+              setAssignDialogOpen(true);
+            }}
+          >
+            ASSIGN
+          </Button>
+        </Box>
       ),
     },
   ];
@@ -137,8 +166,20 @@ const TableSection = () => {
   );
 
   return (
-    <Box sx={{ overflow: "hidden" }}>
-      <Title margin={false} title="Users" marginBottom="16px">
+    <Box
+      sx={{
+        overflow: "hidden",
+        gap: "26px",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Title
+        margin={false}
+        showDivider={false}
+        title="Users"
+        marginBottom="16px"
+      >
         <Grid
           container
           sx={{
@@ -179,6 +220,8 @@ const TableSection = () => {
           rowWidth="150px"
           scrollContainerRef={scrollContainerRef}
           disableOverflow
+          clickableRows="allRow"
+          onRowClick={handleRowClick}
         />
       </CustomScrollbarY>
       <CreateEmployeeDialog
@@ -188,7 +231,14 @@ const TableSection = () => {
       <AssignDialog
         open={assignDialogOpen}
         onClose={() => setAssignDialogOpen(false)}
-        employeeId={selectedEmployeeId}
+        employeeId={selectedEmployee?.id}
+      />
+      <ViewAssignmentsDialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        employeeId={selectedEmployee?.id}
+        name={selectedEmployee?.name}
+        role={selectedEmployee?.role}
       />
     </Box>
   );

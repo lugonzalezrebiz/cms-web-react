@@ -1,6 +1,7 @@
 import { isAxiosError } from "axios";
 import { AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import { usePost } from "../../../hooks/useApi";
+import { usersQueryKey } from "./useUsers";
 
 interface CreateUserPayload {
   username: string;
@@ -32,7 +33,7 @@ const getErrorMessage = (error: unknown): string => {
 
 const useCreateUser = (options?: { onSuccess?: () => void }) => {
   const mutation = usePost<unknown, CreateUserPayload>("user", {
-    invalidateKey: ["user"],
+    invalidateKey: usersQueryKey,
     onSuccess: options?.onSuccess,
   });
 

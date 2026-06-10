@@ -27,7 +27,7 @@ import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
-  const { assignments } = useAssignments(company, location);
+  const { assignments } = useAssignments({ companyID: company, locationID: location });
   const currentAssignment = assignments.find(
     (a) => a.monitoringID === monitoringID,
   );

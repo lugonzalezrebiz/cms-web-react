@@ -2,13 +2,28 @@ import { Box } from "@mui/material";
 import Skeleton from "@mui/material/Skeleton";
 import Card from "./Card";
 import { Colors, Fonts } from "../theme";
+import styled from "@emotion/styled";
+
+const CardTitle = styled("p")({
+  margin: "0px 8px 0px 0px ",
+  padding: "0px",
+  fontSize: "15px",
+  fontWeight: "600",
+  fontFamily: Fonts.main,
+  linHeight: "24px",
+  color: Colors.dimGray,
+  width: "100%",
+  opacity: 0.7,
+  whiteSpace: "nowrap",
+});
 
 interface CardSkeletonProps {
   variant?: "header" | "assignment" | "none";
+  title?: string;
 }
 
-const HeaderSkeleton = () => (
-  <Card>
+const HeaderSkeleton = ({ title }: { title?: string }) => (
+  <Card bgcolor={Colors.white}>
     <Box padding="16px">
       <Box
         display="flex"
@@ -17,7 +32,11 @@ const HeaderSkeleton = () => (
         height="24px"
         mb={1}
       >
-        <Skeleton variant="text" width="55%" height={24} />
+        {!title ? (
+          <Skeleton variant="text" width="55%" height={24} />
+        ) : (
+          <CardTitle>{title || "No data available"}</CardTitle>
+        )}
         <Skeleton
           variant="rectangular"
           width={63}
@@ -108,14 +127,14 @@ const None = () => (
   </Card>
 );
 
-const CardSkeleton = ({ variant = "header" }: CardSkeletonProps) => {
+const CardSkeleton = ({ variant = "header", title }: CardSkeletonProps) => {
   switch (variant) {
     case "assignment":
       return <AssignmentSkeleton />;
     case "none":
       return <None />;
     default:
-      return <HeaderSkeleton />;
+      return <HeaderSkeleton title={title} />;
   }
 };
 

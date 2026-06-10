@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Box, Grid } from "@mui/system";
-import { HeaderCard, NewAssignmentsCard } from "../../components/DashboardCards";
+import {
+  HeaderCard,
+  NewAssignmentsCard,
+} from "../../components/DashboardCards";
 import CardSkeleton from "../../components/CardSkeleton";
 import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
@@ -24,23 +27,23 @@ const Assignments = () => {
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
   const effectiveCompany = company || companyFilters[1]?.value || "";
-  const { assignments, isPending: isLoading } = useAssignments(
-    effectiveCompany ? Number(effectiveCompany) : null,
-    store ? Number(store) : null,
-  );
+  const { assignments, isPending: isLoading } = useAssignments({
+    companyID: effectiveCompany ? Number(effectiveCompany) : null,
+    locationID: store ? Number(store) : null,
+  });
 
   const cards = [
     { title: "Assignments", current: assignments.length },
     {
+      title: "Started Assignments",
+      current: assignments.filter((a) => a.state === "Error").length,
+    },
+    {
       title: "Paused Assignments",
       current: assignments.filter((a) => a.state === "Paused").length,
     },
-    {
-      title: "Rejected Assignments",
-      current: assignments.filter((a) => a.state === "Error").length,
-    },
-    { title: "Open Tickets", current: 0 },
     { title: "Completed This Month", current: 0 },
+    { title: "Tickets", current: 0 },
   ];
 
   const handleSetCompany = (value: string) => {

@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { z } from "zod";
 import { isAxiosError } from "axios";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostCallback } from "../../../hooks/useApi";
 
 const schema = z.object({
@@ -32,6 +32,7 @@ const getErrorMessage = (error: unknown): string => {
 const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const post = usePostCallback();
+  const queryClient = useQueryClient();
 
   const validateField = (name: keyof FormFields, value: string) => {
     const result = schema.shape[name].safeParse(value);
@@ -49,7 +50,11 @@ const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
       post(`user/${employeeId}/associate`, {
         assignments: [{ companyID: companyId, locationIDs: [storeId] }],
       }),
-    onSuccess: options?.onSuccess,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["location/assignments", "user", variables.employeeId] });
+      queryClient.invalidateQueries({ queryKey: [`user/${variables.employeeId}/location`] });
+      options?.onSuccess?.();
+    },
   });
 
   const assign = (employeeId: number, companyId: string, storeId: string) => {

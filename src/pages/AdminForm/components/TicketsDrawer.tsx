@@ -8,51 +8,83 @@ import TicketDetailDialog from "./TicketDetailDialog";
 import { formatTicketDate } from "../utils/formatTicketDate";
 import Drawer from "../../../components/Drawer";
 import type { Ticket } from "../types";
-import { MOCK_TICKETS } from "../mocks";
+import { useTickets } from "../hooks/useTickets";
+import { useMarkTicketResolved } from "../hooks/useMarkTicketResolved";
+import StateBadge from "../../../components/StateBadge";
+import { normalizeTicketState } from "../../../components/stateColors";
+
+const formatStatusLabel = (status: string) => {
+  const label =
+    status.toLowerCase() === "pending_reporter" ||
+    status.toLowerCase() === "pending_support"
+      ? "Pending"
+      : status;
+  return label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
+};
 
 interface TicketsDrawerProps {
   open: boolean;
   onClose: () => void;
-  tickets?: Ticket[];
-  onMarkAsResolved?: (ticketId: number) => void;
 }
 
-const TicketsDrawer = ({
-  open,
-  onClose,
-  tickets = MOCK_TICKETS,
-  onMarkAsResolved,
-}: TicketsDrawerProps) => {
+const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  const { tickets } = useTickets();
+  const { markAsResolved, isTicketPending } = useMarkTicketResolved();
+
   const columns: Column[] = [
-    { title: "ID", key: "id", width: "20px", align: "center" },
-    { title: "LOCATION", key: "location", width: "40px", align: "center" },
-    { title: "STORE", key: "store", width: "40px" },
+    { title: "CREATED BY", key: "createdBy", width: "90px", align: "center" },
     {
-      title: "REPORTED AT",
+      title: "CREATED ON",
       key: "reported",
-      width: "90px",
+      width: "67px",
       rowColor: Colors.vividOrange,
     },
-    { title: "ISSUE", key: "issue", width: "120px" },
+    {
+      title: "STATUS",
+      key: "status",
+      width: "70px",
+      align: "center",
+      render: (status: string) => (
+        <Box>
+          <StateBadge
+            state={normalizeTicketState(status)}
+            label={formatStatusLabel(status)}
+          />
+        </Box>
+      ),
+    },
+    { title: "ISSUE", key: "issue", width: "110px" },
     {
       title: "",
       key: "action",
-      width: "140px",
+      width: "70px",
       align: "right",
-      render: (ticketId: number) => (
-        <Button
-          square
-          sx={{ height: "20px", whiteSpace: "nowrap" }}
-          fontSize="11px"
-          outfit
-          onClick={() => onMarkAsResolved?.(ticketId)}
-        >
-          MARK AS RESOLVED
-        </Button>
-      ),
+      render: ({
+        id,
+        status,
+        isTicketPending,
+      }: {
+        id: number;
+        status: string;
+        isTicketPending: (id: number) => boolean;
+      }) =>
+        status.toLowerCase() === "resolved" ? null : (
+          <Box>
+            <Button
+              square
+              sx={{ height: "20px", whiteSpace: "nowrap" }}
+              fontSize="11px"
+              outfit
+              disabled={isTicketPending(id)}
+              onClick={() => markAsResolved(id)}
+            >
+              {isTicketPending(id) ? "LOADING..." : "RESOLVE"}
+            </Button>
+          </Box>
+        ),
     },
   ];
 
@@ -60,14 +92,15 @@ const TicketsDrawer = ({
     () =>
       tickets.map((ticket) => ({
         id: ticket.id,
-        location: ticket.location,
-        store: ticket.store,
-        reported: formatTicketDate(ticket.reported),
-        issue: ticket.issueType,
-        createdBy: ticket.createdBy,
-        action: ticket.id,
+        location: ticket.locationID,
+        company: ticket.companyID,
+        reported: formatTicketDate(ticket.createDate),
+        issue: ticket.issueTypeName,
+        createdBy: ticket.createdByName,
+        status: ticket.status,
+        action: { id: ticket.id, status: ticket.status, isTicketPending },
       })),
-    [tickets],
+    [tickets, isTicketPending],
   );
 
   const handleRowClick = (ticketId: number) => {
@@ -78,18 +111,21 @@ const TicketsDrawer = ({
   return (
     <>
       <Drawer open={open} onClose={onClose} title="Tickets">
-        <Box height={"91%"}>
+        <Box mt={"4px"} height={"100%"}>
           <CustomScrollbarY
             ref={scrollContainerRef}
             height="100%"
-            sx={{ width: "100%", bgcolor: Colors.white, borderRadius: "8px" }}
+            sx={{
+              width: "100%",
+              borderRadius: "8px",
+            }}
             bottom={0}
             thumbLength={15}
             scrollX
             xThumbLength={15}
           >
             <Table
-              clickableRows
+              clickableRows="mainRow"
               columns={columns}
               rows={rows}
               onRowClick={handleRowClick}
@@ -109,7 +145,6 @@ const TicketsDrawer = ({
           open={!!selectedTicket}
           onClose={() => setSelectedTicket(null)}
           ticket={selectedTicket}
-          onMarkAsResolved={onMarkAsResolved}
         />
       )}
     </>

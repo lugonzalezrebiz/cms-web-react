@@ -8,6 +8,7 @@ import {
   Paper,
   Box,
 } from "@mui/material";
+import { Fragment } from "react";
 import type { RefObject } from "react";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
@@ -16,7 +17,7 @@ import LazyLoading from "./LazyLoading";
 import TableSkeleton from "./TableSkeleton";
 
 interface Props {
-  clickableRows?: boolean; // Indicates if rows are clickable
+  clickableRows?: "mainRow" | "allRow"; // Indicates if rows are clickable and which cells trigger the click
   columns: Column[];
   rows: Record<string, unknown>[];
   onRowClick?: (rowIndex: number) => void; // Callback for row click events
@@ -106,6 +107,9 @@ const Rows = styled(TableCell, {
   userSelect: "none",
   minWidth: rowWidth ? rowWidth : "90px",
   maxWidth: rowWidth ? rowWidth : "90px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   "tr:last-child &": { borderBottom: "none" },
 }));
 
@@ -154,6 +158,9 @@ const MainRow = styled(TableCell, {
   userSelect: "none",
   minWidth: mainRowWidth ? mainRowWidth : "100px",
   maxWidth: mainRowWidth ? mainRowWidth : "100px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   "tr:last-child &": { borderBottom: "none" },
 }));
 
@@ -232,7 +239,7 @@ const TableHeader = ({
 const Table = ({
   loading,
   loadMore,
-  clickableRows = false,
+  clickableRows = "mainRow",
   rows,
   onRowClick,
   columns,
@@ -384,8 +391,14 @@ const Table = ({
               skeleton={<TableSkeleton columnCount={columns.length} />}
               scrollContainerRef={scrollContainerRef}
             >
-              {rows.map((row, rowIndex) => (
-                <TableRow key={rowIndex}>
+              {rows.map((row, rowIndex) => {
+                const content = row.content as React.ReactNode;
+                return (
+                <Fragment key={rowIndex}>
+                <TableRow
+                  onClick={clickableRows === "allRow" && onRowClick ? () => onRowClick((row.id as number | undefined) ?? rowIndex) : undefined}
+                  sx={{ cursor: clickableRows === "allRow" ? "pointer" : "default" }}
+                >
                   {columns.map((col, colIndex) => {
                     const group = groups?.find((group) =>
                       group.columns.includes(col.key),
@@ -414,12 +427,13 @@ const Table = ({
                       return (
                         <MainRow
                           key={colIndex}
-                          isClickable={clickableRows}
+                          isClickable={clickableRows === "mainRow"}
                           mainRowWidth={col.width || mainRowWidth}
                           rowColor={col.rowColor}
                           rowAlign={col.align}
+                          title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
                           onClick={() => {
-                            if (clickableRows && onRowClick) {
+                            if (clickableRows === "mainRow" && onRowClick) {
                               onRowClick(
                                 (row.id as number | undefined) ?? rowIndex,
                               );
@@ -457,6 +471,7 @@ const Table = ({
                         rowColor={col.rowColor}
                         rowAlign={col.align}
                         key={colIndex}
+                        title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
                         sx={{
                           backgroundColor:
                             group?.backgroundColor || Colors.white,
@@ -494,7 +509,19 @@ const Table = ({
                     );
                   })}
                 </TableRow>
-              ))}
+                {content && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      sx={{ padding: 0, border: "none" }}
+                    >
+                      {content}
+                    </TableCell>
+                  </TableRow>
+                )}
+                </Fragment>
+                );
+              })}
             </LazyLoading>
           </TableBody>
         </TableMui>

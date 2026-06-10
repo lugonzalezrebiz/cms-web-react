@@ -1,8 +1,7 @@
 import type React from "react";
-import { useState, useEffect } from "react";
 import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
-import { Box, Skeleton } from "@mui/material";
+import { Box } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 import Card from "./Card";
 import Divider from "./Divider";
@@ -59,20 +58,18 @@ interface HeaderCardProps {
   onClick?: () => void;
 }
 
-export const HeaderCard = ({ title, current = 0, image, onClick }: HeaderCardProps) => {
-  const [timedOut, setTimedOut] = useState(false);
-
-  useEffect(() => {
-    if (current !== 0) return;
-    const timer = setTimeout(() => setTimedOut(true), 2000);
-    return () => {
-      clearTimeout(timer);
-      setTimedOut(false);
-    };
-  }, [current]);
-
+export const HeaderCard = ({
+  title,
+  current = 0,
+  image,
+  onClick,
+}: HeaderCardProps) => {
   return (
-    <Card onClick={onClick} sx={{ cursor: onClick ? "pointer" : "default" }}>
+    <Card
+      onClick={onClick}
+      bgcolor={Colors.white}
+      sx={{ cursor: onClick ? "pointer" : "default" }}
+    >
       <CardContainer>
         <CardTitleContainer sx={{ height: "24px" }}>
           <CardTitle>{title || "No data available"}</CardTitle>
@@ -92,13 +89,7 @@ export const HeaderCard = ({ title, current = 0, image, onClick }: HeaderCardPro
           </MediaContainer>
         </CardTitleContainer>
         <Grid size={{ xs: 12, sm: 12, md: 12, lg: 12 }}>
-          <Current>
-            {current !== 0 || timedOut ? (
-              current
-            ) : (
-              <Skeleton variant="text" width={80} height={44} />
-            )}
-          </Current>
+          <Current>{current}</Current>
         </Grid>
       </CardContainer>
     </Card>

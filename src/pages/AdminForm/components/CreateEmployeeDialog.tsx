@@ -187,7 +187,7 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
             outfit
             disabled={!isValid || isPending}
           >
-            Create New Employee
+            {isPending ? "Loading..." : "Create New Employee"}
           </Button>
         </Box>
       </Box>
