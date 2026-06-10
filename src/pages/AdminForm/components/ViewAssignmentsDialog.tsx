@@ -353,7 +353,7 @@ const ViewAssignmentsDialog = ({
           ) : (
             <CustomScrollbarY
               ref={scrollContainerRef}
-              height="95%"
+              maxHeight="95%"
               thumbLength={15}
               scrollX
               xThumbLength={15}

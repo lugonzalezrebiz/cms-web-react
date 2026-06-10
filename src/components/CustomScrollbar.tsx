@@ -5,7 +5,8 @@ import { Colors } from "../theme";
 
 interface CustomScrollbarYProps {
   children: React.ReactNode;
-  height: string | number;
+  height?: string | number;
+  maxHeight?: string | number;
   thumbLength?: number;
   bottom?: number;
   top?: number;
@@ -23,6 +24,7 @@ export const CustomScrollbarY = forwardRef<
     {
       children,
       height,
+      maxHeight,
       thumbLength = 12,
       sx,
       contentSx,
@@ -158,7 +160,7 @@ export const CustomScrollbarY = forwardRef<
         sx={{
           position: "relative",
           height: height,
-          overflow: "hidden",
+          maxHeight: maxHeight,
           ...sx,
         }}
       >

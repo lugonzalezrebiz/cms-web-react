@@ -202,7 +202,7 @@ const TableSection = () => {
       </Title>
       <CustomScrollbarY
         ref={scrollContainerRef}
-        height="580px"
+        maxHeight="580px"
         sx={{ width: "100%", bgcolor: Colors.white, borderRadius: "8px" }}
         bottom={0}
         top={45}

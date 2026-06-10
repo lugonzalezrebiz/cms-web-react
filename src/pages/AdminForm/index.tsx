@@ -14,7 +14,7 @@ const AdminForm = () => {
   const { cards, isLoading } = useAssignmentCount();
 
   return (
-    <CustomScrollbarY thumbLength={15} bottom={2} height="100%">
+    <CustomScrollbarY thumbLength={15} bottom={2} maxHeight="100%">
       <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
         <Grid container spacing={2}>
           {isLoading

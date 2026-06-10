@@ -114,7 +114,7 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
         <Box mt={"4px"} height={"100%"}>
           <CustomScrollbarY
             ref={scrollContainerRef}
-            height="100%"
+            maxHeight="100%"
             sx={{
               width: "100%",
               borderRadius: "8px",
