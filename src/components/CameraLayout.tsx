@@ -11,13 +11,12 @@ import CameraOverlayMenu, {
   type CameraContextMenuItem,
 } from "./CameraOverlayMenu";
 import { usePopover } from "../hooks/usePopover";
-import CustomScrollbar from "./CustomScrollbar";
+import { CustomScrollbarY } from "./CustomScrollbar";
 
-export const TAG_TOLERANCE_SEC = 300;
+export const TAG_TOLERANCE_SEC = 60;
 
 interface CameraItemProps {
   index: number;
-  media: string;
   expandCamera: (index: number) => void;
   isExpanded?: boolean;
   tags: CameraContextMenuItem[];
@@ -39,7 +38,6 @@ interface CameraItemProps {
 
 export const CameraItem = ({
   index,
-  media,
   expandCamera,
   isExpanded = false,
   tags,
@@ -98,7 +96,7 @@ export const CameraItem = ({
       : { company: 0, location: 0, date: "", camera: 0, timestamp: "" },
   );
 
-  const imageSrc = useRealImages ? liveSrc : media;
+  const imageSrc = liveSrc;
 
   if (imageSrc !== prevImageSrc) {
     setPrevImageSrc(imageSrc);
@@ -120,19 +118,19 @@ export const CameraItem = ({
       }}
     >
       <img
-        src={imageSrc || media}
-        alt={cameraName ?? `Camera ${index + 1}`}
+        src={imageSrc || undefined}
+        //alt={cameraName ?? `Camera ${index + 1}`}
         onError={() => setImgError(true)}
         style={{
           width: "100%",
           height: "100%",
           objectFit: "contain",
           display: "block",
-          opacity: useRealImages && !liveSrc ? 0.15 : 1,
+          opacity: 1,
         }}
       />
 
-      {imgError && (
+      {(imgError || !imageSrc) && (
         <Box
           sx={{
             position: "absolute",
@@ -156,7 +154,7 @@ export const CameraItem = ({
               opacity: 0.6,
             }}
           >
-            Camera doesn't work
+            No cameras available
           </Typography>
         </Box>
       )}
@@ -168,32 +166,38 @@ export const CameraItem = ({
             position: "absolute",
             top: 8,
             left: 8,
-            height: "22px",
             display: "flex",
             alignItems: "center",
             borderRadius: "4px",
             bgcolor: Colors.semiTransparentBlackTwo,
+            flexDirection: "column",
+            width: "90px",
           }}
         >
-          <Typography
-            variant="caption"
-            sx={{
-              padding: "2px 0px 2px 4px",
-              color: Colors.white,
-              borderRadius: 0.5,
-              fontSize: 12,
-              mr: "9px",
-              fontFamily: Fonts.main,
-              lineHeight: 1.5,
-            }}
-          >
-            Camera {cameraId ?? index + 1}
-          </Typography>
-          <img
-            style={{ padding: "0 4px 0 0", cursor: "pointer" }}
-            src="./assets/chevron-down.svg"
-            alt="Show camera options"
-          />
+          {[`Camera ${cameraId ?? index + 1}`, cameraName].map((label) => (
+            <Typography
+              key={label}
+              variant="caption"
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                el.title = el.scrollWidth > el.clientWidth ? (label ?? "") : "";
+              }}
+              sx={{
+                padding: "0px 0px 0px 4px",
+                color: Colors.white,
+                borderRadius: 0.5,
+                fontSize: 12,
+                fontFamily: Fonts.main,
+                lineHeight: 1.3,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                width: "90%",
+              }}
+            >
+              {label}
+            </Typography>
+          ))}
         </Box>
       )}
 
@@ -322,7 +326,7 @@ export const CameraItem = ({
           open={showMenu}
           onClose={closeMenu}
           items={contextMenuItems}
-          cameraIndex={index}
+          cameraId={cameraId ?? 0}
           title="Select a Compliance Violations"
         />
       )}
@@ -334,7 +338,6 @@ export type CameraInfo = { id: number; name: string };
 
 interface CameraLayoutProps {
   count: number;
-  media: string;
   maxHeight?: number | string;
   contextMenuItems?: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
@@ -353,6 +356,9 @@ interface CameraLayoutProps {
 
 const getRowDistribution = (count: number): number[] => {
   if (count === 0) return [];
+
+  // 3 cameras display as a 2×2 grid with an empty 4th slot
+  if (count === 3) return [2, 2];
 
   if (count <= 12) {
     const numRows = count <= 2 ? 1 : count <= 8 ? 2 : 3;
@@ -391,7 +397,6 @@ const getRowDistribution = (count: number): number[] => {
 const GAP = 8;
 
 interface SharedCameraItemProps {
-  media: string;
   expandCamera: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
   getTagsForCamera: (index: number) => CameraContextMenuItem[];
@@ -409,7 +414,6 @@ interface SharedCameraItemProps {
 const CameraCell = ({
   camIndex,
   maxCols,
-  media,
   expandCamera,
   onRemoveTag,
   getTagsForCamera,
@@ -435,7 +439,6 @@ const CameraCell = ({
     >
       <CameraItem
         index={camIndex}
-        media={media}
         expandCamera={expandCamera}
         tags={getTagsForCamera(camIndex)}
         contextMenuItems={contextMenuItems}
@@ -459,12 +462,14 @@ const CameraRow = ({
   rowCount,
   maxCols,
   rowHeight,
+  totalCameras,
   ...shared
 }: SharedCameraItemProps & {
   startIdx: number;
   rowCount: number;
   maxCols: number;
   rowHeight?: string;
+  totalCameras?: number;
 }) => {
   return (
     <Box
@@ -480,21 +485,35 @@ const CameraRow = ({
         }),
       }}
     >
-      {Array.from({ length: rowCount }, (_, colIndex) => (
-        <CameraCell
-          key={colIndex}
-          camIndex={startIdx + colIndex}
-          maxCols={maxCols}
-          {...shared}
-        />
-      ))}
+      {Array.from({ length: rowCount }, (_, colIndex) => {
+        const camIndex = startIdx + colIndex;
+        if (totalCameras !== undefined && camIndex >= totalCameras) {
+          return (
+            <Box
+              key={colIndex}
+              sx={{
+                flex: "0 0 auto",
+                width: `calc(${100 / maxCols}% - ${(GAP * (maxCols - 1)) / maxCols}px)`,
+                height: "100%",
+              }}
+            />
+          );
+        }
+        return (
+          <CameraCell
+            key={colIndex}
+            camIndex={camIndex}
+            maxCols={maxCols}
+            {...shared}
+          />
+        );
+      })}
     </Box>
   );
 };
 
 const CameraLayout = ({
   count,
-  media,
   maxHeight = 350,
   contextMenuItems = [],
   onMenuOpen,
@@ -593,14 +612,14 @@ const CameraLayout = ({
     const seen = new Set<string>();
     return cameraEventPoints
       .filter((ep) => {
-        if (
-          ep.cameraId !== (sortedCameras?.[cameraIndex]?.id ?? cameraIndex + 1)
-        )
-          return false;
-        const epStart = Math.min(ep.startSec, ep.timeSec);
-        const hasRange = ep.endSec > epStart;
-        const epEnd = hasRange ? ep.endSec : epStart + TAG_TOLERANCE_SEC;
-        return markerSec >= epStart && markerSec <= epEnd;
+        if (ep.cameraId !== sortedCameras?.[cameraIndex]?.id) return false;
+        const hasRange = ep.endSec > ep.startSec;
+        if (hasRange)
+          return (
+            markerSec >= ep.timeSec - TAG_TOLERANCE_SEC &&
+            markerSec <= ep.endSec + TAG_TOLERANCE_SEC
+          );
+        return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
       })
       .sort(
         (a, b) =>
@@ -621,7 +640,6 @@ const CameraLayout = ({
   };
 
   const sharedProps: SharedCameraItemProps = {
-    media,
     expandCamera: handleExpandCamera,
     onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
     getTagsForCamera,
@@ -648,16 +666,17 @@ const CameraLayout = ({
 
   if (scrollable) {
     return (
-      <CustomScrollbar
+      <CustomScrollbarY
         height={totalHeight}
         sx={{ width: "100%", m: "auto" }}
-        thumbLength={14}
+        thumbLength={15}
         contentSx={{
           display: "flex",
           flexDirection: "column",
           gap: `${GAP}px`,
           pl: "10px",
         }}
+        top={-10}
       >
         {rowDistribution.map((rowCount, rowIndex) => (
           <CameraRow
@@ -666,10 +685,11 @@ const CameraLayout = ({
             rowCount={rowCount}
             maxCols={maxCols}
             rowHeight={rowHeight}
+            totalCameras={count}
             {...sharedProps}
           />
         ))}
-      </CustomScrollbar>
+      </CustomScrollbarY>
     );
   }
 
@@ -679,11 +699,10 @@ const CameraLayout = ({
         display: "grid",
         gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
         gap: `${GAP}px`,
-        width: "100%",
+        //width: "100%",
         height: totalHeight,
         overflow: "hidden",
-        m: "auto",
-        p: "0 10px",
+        p: "0px 10px 10px 10px",
       }}
     >
       {rowDistribution.map((rowCount, rowIndex) => (
@@ -692,6 +711,7 @@ const CameraLayout = ({
           startIdx={rowStarts[rowIndex]}
           rowCount={rowCount}
           maxCols={maxCols}
+          totalCameras={count}
           {...sharedProps}
         />
       ))}

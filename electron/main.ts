@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, Menu, globalShortcut } from "electron";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
@@ -408,6 +408,18 @@ function createWindow() {
     );
 
     setupAutoUpdater(win);
+
+    app.on("browser-window-focus", () => {
+        globalShortcut.register("CommandOrControl+Shift+I", () => {
+            win.webContents.toggleDevTools();
+        });
+        globalShortcut.register("CommandOrControl+R", () => {
+            win.webContents.reload();
+        });
+    });
+    app.on("browser-window-blur", () => {
+        globalShortcut.unregisterAll();
+    });
 
     win.once("ready-to-show", () => {
         win.maximize();

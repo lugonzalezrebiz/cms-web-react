@@ -4,7 +4,7 @@ import type { CameraEventPoint } from "../types";
 export const useCameraEventPoints = (monitoringID: string) => {
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
-    { id: number; cameraIndex: number; activityLabel: string }[]
+    { id: number; cameraId: number; activityLabel: string }[]
   >([]);
   const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
   const [markerSec, setMarkerSec] = useState<number>(0);
@@ -105,20 +105,19 @@ export const useCameraEventPoints = (monitoringID: string) => {
   };
 
   const handleActivitySelect = (
-    cameraIndex: number,
+    cameraId: number,
     activityLabel: string,
     mode: "POINT" | "RANGE" = "POINT",
   ): void => {
     setCameraActivities((prev) => {
       const alreadyExists = prev.some(
         (a) =>
-          a.cameraIndex === cameraIndex && a.activityLabel === activityLabel,
+          a.cameraId === cameraId && a.activityLabel === activityLabel,
       );
       if (alreadyExists) return prev;
       const newId = activityCounterRef.current++;
-      return [...prev, { id: newId, cameraIndex, activityLabel }];
+      return [...prev, { id: newId, cameraId, activityLabel }];
     });
-    const cameraId = 1 + cameraIndex;
     const timeSec = markerSecRef.current;
     const startSec = Math.max(0, timeSec - 120);
     const endSec = timeSec;

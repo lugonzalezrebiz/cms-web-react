@@ -3,8 +3,8 @@ import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import Dialog from "./Dialog";
+import type { stateAssignments } from "./stateColors";
 import { AssignmentHeader } from "./StateBadge";
-import type { stateAssignments } from "../pages/Assignments/components/stateColors";
 
 interface AssignmentInfo {
   location: number;

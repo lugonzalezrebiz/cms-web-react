@@ -20,7 +20,10 @@ export interface DialogComponentProps {
 
 const DialogStyled = styled(DialogComponent, {
   shouldForwardProp: (prop) =>
-    prop !== "customWidth" && prop !== "align" && prop !== "bgColor",
+    prop !== "customWidth" &&
+    prop !== "customHeight" &&
+    prop !== "align" &&
+    prop !== "bgColor",
 })<{
   customWidth?: string;
   customHeight?: string;

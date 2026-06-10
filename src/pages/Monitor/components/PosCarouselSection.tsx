@@ -21,7 +21,7 @@ interface Props {
   currentCameraId: number;
   allMenuItems: CameraContextMenuItem[];
   onMarkerChange: (sec: number) => void;
-  onActivitySelect: (cameraIndex: number, label: string) => void;
+  onActivitySelect: (cameraId: number, label: string) => void;
   attended: AttendedValue | null;
   onToggleAttended: (value: AttendedValue) => void;
   onDone: () => void;
@@ -68,7 +68,7 @@ export function PosCarouselSection({
             const item = allMenuItems.find((m) => m.id === itemId);
             if (!item) return;
             onMarkerChange(currentTimeSec);
-            onActivitySelect(currentCameraId - 1, item.label);
+            onActivitySelect(currentCameraId, item.label);
           }}
         />
       </Box>

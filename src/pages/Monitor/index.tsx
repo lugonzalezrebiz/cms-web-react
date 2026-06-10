@@ -1,8 +1,8 @@
 import { Box } from "@mui/system";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
-import CameraLayout from "../../components/CameraLayout";
+import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import { useTrackerCameras } from "./hooks/useTrackerCameras";
@@ -27,7 +27,7 @@ import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
-  const { assignments } = useAssignments(company, location);
+  const { assignments } = useAssignments({ companyID: company, locationID: location });
   const currentAssignment = assignments.find(
     (a) => a.monitoringID === monitoringID,
   );
@@ -42,10 +42,6 @@ const Monitor = () => {
   const { cameras, isLoading: isCamerasLoading } = useTrackerCameras(
     groupID,
     trackerID,
-  );
-  const sortedCameras = useMemo(
-    () => [...cameras].sort((a, b) => a.id - b.id),
-    [cameras],
   );
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
@@ -68,16 +64,90 @@ const Monitor = () => {
     cleanUp,
   } = useCameraEventPoints(monitoringID);
 
+  const {
+    snapshot,
+    eventPoints: preloadedEventPoints,
+    rangeSessions,
+    cameras: monitoringCameras,
+    loading: isMonitoringLoading,
+  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
+  const allEventPoints = useMemo(
+    () => [...cameraEventPoints, ...preloadedEventPoints],
+    [cameraEventPoints, preloadedEventPoints],
+  );
+
+  const filteredEventPoints = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return allEventPoints;
+    const tracker = trackers.find((t) => t.id === Number(trackerOption));
+    if (!tracker) return allEventPoints;
+    return allEventPoints.filter((ep) => ep.label === tracker.name);
+  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
+
+  const activeCameras = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return cameras;
+    // Source cameras from monitoring data so IDs match event points from load2.
+    return monitoringCameras.filter((camera) =>
+      filteredEventPoints.some((ep) => {
+        if (ep.cameraId !== camera.id) return false;
+        const hasRange = ep.endSec > ep.startSec;
+        if (hasRange)
+          return markerSec >= ep.timeSec - 60 && markerSec <= ep.endSec + 60;
+        return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
+      }),
+    );
+  }, [
+    cameras,
+    monitoringCameras,
+    filteredEventPoints,
+    markerSec,
+    isTrackerTab,
+    trackerOption,
+  ]);
+
+  const sortedCameras = useMemo(
+    () => [...activeCameras].sort((a, b) => a.id - b.id),
+    [activeCameras],
+  );
+
+  const expandedCameraIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (expandedCamera === null) {
+      expandedCameraIdRef.current = null;
+    } else {
+      const id = sortedCameras[expandedCamera]?.id;
+      if (id !== undefined) expandedCameraIdRef.current = id;
+    }
+  }, [expandedCamera, sortedCameras]);
+
+  useEffect(() => {
+    if (!isTrackerTab || !trackerOption || expandedCamera === null) return;
+    const id = expandedCameraIdRef.current;
+    if (id !== null && !activeCameras.some((c) => c.id === id)) {
+      handleExpandCamera(expandedCamera);
+    }
+  }, [
+    activeCameras,
+    isTrackerTab,
+    trackerOption,
+    expandedCamera,
+    handleExpandCamera,
+  ]);
+
   const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
-    openMenuCamera,
+    openMenuCamera !== null
+      ? (sortedCameras[openMenuCamera]?.id ?? null)
+      : null,
     handleActivitySelect,
   );
   const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
     location,
-    expandedCamera,
+    expandedCamera !== null
+      ? (sortedCameras[expandedCamera]?.id ?? null)
+      : null,
     handleActivitySelect,
   );
 
@@ -97,24 +167,6 @@ const Monitor = () => {
     () => trackerMenuFilter(allExpandedCameraMenuItems),
     [trackerMenuFilter, allExpandedCameraMenuItems],
   );
-
-  const {
-    snapshot,
-    eventPoints: preloadedEventPoints,
-    rangeSessions,
-    loading: isMonitoringLoading,
-  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-  const allEventPoints = useMemo(
-    () => [...cameraEventPoints, ...preloadedEventPoints],
-    [cameraEventPoints, preloadedEventPoints],
-  );
-
-  const filteredEventPoints = useMemo(() => {
-    if (!isTrackerTab || !trackerOption) return allEventPoints;
-    const tracker = trackers.find((t) => t.id === Number(trackerOption));
-    if (!tracker) return allEventPoints;
-    return allEventPoints.filter((ep) => ep.label === tracker.name);
-  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
 
   const { handleDeleteEventPoint, handleConvertEventPoint } =
     useDeleteEventPoint(
@@ -249,17 +301,16 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box sx={{ flex: 9, minHeight: 0, height: 0 }}>
+      <Box mt={"10px"} sx={{ flex: 9, minHeight: 0, height: 0 }}>
         <CameraLayout
-          count={cameras.length}
-          media="/assets/camera/Cam thumbnail.svg"
+          count={activeCameras.length}
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
           onMenuOpen={setOpenMenuCamera}
           cameraEventPoints={filteredEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleDeleteEventPoint}
-          cameras={cameras}
+          cameras={activeCameras}
           company={company}
           location={location}
           date={date}
@@ -287,7 +338,6 @@ const Monitor = () => {
           expandedCamera !== null && handleExpandCamera(expandedCamera)
         }
         cameraIndex={expandedCamera ?? 0}
-        media="/assets/camera/Cam thumbnail.svg"
         expandCamera={handleExpandCamera}
         tags={expandedCameraTags}
         contextMenuItems={expandedCameraMenuItems}

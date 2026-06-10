@@ -8,6 +8,8 @@ import {
   Paper,
   Box,
 } from "@mui/material";
+import { Fragment } from "react";
+import type { RefObject } from "react";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import ProgressBar from "./ProgressBar";
@@ -15,9 +17,9 @@ import LazyLoading from "./LazyLoading";
 import TableSkeleton from "./TableSkeleton";
 
 interface Props {
-  clickableRows?: boolean; // Indicates if rows are clickable
+  clickableRows?: "mainRow" | "allRow"; // Indicates if rows are clickable and which cells trigger the click
   columns: Column[];
-  rows: Record<string, any>[];
+  rows: Record<string, unknown>[];
   onRowClick?: (rowIndex: number) => void; // Callback for row click events
   onClickSort?: (key: string, option: "asc" | "desc") => void; // Callback for sort click events
   loadMore?: () => void; // Callback for loading more data (infinite scroll)
@@ -28,6 +30,8 @@ interface Props {
   mainRowWidth?: string; // Width of the main row (first column)
   mainColumnWidth?: string; // Width of the main column (first column header)
   rowWidth?: string; // Width of the rows (used for non-main columns)
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
+  disableOverflow?: boolean;
 }
 
 export interface Group {
@@ -43,83 +47,121 @@ export interface Column {
   type?: "ProgressBar";
   sort?: "asc" | "desc";
   complement?: React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatTooltip?: (value: any) => React.ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (value: any) => React.ReactNode;
+  width?: string;
+  rowColor?: string;
+  align?: "center" | "left" | "right";
 }
 
 const MainColumn = styled(TableCell, {
-  shouldForwardProp: (prop) => prop !== "mainColumnWidth",
+  shouldForwardProp: (prop) =>
+    prop !== "mainColumnWidth" && prop !== "TableCellWidth",
 })<{ mainColumnWidth?: string }>(({ mainColumnWidth }) => ({
-    opacity: 0.7,
-    fontFamily: Fonts.main,
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#212529",
-    height: "23px",
-    padding: "8px 10px",
-    border: "none",
-    minWidth: mainColumnWidth ? mainColumnWidth : "200px",
-    maxWidth: mainColumnWidth ? mainColumnWidth : "200px",
-  }),
-);
-
-const TableCellStyled = styled(TableCell, {
-  shouldForwardProp: (prop) => prop !== "TableCellWidth",
-})<{ TableCellWidth?: string }>(({ TableCellWidth }) => ({
-    opacity: 0.7,
-    fontFamily: Fonts.main,
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "#212529",
-    height: "23px",
-    padding: "8px 10px",
-    border: "none",
-    minWidth: TableCellWidth ? TableCellWidth : "100px",
-    maxWidth: TableCellWidth ? TableCellWidth : "100px",
-  }),
-);
-
-const Rows = styled(TableCell)<{ rowWidth?: string }>(({ rowWidth }) => ({
-  opacity: 0.7,
   fontFamily: Fonts.main,
-  fontSize: "16px",
+  fontSize: "12px",
   fontWeight: 600,
   color: Colors.dimGray,
-  textAlign: "center",
-  padding: "10px 8px",
+  height: "26px",
+  padding: "0 0px",
   border: "none",
+  borderBottom: `1px solid ${Colors.paleGray}`,
+  minWidth: mainColumnWidth ? mainColumnWidth : "200px",
+  maxWidth: mainColumnWidth ? mainColumnWidth : "200px",
+}));
+
+const TableCellStyled = styled(TableCell, {
+  shouldForwardProp: (prop) =>
+    prop !== "TableCellWidth" && prop !== "mainColumnWidth",
+})<{ TableCellWidth?: string }>(({ TableCellWidth }) => ({
+  fontFamily: Fonts.main,
+  fontSize: "12px",
+  fontWeight: 600,
+  color: Colors.dimGray,
+  height: "26px",
+  padding: "0 10px",
+  border: "none",
+  borderBottom: `1px solid ${Colors.paleGray}`,
+  minWidth: TableCellWidth ? TableCellWidth : "100px",
+  maxWidth: TableCellWidth ? TableCellWidth : "100px",
+}));
+
+const Rows = styled(TableCell, {
+  shouldForwardProp: (prop) =>
+    prop !== "rowWidth" && prop !== "rowColor" && prop !== "rowAlign",
+})<{
+  rowWidth?: string;
+  rowColor?: string;
+  rowAlign?: "center" | "left" | "right";
+}>(({ rowWidth, rowColor, rowAlign }) => ({
+  fontFamily: Fonts.main,
+  fontSize: "14px",
+  fontWeight: 400,
+  color: rowColor ?? Colors.dimGray,
+  textAlign: rowAlign ?? "center",
+  padding: "5px 8px",
+  border: "none",
+  borderBottom: `1px solid ${Colors.paleGray}`,
   userSelect: "none",
   minWidth: rowWidth ? rowWidth : "90px",
   maxWidth: rowWidth ? rowWidth : "90px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  "tr:last-child &": { borderBottom: "none" },
 }));
 
-const ProgressBarRows = styled(TableCell)({
+const ProgressBarRows = styled(TableCell, {
+  shouldForwardProp: (prop) => prop !== "rowColor" && prop !== "rowAlign",
+})<{
+  rowColor?: string;
+  rowAlign?: "center" | "left" | "right";
+}>(({ rowColor, rowAlign }) => ({
   fontFamily: Fonts.main,
   fontSize: "16px",
   fontWeight: 600,
-  color: Colors.dimGray,
-  textAlign: "center",
-  padding: "10px 8px",
+  color: rowColor ?? Colors.dimGray,
+  textAlign: rowAlign ?? "center",
+  padding: "5px 8px",
   border: "none",
+  borderBottom: `1px solid ${Colors.paleGray}`,
   userSelect: "none",
   maxWidth: "180px",
   minWidth: "180px",
-});
+  "tr:last-child &": { borderBottom: "none" },
+}));
 
-const MainRow = styled(TableCell)<{
+const MainRow = styled(TableCell, {
+  shouldForwardProp: (prop) =>
+    prop !== "isClickable" &&
+    prop !== "mainRowWidth" &&
+    prop !== "rowColor" &&
+    prop !== "rowAlign",
+})<{
   isClickable?: boolean;
   mainRowWidth?: string;
-}>(({ isClickable, mainRowWidth }) => ({
+  rowColor?: string;
+  rowAlign?: "center" | "left" | "right";
+}>(({ isClickable, mainRowWidth, rowColor, rowAlign }) => ({
   fontFamily: Fonts.main,
   fontSize: "14px",
-  fontWeight: isClickable ? 500 : 700,
-  color: isClickable ? Colors.main : Colors.lightBlack,
-  padding: "10px 8px",
+  fontWeight: isClickable ? 500 : 400,
+  color: rowColor ?? (isClickable ? Colors.main : Colors.lightBlack),
+  textAlign: rowAlign ?? "left",
+  //padding: "5px 8px",
+  padding: "5px 0px",
   border: "none",
+  borderBottom: `1px solid ${Colors.paleGray}`,
   cursor: isClickable ? "pointer" : "default",
   userSelect: "none",
   minWidth: mainRowWidth ? mainRowWidth : "100px",
   maxWidth: mainRowWidth ? mainRowWidth : "100px",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  "tr:last-child &": { borderBottom: "none" },
 }));
 
 const TableCellSubTitle = styled("span")({
@@ -133,14 +175,14 @@ const TableCellSubTitle = styled("span")({
 const TableHeader = ({
   title,
   subtitle,
-  alignLeft = false,
+  align = "center",
   onSortClick,
   sort,
   complement,
 }: {
   title?: string;
   subtitle?: string;
-  alignLeft?: boolean;
+  align?: "center" | "left" | "right";
   onSortClick?: () => void;
   sort?: "asc" | "desc";
   complement?: React.ReactNode;
@@ -148,27 +190,34 @@ const TableHeader = ({
   <>
     <Box
       display="flex"
-      flexDirection={alignLeft ? "row" : "column"}
+      flexDirection={align === "center" ? "column" : "row"}
       alignItems={"center"}
-      justifyContent={alignLeft ? "space-between" : "center"}
+      justifyContent={
+        align === "left"
+          ? "flex-start"
+          : align === "right"
+            ? "flex-end"
+            : "center"
+      }
       width="100%"
     >
       <Box
         display="flex"
         alignItems="center"
         gap={1}
-        justifyContent={"flex-start"}
-        height={"30px"}
+        justifyContent={align === "right" ? "flex-end" : "flex-start"}
+        height={"26px"}
       >
-        <p
-          style={{
-            margin: 0,
-            //whiteSpace: "nowrap",
-            textAlign: alignLeft ? "left" : "center",
-          }}
-        >
-          {title}
-        </p>
+        {title && (
+          <p
+            style={{
+              margin: 0,
+              textAlign: align,
+            }}
+          >
+            {title}
+          </p>
+        )}
         {complement}
       </Box>
       <TableCellSubTitle>{subtitle}</TableCellSubTitle>
@@ -190,7 +239,7 @@ const TableHeader = ({
 const Table = ({
   loading,
   loadMore,
-  clickableRows = false,
+  clickableRows = "mainRow",
   rows,
   onRowClick,
   columns,
@@ -201,70 +250,82 @@ const Table = ({
   mainRowWidth,
   mainColumnWidth,
   rowWidth,
+  scrollContainerRef,
+  disableOverflow,
 }: Props) => {
   return (
-    <Box margin="0 14px 0 8px">
-      <TableContainer component={Paper} elevation={0}>
-        <TableMui stickyHeader>
+    <Box margin="0 0px 0 0px" width={"100%"} borderRadius="8px">
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{
+          width: "100%",
+
+          ...(disableOverflow && { overflow: "visible" }),
+        }}
+      >
+        <TableMui stickyHeader sx={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
           <TableHead>
-            <TableRow>
-              {columns.map((col, idx) => {
-                const group = groups?.find(
-                  (g) => g.columns.includes(col.key) && g.title,
-                );
-                if (group && group.columns[0] === col.key) {
-                  return (
-                    <TableCell
-                      key={`group-${idx}`}
-                      align="center"
-                      colSpan={group.columns.length}
-                      sx={{
-                        border: "none",
-                        padding: 0,
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          top: "50%",
-                          left: "15px",
-                          right: "15px",
-                          transform: "translateY(0)",
-                          height: "30%",
-                          borderTop: "1px solid #b7bfca",
-                          borderRight: "1px solid #b7bfca",
-                          borderLeft: "1px solid #b7bfca",
-                          zIndex: -1,
-                        },
-                      }}
-                    >
-                      <span
-                        style={{
-                          padding: "0 10px",
-                          backgroundColor: Colors.white,
-                          color: "#66696c",
-                          fontFamily: Fonts.main,
-                          fontSize: "12px",
-                          fontWeight: 400,
+            {groups && (
+              <TableRow>
+                {columns.map((col, idx) => {
+                  const group = groups?.find(
+                    (g) => g.columns.includes(col.key) && g.title,
+                  );
+                  if (group && group.columns[0] === col.key) {
+                    return (
+                      <TableCell
+                        key={`group-${idx}`}
+                        align="center"
+                        colSpan={group.columns.length}
+                        sx={{
+                          border: "none",
+                          padding: 0,
+                          "&::after": {
+                            content: '""',
+                            position: "absolute",
+                            top: "50%",
+                            left: "15px",
+                            right: "15px",
+                            transform: "translateY(0)",
+                            height: "30%",
+                            borderTop: "1px solid #b7bfca",
+                            borderRight: "1px solid #b7bfca",
+                            borderLeft: "1px solid #b7bfca",
+                            zIndex: -1,
+                          },
                         }}
                       >
-                        {group.title}
-                      </span>
-                    </TableCell>
+                        <span
+                          style={{
+                            padding: "0 10px",
+                            backgroundColor: Colors.white,
+                            color: "#66696c",
+                            fontFamily: Fonts.main,
+                            fontSize: "12px",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {group.title}
+                        </span>
+                      </TableCell>
+                    );
+                  }
+                  if (group && group.columns.includes(col.key)) {
+                    return null;
+                  }
+                  return (
+                    <TableCell
+                      key={`nogroup-${idx}`}
+                      sx={{
+                        backgroundColor: Colors.white,
+                        border: "none",
+                      }}
+                    />
                   );
-                }
-                if (group && group.columns.includes(col.key)) {
-                  return null;
-                }
-                return (
-                  <TableCell
-                    key={`nogroup-${idx}`}
-                    sx={{
-                      backgroundColor: Colors.white,
-                      border: "none",
-                    }}
-                  />
-                );
-              })}
-            </TableRow>
+                })}
+              </TableRow>
+            )}
             <TableRow>
               {columns.map((col, index) => {
                 const isSortedColumn = currentSort?.key === col.key;
@@ -291,6 +352,9 @@ const Table = ({
                   <CellComponent
                     key={index}
                     sx={{
+                      ...(!groups && {
+                        "&.MuiTableCell-stickyHeader": { paddingTop: "16px" },
+                      }),
                       backgroundColor: group?.backgroundColor || Colors.white,
                       borderTopLeftRadius:
                         group && group.columns[0] === col.key ? "8px" : 0,
@@ -300,13 +364,16 @@ const Table = ({
                           ? "8px"
                           : 0,
                     }}
-                    TableCellWidth={TableCellWidth}
-                    mainColumnWidth={mainColumnWidth}
+                    TableCellWidth={col.width || TableCellWidth}
+                    mainColumnWidth={col.width || mainColumnWidth}
                   >
                     <TableHeader
                       title={col.title}
                       subtitle={col.subtitle}
-                      alignLeft={index === 0}
+                      align={
+                        col.align ??
+                        (index === 0 && !!col.title ? "left" : "center")
+                      }
                       sort={col.sort ? direction || col.sort : undefined}
                       onSortClick={col.sort ? handleSortClick : undefined}
                       complement={col.complement}
@@ -322,9 +389,16 @@ const Table = ({
               loadMore={loadMore}
               loading={loading}
               skeleton={<TableSkeleton columnCount={columns.length} />}
+              scrollContainerRef={scrollContainerRef}
             >
-              {rows.map((row, rowIndex) => (
-                <TableRow key={rowIndex}>
+              {rows.map((row, rowIndex) => {
+                const content = row.content as React.ReactNode;
+                return (
+                <Fragment key={rowIndex}>
+                <TableRow
+                  onClick={clickableRows === "allRow" && onRowClick ? () => onRowClick((row.id as number | undefined) ?? rowIndex) : undefined}
+                  sx={{ cursor: clickableRows === "allRow" ? "pointer" : "default" }}
+                >
                   {columns.map((col, colIndex) => {
                     const group = groups?.find((group) =>
                       group.columns.includes(col.key),
@@ -332,9 +406,13 @@ const Table = ({
                     const cellValue = row[col.key];
                     if (col.type === "ProgressBar") {
                       return (
-                        <ProgressBarRows key={colIndex}>
+                        <ProgressBarRows
+                          key={colIndex}
+                          rowColor={col.rowColor}
+                          rowAlign={col.align}
+                        >
                           <ProgressBar
-                            value={cellValue}
+                            value={cellValue as number}
                             tooltip={
                               col.formatTooltip
                                 ? col.formatTooltip(row)
@@ -349,23 +427,51 @@ const Table = ({
                       return (
                         <MainRow
                           key={colIndex}
-                          isClickable={clickableRows}
-                          mainRowWidth={mainRowWidth}
+                          isClickable={clickableRows === "mainRow"}
+                          mainRowWidth={col.width || mainRowWidth}
+                          rowColor={col.rowColor}
+                          rowAlign={col.align}
+                          title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
                           onClick={() => {
-                            if (clickableRows && onRowClick) {
-                              onRowClick(row.id || rowIndex);
+                            if (clickableRows === "mainRow" && onRowClick) {
+                              onRowClick(
+                                (row.id as number | undefined) ?? rowIndex,
+                              );
                             }
                           }}
                         >
-                          {cellValue}
+                          {!col.title ? (
+                            <Box
+                              display="flex"
+                              justifyContent={
+                                col.align === "left"
+                                  ? "flex-start"
+                                  : col.align === "right"
+                                    ? "flex-end"
+                                    : "center"
+                              }
+                              alignItems="center"
+                            >
+                              {col.render
+                                ? col.render(cellValue)
+                                : (cellValue as React.ReactNode)}
+                            </Box>
+                          ) : col.render ? (
+                            col.render(cellValue)
+                          ) : (
+                            (cellValue as React.ReactNode)
+                          )}
                         </MainRow>
                       );
                     }
 
                     return (
                       <Rows
-                        rowWidth={rowWidth}
+                        rowWidth={col.width || rowWidth}
+                        rowColor={col.rowColor}
+                        rowAlign={col.align}
                         key={colIndex}
+                        title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
                         sx={{
                           backgroundColor:
                             group?.backgroundColor || Colors.white,
@@ -378,12 +484,44 @@ const Table = ({
                               : 0,
                         }}
                       >
-                        {cellValue}
+                        {!col.title ? (
+                          <Box
+                            display="flex"
+                            justifyContent={
+                              col.align === "left"
+                                ? "flex-start"
+                                : col.align === "right"
+                                  ? "flex-end"
+                                  : "center"
+                            }
+                            alignItems="center"
+                          >
+                            {col.render
+                              ? col.render(cellValue)
+                              : (cellValue as React.ReactNode)}
+                          </Box>
+                        ) : col.render ? (
+                          col.render(cellValue)
+                        ) : (
+                          (cellValue as React.ReactNode)
+                        )}
                       </Rows>
                     );
                   })}
                 </TableRow>
-              ))}
+                {content && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      sx={{ padding: 0, border: "none" }}
+                    >
+                      {content}
+                    </TableCell>
+                  </TableRow>
+                )}
+                </Fragment>
+                );
+              })}
             </LazyLoading>
           </TableBody>
         </TableMui>

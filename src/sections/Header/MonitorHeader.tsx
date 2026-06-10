@@ -170,8 +170,8 @@ const SmallSize = ({
     locationID,
     monitoringID,
   } = useMonitorParams();
-  const navState = useLocationState<{ assignment: Assignment }>();
-  const { assignments } = useAssignments(companyID, locationID);
+  const navState = useLocationState<{ assignment: NavigationAssignment }>();
+  const { assignments } = useAssignments({ companyID, locationID });
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??
@@ -193,14 +193,20 @@ const SmallSize = ({
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
   const { trackerOptions } = useTrackerOptions();
   const cameraGroups = [
-    { value: "0", title: "All" },
-    ...cameraGroupsBase,
     {
       value: "tracker",
       title: "Tracker",
       options: trackerOptions,
     },
+    ...cameraGroupsBase,
+    { value: "0", title: "All" },
   ];
+
+  useEffect(() => {
+    if (trackerOption === "" && trackerOptions.length > 0) {
+      setTrackerOption(trackerOptions[0].value);
+    }
+  }, [trackerOptions, trackerOption, setTrackerOption]);
 
   return (
     <>
@@ -334,8 +340,8 @@ const NormalSize = ({
     locationID,
     monitoringID,
   } = useMonitorParams();
-  const navState = useLocationState<{ assignment: Assignment }>();
-  const { assignments } = useAssignments(companyID, locationID);
+  const navState = useLocationState<{ assignment: NavigationAssignment }>();
+  const { assignments } = useAssignments({ companyID, locationID });
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??
@@ -357,14 +363,20 @@ const NormalSize = ({
   const { cameraGroups: cameraGroupsBase } = useCameraGroups();
   const { trackerOptions } = useTrackerOptions();
   const cameraGroups = [
-    { value: "0", title: "All" },
-    ...cameraGroupsBase,
     {
       value: "tracker",
       title: "Tracker",
       options: trackerOptions,
     },
+    ...cameraGroupsBase,
+    { value: "0", title: "All" },
   ];
+
+  useEffect(() => {
+    if (trackerOption === "" && trackerOptions.length > 0) {
+      setTrackerOption(trackerOptions[0].value);
+    }
+  }, [trackerOptions, trackerOption, setTrackerOption]);
 
   return (
     <>

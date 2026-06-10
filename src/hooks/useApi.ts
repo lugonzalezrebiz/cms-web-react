@@ -157,6 +157,7 @@ export const usePost = <TData = unknown, TVariables = unknown>(
   const { token } = useAuth();
 
   return useMutation<TData, Error, TVariables>({
+    ...options,
     mutationFn: async (data: TVariables) => {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       const res = await apiClient.post<TData>(url, data, {
@@ -168,12 +169,46 @@ export const usePost = <TData = unknown, TVariables = unknown>(
       });
       return res.data;
     },
-    onSuccess: (data, variables, context, meta) => {
+    onSuccess: (data, variables, context) => {
       if (options?.invalidateKey) {
         queryClient.invalidateQueries({ queryKey: options.invalidateKey });
       }
-      options?.onSuccess?.(data, variables, context, meta);
+      options?.onSuccess?.(data, variables, context);
     },
+  });
+};
+
+export const usePatch = <TData = unknown, TVariables = unknown>(
+  url: string | ((variables: TVariables) => string),
+  options?: UseMutationOptions<TData, Error, TVariables> & {
+    invalidateKey?: string[];
+    requestConfig?: RequestConfig;
+    getBody?: (variables: TVariables) => unknown;
+  }
+) => {
+  const queryClient = useQueryClient();
+  const { token } = useAuth();
+
+  return useMutation<TData, Error, TVariables>({
     ...options,
+    mutationFn: async (data: TVariables) => {
+      const resolvedUrl = typeof url === "function" ? url(data) : url;
+      const body = options?.getBody ? options.getBody(data) : data;
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+      const res = await apiClient.patch<TData>(resolvedUrl, body, {
+        ...(options?.requestConfig || {}),
+        headers: {
+          ...(options?.requestConfig?.headers || {}),
+          ...(headers || {}),
+        },
+      });
+      return res.data;
+    },
+    onSuccess: (data, variables, context) => {
+      if (options?.invalidateKey) {
+        queryClient.invalidateQueries({ queryKey: options.invalidateKey });
+      }
+      options?.onSuccess?.(data, variables, context);
+    },
   });
 };

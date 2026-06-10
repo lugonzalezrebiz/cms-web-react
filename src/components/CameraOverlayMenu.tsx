@@ -10,14 +10,14 @@ export interface CameraContextMenuItem {
   shortcut?: string;
   dividerAfter?: boolean;
   reviewed?: boolean;
-  onClick: (cameraIndex: number) => void;
+  onClick: (cameraId: number) => void;
 }
 
 interface CameraOverlayMenuProps {
   open: boolean;
   onClose: () => void;
   items: CameraContextMenuItem[];
-  cameraIndex: number;
+  cameraId: number;
   title: string;
 }
 
@@ -25,7 +25,7 @@ const CameraOverlayMenu = ({
   open,
   onClose,
   items,
-  cameraIndex,
+  cameraId,
   title,
 }: CameraOverlayMenuProps) => {
   if (!open) return null;
@@ -101,7 +101,7 @@ const CameraOverlayMenu = ({
             key={item.id}
             onClick={(e) => {
               e.stopPropagation();
-              item.onClick(cameraIndex);
+              item.onClick(cameraId);
               onClose();
             }}
             sx={{

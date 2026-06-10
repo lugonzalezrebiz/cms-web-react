@@ -47,9 +47,9 @@ interface AssignmentItem {
   userID: number;
   date: string;
   locationID: number;
-  locationName: string;
+  locationName: string | null;
   companyID: number;
-  companyName: string;
+  companyName: string | null;
   statusID: number;
   statusName: string;
   details: AssignmentDetails;
@@ -60,23 +60,25 @@ interface AssignmentsResponse {
   data: AssignmentItem[];
 }
 
-interface AssignmentsPayload {
-  companyID: number;
-  locationID?: number;
-}
+const useAssignments = ({
+  companyID,
+  locationID,
+}: {
+  companyID: number | null;
+  locationID?: number | null;
+}) => {
+  const body = {
+    companyID: companyID ?? 0,
+    ...(locationID ? { locationID } : {}),
+  };
 
-const useAssignments = (companyID: number | null, locationID?: number | null) => {
-  const body: AssignmentsPayload = { companyID: companyID ?? 0 };
-  if (locationID) body.locationID = locationID;
-
-  const { data, isLoading, isPending, isError } = usePostQuery<AssignmentsResponse, AssignmentsPayload>(
-    "location/assignments",
-    body,
-    {
-      queryKey: ["location/assignments", companyID, locationID ?? null],
-      enabled: companyID !== null,
-    }
-  );
+  const { data, isLoading, isPending, isError } = usePostQuery<
+    AssignmentsResponse,
+    typeof body
+  >("location/assignments", body, {
+    queryKey: ["location/assignments", companyID, locationID ?? null],
+    enabled: companyID !== null,
+  });
 
   const formatTime = (time: string | null) => (time ? time.slice(0, 5) : "-");
 
@@ -85,7 +87,9 @@ const useAssignments = (companyID: number | null, locationID?: number | null) =>
     statusName: a.statusName,
     statusID: a.statusID,
     location: a.companyID,
+    locationName: a.locationName,
     store: a.locationID,
+    companyName: a.companyName,
     userID: a.userID,
     date: dayjs.utc(a.date).format("MMMM DD - YYYY"),
     rawDate: dayjs.utc(a.date).format("YYYYMMDD"),

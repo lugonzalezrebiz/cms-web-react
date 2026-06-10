@@ -15,7 +15,7 @@ const Content = ({
         transition: "margin-left 0.4s ease",
         flex: 1,
         minHeight: 0,
-        overflow: "auto",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
       }}
