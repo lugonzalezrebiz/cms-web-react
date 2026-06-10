@@ -3,11 +3,13 @@ import { useState, useEffect } from "react";
 import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
 import { Box, Skeleton } from "@mui/material";
-import { Colors, Fonts } from "../../../theme";
-import Card from "../../../components/Card";
-import Divider from "../../../components/Divider";
-import { type stateAssignments, stateColors } from "./stateColors";
-
+import { Colors, Fonts } from "../theme";
+import Card from "./Card";
+import Divider from "./Divider";
+import {
+  stateColors,
+  type stateAssignments,
+} from "../pages/Assignments/components/stateColors";
 
 const Current = styled("p")({
   fontFamily: Fonts.main,
@@ -54,9 +56,10 @@ interface HeaderCardProps {
   title: string;
   image: string;
   current: number;
+  onClick?: () => void;
 }
 
-const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
+export const HeaderCard = ({ title, current = 0, image, onClick }: HeaderCardProps) => {
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ const HeaderCard = ({ title, current = 0, image }: HeaderCardProps) => {
   }, [current]);
 
   return (
-    <Card>
+    <Card onClick={onClick} sx={{ cursor: onClick ? "pointer" : "default" }}>
       <CardContainer>
         <CardTitleContainer sx={{ height: "24px" }}>
           <CardTitle>{title || "No data available"}</CardTitle>
@@ -154,8 +157,7 @@ export const NewAssignmentsCard = ({
       borderRadius={"16px"}
       onClick={onClick}
       sx={{
-        cursor:
-          onClick && !isCompleted ? "pointer" : "default",
+        cursor: onClick && !isCompleted ? "pointer" : "default",
       }}
     >
       <Box
@@ -184,7 +186,6 @@ export const NewAssignmentsCard = ({
             position: "absolute",
             right: "5px",
             cursor: "pointer",
-            //padding: "1px 4px",
           }}
           src="./assets/dots-vertical.svg"
           alt="More options"
@@ -224,5 +225,3 @@ export const NewAssignmentsCard = ({
     </Card>
   );
 };
-
-export default HeaderCard;

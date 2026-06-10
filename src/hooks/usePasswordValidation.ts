@@ -6,23 +6,23 @@ const lengthRule = z.string().min(8).max(20);
 const uppercaseRule = z.string().regex(/[A-Z]/);
 
 interface PasswordValues {
-  oldPassword: string;
-  newPassword: string;
-  confirmPassword: string;
+  password: string;
+  confirmPassword?: string;
+  oldPassword?: string;
 }
 
-const usePasswordValidation = ({ oldPassword, newPassword, confirmPassword }: PasswordValues) =>
+const usePasswordValidation = ({ password, confirmPassword, oldPassword }: PasswordValues) =>
   useMemo(() => {
     if (!PASSWORD_VALIDATION) {
-      return { validLength: true, validUpperCase: true, passwordsMatch: true, isValid: oldPassword.length > 0 };
+      return { validLength: true, validUpperCase: true, passwordsMatch: true, isValid: oldPassword !== undefined ? oldPassword.length > 0 : password.length > 0 };
     }
 
-    const validLength = lengthRule.safeParse(newPassword).success;
-    const validUpperCase = uppercaseRule.safeParse(newPassword).success;
-    const passwordsMatch = newPassword === confirmPassword;
-    const isValid = validLength && validUpperCase && passwordsMatch && oldPassword.length > 0;
+    const validLength = lengthRule.safeParse(password).success;
+    const validUpperCase = uppercaseRule.safeParse(password).success;
+    const passwordsMatch = confirmPassword !== undefined ? password === confirmPassword : true;
+    const isValid = validLength && validUpperCase && passwordsMatch && (oldPassword !== undefined ? oldPassword.length > 0 : true);
 
     return { validLength, validUpperCase, passwordsMatch, isValid };
-  }, [oldPassword, newPassword, confirmPassword]);
+  }, [password, confirmPassword, oldPassword]);
 
 export default usePasswordValidation;

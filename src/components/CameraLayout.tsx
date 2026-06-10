@@ -669,7 +669,7 @@ const CameraLayout = ({
       <CustomScrollbarY
         height={totalHeight}
         sx={{ width: "100%", m: "auto" }}
-        thumbLength={14}
+        thumbLength={15}
         contentSx={{
           display: "flex",
           flexDirection: "column",

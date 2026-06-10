@@ -10,6 +10,7 @@ interface Props {
   setFilter: (value: string) => void;
   size?: string;
   sizePaper?: string;
+  font?: "main" | "secondary";
 }
 
 const SelectComponent = ({
@@ -18,7 +19,9 @@ const SelectComponent = ({
   setFilter,
   size,
   sizePaper,
+  font = "main",
 }: Props) => {
+  const fontFamily = Fonts[font];
   return (
     <FormControl
       sx={{
@@ -84,7 +87,7 @@ const SelectComponent = ({
           },
 
           alignSelf: "stretch",
-          fontFamily: Fonts.main,
+          fontFamily,
           fontSize: "16px",
           fontWeight: "normal",
           lineHeight: "24px",
@@ -118,7 +121,7 @@ const SelectComponent = ({
             key={f.value}
             value={f.value}
             sx={{
-              fontFamily: Fonts.main,
+              fontFamily,
               fontSize: "16px",
               fontWeight: 400,
               color: Colors.dimGray,
