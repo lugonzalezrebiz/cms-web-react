@@ -30,12 +30,6 @@ const EmployeeTypeRadioGroup = ({ value, onChange }: Props) => (
     sx={{ gap: "16px", ml: "-1px" }}
   >
     <FormControlLabel
-      value="monitoring_agent"
-      control={<Radio size="small" sx={radioSx} />}
-      label={<span style={labelStyle}>Monitoring Agent</span>}
-      sx={{ m: 0 }}
-    />
-    <FormControlLabel
       value="reviewer"
       control={<Radio size="small" sx={radioSx} />}
       label={<span style={labelStyle}>Reviewer</span>}

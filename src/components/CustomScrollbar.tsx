@@ -157,7 +157,8 @@ export const CustomScrollbarY = forwardRef<
       <Box
         sx={{
           position: "relative",
-          maxHeight: height,
+          height: height,
+          overflow: "hidden",
           ...sx,
         }}
       >
@@ -168,6 +169,7 @@ export const CustomScrollbarY = forwardRef<
             updateXThumb();
           }}
           sx={{
+            height: "100%",
             overflowY: "auto",
             overflowX: scrollX ? "auto" : "hidden",
             pr: hasScroll ? "20px" : 0,

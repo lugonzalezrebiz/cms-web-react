@@ -282,7 +282,12 @@ const SmallSize = ({
               />
 
               <Box>
-                <Button disabled={isAgent} onClick={handleDone}>
+                <Button
+                  sx={{ height: "36px" }}
+                  fontSize="14px"
+                  disabled={isAgent}
+                  onClick={handleDone}
+                >
                   Done
                 </Button>
               </Box>
@@ -474,7 +479,12 @@ const NormalSize = ({
               />
 
               <Box>
-                <Button disabled={isAgent} onClick={handleDone}>
+                <Button
+                  sx={{ height: "36px" }}
+                  fontSize="14px"
+                  disabled={isAgent}
+                  onClick={handleDone}
+                >
                   Done
                 </Button>
               </Box>

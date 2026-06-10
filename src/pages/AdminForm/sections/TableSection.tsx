@@ -100,20 +100,20 @@ const TableSection = () => {
     },
     { title: "ROL", key: "role" },
     { title: "NAME", key: "name", rowColor: Colors.vividOrange },
-    { title: "E-MAIL", key: "email", width: "230px" },
+    { title: "E-MAIL", key: "email", width: "150px" },
     {
       title: "ACTIVE",
       key: "active",
-      width: "50px",
-      align: "left",
+      width: "70px",
+      align: "center",
       render: (value: string) => (
         <StateBadge
-          size="sm"
+          size="md"
           label={value}
           sx={{
-            bgcolor: value === "Yes" ? Colors.green : Colors.red,
-            color: Colors.white,
-            border: "none",
+            bgcolor: value === "Yes" ? Colors.mintFoam : Colors.palePink,
+            color: value === "Yes" ? Colors.leafGreen : Colors.blushRed,
+            border: `1px solid ${value === "Yes" ? Colors.leafGreen : Colors.blushRed}`,
           }}
         />
       ),

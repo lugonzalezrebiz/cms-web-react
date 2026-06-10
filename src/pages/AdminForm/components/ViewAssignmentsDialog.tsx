@@ -48,7 +48,7 @@ const EmployeeDrawerHeader = ({
           display: "flex",
           alignItems: "center",
           gap: "10px",
-          p: "8px 0 ",
+          p: "8px 0 8px 16px",
         }}
       >
         <Box p={"4px 8px 4px 0"}>
@@ -333,7 +333,7 @@ const ViewAssignmentsDialog = ({
         }
       >
         <Box mt="20px" display="flex" flexDirection="column" height="99%">
-          <Box mb="4px">
+          <Box mb="4px" pl="16px">
             <Title>Assignments</Title>
           </Box>
           {!isLoading && rows.length === 0 ? (
