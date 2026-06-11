@@ -61,7 +61,7 @@ const ErrorText = styled("p")({
 });
 
 const CreateEmployeeDialog = ({ open, onClose }: Props) => {
-  const [employeeType, setEmployeeType] = useState("monitoring_agent");
+  const [employeeType, setEmployeeType] = useState("reviewer");
   const { fields, errors, isValid, setField, validate, reset } =
     useCreateEmployeeForm();
   const { employeeName, email, userName, password } = fields;
@@ -69,7 +69,7 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
   const { validLength, validUpperCase } = usePasswordValidation({ password });
 
   const handleClose = () => {
-    setEmployeeType("monitoring_agent");
+    setEmployeeType("reviewer");
     reset();
     onClose();
   };
@@ -85,7 +85,7 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
       password,
       name: employeeName,
       email,
-      employeeType: employeeType as "monitoring_agent" | "reviewer",
+      employeeType: employeeType as "reviewer",
     });
   };
 
@@ -187,7 +187,7 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
             outfit
             disabled={!isValid || isPending}
           >
-            {isPending ? "Loading..." : "Create New Employee"}
+            {isPending ? "Loading..." : "Create"}
           </Button>
         </Box>
       </Box>

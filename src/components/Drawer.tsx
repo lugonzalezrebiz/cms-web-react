@@ -19,7 +19,7 @@ const Drawer = ({
   children,
   title,
   header,
-  width = 500,
+  width = 520,
 }: Props) => {
   return (
     <DrawerMUI
@@ -31,7 +31,7 @@ const Drawer = ({
           sx: {
             width,
             bgcolor: Colors.white,
-            padding: "16px",
+            padding: "16px 24px",
             borderTopLeftRadius: "16px",
             borderBottomLeftRadius: "16px",
             height: "calc(100% - 32px)",
@@ -52,7 +52,7 @@ const Drawer = ({
         {header ??
           (title && (
             <Box>
-              <Box p={"10px 0 "}>
+              <Box p={"8px 0 10px 0"}>
                 <Title
                   showDivider={false}
                   margin={false}
