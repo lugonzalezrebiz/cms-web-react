@@ -1,18 +1,9 @@
 import { Box } from "@mui/system";
-import Dialog from "../../../components/Dialog";
 import { Colors, Fonts } from "../../../theme";
 import styled from "@emotion/styled";
-import { type stateAssignments, stateColors } from "./stateColors";
+import type { Assignment } from "../../../hooks/useAssignments";
+import FormDialog from "../../../components/FormDialog";
 
-export type Assignment = {
-  state: stateAssignments;
-  location: number;
-  store: number;
-  date: string;
-  comments: number;
-  items: { activity: string; complement: string }[];
-  commentsTex: string[];
-};
 
 interface InfoAssignmentProps {
   handleCloseDialog: () => void;
@@ -20,22 +11,6 @@ interface InfoAssignmentProps {
   selectedAssignment: Assignment | null;
 }
 
-const AssignmentSubText = styled("p")({
-  fontFamily: Fonts.main,
-  fontSize: "14px",
-  fontWeight: 400,
-  color: Colors.charcoalNavy,
-  lineHeight: 1.43,
-});
-
-const AssignmentTitle = styled("p")({
-  fontFamily: Fonts.main,
-  fontSize: "20px",
-  fontWeight: 700,
-  color: Colors.charcoalNavy,
-  margin: "0 0px 0px 0px",
-  lineHeight: 1.5,
-});
 
 const MenuHeaderContainer = styled(Box)({
   display: "flex",
@@ -96,109 +71,58 @@ const InfoAssignment = ({
   selectedAssignment,
 }: InfoAssignmentProps) => {
   return (
-    <Dialog
-      onClose={handleCloseDialog}
+    <FormDialog
       open={dialogOpen}
+      onClose={handleCloseDialog}
       maxWidth="364px"
       padding="24px"
+      assignment={selectedAssignment ?? undefined}
     >
-      <Box>
-        <Box
-          onClick={handleCloseDialog}
-          sx={{ position: "absolute", top: 8, right: 10, cursor: "pointer" }}
-        >
-          <img src="./assets/x-close.svg" alt="Close" />
-        </Box>
-        {selectedAssignment && (
-          <>
-            <Box height={"20px"} sx={{ display: "flex", alignItems: "center" }}>
-              <img
-                style={{ margin: "0 6px 0 0" }}
-                src="./assets/building-07.svg"
-                alt="Location"
-              />
-              <AssignmentSubText style={{ margin: "0 18px 0 0" }}>
-                {selectedAssignment.location}
-              </AssignmentSubText>
-              <img
-                style={{ margin: "0 6px 0 0" }}
-                src="./assets/building-02.svg"
-                alt="Store"
-              />
-              <AssignmentSubText style={{ margin: 0 }}>
-                {selectedAssignment.store}
-              </AssignmentSubText>
-            </Box>
-            <Box
-              height={"30px"}
-              display={"flex"}
-              flexDirection={"row"}
-              alignItems={"center"}
-            >
-              <AssignmentTitle>{selectedAssignment.date}</AssignmentTitle>
-              <Box
-                sx={{
-                  p: "4px 16px",
-                  border: `1px solid ${stateColors[selectedAssignment.state].border}`,
-                  borderRadius: "20px",
-                  bgcolor: stateColors[selectedAssignment.state].bg,
-                  color: stateColors[selectedAssignment.state].color,
-                  fontFamily: Fonts.main,
-                  fontSize: "12px",
-                  fontWeight: 700,
-                  ml: "8px",
-                  display: "flex",
-                  alignItems: "center",
-                  // mb: "8px",
-                }}
+      {selectedAssignment && (
+        <Box>
+          <Box>
+            {selectedAssignment.items.map((item, index) => (
+              <MenuHeaderContainer
+                key={index}
+                sx={{ mt: index === 0 ? "8px" : undefined }}
               >
-                {selectedAssignment.state}
-              </Box>
-            </Box>
-            <Box>
-              {selectedAssignment.items.map((item, index) => (
-                <MenuHeaderContainer
-                  key={index}
-                  sx={{ mt: index === 0 ? "8px" : undefined }}
-                >
-                  <TextHeaderMenu>{item.activity}</TextHeaderMenu>
-                  <SubTextHeaderMenu>{item.complement}</SubTextHeaderMenu>
-                </MenuHeaderContainer>
+                <TextHeaderMenu>{item.activity}</TextHeaderMenu>
+                <SubTextHeaderMenu>{item.complement}</SubTextHeaderMenu>
+              </MenuHeaderContainer>
+            ))}
+          </Box>
+          <Box>
+            <TextComments>
+              <span style={{ marginRight: "4px" }}>
+                {selectedAssignment.commentsTex.length}
+              </span>
+              Comments:
+            </TextComments>
+            <Box
+              component="ol"
+              sx={{
+                "& li::marker": {
+                  content: "counter(list-item)",
+                  fontFamily: Fonts.main,
+                  fontWeight: "bold",
+                  fontSize: "14px",
+                },
+                margin: "0 0 0 7px",
+                padding: 0,
+              }}
+            >
+              {selectedAssignment.commentsTex.map((comment, index) => (
+                <li key={index}>
+                  <Comments style={{ margin: "8px 0 8px 8px" }}>
+                    {comment}
+                  </Comments>
+                </li>
               ))}
             </Box>
-            <Box>
-              <TextComments>
-                <span style={{ marginRight: "4px" }}>
-                  {selectedAssignment.commentsTex.length}
-                </span>
-                Comments:
-              </TextComments>
-              <Box
-                component="ol"
-                sx={{
-                  "& li::marker": {
-                    content: "counter(list-item)",
-                    fontFamily: Fonts.main,
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                  },
-                  margin: "0 0 0 7px",
-                  padding: 0,
-                }}
-              >
-                {selectedAssignment.commentsTex.map((comment, index) => (
-                  <li key={index}>
-                    <Comments style={{ margin: "8px 0 8px 8px" }}>
-                      {comment}
-                    </Comments>
-                  </li>
-                ))}
-              </Box>
-            </Box>
-          </>
-        )}
-      </Box>
-    </Dialog>
+          </Box>
+        </Box>
+      )}
+    </FormDialog>
   );
 };
 

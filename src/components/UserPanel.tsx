@@ -7,7 +7,7 @@ import useNavigateWithQuery from "../hooks/useNavigate";
 import useAuth from "../hooks/useAuth";
 import useChangePassword from "../hooks/useChangePassword";
 import ResetPasswordDialog from "./ResetPasswordDialog";
-import PasswordChangedDialog from "./PasswordChangedDialog";
+import SuccessDialog from "./SuccessDialog";
 import { useState } from "react";
 
 interface Props {
@@ -200,9 +200,10 @@ const UserPanel = ({ anchorEl, open, handleClose }: Props) => {
         errorMessage={errorMessage}
       />
 
-      <PasswordChangedDialog
+      <SuccessDialog
         open={showSuccess}
         onClose={() => setShowSuccess(false)}
+        message="Password changed successfully."
       />
     </PopoverMenu>
   );

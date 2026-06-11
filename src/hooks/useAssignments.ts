@@ -15,6 +15,23 @@ const parseStatusName = (statusName: string): stateAssignments => {
   return VALID_STATES.includes(capitalized) ? capitalized : "Ready";
 };
 
+export type Assignment = {
+  state: stateAssignments;
+  statusName: string;
+  statusID: number;
+  location: number;
+  store: number;
+  userID: number;
+  date: string;
+  rawDate: string;
+  comments: number;
+  monitoringID: string;
+  open: string | null;
+  close: string | null;
+  items: { activity: string; complement: string }[];
+  commentsTex: string[];
+};
+
 interface AssignmentDetails {
   open: string | null;
   close: string | null;
@@ -68,6 +85,7 @@ const useAssignments = ({
   const assignments = (data?.data ?? []).map((a) => ({
     state: parseStatusName(a.statusName),
     statusName: a.statusName,
+    statusID: a.statusID,
     location: a.companyID,
     locationName: a.locationName,
     store: a.locationID,

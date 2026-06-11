@@ -6,8 +6,11 @@ import { stateColors, type stateAssignments } from "./stateColors";
 
 type BadgeSize = "sm" | "md" | "lg";
 
-const sizeStyles: Record<BadgeSize, { p: string; fontSize: string; borderRadius: string }> = {
-  sm: { p: "2px 8px",  fontSize: "11px", borderRadius: "6px"  },
+const sizeStyles: Record<
+  BadgeSize,
+  { p: string; fontSize: string; borderRadius: string }
+> = {
+  sm: { p: "2px 8px", fontSize: "11px", borderRadius: "6px" },
   md: { p: "2px 16px", fontSize: "12px", borderRadius: "20px" },
   lg: { p: "4px 16px", fontSize: "12px", borderRadius: "20px" },
 };

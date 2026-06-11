@@ -24,6 +24,7 @@ const DropDownMenu = ({
       anchorEl={anchorEl}
       open={open}
       onClose={handleClose}
+      autoFocus={false}
       anchorOrigin={{ vertical: "center", horizontal: "left" }}
       transformOrigin={{ vertical: "top", horizontal: "right" }}
       slotProps={{
@@ -40,6 +41,7 @@ const DropDownMenu = ({
     >
       {options?.map((option) => (
         <MenuItem
+          key={option.label}
           sx={{
             fontFamily: Fonts.secondary,
             fontSize: "12px",

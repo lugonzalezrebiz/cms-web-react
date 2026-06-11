@@ -2,40 +2,16 @@ import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
-import { type stateAssignments, stateColors } from "../pages/Assignments/components/stateColors";
-
-export interface HeaderInfo {
-  title: string;
-  state: stateAssignments;
-  subTitle: { store: string; user: string };
-  items: { activity: string; complement: string }[];
-  commentsTex: string[];
-}
+import { AssignmentHeader } from "./StateBadge";
+import type { Assignment } from "../hooks/useAssignments";
 
 interface Props {
   open: boolean;
   anchorEl: HTMLElement | null;
   handleClose: () => void;
-  info?: HeaderInfo;
+  info?: Assignment;
 }
 
-const TitleHeaderMenu = styled("p")({
-  margin: 0,
-  fontFamily: Fonts.main,
-  fontSize: "16px",
-  fontWeight: 700,
-  lineHeight: 1.5,
-  color: Colors.lightBlack,
-});
-
-const SubTitleHeaderMenu = styled("p")({
-  margin: "4px 0 0 0",
-  fontFamily: Fonts.main,
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: 1.5,
-  color: Colors.dimGray,
-});
 
 const MenuHeaderContainer = styled(Box)({
   display: "flex",
@@ -88,7 +64,6 @@ const Comments = styled("p")({
 
 const HeaderInfoMenu = ({ anchorEl, open, handleClose, info }: Props) => {
   if (!info) return null;
-  const activeState = info.state;
 
   return (
     <PopoverMenu
@@ -100,31 +75,12 @@ const HeaderInfoMenu = ({ anchorEl, open, handleClose, info }: Props) => {
     >
       <Box sx={{ width: "100%" }}>
         <Box sx={{ pb: "8px", borderBottom: `1px solid ${Colors.silverGrey}` }}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <TitleHeaderMenu>{info.title}</TitleHeaderMenu>
-            <Box
-              sx={{
-                p: "4px 16px",
-                border: `1px solid ${stateColors[activeState].border}`,
-                borderRadius: "20px",
-                bgcolor: stateColors[activeState].bg,
-                color: stateColors[activeState].color,
-                fontFamily: Fonts.main,
-                fontSize: "12px",
-                fontWeight: 700,
-                ml: "7px",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              {activeState}
-            </Box>
-          </Box>
-          <SubTitleHeaderMenu>
-            Store: {info.subTitle.store}
-            <span style={{ margin: "0 5px" }}>-</span>
-            User: {info.subTitle.user}
-          </SubTitleHeaderMenu>
+          <AssignmentHeader
+            location={info.location}
+            store={info.store}
+            date={info.date}
+            state={info.state}
+          />
         </Box>
         {info.items.map((item, index) => (
           <MenuHeaderContainer

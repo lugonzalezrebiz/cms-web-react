@@ -9,8 +9,10 @@ import Title from "../../components/Title";
 import SelectComponent from "../../components/SelectComponent";
 import { usePopover } from "../../components/timeline/hooks/usePopover";
 import DropDownMenu from "../../components/DropDownMenu";
-import type { Assignment } from "./components/InfoAssignment";
+import type { Assignment } from "../../hooks/useAssignments";
 import InfoAssignment from "./components/InfoAssignment";
+import OpenTicketDialog from "./components/OpenTicketDialog";
+import SuccessDialog from "../../components/SuccessDialog";
 import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
@@ -18,8 +20,9 @@ import { useAssignmentCount } from "../AdminForm/hooks/useAssignmentCount";
 
 const activityIcon = "./assets/activity-other-icon.svg";
 
-const dropdownOptions = (onOpen: () => void) => [
-  { label: "See detail information", onClick: onOpen },
+const dropdownOptions = (onOpenTicket: () => void, onSeeDetail: () => void) => [
+  { label: "Open a ticket", onClick: onOpenTicket },
+  { label: "See detail information", onClick: onSeeDetail },
 ];
 
 const Assignments = () => {
@@ -41,6 +44,8 @@ const Assignments = () => {
 
   const cardMenu = usePopover();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [ticketSuccessOpen, setTicketSuccessOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] =
     useState<Assignment | null>(null);
 
@@ -53,9 +58,18 @@ const Assignments = () => {
     setDialogOpen(false);
   };
 
+  const handleOpenTicketDialog = () => {
+    setTicketDialogOpen(true);
+    cardMenu.handleClose();
+  };
+
+  const handleCloseTicketDialog = () => {
+    setTicketDialogOpen(false);
+  };
+
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} mb={2}>
         {isCardsLoading
           ? Array.from({ length: 5 }).map((_, i) => (
               <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
@@ -73,7 +87,7 @@ const Assignments = () => {
             ))}
       </Grid>
 
-      <Title title="Assignments">
+      <Title margin={false} title="Assignments">
         <Grid
           container
           sx={{
@@ -94,7 +108,7 @@ const Assignments = () => {
           />
         </Grid>
       </Title>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} mb={2}>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
@@ -123,7 +137,7 @@ const Assignments = () => {
             ))
         )}
       </Grid>
-      <Title title="Rejected Assignments"></Title>
+      <Title margin={false} title="Rejected Assignments"></Title>
       <Grid container spacing={2}>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
@@ -170,7 +184,7 @@ const Assignments = () => {
       <DropDownMenu
         anchorEl={cardMenu.anchorEl}
         open={cardMenu.open}
-        options={dropdownOptions(handleOpenDialog)}
+        options={dropdownOptions(handleOpenTicketDialog, handleOpenDialog)}
         handleClose={cardMenu.handleClose}
       />
 
@@ -178,6 +192,28 @@ const Assignments = () => {
         handleCloseDialog={handleCloseDialog}
         dialogOpen={dialogOpen}
         selectedAssignment={selectedAssignment}
+      />
+
+      {selectedAssignment && (
+        <OpenTicketDialog
+          open={ticketDialogOpen}
+          onClose={handleCloseTicketDialog}
+          onSuccess={() => setTicketSuccessOpen(true)}
+          selectedAssignment={selectedAssignment}
+        />
+      )}
+
+      <SuccessDialog
+        open={ticketSuccessOpen}
+        onClose={() => setTicketSuccessOpen(false)}
+        message={
+          <>
+            The ticket has been created successfully.
+            <br />
+            As soon as it gets resolved the assignment would be back on your
+            dashboard.
+          </>
+        }
       />
     </Box>
   );
