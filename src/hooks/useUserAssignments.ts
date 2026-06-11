@@ -58,6 +58,7 @@ interface AssignmentsResponse {
 
 interface LocationEntry {
   companyID: number;
+  companyName: string | null;
   locationIDs: number[];
 }
 
@@ -112,14 +113,6 @@ const useUserAssignments = ({
     {},
   );
 
-  const companyNameMap = (assignmentsData?.data ?? []).reduce<Record<number, string | null>>(
-    (acc, a) => {
-      if (!(a.companyID in acc)) acc[a.companyID] = a.companyName;
-      return acc;
-    },
-    {},
-  );
-
   const locationNameMap = (assignmentsData?.data ?? []).reduce<Record<string, string | null>>(
     (acc, a) => {
       const key = `${a.companyID}-${a.locationID}`;
@@ -130,10 +123,9 @@ const useUserAssignments = ({
   );
 
   const groupedList: GroupedAssignment[] = (locationData?.assignments ?? []).flatMap(
-    ({ companyID, locationIDs }) =>
+    ({ companyID, companyName, locationIDs }) =>
       locationIDs.map((locationID) => {
         const key = `${companyID}-${locationID}`;
-        const companyName = companyNameMap[companyID] ?? null;
         const locationName = locationNameMap[key] ?? null;
         return {
           companyDisplay: companyName ? `${companyName} (${companyID})` : String(companyID),

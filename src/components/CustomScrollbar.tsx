@@ -5,7 +5,8 @@ import { Colors } from "../theme";
 
 interface CustomScrollbarYProps {
   children: React.ReactNode;
-  height: string | number;
+  height?: string | number;
+  maxHeight?: string | number;
   thumbLength?: number;
   bottom?: number;
   top?: number;
@@ -23,6 +24,7 @@ export const CustomScrollbarY = forwardRef<
     {
       children,
       height,
+      maxHeight,
       thumbLength = 12,
       sx,
       contentSx,
@@ -157,7 +159,8 @@ export const CustomScrollbarY = forwardRef<
       <Box
         sx={{
           position: "relative",
-          maxHeight: height,
+          height: height,
+          maxHeight: maxHeight,
           ...sx,
         }}
       >
@@ -168,6 +171,7 @@ export const CustomScrollbarY = forwardRef<
             updateXThumb();
           }}
           sx={{
+            height: "100%",
             overflowY: "auto",
             overflowX: scrollX ? "auto" : "hidden",
             pr: hasScroll ? "20px" : 0,

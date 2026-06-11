@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import VideocamOffOutlinedIcon from "@mui/icons-material/VideocamOffOutlined";
@@ -14,6 +14,7 @@ import { usePopover } from "../hooks/usePopover";
 import { CustomScrollbarY } from "./CustomScrollbar";
 
 export const TAG_TOLERANCE_SEC = 60;
+const TRANSITION_MS = 200;
 
 interface CameraItemProps {
   index: number;
@@ -34,6 +35,7 @@ interface CameraItemProps {
   location?: number;
   date?: string;
   timestamp?: string;
+  isExiting?: boolean;
 }
 
 export const CameraItem = ({
@@ -54,6 +56,7 @@ export const CameraItem = ({
   cameraLabel = true,
   controlledOpen,
   onControlledClose,
+  isExiting = false,
 }: CameraItemProps) => {
   const {
     open: localShowMenu,
@@ -115,6 +118,13 @@ export const CameraItem = ({
         bgcolor: Colors.blushWhite,
         overflow: "hidden",
         borderRadius: 1,
+        opacity: isExiting ? 0 : 1,
+        transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
+        "@keyframes cameraFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+        animation: isExiting
+          ? "none"
+          : `cameraFadeIn ${TRANSITION_MS}ms ease-in-out`,
+        pointerEvents: isExiting ? "none" : undefined,
       }}
     >
       <img
@@ -357,13 +367,13 @@ interface CameraLayoutProps {
 const getRowDistribution = (count: number): number[] => {
   if (count === 0) return [];
 
-  // 3 cameras display as a 2×2 grid with an empty 4th slot
-  if (count === 3) return [2, 2];
+  // Odd counts > 1 pad to the next even number — the last slot renders empty
+  const effective = count > 1 && count % 2 !== 0 ? count + 1 : count;
 
-  if (count <= 12) {
-    const numRows = count <= 2 ? 1 : count <= 8 ? 2 : 3;
+  if (effective <= 12) {
+    const numRows = effective <= 2 ? 1 : effective <= 8 ? 2 : 3;
     const rows: number[] = [];
-    let remaining = count;
+    let remaining = effective;
     for (let i = 0; i < numRows; i++) {
       const rowCount = Math.ceil(remaining / (numRows - i));
       rows.push(rowCount);
@@ -385,7 +395,7 @@ const getRowDistribution = (count: number): number[] => {
 
   // >12: fixed 4 columns, scroll handles overflow
   const rows: number[] = [];
-  let remaining = count;
+  let remaining = effective;
   while (remaining > 0) {
     const n = Math.min(remaining, 4);
     rows.push(n);
@@ -409,6 +419,7 @@ interface SharedCameraItemProps {
   timestamp?: string;
   openMenuIndex: number | null;
   onCloseMenu: () => void;
+  exitingIds: ReadonlySet<number>;
 }
 
 const CameraCell = ({
@@ -426,7 +437,10 @@ const CameraCell = ({
   timestamp,
   openMenuIndex,
   onCloseMenu,
+  exitingIds,
 }: SharedCameraItemProps & { camIndex: number; maxCols: number }) => {
+  const cameraId = cameras?.[camIndex]?.id;
+  const isExiting = cameraId !== undefined && exitingIds.has(cameraId);
   return (
     <Box
       sx={{
@@ -444,7 +458,7 @@ const CameraCell = ({
         contextMenuItems={contextMenuItems}
         onMenuOpen={onMenuOpen}
         onRemoveTag={onRemoveTag}
-        cameraId={cameras?.[camIndex]?.id}
+        cameraId={cameraId}
         cameraName={cameras?.[camIndex]?.name}
         company={company}
         location={location}
@@ -452,6 +466,7 @@ const CameraCell = ({
         timestamp={timestamp}
         controlledOpen={openMenuIndex === camIndex}
         onControlledClose={onCloseMenu}
+        isExiting={isExiting}
       />
     </Box>
   );
@@ -490,7 +505,7 @@ const CameraRow = ({
         if (totalCameras !== undefined && camIndex >= totalCameras) {
           return (
             <Box
-              key={colIndex}
+              key={`empty-${colIndex}`}
               sx={{
                 flex: "0 0 auto",
                 width: `calc(${100 / maxCols}% - ${(GAP * (maxCols - 1)) / maxCols}px)`,
@@ -501,7 +516,7 @@ const CameraRow = ({
         }
         return (
           <CameraCell
-            key={colIndex}
+            key={shared.cameras?.[startIdx + colIndex]?.id ?? colIndex}
             camIndex={camIndex}
             maxCols={maxCols}
             {...shared}
@@ -529,6 +544,53 @@ const CameraLayout = ({
   loadState = false,
 }: CameraLayoutProps) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
+
+  // sortedCameras is always the current prop — new cameras appear immediately
+  const sortedCameras = useMemo(
+    () => [...(cameras ?? [])].sort((a, b) => a.id - b.id),
+    [cameras],
+  );
+
+  // Only cameras being removed (for fade-out)
+  const [exitingCameras, setExitingCameras] = useState<CameraInfo[]>([]);
+  const prevCamerasRef = useRef<CameraInfo[]>([]);
+
+  // String key — stable when IDs are the same even if the array reference changes
+  const cameraIdsKey = sortedCameras.map((c) => c.id).join(",");
+
+  useEffect(() => {
+    const incoming = [...(cameras ?? [])].sort((a, b) => a.id - b.id);
+    const incomingIds = new Set(incoming.map((c) => c.id));
+    const leaving = prevCamerasRef.current.filter(
+      (c) => !incomingIds.has(c.id),
+    );
+    prevCamerasRef.current = incoming;
+
+    if (leaving.length === 0) {
+      const t = setTimeout(() => setExitingCameras([]), 0);
+      return () => clearTimeout(t);
+    }
+
+    const tStart = setTimeout(() => setExitingCameras(leaving), 0);
+    const tEnd = setTimeout(() => setExitingCameras([]), TRANSITION_MS + 50);
+
+    return () => {
+      clearTimeout(tStart);
+      clearTimeout(tEnd);
+    };
+  }, [cameraIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Merge current cameras with any that are fading out
+  const renderedCameras = useMemo(() => {
+    const incomingIds = new Set(sortedCameras.map((c) => c.id));
+    const exitingOnly = exitingCameras.filter((c) => !incomingIds.has(c.id));
+    return [...sortedCameras, ...exitingOnly].sort((a, b) => a.id - b.id);
+  }, [sortedCameras, exitingCameras]);
+
+  const exitingIds = useMemo(
+    () => new Set(exitingCameras.map((c) => c.id)),
+    [exitingCameras],
+  );
 
   if (loadState) {
     return (
@@ -563,7 +625,7 @@ const CameraLayout = ({
     );
   }
 
-  if (count === 0) {
+  if (count === 0 && exitingIds.size === 0) {
     return (
       <Box
         sx={{
@@ -596,23 +658,16 @@ const CameraLayout = ({
     );
   }
 
-  const scrollable = count > 16; // beyond 16 cameras, we switch to a scrollable layout with fixed 4-column rows
+  const scrollable = renderedCameras.length > 16;
   const totalHeight =
     typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
-  // Each row fills exactly 1/3 of the container (same size as the 12-camera grid rows).
-  // Using calc(100%) so the 3 visible rows + 2 gaps fill the container perfectly,
-  // and row 4+ start beyond the fold and are revealed by scroll.
   const rowHeight = scrollable ? `calc((100% - ${GAP * 2}px) / 3)` : undefined;
-
-  const sortedCameras = cameras
-    ? [...cameras].sort((a, b) => a.id - b.id)
-    : undefined;
 
   const getTagsForCamera = (cameraIndex: number): CameraContextMenuItem[] => {
     const seen = new Set<string>();
     return cameraEventPoints
       .filter((ep) => {
-        if (ep.cameraId !== sortedCameras?.[cameraIndex]?.id) return false;
+        if (ep.cameraId !== renderedCameras[cameraIndex]?.id) return false;
         const hasRange = ep.endSec > ep.startSec;
         if (hasRange)
           return (
@@ -648,16 +703,17 @@ const CameraLayout = ({
       setOpenMenuIndex(index);
       onMenuOpen?.(index);
     },
-    cameras: sortedCameras,
+    cameras: renderedCameras,
     company,
     location,
     date,
     timestamp,
     openMenuIndex,
     onCloseMenu: () => setOpenMenuIndex(null),
+    exitingIds,
   };
 
-  const rowDistribution = getRowDistribution(count);
+  const rowDistribution = getRowDistribution(renderedCameras.length);
   const numRows = rowDistribution.length;
   const maxCols = Math.max(...rowDistribution);
   const rowStarts = rowDistribution.map((_, i) =>
@@ -685,7 +741,7 @@ const CameraLayout = ({
             rowCount={rowCount}
             maxCols={maxCols}
             rowHeight={rowHeight}
-            totalCameras={count}
+            totalCameras={renderedCameras.length}
             {...sharedProps}
           />
         ))}
