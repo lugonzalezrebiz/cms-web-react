@@ -1,7 +1,7 @@
-import { isAxiosError } from "axios";
 import { AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import { usePost } from "../../../hooks/useApi";
 import { usersQueryKey } from "./useUsers";
+import { getErrorMessage } from "../utils/errors";
 
 interface CreateUserPayload {
   username: string;
@@ -20,15 +20,10 @@ export interface CreateUserInput {
   employeeType: "monitoring_agent" | "reviewer";
 }
 
-const getErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error)) {
-    switch (error.response?.status) {
-      case 400: return "Invalid request.";
-      case 401: return "Unauthorized.";
-      case 409: return "Username or email already exists.";
-    }
-  }
-  return "An unexpected error occurred.";
+const CREATE_USER_ERRORS = {
+  400: "Invalid request.",
+  401: "Unauthorized.",
+  409: "Username or email already exists.",
 };
 
 const useCreateUser = (options?: { onSuccess?: () => void }) => {
@@ -50,7 +45,7 @@ const useCreateUser = (options?: { onSuccess?: () => void }) => {
   return {
     createUser,
     isPending: mutation.isPending,
-    errorMessage: mutation.error ? getErrorMessage(mutation.error) : null,
+    errorMessage: mutation.error ? getErrorMessage(mutation.error, CREATE_USER_ERRORS) : null,
   };
 };
 

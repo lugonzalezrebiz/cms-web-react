@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type React from "react";
 import type { EventPointUpdate } from "../types";
+import { clientXToSec } from "../utils";
 
 export const useDragExtendEventPoint = ({
   gridRef,
@@ -38,8 +39,7 @@ export const useDragExtendEventPoint = ({
     const handleMouseMove = (e: MouseEvent) => {
       const rect = gridRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const rawSec = visibleStartRef.current + fraction * visibleDurationRef.current;
+      const rawSec = clientXToSec(e.clientX, rect, visibleStartRef.current, visibleDurationRef.current);
       const newSec = Math.max(minSecRef.current, Math.min(totalSec, rawSec));
       onUpdateRef.current?.(extendingId, { endSec: newSec });
     };
@@ -61,8 +61,7 @@ export const useDragExtendEventPoint = ({
     const handleMouseMove = (e: MouseEvent) => {
       const rect = gridRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const rawSec = visibleStartRef.current + fraction * visibleDurationRef.current;
+      const rawSec = clientXToSec(e.clientX, rect, visibleStartRef.current, visibleDurationRef.current);
       const newSec = Math.max(0, Math.min(maxSecRef.current, rawSec));
       onUpdateRef.current?.(movingStartId, { timeSec: newSec, startSec: newSec });
     };

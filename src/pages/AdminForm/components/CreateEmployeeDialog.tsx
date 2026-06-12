@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Box } from "@mui/system";
-import { OutlinedInput, FormLabel } from "@mui/material";
+import { OutlinedInput } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../../theme";
 import FormDialog from "../../../components/FormDialog";
@@ -11,23 +11,12 @@ import useCreateUser from "../hooks/useCreateUser";
 import useCreateEmployeeForm from "../hooks/useCreateEmployeeForm";
 import { generatePassword } from "../../../utils/generatePassword";
 import PasswordInput from "../../../components/PasswordInput";
+import { Label, ErrorText } from "./StyledComponents";
 
 interface Props {
   open: boolean;
   onClose: () => void;
 }
-
-const Label = styled(FormLabel)({
-  fontFamily: Fonts.secondary,
-  fontSize: "14px",
-  fontWeight: 400,
-  color: Colors.charcoalNavy,
-  marginBottom: "6px",
-  display: "block",
-  height: "20px",
-  lineHeight: 1.43,
-  "&.Mui-focused": { color: Colors.lightBlack },
-});
 
 const StyledInput = styled(OutlinedInput)({
   borderRadius: "8px",
@@ -52,13 +41,6 @@ const StyledInput = styled(OutlinedInput)({
   },
 });
 
-const ErrorText = styled("p")({
-  margin: "4px 0 0",
-  fontFamily: Fonts.secondary,
-  fontSize: "12px",
-  color: Colors.red,
-  lineHeight: 1.4,
-});
 
 const CreateEmployeeDialog = ({ open, onClose }: Props) => {
   const [employeeType, setEmployeeType] = useState("reviewer");

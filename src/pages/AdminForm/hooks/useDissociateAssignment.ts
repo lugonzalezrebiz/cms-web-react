@@ -1,20 +1,15 @@
-import { isAxiosError } from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getErrorMessage } from "../utils/errors";
 import { useDeleteCallback } from "../../../hooks/useApi";
 import {
   userLocationQueryKey,
   type UserLocationResponse,
 } from "../../../hooks/useUserAssignments";
 
-const getErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error)) {
-    switch (error.response?.status) {
-      case 400: return "Invalid request payload.";
-      case 401: return "Unauthorized. Only supervisor role or above can assign locations.";
-      case 404: return "User, company, or location not found.";
-    }
-  }
-  return "An unexpected error occurred.";
+const DISSOCIATE_ERRORS = {
+  400: "Invalid request payload.",
+  401: "Unauthorized. Only supervisor role or above can assign locations.",
+  404: "User, company, or location not found.",
 };
 
 interface DissociateVariables {
@@ -66,7 +61,7 @@ const useDissociateAssignment = (userID: number | null | undefined) => {
   return {
     dissociate,
     pendingKey,
-    errorMessage: mutation.error ? getErrorMessage(mutation.error) : null,
+    errorMessage: mutation.error ? getErrorMessage(mutation.error, DISSOCIATE_ERRORS) : null,
   };
 };
 

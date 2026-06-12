@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTrackersByCamera } from "../../../hooks/useTrackersByCamera";
-import type { CameraContextMenuItem } from "../../../components/CameraOverlayMenu";
+import type { CameraContextMenuItem } from "../../../components/CameraLayout/CameraOverlayMenu";
 
 export const useCameraMenuItems = (
   company: number,

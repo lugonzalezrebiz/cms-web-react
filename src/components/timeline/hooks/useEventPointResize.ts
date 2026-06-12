@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { CameraEventPoint, ResizingState, SetResizing } from "../types";
+import { clientXToSec } from "../utils";
 
 interface UseEventPointResizeArgs {
   gridRef: React.RefObject<HTMLDivElement | null>;
@@ -27,8 +28,7 @@ export const useEventPointResize = ({
       const el = gridRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const relX = (e.clientX - rect.left) / rect.width;
-      const newSec = Math.max(0, Math.min(totalSec, visibleStart + relX * visibleDuration));
+      const newSec = Math.max(0, Math.min(totalSec, clientXToSec(e.clientX, rect, visibleStart, visibleDuration)));
       onUpdateEventPoint?.(
         resizing.id,
         resizing.side === "left" ? { startSec: newSec } : { endSec: newSec },

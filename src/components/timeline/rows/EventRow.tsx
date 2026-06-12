@@ -3,6 +3,7 @@ import { Colors } from "../../../theme";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
+import { secToTimeString, secToPixelX } from "../utils";
 
 const ROW_HEIGHT = 32.8;
 const DIAMOND_SIZE = 17;
@@ -28,13 +29,6 @@ function lerpHexAlpha(
 ): string {
   const a = Math.round(fromA + (toA - fromA) * t);
   return colorAlpha(hex, a.toString(16).padStart(2, "0"));
-}
-
-function formatSec(sec: number): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,8 +131,7 @@ function drawFrame(
 ) {
   ctx.clearRect(0, 0, width, height);
   const cy = height / 2;
-  const toSecX = (sec: number) =>
-    ((sec - visibleStart) / visibleDuration) * width;
+  const toSecX = (sec: number) => secToPixelX(sec, visibleStart, visibleDuration, width);
 
   // Draw order: unreviewed-bars → unreviewed-diamonds → reviewed-bars → reviewed-diamonds
   // Within each group: unselected before selected
@@ -464,8 +457,7 @@ export const EventRow = memo(
         h: number,
       ): CameraEventPoint | null => {
         const cy = h / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * w;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, w);
         const reversed = [...points].reverse();
 
         // Priority mirrors draw order in reverse (last drawn = highest priority):
@@ -522,8 +514,7 @@ export const EventRow = memo(
       ): boolean => {
         if (ep.mode !== "RANGE") return false;
         const centerY = h / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * w;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, w);
         if (ep.endSec > ep.timeSec) {
           return (
             ep.endSec >= visibleStart &&
@@ -605,8 +596,7 @@ export const EventRow = memo(
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
         const cy = rect.height / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * rect.width;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, rect.width);
         for (const ep of [...points].reverse()) {
           // Start diamond is draggable when selected or in edit mode, only when range has width
           const isActivePoint =
@@ -665,8 +655,7 @@ export const EventRow = memo(
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
         const cy = rect.height / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * rect.width;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, rect.width);
 
         for (const ep of [...points].reverse()) {
           const isActivePoint =
@@ -773,7 +762,7 @@ export const EventRow = memo(
             <div key={ep.id} role="listitem">
               <button
                 aria-pressed={selectedEventPointId === ep.id}
-                aria-label={`${ep.label ?? row.name} at ${formatSec(ep.timeSec)}, ${ep.reviewed ? "reviewed" : "unreviewed"}`}
+                aria-label={`${ep.label ?? row.name} at ${secToTimeString(ep.timeSec)}, ${ep.reviewed ? "reviewed" : "unreviewed"}`}
                 onClick={() => selectEp(ep)}
                 style={{
                   background: "none",

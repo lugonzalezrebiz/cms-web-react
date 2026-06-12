@@ -90,6 +90,8 @@ export const Colors = {
   semiTransparentGray: "#ededed4c",
   slateGray: "#667085",
   softMistGray: "#f0efef66",
+  mistWhite: "#f8fafc",
+  borderGray: "#e5e7eb",
 };
 
 //Color Palette

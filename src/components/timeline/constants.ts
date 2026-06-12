@@ -59,38 +59,3 @@ export const MOCK_SNAPSHOT: TimelineSnapshot = {
     playback: false,
   },
 };
-
-export const TABS_DIALOG = [
-  { key: "all", label: "All", icon: "./assets/users-03.svg" },
-  { key: "sales", label: "Sales", icon: "./assets/tag-01.svg" },
-  { key: "nonsales", label: "Non.Sales", icon: "./assets/user-02.svg" },
-  { key: "unknown", label: "Unknow", icon: "./assets/help-circle.svg" },
-];
-
-export const PEOPLE = [
-  {
-    name: "Name Last Name",
-    lastSeen: "Last seen 1 Day ago",
-    role: "Sales representative",
-  },
-  {
-    name: "Name Last Name",
-    lastSeen: "Last seen 1 Day ago",
-    role: "Sales representative",
-  },
-  {
-    name: "Name Last Name",
-    lastSeen: "Last seen 1 Day ago",
-    role: "Sales representative",
-  },
-  {
-    name: "Name Last Name",
-    lastSeen: "Last seen 1 Day ago",
-    role: "Sales representative",
-  },
-  {
-    name: "Name Last Name",
-    lastSeen: "Last seen 1 Day ago",
-    role: "Sales representative",
-  },
-];

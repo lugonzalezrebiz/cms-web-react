@@ -1,6 +1,6 @@
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
-import { Colors, Fonts } from "../theme";
+import { Colors, Fonts } from "../../theme";
 
 export interface CameraContextMenuItem {
   id: number;
@@ -10,6 +10,7 @@ export interface CameraContextMenuItem {
   shortcut?: string;
   dividerAfter?: boolean;
   reviewed?: boolean;
+  overlapsUnreviewed?: boolean;
   onClick: (cameraId: number) => void;
 }
 

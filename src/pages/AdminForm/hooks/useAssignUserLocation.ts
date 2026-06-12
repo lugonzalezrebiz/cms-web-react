@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { z } from "zod";
-import { isAxiosError } from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePostCallback } from "../../../hooks/useApi";
+import { getErrorMessage } from "../utils/errors";
 
 const schema = z.object({
   company: z.string().min(1, "Select a company"),
@@ -18,15 +18,10 @@ interface AssignVariables {
   companyId: string;
 }
 
-const getErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error)) {
-    switch (error.response?.status) {
-      case 400: return "Invalid request payload.";
-      case 401: return "Unauthorized. Only supervisor role or above can assign locations.";
-      case 404: return "User, company, or location not found.";
-    }
-  }
-  return "An unexpected error occurred.";
+const ASSIGN_ERRORS = {
+  400: "Invalid request payload.",
+  401: "Unauthorized. Only supervisor role or above can assign locations.",
+  404: "User, company, or location not found.",
 };
 
 const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
@@ -80,7 +75,7 @@ const useAssignUserLocation = (options?: { onSuccess?: () => void }) => {
     isFormValid,
     reset,
     isPending: mutation.isPending,
-    errorMessage: mutation.error ? getErrorMessage(mutation.error) : null,
+    errorMessage: mutation.error ? getErrorMessage(mutation.error, ASSIGN_ERRORS) : null,
   };
 };
 
