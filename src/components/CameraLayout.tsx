@@ -13,19 +13,21 @@ import CameraOverlayMenu, {
 import { usePopover } from "../hooks/usePopover";
 import { CustomScrollbarY } from "./CustomScrollbar";
 
-export const TAG_TOLERANCE_SEC = 60;
+export const TAG_TOLERANCE_SEC = 0;
 const TRANSITION_MS = 200;
 
 interface CameraItemProps {
   index: number;
   expandCamera: (index: number) => void;
   isExpanded?: boolean;
+  empty?: boolean;
   tags: CameraContextMenuItem[];
   contextMenuItems: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
   cameraLabel?: boolean;
   disableOverlay?: boolean;
+  skipAnimation?: boolean;
   controlledOpen?: boolean;
   onControlledClose?: () => void;
   // Real image props — when provided, loads from DVR via dvr:// protocol
@@ -42,10 +44,12 @@ export const CameraItem = ({
   index,
   expandCamera,
   isExpanded = false,
+  empty = false,
   tags,
   contextMenuItems,
   onMenuOpen,
   disableOverlay = false,
+  skipAnimation = false,
   cameraId,
   cameraName,
   company,
@@ -119,11 +123,14 @@ export const CameraItem = ({
         overflow: "hidden",
         borderRadius: 1,
         opacity: isExiting ? 0 : 1,
-        transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
-        "@keyframes cameraFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
-        animation: isExiting
+        transition: skipAnimation
           ? "none"
-          : `cameraFadeIn ${TRANSITION_MS}ms ease-in-out`,
+          : `opacity ${TRANSITION_MS}ms ease-in-out`,
+        "@keyframes cameraFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+        animation:
+          isExiting || empty || skipAnimation
+            ? "none"
+            : `cameraFadeIn ${TRANSITION_MS}ms ease-in-out`,
         pointerEvents: isExiting ? "none" : undefined,
       }}
     >
@@ -140,7 +147,7 @@ export const CameraItem = ({
         }}
       />
 
-      {(imgError || !imageSrc) && (
+      {(imgError || !imageSrc || empty) && (
         <Box
           sx={{
             position: "absolute",
@@ -164,7 +171,7 @@ export const CameraItem = ({
               opacity: 0.6,
             }}
           >
-            No cameras available
+            {empty ? "No cameras available" : "Camera doesn't work"}
           </Typography>
         </Box>
       )}
@@ -306,30 +313,32 @@ export const CameraItem = ({
       )}
 
       {/* Bottom-right: expand button */}
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: 10,
-          right: 13,
-          zIndex: 1,
-          bgcolor: Colors.semiTransparentBlackTwo,
-          borderRadius: "4px",
-          p: "2px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <img
-          style={{ cursor: "pointer" }}
-          src={!isExpanded ? "./assets/expand-03.svg" : " "}
-          alt={!isExpanded ? "Expand camera" : ""}
-          onClick={(e) => {
-            e.stopPropagation();
-            expandCamera(index);
+      {!empty && !isExpanded && (
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 10,
+            right: 13,
+            zIndex: 1,
+            bgcolor: Colors.semiTransparentBlackTwo,
+            borderRadius: "4px",
+            p: "2px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
-        />
-      </Box>
+        >
+          <img
+            style={{ cursor: "pointer" }}
+            src={!isExpanded ? "./assets/expand-03.svg" : " "}
+            alt={!isExpanded ? "Expand camera" : ""}
+            onClick={(e) => {
+              e.stopPropagation();
+              expandCamera(index);
+            }}
+          />
+        </Box>
+      )}
 
       {!disableOverlay && (
         <CameraOverlayMenu
@@ -420,6 +429,7 @@ interface SharedCameraItemProps {
   openMenuIndex: number | null;
   onCloseMenu: () => void;
   exitingIds: ReadonlySet<number>;
+  skipAnimation?: boolean;
 }
 
 const CameraCell = ({
@@ -438,6 +448,7 @@ const CameraCell = ({
   openMenuIndex,
   onCloseMenu,
   exitingIds,
+  skipAnimation,
 }: SharedCameraItemProps & { camIndex: number; maxCols: number }) => {
   const cameraId = cameras?.[camIndex]?.id;
   const isExiting = cameraId !== undefined && exitingIds.has(cameraId);
@@ -467,6 +478,7 @@ const CameraCell = ({
         controlledOpen={openMenuIndex === camIndex}
         onControlledClose={onCloseMenu}
         isExiting={isExiting}
+        skipAnimation={skipAnimation}
       />
     </Box>
   );
@@ -544,6 +556,10 @@ const CameraLayout = ({
   loadState = false,
 }: CameraLayoutProps) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
+
+  const [prevCount, setPrevCount] = useState(count);
+  if (prevCount !== count) setPrevCount(count);
+  const skipAnimation = prevCount <= 1 && count <= 1;
 
   // sortedCameras is always the current prop — new cameras appear immediately
   const sortedCameras = useMemo(
@@ -625,39 +641,6 @@ const CameraLayout = ({
     );
   }
 
-  if (count === 0 && exitingIds.size === 0) {
-    return (
-      <Box
-        sx={{
-          width: "100%",
-          height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
-          m: "auto",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          bgcolor: Colors.blushWhite,
-          borderRadius: 1,
-          flexDirection: "column",
-          gap: 1,
-        }}
-      >
-        <VideocamOffOutlinedIcon
-          sx={{ fontSize: 40, color: Colors.dimGray, opacity: 0.4 }}
-        />
-        <Typography
-          sx={{
-            color: Colors.dimGray,
-            fontFamily: Fonts.main,
-            fontSize: 14,
-            opacity: 0.6,
-          }}
-        >
-          No cameras available
-        </Typography>
-      </Box>
-    );
-  }
-
   const scrollable = renderedCameras.length > 16;
   const totalHeight =
     typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
@@ -711,6 +694,7 @@ const CameraLayout = ({
     openMenuIndex,
     onCloseMenu: () => setOpenMenuIndex(null),
     exitingIds,
+    skipAnimation,
   };
 
   const rowDistribution = getRowDistribution(renderedCameras.length);
@@ -753,7 +737,8 @@ const CameraLayout = ({
     <Box
       sx={{
         display: "grid",
-        gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
+        gridTemplateRows:
+          count === 0 ? "1fr" : `repeat(${numRows}, minmax(0, 1fr))`,
         gap: `${GAP}px`,
         //width: "100%",
         height: totalHeight,
@@ -761,16 +746,30 @@ const CameraLayout = ({
         p: "0px 10px 10px 10px",
       }}
     >
-      {rowDistribution.map((rowCount, rowIndex) => (
-        <CameraRow
-          key={rowIndex}
-          startIdx={rowStarts[rowIndex]}
-          rowCount={rowCount}
-          maxCols={maxCols}
-          totalCameras={count}
-          {...sharedProps}
+      {count === 0 && (exitingIds.size === 0 || skipAnimation) ? (
+        <CameraItem
+          index={0}
+          expandCamera={() => {}}
+          tags={[]}
+          contextMenuItems={[]}
+          onRemoveTag={() => {}}
+          cameraLabel={false}
+          disableOverlay
+          empty
+          skipAnimation={skipAnimation}
         />
-      ))}
+      ) : (
+        rowDistribution.map((rowCount, rowIndex) => (
+          <CameraRow
+            key={rowIndex}
+            startIdx={rowStarts[rowIndex]}
+            rowCount={rowCount}
+            maxCols={maxCols}
+            totalCameras={count}
+            {...sharedProps}
+          />
+        ))
+      )}
     </Box>
   );
 };

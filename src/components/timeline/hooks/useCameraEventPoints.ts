@@ -122,13 +122,6 @@ export const useCameraEventPoints = (monitoringID: string) => {
     const startSec = Math.max(0, timeSec - 120);
     const endSec = timeSec;
     setCameraEventPoints((prev) => {
-      const duplicate = prev.some(
-        (ep) =>
-          ep.cameraId === cameraId &&
-          ep.label === activityLabel &&
-          Math.abs(timeSec - ep.timeSec) <= 300,
-      );
-      if (duplicate) return prev;
       pushHistory(prev);
       const next = [
         ...prev,
