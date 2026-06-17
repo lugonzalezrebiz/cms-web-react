@@ -22,6 +22,7 @@ export interface Props {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   name?: string;
   value?: string;
+  disabled?: boolean;
   ref?: Ref<HTMLButtonElement>;
 }
 
@@ -60,7 +61,7 @@ const TickBoxStyled = styled(Checkbox, {
 }));
 
 const TickBox = memo(
-  ({ label, checked, onChange, name, value, ref }: Props) => {
+  ({ label, checked, onChange, name, value, disabled, ref }: Props) => {
     return (
       <TickBoxContainer>
         <TickBoxLabel
@@ -71,6 +72,7 @@ const TickBox = memo(
               onChange={onChange}
               name={name}
               value={value}
+              disabled={disabled}
               ref={ref}
               icon={<UncheckedIcon />}
               checkedIcon={<CheckedIcon />}

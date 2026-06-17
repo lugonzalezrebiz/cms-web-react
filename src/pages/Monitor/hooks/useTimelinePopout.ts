@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 export const useTimelinePopout =(
   onMarkerChange: (sec: number) => void,
   markerTimeSec: number | null,
+  cameraGroup: string = "",
 ) =>{
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
@@ -55,7 +56,9 @@ export const useTimelinePopout =(
       popoutRef.current.focus();
       return;
     }
-    const route = `/monitor/timeline?${searchParams.toString()}`;
+    const params = new URLSearchParams(searchParams);
+    if (cameraGroup) params.set("cameraGroup", cameraGroup);
+    const route = `/monitor/timeline?${params.toString()}`;
     const url =
       window.location.protocol === "file:"
         ? `${window.location.href.split("#")[0]}#${route}`
@@ -79,7 +82,7 @@ export const useTimelinePopout =(
         popoutRef.current = null;
       }
     }, 500);
-  }, [searchParams]);
+  }, [searchParams, cameraGroup]);
 
   return { timelinePopped, handlePopOut, restoreMarkerSec };
 }

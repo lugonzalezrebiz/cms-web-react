@@ -3,7 +3,7 @@ import type { CameraEventPoint } from "../components/timeline/types";
 import type { CameraContextMenuItem } from "../components/CameraLayout/CameraOverlayMenu";
 import type { CameraInfo } from "./useExitingCameras";
 
-export const TAG_TOLERANCE_SEC = 0;
+export const TAG_TOLERANCE_SEC = 60;
 
 export const useTagsForCamera = (
   cameraEventPoints: CameraEventPoint[],

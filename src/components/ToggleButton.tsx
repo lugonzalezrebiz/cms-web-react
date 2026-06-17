@@ -78,6 +78,8 @@ const ToggleButton = ({
   groups,
   selectValue,
   setSelectValue,
+  onCustomClick,
+  customCreated = false,
 }: {
   value: string;
   setValue: (value: string) => void;
@@ -85,6 +87,8 @@ const ToggleButton = ({
   groups: GroupItem[];
   selectValue?: string;
   setSelectValue?: (value: string) => void;
+  onCustomClick?: () => void;
+  customCreated?: boolean;
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [activeGroupValue, setActiveGroupValue] = useState<string | null>(null);
@@ -110,18 +114,21 @@ const ToggleButton = ({
         value={value}
         exclusive
         onChange={(_event, newValue) => {
-          if (newValue !== null) setValue(newValue);
+          const isPlaceholder = groups.some(
+            (g) => g.value === newValue && g.options?.length,
+          );
+          if (newValue !== null && !isPlaceholder) setValue(newValue);
         }}
         aria-label={label}
       >
         {groups.map((group) => {
-          const selectedOption = group.options?.find(
-            (o) => o.value === selectValue,
-          );
+          const selectedOption = group.options?.find((o) => o.value === value);
+          // When an overflow option is active, use its value so ToggleButtonGroup marks this button as selected
+          const effectiveValue = selectedOption?.value ?? group.value;
           return (
             <StyledToggleButton
               key={group.value}
-              value={group.value}
+              value={effectiveValue}
               onClick={
                 group.options
                   ? (e) => handleOptionsClick(group.value, e)
@@ -137,6 +144,25 @@ const ToggleButton = ({
             </StyledToggleButton>
           );
         })}
+
+        {onCustomClick && (
+          <StyledToggleButton value="__custom__">
+            <span className="toggle-label">Custom</span>
+            <img
+              onClick={(e) => { e.stopPropagation(); onCustomClick?.(); }}
+              src={
+                customCreated ? "./assets/edit-05.svg" : "./assets/plus-1.svg"
+              }
+              alt=""
+              style={{
+                width: 14,
+                height: 14,
+                marginLeft: 4,
+                cursor: "pointer",
+              }}
+            />
+          </StyledToggleButton>
+        )}
       </StyledToggleGroup>
 
       <Menu
@@ -171,7 +197,7 @@ const ToggleButton = ({
               key={option.value}
               selected={selectValue === option.value}
               onClick={() => {
-                setSelectValue?.(option.value);
+                setValue(option.value);
                 handleClose();
               }}
               sx={{

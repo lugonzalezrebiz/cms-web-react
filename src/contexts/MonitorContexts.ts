@@ -17,9 +17,13 @@ export const CameraGroupContext = createContext<{
   setCameraGroup: (v: string) => void;
   trackerOption: string;
   setTrackerOption: (v: string) => void;
+  customTrackerIDs: number[];
+  setCustomTrackerIDs: (ids: number[]) => void;
 }>({
   cameraGroup: "0",
   setCameraGroup: () => {},
   trackerOption: "",
   setTrackerOption: () => {},
+  customTrackerIDs: [],
+  setCustomTrackerIDs: () => {},
 });

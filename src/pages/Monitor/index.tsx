@@ -34,10 +34,22 @@ const Monitor = () => {
   const timeStart = currentAssignment?.open ?? null;
   const timeEnd = currentAssignment?.close ?? null;
 
-  const { cameraGroup, trackerOption } = useCameraGroup();
+  const { cameraGroup, trackerOption, customTrackerIDs } = useCameraGroup();
   const isTrackerTab = cameraGroup === "tracker";
+  const isDirectTracker =
+    cameraGroup !== "" && cameraGroup !== "0" && !isNaN(Number(cameraGroup));
+  const isCustomMode = cameraGroup === "__custom__";
+
+  const singleTrackerID = isDirectTracker
+    ? Number(cameraGroup)
+    : isTrackerTab && trackerOption
+      ? Number(trackerOption)
+      : 0;
+
   const groupID =
-    cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
+    !isTrackerTab && !isDirectTracker && !isCustomMode && cameraGroup !== "0"
+      ? Number(cameraGroup)
+      : 0;
   const trackerID = isTrackerTab && trackerOption ? Number(trackerOption) : 0;
   const { cameras, isLoading: isCamerasLoading } = useTrackerCameras(
     groupID,
@@ -77,15 +89,40 @@ const Monitor = () => {
   );
 
   const filteredEventPoints = useMemo(() => {
-    if (!isTrackerTab || !trackerOption) return allEventPoints;
-    const tracker = trackers.find((t) => t.id === Number(trackerOption));
-    if (!tracker) return allEventPoints;
-    return allEventPoints.filter((ep) => ep.label === tracker.name);
-  }, [allEventPoints, isTrackerTab, trackerOption, trackers]);
+    if (isDirectTracker && singleTrackerID) {
+      const tracker = trackers.find((t) => t.id === singleTrackerID);
+      if (!tracker) return allEventPoints;
+      return allEventPoints.filter((ep) => ep.label === tracker.name);
+    }
+    if (isCustomMode && customTrackerIDs.length > 0) {
+      const names = new Set(
+        trackers
+          .filter((t) => customTrackerIDs.includes(t.id))
+          .map((t) => t.name),
+      );
+      return allEventPoints.filter((ep) => names.has(ep.label));
+    }
+    if (isTrackerTab && trackerOption) {
+      const tracker = trackers.find((t) => t.id === Number(trackerOption));
+      if (!tracker) return allEventPoints;
+      return allEventPoints.filter((ep) => ep.label === tracker.name);
+    }
+    return allEventPoints;
+  }, [
+    allEventPoints,
+    isDirectTracker,
+    singleTrackerID,
+    isCustomMode,
+    customTrackerIDs,
+    isTrackerTab,
+    trackerOption,
+    trackers,
+  ]);
 
   const activeCameras = useMemo(() => {
-    if (!isTrackerTab || !trackerOption) return cameras;
-    // Source cameras from monitoring data so IDs match event points from load2.
+    const isFiltered =
+      isDirectTracker || isCustomMode || (isTrackerTab && !!trackerOption);
+    if (!isFiltered) return cameras;
     return monitoringCameras.filter((camera) =>
       filteredEventPoints.some((ep) => {
         if (ep.cameraId !== camera.id) return false;
@@ -100,6 +137,8 @@ const Monitor = () => {
     monitoringCameras,
     filteredEventPoints,
     markerSec,
+    isDirectTracker,
+    isCustomMode,
     isTrackerTab,
     trackerOption,
   ]);
@@ -121,13 +160,17 @@ const Monitor = () => {
   }, [expandedCamera, sortedCameras]);
 
   useEffect(() => {
-    if (!isTrackerTab || !trackerOption || expandedCamera === null) return;
+    const isFiltered =
+      isDirectTracker || isCustomMode || (isTrackerTab && !!trackerOption);
+    if (!isFiltered || expandedCamera === null) return;
     const id = expandedCameraIdRef.current;
     if (id !== null && !activeCameras.some((c) => c.id === id)) {
       handleExpandCamera(expandedCamera);
     }
   }, [
     activeCameras,
+    isDirectTracker,
+    isCustomMode,
     isTrackerTab,
     trackerOption,
     expandedCamera,
@@ -153,10 +196,15 @@ const Monitor = () => {
 
   const trackerMenuFilter = useMemo(
     () => (items: typeof allCameraMenuItems) => {
-      if (!isTrackerTab || !trackerOption) return items;
-      return items.filter((item) => item.id === Number(trackerOption));
+      if (isDirectTracker && singleTrackerID)
+        return items.filter((item) => item.id === singleTrackerID);
+      if (isCustomMode && customTrackerIDs.length > 0)
+        return items.filter((item) => customTrackerIDs.includes(item.id));
+      if (isTrackerTab && trackerOption)
+        return items.filter((item) => item.id === Number(trackerOption));
+      return items;
     },
-    [isTrackerTab, trackerOption],
+    [isDirectTracker, singleTrackerID, isCustomMode, customTrackerIDs, isTrackerTab, trackerOption],
   );
 
   const cameraMenuItems = useMemo(
@@ -193,6 +241,7 @@ const Monitor = () => {
   const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
+    cameraGroup,
   );
 
   const sessionDate = useSessionDate();
@@ -218,9 +267,14 @@ const Monitor = () => {
   );
 
   const filteredMenuItems = useMemo(() => {
-    if (!isTrackerTab || !trackerOption) return menuItems;
-    return menuItems.filter((item) => item.id === Number(trackerOption));
-  }, [menuItems, isTrackerTab, trackerOption]);
+    if (isDirectTracker && singleTrackerID)
+      return menuItems.filter((item) => item.id === singleTrackerID);
+    if (isCustomMode && customTrackerIDs.length > 0)
+      return menuItems.filter((item) => customTrackerIDs.includes(item.id));
+    if (isTrackerTab && trackerOption)
+      return menuItems.filter((item) => item.id === Number(trackerOption));
+    return menuItems;
+  }, [menuItems, isDirectTracker, singleTrackerID, isCustomMode, customTrackerIDs, isTrackerTab, trackerOption]);
 
   const timelineProps = useMemo(
     () => ({
