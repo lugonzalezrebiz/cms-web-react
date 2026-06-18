@@ -3,6 +3,7 @@ import { Colors } from "../../../theme";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
+import { secToTimeString, secToPixelX } from "../utils";
 
 const ROW_HEIGHT = 32.8;
 const DIAMOND_SIZE = 17;
@@ -28,13 +29,6 @@ function lerpHexAlpha(
 ): string {
   const a = Math.round(fromA + (toA - fromA) * t);
   return colorAlpha(hex, a.toString(16).padStart(2, "0"));
-}
-
-function formatSec(sec: number): string {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = Math.floor(sec % 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,8 +131,7 @@ function drawFrame(
 ) {
   ctx.clearRect(0, 0, width, height);
   const cy = height / 2;
-  const toSecX = (sec: number) =>
-    ((sec - visibleStart) / visibleDuration) * width;
+  const toSecX = (sec: number) => secToPixelX(sec, visibleStart, visibleDuration, width);
 
   // Draw order: unreviewed-bars → unreviewed-diamonds → reviewed-bars → reviewed-diamonds
   // Within each group: unselected before selected
@@ -168,26 +161,43 @@ function drawFrame(
               : 0;
 
         const isEditing = ep.id === editingId;
-        const activeColor = isEditing
-          ? Colors.vividOrange
-          : ep.reviewed
+        const overlapsBlue =
+          ep.reviewed &&
+          points.some(
+            (other) =>
+              other.id !== ep.id &&
+              !other.reviewed &&
+              other.timeSec === ep.timeSec,
+          );
+        const activeColor = overlapsBlue
+          ? Colors.leafGreen
+          : isEditing
             ? Colors.vividOrange
-            : Colors.blue;
-        const idleColor = isEditing
-          ? Colors.lightOrange
-          : ep.reviewed
+            : ep.reviewed
+              ? Colors.vividOrange
+              : Colors.blue;
+        const idleColor = overlapsBlue
+          ? Colors.mintFoam
+          : isEditing
             ? Colors.lightOrange
-            : Colors.lightSkyBlue;
+            : ep.reviewed
+              ? Colors.lightOrange
+              : Colors.lightSkyBlue;
         const shadowColor = t > 0 ? colorAlpha(activeColor, "99") : null;
         const shadowBlur = t * 10;
 
         if (pass === "bars") {
-          const barStart = Math.max(ep.startSec, visibleStart);
+          if (ep.mode !== "RANGE" || ep.endSec <= ep.timeSec) continue;
+          const barStart = Math.max(ep.timeSec, visibleStart);
           const barEnd = Math.min(ep.endSec, visibleEnd);
           if (barStart >= barEnd) continue;
 
-          const leftPx = toSecX(ep.startSec) + (0.28 / 100) * width;
-          const widthPx = ((ep.endSec - ep.startSec) / visibleDuration) * width;
+          const barOffset = (0.28 / 100) * width;
+          const leftPx = toSecX(ep.timeSec) + barOffset;
+          const widthPx = Math.max(
+            0,
+            ((ep.endSec - ep.timeSec) / visibleDuration) * width - barOffset,
+          );
           const widthPct = (widthPx / width) * 100;
           // Interpolate bar fill: 0x55 (unselected) ↔ 0x99 (selected)
           const barFill = lerpHexAlpha(activeColor, 0x55, 0x99, t);
@@ -224,6 +234,7 @@ function drawFrame(
               shadowBlur,
             );
           }
+          const endDiamondX = toSecX(ep.endSec);
           if (
             ep.mode === "RANGE" &&
             ep.endSec > ep.timeSec &&
@@ -232,7 +243,7 @@ function drawFrame(
           ) {
             drawDiamond(
               ctx,
-              toSecX(ep.endSec),
+              endDiamondX,
               cy,
               DIAMOND_SIZE,
               fillColor,
@@ -446,8 +457,7 @@ export const EventRow = memo(
         h: number,
       ): CameraEventPoint | null => {
         const cy = h / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * w;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, w);
         const reversed = [...points].reverse();
 
         // Priority mirrors draw order in reverse (last drawn = highest priority):
@@ -477,11 +487,12 @@ export const EventRow = memo(
                   return ep;
               }
             } else {
-              const bS = Math.max(ep.startSec, visibleStart);
+              if (ep.mode !== "RANGE" || ep.endSec <= ep.timeSec) continue;
+              const bS = Math.max(ep.timeSec, visibleStart);
               const bE = Math.min(ep.endSec, visibleEnd);
               if (bS < bE) {
-                const lx = toSecX(ep.startSec);
-                const bw = ((ep.endSec - ep.startSec) / visibleDuration) * w;
+                const lx = toSecX(ep.timeSec);
+                const bw = ((ep.endSec - ep.timeSec) / visibleDuration) * w;
                 if (hitBar(px, py, lx, cy - BAR_HEIGHT / 2, bw, BAR_HEIGHT))
                   return ep;
               }
@@ -503,8 +514,7 @@ export const EventRow = memo(
       ): boolean => {
         if (ep.mode !== "RANGE") return false;
         const centerY = h / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * w;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, w);
         if (ep.endSec > ep.timeSec) {
           return (
             ep.endSec >= visibleStart &&
@@ -586,8 +596,7 @@ export const EventRow = memo(
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
         const cy = rect.height / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * rect.width;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, rect.width);
         for (const ep of [...points].reverse()) {
           // Start diamond is draggable when selected or in edit mode, only when range has width
           const isActivePoint =
@@ -646,8 +655,7 @@ export const EventRow = memo(
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
         const cy = rect.height / 2;
-        const toSecX = (s: number) =>
-          ((s - visibleStart) / visibleDuration) * rect.width;
+        const toSecX = (s: number) => secToPixelX(s, visibleStart, visibleDuration, rect.width);
 
         for (const ep of [...points].reverse()) {
           const isActivePoint =
@@ -754,7 +762,7 @@ export const EventRow = memo(
             <div key={ep.id} role="listitem">
               <button
                 aria-pressed={selectedEventPointId === ep.id}
-                aria-label={`${ep.label ?? row.name} at ${formatSec(ep.timeSec)}, ${ep.reviewed ? "reviewed" : "unreviewed"}`}
+                aria-label={`${ep.label ?? row.name} at ${secToTimeString(ep.timeSec)}, ${ep.reviewed ? "reviewed" : "unreviewed"}`}
                 onClick={() => selectEp(ep)}
                 style={{
                   background: "none",

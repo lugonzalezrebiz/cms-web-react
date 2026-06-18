@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
 import { useGet, usePostQuery } from "./useApi";
-import type { stateAssignments } from "../pages/Assignments/components/stateColors";
+import type { stateAssignments } from "../components/stateColors";
 import utc from "dayjs/plugin/utc";
+import { parseStatusName, type AssignmentItem, type AssignmentsResponse } from "./utils";
 
 export interface AssignmentDetail {
   date: string;
@@ -17,44 +18,6 @@ export interface GroupedAssignment {
 }
 
 dayjs.extend(utc);
-
-const VALID_STATES: stateAssignments[] = [
-  "Ready", "Assigned", "Started", "Paused", "Resumed", "Completed", "Error", "Reported",
-];
-
-const parseStatusName = (statusName: string): stateAssignments => {
-  const last = statusName.split(".").pop() ?? "";
-  const capitalized = (last.charAt(0).toUpperCase() + last.slice(1)) as stateAssignments;
-  return VALID_STATES.includes(capitalized) ? capitalized : "Ready";
-};
-
-interface AssignmentDetails {
-  open: string | null;
-  close: string | null;
-  dvr: string | null;
-  offsetDiff: number;
-  offsetInterval: number;
-  comments: string | null;
-}
-
-interface AssignmentItem {
-  assignmentID: string;
-  monitoringID: string;
-  userID: number;
-  date: string;
-  locationID: number;
-  locationName: string | null;
-  companyID: number;
-  companyName: string | null;
-  statusID: number;
-  statusName: string;
-  details: AssignmentDetails;
-}
-
-interface AssignmentsResponse {
-  success: boolean;
-  data: AssignmentItem[];
-}
 
 interface LocationEntry {
   companyID: number;

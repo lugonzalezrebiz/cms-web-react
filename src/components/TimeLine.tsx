@@ -302,10 +302,6 @@ const TimeLine = ({
         rowsLoadState={rowsLoadState}
         loadState={loadState}
       />
-      {/* <TimelineDialog
-        dialogOnClose={state.handleOnCloseDialog}
-        openDialog={state.openDialog}
-      /> */}
     </Box>
   );
 };

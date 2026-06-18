@@ -175,8 +175,9 @@ export const NewAssignmentsCard = ({
         <img
           style={{
             position: "absolute",
-            right: "5px",
+            right: "0px",
             cursor: "pointer",
+            padding: "5px",
           }}
           src="./assets/dots-vertical.svg"
           alt="More options"

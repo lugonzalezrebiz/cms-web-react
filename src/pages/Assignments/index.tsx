@@ -17,6 +17,7 @@ import useCompanies from "../../hooks/useCompanies";
 import useAssignments from "../../hooks/useAssignments";
 import { useAssignmentNavigate } from "./hooks/useAssignmentNavigate";
 import { useAssignmentCount } from "../AdminForm/hooks/useAssignmentCount";
+import Divider from "../../components/Divider";
 
 const activityIcon = "./assets/activity-other-icon.svg";
 
@@ -137,7 +138,10 @@ const Assignments = () => {
             ))
         )}
       </Grid>
-      <Title margin={false} title="Rejected Assignments"></Title>
+      <Title margin={false} showDivider={false} title="Rejected Assignments" />
+      <Box mt={-1}>
+        <Divider />
+      </Box>
       <Grid container spacing={2}>
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
@@ -166,20 +170,6 @@ const Assignments = () => {
             ))
         )}
       </Grid>
-
-      {/* <Title title="Test" />
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-          <NewAssignmentsCard
-            state="Ready"
-            location={9001}
-            store={222}
-            date="Monitor Test"
-            comments={0}
-            onClick={() => navigate("/monitor-test")}
-          />
-        </Grid>
-      </Grid> */}
 
       <DropDownMenu
         anchorEl={cardMenu.anchorEl}

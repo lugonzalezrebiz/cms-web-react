@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { crashLogger } from "../services/CrashLogger";
+import { Colors } from "../theme";
 
 type Props = {
   children: ReactNode;
@@ -36,15 +37,15 @@ export default class CrashBoundary extends Component<Props, State> {
           minHeight: "100vh",
           display: "grid",
           placeItems: "center",
-          bgcolor: "#f8fafc",
+          bgcolor: Colors.mistWhite,
           p: 3,
         }}
       >
         <Box
           sx={{
             width: "min(520px, 100%)",
-            bgcolor: "white",
-            border: "1px solid #e5e7eb",
+            bgcolor: Colors.white,
+            border: `1px solid ${Colors.borderGray}`,
             borderRadius: 3,
             p: 4,
             boxShadow: "0 24px 80px rgba(15, 23, 42, 0.08)",

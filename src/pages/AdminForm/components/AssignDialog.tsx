@@ -1,7 +1,4 @@
-import { Colors, Fonts } from "../../../theme";
 import { Box } from "@mui/system";
-import { FormLabel } from "@mui/material";
-import styled from "@emotion/styled";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
 import SelectComponent from "../../../components/SelectComponent";
@@ -9,26 +6,7 @@ import SuccessDialog from "../../../components/SuccessDialog";
 import useCompanies from "../../../hooks/useCompanies";
 import useAssignUserLocation from "../hooks/useAssignUserLocation";
 import { useState } from "react";
-
-const Label = styled(FormLabel)({
-  fontFamily: Fonts.secondary,
-  fontSize: "14px",
-  fontWeight: 400,
-  color: Colors.charcoalNavy,
-  marginBottom: "6px",
-  display: "block",
-  height: "20px",
-  lineHeight: 1.43,
-  "&.Mui-focused": { color: Colors.lightBlack },
-});
-
-const ErrorText = styled("p")({
-  margin: "4px 0 0",
-  fontFamily: Fonts.secondary,
-  fontSize: "12px",
-  color: Colors.red,
-  lineHeight: 1.4,
-});
+import { Label, ErrorText } from "./StyledComponents";
 
 interface AssignDialogProps {
   open: boolean;

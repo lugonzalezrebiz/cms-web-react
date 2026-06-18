@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../../theme";
+import { secToPercent } from "./utils";
 
 interface TimelineTimeRulerProps {
   zoom: number;
@@ -36,7 +37,7 @@ const ActivityRangeBar = ({
   const start = Math.max(timelineStartSec, visibleStart);
   const end = Math.min(timelineEndSec, visibleEnd);
   if (end <= start) return null;
-  const left = ((start - visibleStart) / visibleDuration) * 100;
+  const left = secToPercent(start, visibleStart, visibleDuration);
   const width = ((end - start) / visibleDuration) * 100;
   return (
     <Box
@@ -84,7 +85,7 @@ const TickLabels = ({
           key={tickSec}
           sx={{
             position: "absolute",
-            left: `${((tickSec - visibleStart) / visibleDuration) * 100}%`,
+            left: `${secToPercent(tickSec, visibleStart, visibleDuration)}%`,
             top: 5,
             transform: "translateX(-50%)",
             fontSize: 14,

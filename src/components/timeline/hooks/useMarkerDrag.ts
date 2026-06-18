@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clientXToSec } from "../utils";
 
 export function useMarkerDrag(
   gridRef: React.RefObject<HTMLDivElement | null>,
@@ -16,8 +17,7 @@ export function useMarkerDrag(
       const el = gridRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const relX = (e.clientX - rect.left) / rect.width;
-      const newSec = visibleStart + relX * visibleDuration;
+      const newSec = clientXToSec(e.clientX, rect, visibleStart, visibleDuration);
       setMarkerSec(Math.max(timelineStartSec, Math.min(timelineEndSec, newSec)));
     };
     const handleMouseUp = () => setIsDraggingMarker(false);

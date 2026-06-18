@@ -1,10 +1,6 @@
 import { useMemo } from "react";
 import type { CameraEventPoint, FlatRow, TimelineSnapshot } from "../types";
-
-function toSeconds(time: string): number {
-  const [h, m, s] = time.split(":").map(Number);
-  return h * 3600 + m * 60 + s;
-}
+import { timeStringToSec } from "../utils";
 
 interface UseFlatRowsParams {
   data: TimelineSnapshot;
@@ -15,8 +11,8 @@ export const useFlatRows = ({
   data,
   cameraEventPoints,
 }: UseFlatRowsParams) => {
-  const timelineStartSec = toSeconds(data.timeline.times.start);
-  const timelineEndSec = toSeconds(data.timeline.times.end);
+  const timelineStartSec = timeStringToSec(data.timeline.times.start);
+  const timelineEndSec = timeStringToSec(data.timeline.times.end);
 
   const flatRows = useMemo((): FlatRow[] => {
     const tracks = data.timeline.tracks;
@@ -57,7 +53,7 @@ export const useFlatRows = ({
   );
 
   const allTimestamps = flatRows.flatMap((row) =>
-    row.sessions.map((s) => toSeconds(s.timestamp)),
+    row.sessions.map((s) => timeStringToSec(s.timestamp)),
   );
   const firstActivitySec =
     allTimestamps.length > 0 ? Math.min(...allTimestamps) : 0;

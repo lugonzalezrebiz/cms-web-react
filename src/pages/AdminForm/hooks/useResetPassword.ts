@@ -1,16 +1,11 @@
-import { isAxiosError } from "axios";
 import { usePost } from "../../../hooks/useApi";
+import { getErrorMessage } from "../utils/errors";
 
-const getErrorMessage = (error: unknown): string => {
-  if (isAxiosError(error)) {
-    switch (error.response?.status) {
-      case 400: return "Invalid request.";
-      case 401: return "Unauthorized.";
-      case 403: return "Forbidden.";
-      case 404: return "User not found.";
-    }
-  }
-  return "An unexpected error occurred.";
+const RESET_PASSWORD_ERRORS = {
+  400: "Invalid request.",
+  401: "Unauthorized.",
+  403: "Forbidden.",
+  404: "User not found.",
 };
 
 const useResetPassword = (userID: number | undefined) => {
@@ -24,7 +19,7 @@ const useResetPassword = (userID: number | undefined) => {
   return {
     resetPassword,
     isPending,
-    errorMessage: error ? getErrorMessage(error) : null,
+    errorMessage: error ? getErrorMessage(error, RESET_PASSWORD_ERRORS) : null,
   };
 };
 
