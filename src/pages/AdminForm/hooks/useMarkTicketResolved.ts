@@ -20,6 +20,7 @@ export const useMarkTicketResolved = () => {
             ),
           };
         });
+        queryClient.invalidateQueries({ queryKey: ["location/assignment/count"] });
       },
     },
   );

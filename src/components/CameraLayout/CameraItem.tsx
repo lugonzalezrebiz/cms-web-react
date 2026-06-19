@@ -111,7 +111,7 @@ export const CameraItem = ({
         width: "100%",
         height: "100%",
         position: "relative",
-        bgcolor: Colors.blushWhite,
+        bgcolor: Colors.black,
         overflow: "hidden",
         borderRadius: 1,
         opacity: isExiting ? 0 : 1,
@@ -147,7 +147,7 @@ export const CameraItem = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: Colors.blushWhite,
+            bgcolor: Colors.black,
             gap: 1,
           }}
         >
@@ -228,7 +228,11 @@ export const CameraItem = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                bgcolor: tag.overlapsUnreviewed ? Colors.leafGreen : tag.reviewed === false ? Colors.blue : Colors.main,
+                bgcolor: tag.overlapsUnreviewed
+                  ? Colors.leafGreen
+                  : tag.reviewed === false
+                    ? Colors.blue
+                    : Colors.main,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",

@@ -12,7 +12,7 @@ const CameraLoadingState = ({ maxHeight }: { maxHeight: number | string }) => (
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      bgcolor: Colors.blushWhite,
+      bgcolor: Colors.black,
       borderRadius: 1,
       flexDirection: "column",
       gap: 1,
@@ -21,7 +21,13 @@ const CameraLoadingState = ({ maxHeight }: { maxHeight: number | string }) => (
   >
     <Spinner />
     <Typography
-      sx={{ color: Colors.dimGray, fontFamily: Fonts.main, fontSize: 14, opacity: 0.6, mt: "20px" }}
+      sx={{
+        color: Colors.dimGray,
+        fontFamily: Fonts.main,
+        fontSize: 14,
+        opacity: 0.6,
+        mt: "20px",
+      }}
     >
       Loading cameras...
     </Typography>

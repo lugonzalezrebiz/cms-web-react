@@ -4,7 +4,7 @@ import type { SxProps } from "@mui/system";
 import { Colors } from "../theme";
 
 interface CustomScrollbarYProps {
-  children: React.ReactNode;
+  children: React.ReactNode | ((hasScroll: boolean, hasXScroll: boolean) => React.ReactNode);
   height?: string | number;
   maxHeight?: string | number;
   thumbLength?: number;
@@ -181,7 +181,9 @@ export const CustomScrollbarY = forwardRef<
             ...contentSx,
           }}
         >
-          {children}
+          {typeof children === "function"
+            ? children(hasScroll, hasXScroll)
+            : children}
         </Box>
 
         {hasScroll && (

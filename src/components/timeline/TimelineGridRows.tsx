@@ -22,6 +22,8 @@ interface TimelineGridRowsProps {
   zoom: number;
   panOffsetSec: number;
   totalSec: number;
+  timelineStartSec: number;
+  timelineEndSec: number;
   startSec: number;
   tickStepSec: number;
   selectedTracks: Set<number>;
@@ -60,6 +62,8 @@ export const TimelineGridRows = ({
   zoom,
   panOffsetSec,
   totalSec,
+  timelineStartSec,
+  timelineEndSec,
   startSec,
   tickStepSec,
   selectedTracks,
@@ -92,7 +96,8 @@ export const TimelineGridRows = ({
     gridRef,
     visibleStart,
     visibleDuration,
-    totalSec,
+    timelineStartSec,
+    timelineEndSec,
     onUpdateEventPoint,
   });
 
@@ -112,7 +117,8 @@ export const TimelineGridRows = ({
     gridRef,
     visibleStart,
     visibleDuration,
-    totalSec,
+    timelineStartSec,
+    timelineEndSec,
     onUpdateEventPoint,
   });
 

@@ -119,7 +119,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
       return [...prev, { id: newId, cameraId, activityLabel }];
     });
     const timeSec = markerSecRef.current;
-    const startSec = Math.max(0, timeSec - 120);
+    const startSec = timeSec;
     const endSec = timeSec;
     setCameraEventPoints((prev) => {
       pushHistory(prev);

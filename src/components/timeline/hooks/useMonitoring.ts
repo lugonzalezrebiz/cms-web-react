@@ -76,7 +76,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           id: Number(entry.id),
           cameraId: event.cameraId,
           timeSec,
-          startSec: Math.max(0, timeSec - 120),
+          startSec: timeSec,
           endSec: timeSec,
           label,
           reviewed: entry.reviewed,

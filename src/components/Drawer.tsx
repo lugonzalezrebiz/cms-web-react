@@ -35,11 +35,14 @@ const Drawer = ({
             borderTopLeftRadius: "16px",
             borderBottomLeftRadius: "16px",
             height: "calc(100% - 32px)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
           },
         },
       }}
     >
-      <Box>
+      <Box sx={{ flexShrink: 0 }}>
         <Box
           position={"absolute"}
           top={20}
@@ -64,8 +67,8 @@ const Drawer = ({
             </Box>
           ))}
       </Box>
-      <Box height={"100%"}>
-        <Box height={"99%"}>{children}</Box>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        {children}
       </Box>
     </DrawerMUI>
   );
