@@ -204,15 +204,17 @@ const TimelineBody = ({
           loadState={loadState}
         />
 
-        <TimelineMarker
-          currentLeft={currentLeft}
-          setMarkerSec={setMarkerSec}
-          visibleStart={visibleStart}
-          visibleDuration={visibleDuration}
-          timelineStartSec={timelineStartSec}
-          timelineEndSec={timelineEndSec}
-          gridRef={gridRef}
-        />
+        {!loadState && (
+          <TimelineMarker
+            currentLeft={currentLeft}
+            setMarkerSec={setMarkerSec}
+            visibleStart={visibleStart}
+            visibleDuration={visibleDuration}
+            timelineStartSec={timelineStartSec}
+            timelineEndSec={timelineEndSec}
+            gridRef={gridRef}
+          />
+        )}
       </Box>
 
       <GoToTimeDialog

@@ -118,11 +118,14 @@ export const CameraItem = ({
         transition: skipAnimation
           ? "none"
           : `opacity ${TRANSITION_MS}ms ease-in-out`,
-        "@keyframes cameraFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+        "@keyframes cameraFadeIn": {
+          from: { opacity: 0, transform: "scale(0.96)" },
+          to: { opacity: 1, transform: "scale(1)" },
+        },
         animation:
           isExiting || empty || skipAnimation
             ? "none"
-            : `cameraFadeIn ${TRANSITION_MS}ms ease-in-out`,
+            : `cameraFadeIn ${TRANSITION_MS}ms ease-out ${Math.min(index * 40, 240)}ms both`,
         pointerEvents: isExiting ? "none" : undefined,
       }}
     >

@@ -3,7 +3,7 @@ import type { CameraInfo } from "../../hooks/useExitingCameras";
 import type { CameraEventPoint } from "../timeline/types";
 
 export const GAP = 8;
-export const TRANSITION_MS = 200;
+export const TRANSITION_MS = 300;
 
 export interface SharedCameraItemProps {
   expandCamera: (index: number) => void;

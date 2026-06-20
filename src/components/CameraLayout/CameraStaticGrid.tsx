@@ -29,7 +29,8 @@ const CameraStaticGrid = ({
   <Box
     sx={{
       display: "grid",
-      gridTemplateRows: count === 0 ? "1fr" : `repeat(${numRows}, minmax(0, 1fr))`,
+      gridTemplateRows:
+        count === 0 ? "1fr" : `repeat(${numRows}, minmax(0, 1fr))`,
       gap: `${GAP}px`,
       height: totalHeight,
       overflow: "hidden",

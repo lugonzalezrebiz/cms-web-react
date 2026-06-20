@@ -6,9 +6,9 @@ import Spinner from "../Spinner";
 const CameraLoadingState = ({ maxHeight }: { maxHeight: number | string }) => (
   <Box
     sx={{
-      width: "100%",
+      width: "calc(100% - 20px)",
       height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
-      m: "auto",
+      mx: "10px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -16,7 +16,7 @@ const CameraLoadingState = ({ maxHeight }: { maxHeight: number | string }) => (
       borderRadius: 1,
       flexDirection: "column",
       gap: 1,
-      p: "0 10px",
+      mb: "10px",
     }}
   >
     <Spinner />
