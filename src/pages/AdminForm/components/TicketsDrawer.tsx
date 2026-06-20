@@ -124,6 +124,7 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
           scrollX
           xThumbLength={15}
           top={41}
+          right={-10}
         >
           <Table
             clickableRows="mainRow"
