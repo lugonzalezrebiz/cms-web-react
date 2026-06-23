@@ -197,9 +197,13 @@ const MonitorHeader = ({
   useEffect(() => {
     if (!monitoringID) return;
     try {
-      const saved = sessionStorage.getItem(`custom_tracker_group_${monitoringID}`);
-      if (saved) setCustomTrackerIDs((JSON.parse(saved) as string[]).map(Number));
-    } catch {}
+      const saved = sessionStorage.getItem(
+        `custom_tracker_group_${monitoringID}`,
+      );
+      if (saved) setCustomTrackerIDs(JSON.parse(saved) as string[]);
+    } catch {
+      /* ignore invalid JSON */
+    }
   }, [monitoringID, setCustomTrackerIDs]);
   const { trackerOptions } = useTrackerOptions();
 
@@ -209,7 +213,9 @@ const MonitorHeader = ({
     }
   }, [cameraGroup, trackerOptions, setCameraGroup]);
 
-  const allGroups = [...trackerOptions];
+  const allGroups = [...trackerOptions].sort(
+    (a, b) => (b.options ? 1 : 0) - (a.options ? 1 : 0),
+  );
   const overflowGroups = allGroups.slice(MAX_VISIBLE);
   const cameraGroups = [
     ...allGroups.slice(0, MAX_VISIBLE),
@@ -363,7 +369,11 @@ const MonitorHeader = ({
         key={customOpen ? monitoringID : "closed"}
         open={customOpen}
         onClose={() => setCustomOpen(false)}
-        onCustomCreate={(ids) => { setHasCustomGroup(true); setCustomTrackerIDs(ids.map(Number)); }}
+        onCustomCreate={(ids) => {
+          setHasCustomGroup(true);
+          setCustomTrackerIDs(ids);
+          setCameraGroup("__custom__");
+        }}
         groups={allGroups}
         monitoringID={monitoringID}
       />

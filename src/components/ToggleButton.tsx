@@ -20,6 +20,7 @@ interface GroupItem {
   value: string;
   title: string;
   options?: GroupOption[];
+  selectOnClick?: boolean;
 }
 
 const StyledToggleGroup = styled(ToggleButtonGroup)({
@@ -114,10 +115,22 @@ const ToggleButton = ({
         value={value}
         exclusive
         onChange={(_event, newValue) => {
-          const isPlaceholder = groups.some(
-            (g) => g.value === newValue && g.options?.length,
+          if (newValue === null) return;
+          if (newValue === "__custom__" && !customCreated) {
+            onCustomClick?.();
+            return;
+          }
+          const selectOnClickGroup = groups.find(
+            (g) => g.selectOnClick && g.options?.some((o) => o.value === newValue),
           );
-          if (newValue !== null && !isPlaceholder) setValue(newValue);
+          if (selectOnClickGroup) {
+            setValue(selectOnClickGroup.value);
+            return;
+          }
+          const isPlaceholder = groups.some(
+            (g) => g.value === newValue && g.options?.length && !g.selectOnClick,
+          );
+          if (!isPlaceholder) setValue(newValue);
         }}
         aria-label={label}
       >
@@ -130,7 +143,7 @@ const ToggleButton = ({
               key={group.value}
               value={effectiveValue}
               onClick={
-                group.options
+                group.options && !group.selectOnClick
                   ? (e) => handleOptionsClick(group.value, e)
                   : undefined
               }
@@ -139,7 +152,14 @@ const ToggleButton = ({
                 {selectedOption ? selectedOption.title : group.title}
               </span>
               {group.options && (
-                <KeyboardArrowDownIcon sx={{ fontSize: 14, ml: 0.3 }} />
+                <KeyboardArrowDownIcon
+                  sx={{ fontSize: 14, ml: 0.3 }}
+                  onClick={
+                    group.selectOnClick
+                      ? (e) => { e.stopPropagation(); handleOptionsClick(group.value, e); }
+                      : undefined
+                  }
+                />
               )}
             </StyledToggleButton>
           );

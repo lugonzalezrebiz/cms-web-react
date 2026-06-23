@@ -14,7 +14,7 @@ export const MonitorProvider = ({ children }: { children: ReactNode }) => {
   const setState = useCallback((s: typeof state) => setStateInternal(s), []);
   const [cameraGroup, setCameraGroup] = useState("tracker");
   const [trackerOption, setTrackerOption] = useState("");
-  const [customTrackerIDs, setCustomTrackerIDs] = useState<number[]>([]);
+  const [customTrackerIDs, setCustomTrackerIDs] = useState<string[]>([]);
 
   return (
     <MonitorSetterContext.Provider value={setState}>
