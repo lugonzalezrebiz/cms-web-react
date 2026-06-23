@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import styled from "@emotion/styled";
 import {
   ToggleButton as MuiToggleButton,
@@ -23,12 +23,28 @@ interface GroupItem {
   selectOnClick?: boolean;
 }
 
+interface CustomToggleButtonProps {
+  onCustomClick?: () => void;
+  customCreated?: boolean;
+}
+
+interface ToggleButtonProps {
+  value: string;
+  setValue: (value: string) => void;
+  label: string;
+  groups: GroupItem[];
+  selectValue?: string;
+  onCustomClick?: () => void;
+  customCreated?: boolean;
+}
+
 const StyledToggleGroup = styled(ToggleButtonGroup)({
   padding: 4,
   backgroundColor: Colors.lightGray,
   borderRadius: 30,
   height: "32px",
   width: "100%",
+  gap: "5px",
   boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
   "& .MuiToggleButtonGroup-lastButton": {
     margin: 0,
@@ -49,15 +65,15 @@ const StyledToggleButton = styled(MuiToggleButton)({
   fontWeight: "normal",
   backgroundColor: Colors.lightGray,
   border: "none",
-  margin: 0,
   fontSize: "14px",
   borderRadius: 35,
+  width: "100%",
   maxWidth: "120px",
   "& .toggle-label": {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    minWidth: 0,
+    minWidth: "50px",
   },
   "&.Mui-selected": {
     color: Colors.lightBlack,
@@ -72,25 +88,40 @@ const StyledToggleButton = styled(MuiToggleButton)({
   },
 });
 
+const CustomToggleButton = ({
+  onCustomClick,
+  customCreated,
+}: CustomToggleButtonProps) => {
+  return (
+    <StyledToggleButton value="__custom__">
+      <span className="toggle-label">Custom</span>
+      <img
+        onClick={(e) => {
+          e.stopPropagation();
+          onCustomClick?.();
+        }}
+        src={customCreated ? "./assets/edit-05.svg" : "./assets/plus-1.svg"}
+        alt=""
+        style={{
+          width: 14,
+          height: 14,
+          marginLeft: 4,
+          cursor: "pointer",
+        }}
+      />
+    </StyledToggleButton>
+  );
+};
+
 const ToggleButton = ({
   value,
   setValue,
   label,
   groups,
   selectValue,
-  setSelectValue,
   onCustomClick,
   customCreated = false,
-}: {
-  value: string;
-  setValue: (value: string) => void;
-  label: string;
-  groups: GroupItem[];
-  selectValue?: string;
-  setSelectValue?: (value: string) => void;
-  onCustomClick?: () => void;
-  customCreated?: boolean;
-}) => {
+}: ToggleButtonProps) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [activeGroupValue, setActiveGroupValue] = useState<string | null>(null);
 
@@ -109,29 +140,34 @@ const ToggleButton = ({
 
   const activeGroup = groups.find((g) => g.value === activeGroupValue);
 
+  const handleCustom = (
+    _event: MouseEvent<HTMLElement>,
+    newValue: string | null,
+  ) => {
+    if (newValue === null) return;
+    if (newValue === "__custom__" && !customCreated) {
+      onCustomClick?.();
+      return;
+    }
+    const selectOnClickGroup = groups.find(
+      (g) => g.selectOnClick && g.options?.some((o) => o.value === newValue),
+    );
+    if (selectOnClickGroup) {
+      setValue(selectOnClickGroup.value);
+      return;
+    }
+    const isPlaceholder = groups.some(
+      (g) => g.value === newValue && g.options?.length && !g.selectOnClick,
+    );
+    if (!isPlaceholder) setValue(newValue);
+  };
+
   return (
     <Box>
       <StyledToggleGroup
         value={value}
         exclusive
-        onChange={(_event, newValue) => {
-          if (newValue === null) return;
-          if (newValue === "__custom__" && !customCreated) {
-            onCustomClick?.();
-            return;
-          }
-          const selectOnClickGroup = groups.find(
-            (g) => g.selectOnClick && g.options?.some((o) => o.value === newValue),
-          );
-          if (selectOnClickGroup) {
-            setValue(selectOnClickGroup.value);
-            return;
-          }
-          const isPlaceholder = groups.some(
-            (g) => g.value === newValue && g.options?.length && !g.selectOnClick,
-          );
-          if (!isPlaceholder) setValue(newValue);
-        }}
+        onChange={handleCustom}
         aria-label={label}
       >
         {groups.map((group) => {
@@ -156,7 +192,10 @@ const ToggleButton = ({
                   sx={{ fontSize: 14, ml: 0.3 }}
                   onClick={
                     group.selectOnClick
-                      ? (e) => { e.stopPropagation(); handleOptionsClick(group.value, e); }
+                      ? (e) => {
+                          e.stopPropagation();
+                          handleOptionsClick(group.value, e);
+                        }
                       : undefined
                   }
                 />
@@ -166,22 +205,10 @@ const ToggleButton = ({
         })}
 
         {onCustomClick && (
-          <StyledToggleButton value="__custom__">
-            <span className="toggle-label">Custom</span>
-            <img
-              onClick={(e) => { e.stopPropagation(); onCustomClick?.(); }}
-              src={
-                customCreated ? "./assets/edit-05.svg" : "./assets/plus-1.svg"
-              }
-              alt=""
-              style={{
-                width: 14,
-                height: 14,
-                marginLeft: 4,
-                cursor: "pointer",
-              }}
-            />
-          </StyledToggleButton>
+          <CustomToggleButton
+            onCustomClick={onCustomClick}
+            customCreated={customCreated}
+          />
         )}
       </StyledToggleGroup>
 

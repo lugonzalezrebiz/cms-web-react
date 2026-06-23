@@ -220,7 +220,13 @@ const MonitorHeader = ({
   const cameraGroups = [
     ...allGroups.slice(0, MAX_VISIBLE),
     ...(overflowGroups.length > 0
-      ? [{ value: "__other__", title: "Other", options: overflowGroups }]
+      ? [
+          {
+            value: "__other__",
+            title: "Other",
+            options: overflowGroups,
+          },
+        ]
       : []),
   ];
 
