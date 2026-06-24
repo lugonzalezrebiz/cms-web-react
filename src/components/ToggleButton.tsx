@@ -122,12 +122,12 @@ const ToggleButton = ({
   onCustomClick,
   customCreated = false,
 }: ToggleButtonProps) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [anchorEl, setAnchorEl] = useState<Element | null>(null);
   const [activeGroupValue, setActiveGroupValue] = useState<string | null>(null);
 
   const handleOptionsClick = (
     groupValue: string,
-    event: React.MouseEvent<HTMLElement>,
+    event: React.MouseEvent<HTMLElement | SVGSVGElement>,
   ) => {
     setAnchorEl(event.currentTarget);
     setActiveGroupValue(groupValue);

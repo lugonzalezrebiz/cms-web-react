@@ -55,7 +55,7 @@ const CameraStaticGrid = ({
           startIdx={rowStarts[rowIndex]}
           rowCount={rowCount}
           maxCols={maxCols}
-          totalCameras={count}
+          totalCameras={sharedProps.cameras?.length ?? count}
           {...sharedProps}
         />
       ))
