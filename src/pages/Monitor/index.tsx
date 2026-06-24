@@ -36,6 +36,17 @@ const Monitor = () => {
   const timeEnd = currentAssignment?.close ?? null;
 
   const { cameraGroup, trackerOption } = useCameraGroup();
+  const [prevTrackerOption, setPrevTrackerOption] = useState(trackerOption);
+  const [isTrackerSwitching, setIsTrackerSwitching] = useState(false);
+  if (prevTrackerOption !== trackerOption) {
+    setPrevTrackerOption(trackerOption);
+    if (trackerOption) setIsTrackerSwitching(true);
+  }
+  useEffect(() => {
+    if (!isTrackerSwitching) return;
+    const t = setTimeout(() => setIsTrackerSwitching(false), 300);
+    return () => clearTimeout(t);
+  }, [isTrackerSwitching]);
   const isTrackerTab = cameraGroup === "tracker";
   const groupID =
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
@@ -337,7 +348,7 @@ const Monitor = () => {
           timestamp={timestamp}
           expandedCamera={expandedCamera}
           onExpandCamera={handleExpandCamera}
-          loadState={isCamerasLoading}
+          loadState={isCamerasLoading || isTrackerSwitching}
         />
       </Box>
 
