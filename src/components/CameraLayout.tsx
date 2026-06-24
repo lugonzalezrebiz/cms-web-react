@@ -35,11 +35,20 @@ const CameraLayout = ({
 }: CameraLayoutProps) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
-  const { renderedCameras, exitingIds, skipAnimation } = useExitingCameras(cameras, count, TRANSITION_MS);
-  const getTagsForCamera = useTagsForCamera(cameraEventPoints, markerSec, renderedCameras);
+  const { renderedCameras, exitingIds, skipAnimation } = useExitingCameras(
+    cameras,
+    count,
+    TRANSITION_MS,
+  );
+  const getTagsForCamera = useTagsForCamera(
+    cameraEventPoints,
+    markerSec,
+    renderedCameras,
+  );
 
   const scrollable = renderedCameras.length > 16;
-  const totalHeight = typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
+  const totalHeight =
+    typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight;
   const rowHeight = scrollable ? `calc((100% - ${GAP * 2}px) / 3)` : undefined;
 
   const sharedProps: SharedCameraItemProps = {

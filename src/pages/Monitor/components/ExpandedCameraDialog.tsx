@@ -63,7 +63,9 @@ export const ExpandedCameraDialog = ({
               <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
             </Box>
           </Title>
-          <Box sx={{ flex: 100, minHeight: 0, position: "relative" }}>
+          <Box
+            sx={{ flex: 100, minHeight: 0, position: "relative", p: "0 16px" }}
+          >
             <CameraItem
               index={cameraIndex}
               expandCamera={expandCamera}

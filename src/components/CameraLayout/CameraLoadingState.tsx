@@ -6,22 +6,28 @@ import Spinner from "../Spinner";
 const CameraLoadingState = ({ maxHeight }: { maxHeight: number | string }) => (
   <Box
     sx={{
-      width: "100%",
+      width: "calc(100% - 20px)",
       height: typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
-      m: "auto",
+      mx: "10px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      bgcolor: Colors.blushWhite,
+      bgcolor: Colors.black,
       borderRadius: 1,
       flexDirection: "column",
       gap: 1,
-      p: "0 10px",
+      mb: "10px",
     }}
   >
     <Spinner />
     <Typography
-      sx={{ color: Colors.dimGray, fontFamily: Fonts.main, fontSize: 14, opacity: 0.6, mt: "20px" }}
+      sx={{
+        color: Colors.dimGray,
+        fontFamily: Fonts.main,
+        fontSize: 14,
+        opacity: 0.6,
+        mt: "20px",
+      }}
     >
       Loading cameras...
     </Typography>

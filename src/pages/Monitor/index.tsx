@@ -13,6 +13,7 @@ import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
 // import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
+import { timeStringToSec } from "../../components/timeline/utils";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
@@ -181,6 +182,15 @@ const Monitor = () => {
 
   const { timestamp, setTimestamp } = useMarkerState();
 
+  const timelineStartSec = timeStringToSec(snapshot?.timeline?.times?.start ?? "00:00:00");
+
+  const trackerTargetSec = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return timelineStartSec;
+    return filteredEventPoints
+      .filter((ep) => !ep.reviewed)
+      .sort((a, b) => a.timeSec - b.timeSec)[0]?.timeSec;
+  }, [isTrackerTab, trackerOption, filteredEventPoints, timelineStartSec]);
+
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
@@ -228,7 +238,7 @@ const Monitor = () => {
       cameraEventPoints: filteredEventPoints,
       onMarkerChange: handleMarkerChange,
       markerTimeSec,
-      targetMarkerSec: restoreMarkerSec,
+      targetMarkerSec: restoreMarkerSec ?? trackerTargetSec,
       onUpdateEventPoint: handleUpdateEventPoint,
       onPopOut: handlePopOut,
       headerLabel: "Compliance Violations" as const,
@@ -251,6 +261,7 @@ const Monitor = () => {
       handleMarkerChange,
       markerTimeSec,
       restoreMarkerSec,
+      trackerTargetSec,
       handleUpdateEventPoint,
       handlePopOut,
       handleUndo,
@@ -287,6 +298,15 @@ const Monitor = () => {
         name: ep.label,
         label: ep.label,
         reviewed: ep.reviewed,
+        overlapsUnreviewed:
+          ep.reviewed &&
+          filteredEventPoints.some(
+            (other) =>
+              other.id !== ep.id &&
+              other.cameraId === ep.cameraId &&
+              !other.reviewed &&
+              other.timeSec === ep.timeSec,
+          ),
         onClick: () => {},
       }));
   }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec]);

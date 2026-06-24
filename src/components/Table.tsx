@@ -264,7 +264,10 @@ const Table = ({
           ...(disableOverflow && { overflow: "visible" }),
         }}
       >
-        <TableMui stickyHeader sx={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+        <TableMui
+          stickyHeader
+          sx={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}
+        >
           <TableHead>
             {groups && (
               <TableRow>
@@ -394,132 +397,155 @@ const Table = ({
               {rows.map((row, rowIndex) => {
                 const content = row.content as React.ReactNode;
                 return (
-                <Fragment key={rowIndex}>
-                <TableRow
-                  onClick={clickableRows === "allRow" && onRowClick ? () => onRowClick((row.id as number | undefined) ?? rowIndex) : undefined}
-                  sx={{ cursor: clickableRows === "allRow" ? "pointer" : "default" }}
-                >
-                  {columns.map((col, colIndex) => {
-                    const group = groups?.find((group) =>
-                      group.columns.includes(col.key),
-                    );
-                    const cellValue = row[col.key];
-                    if (col.type === "ProgressBar") {
-                      return (
-                        <ProgressBarRows
-                          key={colIndex}
-                          rowColor={col.rowColor}
-                          rowAlign={col.align}
-                        >
-                          <ProgressBar
-                            value={cellValue as number}
-                            tooltip={
-                              col.formatTooltip
-                                ? col.formatTooltip(row)
-                                : undefined
-                            }
-                          />
-                        </ProgressBarRows>
-                      );
-                    }
-
-                    if (colIndex === 0) {
-                      return (
-                        <MainRow
-                          key={colIndex}
-                          isClickable={clickableRows === "mainRow"}
-                          mainRowWidth={col.width || mainRowWidth}
-                          rowColor={col.rowColor}
-                          rowAlign={col.align}
-                          title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
-                          onClick={() => {
-                            if (clickableRows === "mainRow" && onRowClick) {
+                  <Fragment key={rowIndex}>
+                    <TableRow
+                      onClick={
+                        clickableRows === "allRow" && onRowClick
+                          ? () =>
                               onRowClick(
                                 (row.id as number | undefined) ?? rowIndex,
-                              );
-                            }
-                          }}
-                        >
-                          {!col.title ? (
-                            <Box
-                              display="flex"
-                              justifyContent={
-                                col.align === "left"
-                                  ? "flex-start"
-                                  : col.align === "right"
-                                    ? "flex-end"
-                                    : "center"
-                              }
-                              alignItems="center"
-                            >
-                              {col.render
-                                ? col.render(cellValue)
-                                : (cellValue as React.ReactNode)}
-                            </Box>
-                          ) : col.render ? (
-                            col.render(cellValue)
-                          ) : (
-                            (cellValue as React.ReactNode)
-                          )}
-                        </MainRow>
-                      );
-                    }
-
-                    return (
-                      <Rows
-                        rowWidth={col.width || rowWidth}
-                        rowColor={col.rowColor}
-                        rowAlign={col.align}
-                        key={colIndex}
-                        title={typeof cellValue === "string" || typeof cellValue === "number" ? String(cellValue) : undefined}
-                        sx={{
-                          backgroundColor:
-                            group?.backgroundColor || Colors.white,
-                          borderBottomLeftRadius:
-                            group && group.columns[0] === col.key ? "8px" : 0,
-                          borderBottomRightRadius:
-                            group &&
-                            group.columns[group.columns.length - 1] === col.key
-                              ? "8px"
-                              : 0,
-                        }}
-                      >
-                        {!col.title ? (
-                          <Box
-                            display="flex"
-                            justifyContent={
-                              col.align === "left"
-                                ? "flex-start"
-                                : col.align === "right"
-                                  ? "flex-end"
-                                  : "center"
-                            }
-                            alignItems="center"
-                          >
-                            {col.render
-                              ? col.render(cellValue)
-                              : (cellValue as React.ReactNode)}
-                          </Box>
-                        ) : col.render ? (
-                          col.render(cellValue)
-                        ) : (
-                          (cellValue as React.ReactNode)
-                        )}
-                      </Rows>
-                    );
-                  })}
-                </TableRow>
-                {content && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      sx={{ padding: 0, border: "none" }}
+                              )
+                          : undefined
+                      }
+                      sx={{
+                        cursor:
+                          clickableRows === "allRow" ? "pointer" : "default",
+                      }}
                     >
-                      {content}
-                    </TableCell>
-                  </TableRow>
-                )}
-                </Fragment>
+                      {columns.map((col, colIndex) => {
+                        const group = groups?.find((group) =>
+                          group.columns.includes(col.key),
+                        );
+                        const cellValue = row[col.key];
+                        if (col.type === "ProgressBar") {
+                          return (
+                            <ProgressBarRows
+                              key={colIndex}
+                              rowColor={col.rowColor}
+                              rowAlign={col.align}
+                            >
+                              <ProgressBar
+                                value={cellValue as number}
+                                tooltip={
+                                  col.formatTooltip
+                                    ? col.formatTooltip(row)
+                                    : undefined
+                                }
+                              />
+                            </ProgressBarRows>
+                          );
+                        }
+
+                        if (colIndex === 0) {
+                          return (
+                            <MainRow
+                              key={colIndex}
+                              isClickable={clickableRows === "mainRow"}
+                              mainRowWidth={col.width || mainRowWidth}
+                              rowColor={col.rowColor}
+                              rowAlign={col.align}
+                              title={
+                                typeof cellValue === "string" ||
+                                typeof cellValue === "number"
+                                  ? String(cellValue)
+                                  : undefined
+                              }
+                              onClick={() => {
+                                if (clickableRows === "mainRow" && onRowClick) {
+                                  onRowClick(
+                                    (row.id as number | undefined) ?? rowIndex,
+                                  );
+                                }
+                              }}
+                            >
+                              {!col.title ? (
+                                <Box
+                                  display="flex"
+                                  justifyContent={
+                                    col.align === "left"
+                                      ? "flex-start"
+                                      : col.align === "right"
+                                        ? "flex-end"
+                                        : "center"
+                                  }
+                                  alignItems="center"
+                                >
+                                  {col.render
+                                    ? col.render(cellValue)
+                                    : (cellValue as React.ReactNode)}
+                                </Box>
+                              ) : col.render ? (
+                                col.render(cellValue)
+                              ) : (
+                                (cellValue as React.ReactNode)
+                              )}
+                            </MainRow>
+                          );
+                        }
+
+                        return (
+                          <Rows
+                            rowWidth={col.width || rowWidth}
+                            rowColor={col.rowColor}
+                            rowAlign={col.align}
+                            key={colIndex}
+                            title={
+                              typeof cellValue === "string" ||
+                              typeof cellValue === "number"
+                                ? String(cellValue)
+                                : undefined
+                            }
+                            sx={{
+                              backgroundColor:
+                                group?.backgroundColor || Colors.white,
+                              borderBottomLeftRadius:
+                                group && group.columns[0] === col.key
+                                  ? "8px"
+                                  : 0,
+                              borderBottomRightRadius:
+                                group &&
+                                group.columns[group.columns.length - 1] ===
+                                  col.key
+                                  ? "8px"
+                                  : 0,
+                            }}
+                          >
+                            {!col.title ? (
+                              <Box
+                                display="flex"
+                                justifyContent={
+                                  col.align === "left"
+                                    ? "flex-start"
+                                    : col.align === "right"
+                                      ? "flex-end"
+                                      : "center"
+                                }
+                                alignItems="center"
+                              >
+                                {col.render
+                                  ? col.render(cellValue)
+                                  : (cellValue as React.ReactNode)}
+                              </Box>
+                            ) : col.render ? (
+                              col.render(cellValue)
+                            ) : (
+                              (cellValue as React.ReactNode)
+                            )}
+                          </Rows>
+                        );
+                      })}
+                    </TableRow>
+                    {content && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          sx={{ padding: 0, border: "none" }}
+                        >
+                          {content}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
                 );
               })}
             </LazyLoading>

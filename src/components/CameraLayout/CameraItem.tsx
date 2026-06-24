@@ -111,18 +111,21 @@ export const CameraItem = ({
         width: "100%",
         height: "100%",
         position: "relative",
-        bgcolor: Colors.blushWhite,
+        bgcolor: Colors.black,
         overflow: "hidden",
         borderRadius: 1,
         opacity: isExiting ? 0 : 1,
         transition: skipAnimation
           ? "none"
           : `opacity ${TRANSITION_MS}ms ease-in-out`,
-        "@keyframes cameraFadeIn": { from: { opacity: 0 }, to: { opacity: 1 } },
+        "@keyframes cameraFadeIn": {
+          from: { opacity: 0, transform: "scale(0.96)" },
+          to: { opacity: 1, transform: "scale(1)" },
+        },
         animation:
           isExiting || empty || skipAnimation
             ? "none"
-            : `cameraFadeIn ${TRANSITION_MS}ms ease-in-out`,
+            : `cameraFadeIn ${TRANSITION_MS}ms ease-out ${Math.min(index * 40, 240)}ms both`,
         pointerEvents: isExiting ? "none" : undefined,
       }}
     >
@@ -147,7 +150,7 @@ export const CameraItem = ({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: Colors.blushWhite,
+            bgcolor: Colors.black,
             gap: 1,
           }}
         >
@@ -228,7 +231,11 @@ export const CameraItem = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                bgcolor: tag.overlapsUnreviewed ? Colors.leafGreen : tag.reviewed === false ? Colors.blue : Colors.main,
+                bgcolor: tag.overlapsUnreviewed
+                  ? Colors.leafGreen
+                  : tag.reviewed === false
+                    ? Colors.blue
+                    : Colors.main,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",

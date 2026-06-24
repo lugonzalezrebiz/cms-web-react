@@ -109,37 +109,37 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
   };
 
   return (
-    <>
-      <Drawer open={open} onClose={onClose} title="Tickets">
-        <Box mt={"4px"} height={"100%"}>
-          <CustomScrollbarY
-            ref={scrollContainerRef}
-            maxHeight="100%"
-            sx={{
-              width: "100%",
-              borderRadius: "8px",
-            }}
-            bottom={0}
-            thumbLength={15}
-            scrollX
-            xThumbLength={15}
-          >
-            <Table
-              clickableRows="mainRow"
-              columns={columns}
-              rows={rows}
-              onRowClick={handleRowClick}
-              mainColumnWidth="80px"
-              mainRowWidth="80px"
-              TableCellWidth="120px"
-              rowWidth="120px"
-              scrollContainerRef={scrollContainerRef}
-              disableOverflow
-            />
-          </CustomScrollbarY>
-        </Box>
-      </Drawer>
-
+    <Drawer open={open} onClose={onClose} title="Tickets">
+      <Box mt={"4px"} sx={{ height: "100%" }}>
+        <CustomScrollbarY
+          ref={scrollContainerRef}
+          height="100%"
+          maxHeight="100%"
+          sx={{
+            width: "100%",
+            borderRadius: "8px",
+          }}
+          bottom={0}
+          thumbLength={15}
+          scrollX
+          xThumbLength={15}
+          top={41}
+          right={-10}
+        >
+          <Table
+            clickableRows="mainRow"
+            columns={columns}
+            rows={rows}
+            onRowClick={handleRowClick}
+            mainColumnWidth="80px"
+            mainRowWidth="80px"
+            TableCellWidth="120px"
+            rowWidth="120px"
+            scrollContainerRef={scrollContainerRef}
+            disableOverflow
+          />
+        </CustomScrollbarY>
+      </Box>
       {selectedTicket && (
         <TicketDetailDialog
           open={!!selectedTicket}
@@ -147,7 +147,7 @@ const TicketsDrawer = ({ open, onClose }: TicketsDrawerProps) => {
           ticket={selectedTicket}
         />
       )}
-    </>
+    </Drawer>
   );
 };
 
