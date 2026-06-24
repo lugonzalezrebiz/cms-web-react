@@ -32,6 +32,14 @@ export const useExitingCameras = (
       return () => clearTimeout(t);
     }
 
+    const remaining = prevCamerasRef.current.filter((c) => incomingIds.has(c.id));
+    const isFullReset = prevCamerasRef.current.length > 0 && remaining.length === 0;
+
+    if (isFullReset) {
+      const t = setTimeout(() => setExitingCameras([]), 0);
+      return () => clearTimeout(t);
+    }
+
     const tStart = setTimeout(() => setExitingCameras(leaving), 0);
     const tEnd = setTimeout(() => setExitingCameras([]), transitionMs + 50);
 

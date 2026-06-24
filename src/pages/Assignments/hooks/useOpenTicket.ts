@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePost } from "../../../hooks/useApi";
 
 interface TicketPayload {
@@ -23,6 +24,7 @@ const SUBMIT_ERRORS: Record<number, string> = {
 };
 
 const useOpenTicket = () => {
+  const queryClient = useQueryClient();
   const { mutateAsync, isPending } = usePost<TicketResponse, FormData>("ticket");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ const useOpenTicket = () => {
         form.append("attachments", payload.file);
       }
       await mutateAsync(form);
+      queryClient.invalidateQueries({ queryKey: ["location/assignment/count"] });
       return true;
     } catch (err) {
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;

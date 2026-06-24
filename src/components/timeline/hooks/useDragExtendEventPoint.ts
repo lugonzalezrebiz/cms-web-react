@@ -7,13 +7,15 @@ export const useDragExtendEventPoint = ({
   gridRef,
   visibleStart,
   visibleDuration,
-  totalSec,
+  timelineStartSec,
+  timelineEndSec,
   onUpdateEventPoint,
 }: {
   gridRef: React.RefObject<HTMLDivElement | null>;
   visibleStart: number;
   visibleDuration: number;
-  totalSec: number;
+  timelineStartSec: number;
+  timelineEndSec: number;
   onUpdateEventPoint?: (id: number, update: EventPointUpdate) => void;
 }) => {
   // End-diamond drag (updates endSec)
@@ -40,7 +42,7 @@ export const useDragExtendEventPoint = ({
       const rect = gridRef.current?.getBoundingClientRect();
       if (!rect) return;
       const rawSec = clientXToSec(e.clientX, rect, visibleStartRef.current, visibleDurationRef.current);
-      const newSec = Math.max(minSecRef.current, Math.min(totalSec, rawSec));
+      const newSec = Math.max(minSecRef.current, Math.min(timelineEndSec, rawSec));
       onUpdateRef.current?.(extendingId, { endSec: newSec });
     };
 
@@ -52,7 +54,7 @@ export const useDragExtendEventPoint = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [extendingId, gridRef, totalSec]);
+  }, [extendingId, gridRef, timelineEndSec]);
 
   // Start diamond drag
   useEffect(() => {
@@ -62,7 +64,7 @@ export const useDragExtendEventPoint = ({
       const rect = gridRef.current?.getBoundingClientRect();
       if (!rect) return;
       const rawSec = clientXToSec(e.clientX, rect, visibleStartRef.current, visibleDurationRef.current);
-      const newSec = Math.max(0, Math.min(maxSecRef.current, rawSec));
+      const newSec = Math.max(timelineStartSec, Math.min(maxSecRef.current, rawSec));
       onUpdateRef.current?.(movingStartId, { timeSec: newSec, startSec: newSec });
     };
 
@@ -74,7 +76,7 @@ export const useDragExtendEventPoint = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [movingStartId, gridRef]);
+  }, [movingStartId, gridRef, timelineStartSec]);
 
   const startExtend = useCallback((epId: number, e: React.MouseEvent, minSec: number) => {
     e.preventDefault();

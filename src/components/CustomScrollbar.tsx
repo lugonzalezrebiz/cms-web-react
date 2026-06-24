@@ -4,12 +4,15 @@ import type { SxProps } from "@mui/system";
 import { Colors } from "../theme";
 
 interface CustomScrollbarYProps {
-  children: React.ReactNode;
+  children:
+    | React.ReactNode
+    | ((hasScroll: boolean, hasXScroll: boolean) => React.ReactNode);
   height?: string | number;
   maxHeight?: string | number;
   thumbLength?: number;
   bottom?: number;
   top?: number;
+  right?: number;
   sx?: SxProps;
   contentSx?: SxProps;
   scrollX?: boolean;
@@ -30,6 +33,7 @@ export const CustomScrollbarY = forwardRef<
       contentSx,
       top,
       bottom,
+      right = 0,
       scrollX = false,
       xThumbLength = 12,
     },
@@ -174,14 +178,16 @@ export const CustomScrollbarY = forwardRef<
             height: "100%",
             overflowY: "auto",
             overflowX: scrollX ? "auto" : "hidden",
-            pr: hasScroll ? "20px" : 0,
+            pr: hasScroll ? (right >= 0 ? "20px" : "8px") : 0,
             pb: scrollX && hasXScroll ? "20px" : 0,
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
             ...contentSx,
           }}
         >
-          {children}
+          {typeof children === "function"
+            ? children(hasScroll, hasXScroll)
+            : children}
         </Box>
 
         {hasScroll && (
@@ -189,7 +195,7 @@ export const CustomScrollbarY = forwardRef<
             ref={trackRef}
             sx={{
               position: "absolute",
-              right: 0,
+              right,
               top: top ?? 0,
               bottom: scrollX && hasXScroll ? 12 : trackBottom,
               width: 10,

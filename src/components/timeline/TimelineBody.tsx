@@ -175,6 +175,8 @@ const TimelineBody = ({
           zoom={zoom}
           panOffsetSec={panOffsetSec}
           totalSec={totalSec}
+          timelineStartSec={timelineStartSec}
+          timelineEndSec={timelineEndSec}
           startSec={startSec}
           tickStepSec={tickStepSec}
           selectedTracks={selectedTracks}
@@ -202,15 +204,17 @@ const TimelineBody = ({
           loadState={loadState}
         />
 
-        <TimelineMarker
-          currentLeft={currentLeft}
-          setMarkerSec={setMarkerSec}
-          visibleStart={visibleStart}
-          visibleDuration={visibleDuration}
-          timelineStartSec={timelineStartSec}
-          timelineEndSec={timelineEndSec}
-          gridRef={gridRef}
-        />
+        {!loadState && (
+          <TimelineMarker
+            currentLeft={currentLeft}
+            setMarkerSec={setMarkerSec}
+            visibleStart={visibleStart}
+            visibleDuration={visibleDuration}
+            timelineStartSec={timelineStartSec}
+            timelineEndSec={timelineEndSec}
+            gridRef={gridRef}
+          />
+        )}
       </Box>
 
       <GoToTimeDialog

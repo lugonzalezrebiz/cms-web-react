@@ -95,6 +95,9 @@ const TimeLine = ({
     timelineEndSec,
     setMarkerSec: state.setMarkerSec,
     handleMarkerChange: onMarkerChange ?? (() => {}),
+    setPanOffsetSec: state.setPanOffsetSec,
+    visibleDuration: state.visibleDuration,
+    totalSec: state.totalSec,
   });
 
   useAutoSelectOnEventPoint({

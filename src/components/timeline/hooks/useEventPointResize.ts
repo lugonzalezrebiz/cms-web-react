@@ -6,7 +6,8 @@ interface UseEventPointResizeArgs {
   gridRef: React.RefObject<HTMLDivElement | null>;
   visibleStart: number;
   visibleDuration: number;
-  totalSec: number;
+  timelineStartSec: number;
+  timelineEndSec: number;
   onUpdateEventPoint?: (
     id: number,
     update: Partial<Pick<CameraEventPoint, "startSec" | "endSec">>,
@@ -17,7 +18,8 @@ export const useEventPointResize = ({
   gridRef,
   visibleStart,
   visibleDuration,
-  totalSec,
+  timelineStartSec,
+  timelineEndSec,
   onUpdateEventPoint,
 }: UseEventPointResizeArgs): SetResizing => {
   const [resizing, setResizing] = useState<ResizingState>(null);
@@ -28,7 +30,7 @@ export const useEventPointResize = ({
       const el = gridRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
-      const newSec = Math.max(0, Math.min(totalSec, clientXToSec(e.clientX, rect, visibleStart, visibleDuration)));
+      const newSec = Math.max(timelineStartSec, Math.min(timelineEndSec, clientXToSec(e.clientX, rect, visibleStart, visibleDuration)));
       onUpdateEventPoint?.(
         resizing.id,
         resizing.side === "left" ? { startSec: newSec } : { endSec: newSec },
@@ -41,7 +43,7 @@ export const useEventPointResize = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [resizing, visibleStart, visibleDuration, totalSec, gridRef, onUpdateEventPoint]);
+  }, [resizing, visibleStart, visibleDuration, timelineStartSec, timelineEndSec, gridRef, onUpdateEventPoint]);
 
   return setResizing;
 };
