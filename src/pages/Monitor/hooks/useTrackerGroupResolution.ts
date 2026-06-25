@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import useTrackerGrouping from "../../../hooks/useTrackerGrouping";
 import { useCameraGroup } from "../../../contexts/useMonitorContext";
 
-const PAY_STATION_ID = 8;
 
 export function useTrackerGroupResolution() {
   const { cameraGroup, trackerOption, customTrackerIDs } = useCameraGroup();
@@ -17,7 +16,7 @@ export function useTrackerGroupResolution() {
   const joinCameraTrackerMap = useMemo(() => {
     const map = new Map<number, { id: number; name: string }[]>();
     for (const t of trackerGroupings)
-      if (t.joinCamera && t.cameras.length > 0 && t.id === PAY_STATION_ID)
+      if (t.joinCamera && t.cameras.length > 0)
         map.set(t.id, t.cameras);
     return map;
   }, [trackerGroupings]);

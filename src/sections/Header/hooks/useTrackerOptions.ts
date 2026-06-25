@@ -2,9 +2,8 @@ import useTrackerGrouping from "../../../hooks/useTrackerGrouping";
 
 const useTrackerOptions = () => {
   const { trackers, isLoading } = useTrackerGrouping();
-  const PAY_STATION_ID = 8;
   const trackerOptions = trackers.map((t) =>
-    t.joinCamera && t.cameras.length > 0 && t.id === PAY_STATION_ID
+    t.joinCamera && t.cameras.length > 0 
       ? {
           value: String(t.id),
           title: t.name,
