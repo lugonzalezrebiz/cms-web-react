@@ -30,15 +30,15 @@ There is no test suite.
 
 Copy `.env` and set at minimum:
 
-| Variable | Purpose |
-|---|---|
-| `VITE_HOST` | Backend base URL (e.g. `https://cmsweb.rebiz.com/`) |
-| `VITE_URL_API` | API path or full URL, defaults to `/api/` |
-| `VITE_REVIEWER_ROLE` / `VITE_AGENT_ROLE` / `VITE_ADMIN_ROLE` | Role IDs decoded from the JWT |
-| `VITE_MONITORING_ID` | Default monitoring session for dev |
-| `VITE_USE_STATIC_IDS` | `true` to hard-code IDs instead of reading from URL params |
-| `VITE_ASSIGNMENT_COMPLETED` | Feature flag for completed-assignment UI |
-| `VITE_PASSWORD_VALIDATION` | Set to `false` to disable password strength rules |
+| Variable                                                     | Purpose                                                    |
+| ------------------------------------------------------------ | ---------------------------------------------------------- |
+| `VITE_HOST`                                                  | Backend base URL (e.g. `https://cmsweb.rebiz.com/`)        |
+| `VITE_URL_API`                                               | API path or full URL, defaults to `/api/`                  |
+| `VITE_REVIEWER_ROLE` / `VITE_AGENT_ROLE` / `VITE_ADMIN_ROLE` | Role IDs decoded from the JWT                              |
+| `VITE_MONITORING_ID`                                         | Default monitoring session for dev                         |
+| `VITE_USE_STATIC_IDS`                                        | `true` to hard-code IDs instead of reading from URL params |
+| `VITE_ASSIGNMENT_COMPLETED`                                  | Feature flag for completed-assignment UI                   |
+| `VITE_PASSWORD_VALIDATION`                                   | Set to `false` to disable password strength rules          |
 
 In Electron, `.env` is also loaded by the main process via `dotenv`; `DVR_BASE` controls where local DVR files are read from.
 
@@ -109,6 +109,7 @@ The `/monitor` route is the core feature. Key concepts:
 1. **`MonitorProvider`** (wraps the route) holds `cameraGroup` (which tracker grouping tab is active), `trackerOption`, and `customTrackerIDs` in context.
 
 2. **`useTrackerGroupResolution`** (`pages/Monitor/hooks/`) derives all filtering flags from `cameraGroup`:
+
    - `"tracker"` → tracker tab, filtered further by `trackerOption`
    - `"__custom__"` → user-defined set of tracker/camera IDs
    - `"cam_<id>"` → a specific camera from a join-camera tracker
@@ -129,6 +130,7 @@ The `/monitor` route is the core feature. Key concepts:
 ### Tracker grouping model
 
 `useTrackerGrouping` fetches `tracker/grouping/<companyID>/<locationID>`. Each item has:
+
 - `id` — tracker ID
 - `joinCamera: boolean` — if true, this tracker's cameras are shown as individual camera-group tabs rather than filtering by tracker ID
 - `cameras[]` — cameras belonging to a join-camera tracker

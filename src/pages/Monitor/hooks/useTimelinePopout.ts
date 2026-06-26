@@ -4,7 +4,8 @@ import { useSearchParams } from "react-router-dom";
 export const useTimelinePopout =(
   onMarkerChange: (sec: number) => void,
   markerTimeSec: number | null,
-  cameraGroup: string = "",
+  cameraGroup: string,
+  trackerOption: string,
 ) =>{
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
@@ -14,9 +15,13 @@ export const useTimelinePopout =(
   const onMarkerChangeRef = useRef(onMarkerChange);
   const markerTimeSecRef = useRef(markerTimeSec);
   const suppressSendRef = useRef(false);
+  const cameraGroupRef = useRef(cameraGroup);
+  const trackerOptionRef = useRef(trackerOption);
 
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; });
   useEffect(() => { markerTimeSecRef.current = markerTimeSec; }, [markerTimeSec]);
+  useEffect(() => { cameraGroupRef.current = cameraGroup; }, [cameraGroup]);
+  useEffect(() => { trackerOptionRef.current = trackerOption; }, [trackerOption]);
 
   useEffect(() => {
     if (!timelinePopped) return;
@@ -33,6 +38,11 @@ export const useTimelinePopout =(
         if (sec !== null) {
           channel.postMessage({ type: "marker", sec, source: "monitor" });
         }
+        channel.postMessage({
+          type: "filter",
+          cameraGroup: cameraGroupRef.current,
+          trackerOption: trackerOptionRef.current,
+        });
       }
     });
 
@@ -50,6 +60,11 @@ export const useTimelinePopout =(
     }
     channelRef.current?.postMessage({ type: "marker", sec: markerTimeSec, source: "monitor" });
   }, [markerTimeSec, timelinePopped]);
+
+  useEffect(() => {
+    if (!timelinePopped) return;
+    channelRef.current?.postMessage({ type: "filter", cameraGroup, trackerOption });
+  }, [cameraGroup, trackerOption, timelinePopped]);
 
   const handlePopOut = useCallback(() => {
     if (popoutRef.current && !popoutRef.current.closed) {

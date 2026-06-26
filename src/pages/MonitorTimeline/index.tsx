@@ -9,17 +9,19 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import useTrackers from "../../hooks/useTrackers";
 import { useMenuItems } from "../Monitor/hooks/useMenuItems";
+import { useDeleteEventPoint } from "../Monitor/hooks/useDeleteEventPoint";
+import { useEventPointsBroadcast } from "../Monitor/hooks/useEventPointsBroadcast";
 import { useBroadcastSync } from "./hooks/useBroadcastSync";
 
 const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
   const monitoringID = searchParams.get("monitoringID") ?? "";
-  const cameraGroup = searchParams.get("cameraGroup") ?? "";
-  const { trackers } = useTrackers();
+  const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const {
     snapshot,
     eventPoints: preloadedEventPoints,
     rangeSessions,
+    loading: isMonitoringLoading,
   } = useMonitoring(trackers, monitoringID);
 
   const {
@@ -28,6 +30,8 @@ const MonitorTimeline = () => {
     handleUpdateEventPoint,
     handleActivitySelect,
     handleRemoveEventPoint,
+    handleRegisterPreloadedDelete,
+    handleConvertToEditableLocal,
     handleUndo,
     handleRedo,
     canUndo,
@@ -35,21 +39,45 @@ const MonitorTimeline = () => {
     cleanUp,
   } = useCameraEventPoints(monitoringID);
 
-  const allEventPoints = [...cameraEventPoints, ...preloadedEventPoints];
+  const allEventPoints = useMemo(
+    () => [...cameraEventPoints, ...preloadedEventPoints],
+    [cameraEventPoints, preloadedEventPoints],
+  );
 
+  const { markerTimeSec, handleMarkerChange } = useTimelineMarker({
+    snapshot,
+    onMarkerChange: handleCameraMarkerChange,
+  });
+
+  const { broadcastMutation } = useEventPointsBroadcast(monitoringID);
+
+  const { handleDeleteEventPoint, handleConvertEventPoint } =
+    useDeleteEventPoint(
+      monitoringID,
+      allEventPoints,
+      handleRemoveEventPoint,
+      handleRegisterPreloadedDelete,
+      handleConvertToEditableLocal,
+      broadcastMutation,
+    );
+
+  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
+
+  const [targetSec, setTargetSec] = useState<number | undefined>(undefined);
+  const { cameraGroup, trackerOption } = useBroadcastSync(
+    markerTimeSec,
+    setTargetSec,
+  );
+
+  const isTrackerTab = cameraGroup === "tracker";
   const isDirectTracker =
-    cameraGroup !== "" && cameraGroup !== "0" && !isNaN(Number(cameraGroup));
+    !isTrackerTab &&
+    cameraGroup !== "" &&
+    cameraGroup !== "0" &&
+    !isNaN(Number(cameraGroup));
   const isCustomMode = cameraGroup === "__custom__";
 
-  const [customTrackerIDs, setCustomTrackerIDs] = useState<number[]>(() => {
-    if (!isCustomMode) return [];
-    try {
-      const saved = sessionStorage.getItem(`custom_tracker_group_${monitoringID}`);
-      return saved ? (JSON.parse(saved) as string[]).map(Number) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [customTrackerIDs, setCustomTrackerIDs] = useState<number[]>([]);
 
   useEffect(() => {
     if (!isCustomMode) return;
@@ -63,39 +91,32 @@ const MonitorTimeline = () => {
   }, [isCustomMode]);
 
   const filteredEventPoints = useMemo(() => {
+    if (isTrackerTab && trackerOption) {
+      const tracker = trackers.find((t) => t.id === Number(trackerOption));
+      if (tracker) return allEventPoints.filter((ep) => ep.label === tracker.name);
+    }
     if (isDirectTracker) {
       const tracker = trackers.find((t) => t.id === Number(cameraGroup));
-      if (!tracker) return allEventPoints;
-      return allEventPoints.filter((ep) => ep.label === tracker.name);
+      if (tracker) return allEventPoints.filter((ep) => ep.label === tracker.name);
     }
     if (isCustomMode && customTrackerIDs.length > 0) {
       const names = new Set(
-        trackers
-          .filter((t) => customTrackerIDs.includes(t.id))
-          .map((t) => t.name),
+        trackers.filter((t) => customTrackerIDs.includes(t.id)).map((t) => t.name),
       );
       return allEventPoints.filter((ep) => names.has(ep.label));
     }
     return allEventPoints;
-  }, [allEventPoints, isDirectTracker, isCustomMode, cameraGroup, customTrackerIDs, trackers]);
-
-  const { markerTimeSec, handleMarkerChange } = useTimelineMarker({
-    snapshot,
-    onMarkerChange: handleCameraMarkerChange,
-  });
-
-  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
+  }, [allEventPoints, isTrackerTab, trackerOption, isDirectTracker, isCustomMode, cameraGroup, customTrackerIDs, trackers]);
 
   const filteredMenuItems = useMemo(() => {
+    if (isTrackerTab && trackerOption)
+      return allMenuItems.filter((item) => item.id === Number(trackerOption));
     if (isDirectTracker)
       return allMenuItems.filter((item) => item.id === Number(cameraGroup));
     if (isCustomMode && customTrackerIDs.length > 0)
       return allMenuItems.filter((item) => customTrackerIDs.includes(item.id));
     return allMenuItems;
-  }, [allMenuItems, isDirectTracker, isCustomMode, cameraGroup, customTrackerIDs]);
-
-  const [targetSec, setTargetSec] = useState<number | undefined>(undefined);
-  useBroadcastSync(markerTimeSec, setTargetSec);
+  }, [allMenuItems, isTrackerTab, trackerOption, isDirectTracker, isCustomMode, cameraGroup, customTrackerIDs]);
 
   const sessionDate = useSessionDate();
   useSaveMonitoring({
@@ -115,7 +136,8 @@ const MonitorTimeline = () => {
         markerTimeSec={markerTimeSec}
         targetMarkerSec={targetSec}
         onUpdateEventPoint={handleUpdateEventPoint}
-        onRemoveEventPoint={handleRemoveEventPoint}
+        onRemoveEventPoint={handleDeleteEventPoint}
+        onConvertEventPointToLocal={handleConvertEventPoint}
         onUndo={handleUndo}
         onRedo={handleRedo}
         canUndo={canUndo}
@@ -126,6 +148,8 @@ const MonitorTimeline = () => {
         rangeSessions={rangeSessions}
         onPopOut={() => window.close()}
         expandedIcon={false}
+        loadState={isMonitoringLoading || isTrackersLoading}
+        rowsLoadState={isTrackersLoading}
       />
     </Box>
   );

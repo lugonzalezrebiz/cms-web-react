@@ -43,6 +43,7 @@ export const useTimestampIndex =(
     useEffect(() => {
         if (!company || !location || !date || camera === undefined) return;
         if (INDEX_CACHE.has(key)) return;
+        if (!('api' in window)) return;
         window.api
             .timestamps({ company, location, date, camera })
             .then((ts) => {
