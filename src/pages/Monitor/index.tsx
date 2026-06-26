@@ -23,6 +23,7 @@ import {
   useRegisterMonitorActions,
   useCameraGroup,
 } from "../../contexts/useMonitorContext";
+import { useEventPointsBroadcast } from "./hooks/useEventPointsBroadcast";
 import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 
 const Monitor = () => {
@@ -180,6 +181,8 @@ const Monitor = () => {
     [trackerMenuFilter, allExpandedCameraMenuItems],
   );
 
+  const { broadcastMutation } = useEventPointsBroadcast(monitoringID);
+
   const { handleDeleteEventPoint, handleConvertEventPoint } =
     useDeleteEventPoint(
       monitoringID,
@@ -187,6 +190,7 @@ const Monitor = () => {
       handleRemoveEventPoint,
       handleRegisterPreloadedDelete,
       handleConvertToEditableLocal,
+      broadcastMutation,
     );
 
   // const { transactions } = useSalesTransactions(monitoringID);
@@ -214,6 +218,8 @@ const Monitor = () => {
   const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
+    cameraGroup,
+    trackerOption ?? "",
   );
 
   const sessionDate = useSessionDate();

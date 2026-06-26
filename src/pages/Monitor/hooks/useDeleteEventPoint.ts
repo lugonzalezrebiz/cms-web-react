@@ -26,6 +26,7 @@ export const useDeleteEventPoint = (
   handleRemoveEventPoint: (id: number) => void,
   handleRegisterPreloadedDelete: (point: CameraEventPoint) => void,
   handleConvertToLocal: (point: CameraEventPoint) => number,
+  onMutated?: () => void,
 ) => {
   const deleteCallback = useDeleteCallback();
   const queryClient = useQueryClient();
@@ -62,6 +63,7 @@ export const useDeleteEventPoint = (
       handleRegisterPreloadedDelete(target);
       removeFromCache(target.entryIds);
       await deleteCallback(`tracker/${monitoringID}/bulk`, { ids: target.entryIds });
+      onMutated?.();
     } else {
       handleRemoveEventPoint(id);
     }
@@ -75,7 +77,9 @@ export const useDeleteEventPoint = (
     if (target.entryIds?.length) {
       const newId = handleConvertToLocal(target);
       removeFromCache(target.entryIds);
-      void deleteCallback(`tracker/${monitoringID}/bulk`, { ids: target.entryIds });
+      void deleteCallback(`tracker/${monitoringID}/bulk`, { ids: target.entryIds }).then(() =>
+        onMutated?.(),
+      );
       return newId;
     }
     return target.id;

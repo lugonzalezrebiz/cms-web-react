@@ -19,3 +19,8 @@ docker-compose.yml
 
 release
 cmsweb-app-react.zip
+
+# Playwright
+e2e/.auth/
+playwright-report/
+test-results/
