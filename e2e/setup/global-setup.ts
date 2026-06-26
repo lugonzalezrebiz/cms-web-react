@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test';
 
 const authFile = 'e2e/.auth/user.json';
 
-setup('autenticar usuario', async ({ page }) => {
+setup('authenticate user', async ({ page }) => {
   await page.goto('/');
   await page.locator('#username').fill(process.env.VITE_TEST_USER ?? '');
   await page.locator('#password').fill(process.env.VITE_TEST_PASS ?? '');

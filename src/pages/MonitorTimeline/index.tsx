@@ -51,19 +51,23 @@ const MonitorTimeline = () => {
 
   const { broadcastMutation } = useEventPointsBroadcast(monitoringID);
 
-  const { handleDeleteEventPoint, handleConvertEventPoint } = useDeleteEventPoint(
-    monitoringID,
-    allEventPoints,
-    handleRemoveEventPoint,
-    handleRegisterPreloadedDelete,
-    handleConvertToEditableLocal,
-    broadcastMutation,
-  );
+  const { handleDeleteEventPoint, handleConvertEventPoint } =
+    useDeleteEventPoint(
+      monitoringID,
+      allEventPoints,
+      handleRemoveEventPoint,
+      handleRegisterPreloadedDelete,
+      handleConvertToEditableLocal,
+      broadcastMutation,
+    );
 
   const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
 
   const [targetSec, setTargetSec] = useState<number | undefined>(undefined);
-  const { cameraGroup, trackerOption } = useBroadcastSync(markerTimeSec, setTargetSec);
+  const { cameraGroup, trackerOption } = useBroadcastSync(
+    markerTimeSec,
+    setTargetSec,
+  );
 
   const isTrackerTab = cameraGroup === "tracker";
 
