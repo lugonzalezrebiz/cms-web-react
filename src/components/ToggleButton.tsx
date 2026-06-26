@@ -33,7 +33,6 @@ interface ToggleButtonProps {
   setValue: (value: string) => void;
   label: string;
   groups: GroupItem[];
-  selectValue?: string;
   onCustomClick?: () => void;
   customCreated?: boolean;
 }
@@ -118,7 +117,6 @@ const ToggleButton = ({
   setValue,
   label,
   groups,
-  selectValue,
   onCustomClick,
   customCreated = false,
 }: ToggleButtonProps) => {
@@ -194,7 +192,9 @@ const ToggleButton = ({
                     group.selectOnClick
                       ? (e) => {
                           e.stopPropagation();
-                          const btn = (e.currentTarget as Element).closest("button");
+                          const btn = (e.currentTarget as Element).closest(
+                            "button",
+                          );
                           setAnchorEl(btn ?? e.currentTarget);
                           setActiveGroupValue(group.value);
                         }
@@ -244,7 +244,7 @@ const ToggleButton = ({
           activeGroup.options.map((option) => (
             <MenuItem
               key={option.value}
-              selected={selectValue === option.value}
+              selected={value === option.value}
               onClick={() => {
                 setValue(option.value);
                 handleClose();
@@ -262,12 +262,12 @@ const ToggleButton = ({
                 minHeight: 0,
                 height: "31px",
                 "&.Mui-selected": {
-                  color: Colors.white,
-                  backgroundColor: Colors.vividOrange,
+                  color: Colors.vividOrange,
+                  backgroundColor: Colors.transparentVividOrange,
                 },
                 "&.Mui-selected:hover": {
-                  color: Colors.white,
-                  backgroundColor: Colors.vividOrange,
+                  color: Colors.vividOrange,
+                  backgroundColor: "rgba(0,0,0,0.04)",
                 },
               }}
             >

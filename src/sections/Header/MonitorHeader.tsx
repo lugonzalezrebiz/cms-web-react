@@ -207,15 +207,15 @@ const MonitorHeader = ({
   }, [monitoringID, setCustomTrackerIDs]);
   const { trackerOptions } = useTrackerOptions();
 
-  useEffect(() => {
-    if (cameraGroup === "tracker" && trackerOptions.length > 0) {
-      setCameraGroup(trackerOptions[0].value);
-    }
-  }, [cameraGroup, trackerOptions, setCameraGroup]);
-
   const allGroups = [...trackerOptions].sort(
     (a, b) => (b.options ? 1 : 0) - (a.options ? 1 : 0),
   );
+
+  useEffect(() => {
+    if (cameraGroup === "tracker" && allGroups.length > 0) {
+      setCameraGroup(allGroups[0].value);
+    }
+  }, [cameraGroup, allGroups, setCameraGroup]);
   const overflowGroups = allGroups.slice(MAX_VISIBLE);
   const cameraGroups = [
     ...allGroups.slice(0, MAX_VISIBLE),

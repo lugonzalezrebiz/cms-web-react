@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import useAssignments from "../../hooks/useAssignments";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout, { TAG_TOLERANCE_SEC } from "../../components/CameraLayout";
@@ -28,7 +28,10 @@ import { useFilteredMenuItems } from "./hooks/useFilteredMenuItems";
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
-  const { assignments } = useAssignments({ companyID: company, locationID: location });
+  const { assignments } = useAssignments({
+    companyID: company,
+    locationID: location,
+  });
   const currentAssignment = assignments.find(
     (a) => a.monitoringID === monitoringID,
   );
@@ -51,7 +54,6 @@ const Monitor = () => {
     isDirectTracker,
     singleTrackerID,
   } = useTrackerGroupResolution();
-
 
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
@@ -104,31 +106,32 @@ const Monitor = () => {
     cameraToJoinTrackerMap,
   });
 
-  const [debouncedMarkerSec, setDebouncedMarkerSec] = useState(markerSec);
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedMarkerSec(markerSec), 250);
-    return () => clearTimeout(t);
-  }, [markerSec]);
-
+  const cameraGroupKey = `${cameraGroup}-${trackerOption ?? ""}`;
+  const [prevCameraGroupKey, setPrevCameraGroupKey] = useState(cameraGroupKey);
   const [isCameraReloading, setIsCameraReloading] = useState(false);
-  useEffect(() => {
+
+  if (prevCameraGroupKey !== cameraGroupKey) {
+    setPrevCameraGroupKey(cameraGroupKey);
     setIsCameraReloading(true);
-    const t = setTimeout(() => setIsCameraReloading(false), 400);
-    return () => clearTimeout(t);
-  }, [cameraGroup, trackerOption]);
+  }
 
   const activeCameras = useMemo(() => {
-    if (isJoinCameraTracker) {
-      const cameraIds = new Set((joinCameraTrackerMap.get(cameraGroupNum) ?? []).map((c) => c.id));
-      return monitoringCameras.filter((cam) => cameraIds.has(cam.id));
-    }
-    return monitoringCameras.filter((camera) =>
+    const candidateCameras = isJoinCameraTracker
+      ? (() => {
+          const cameraIds = new Set(
+            (joinCameraTrackerMap.get(cameraGroupNum) ?? []).map((c) => c.id),
+          );
+          return monitoringCameras.filter((cam) => cameraIds.has(cam.id));
+        })()
+      : monitoringCameras;
+
+    return candidateCameras.filter((camera) =>
       filteredEventPoints.some((ep) => {
         if (ep.cameraId !== camera.id) return false;
         const hasRange = ep.endSec > ep.startSec;
         if (hasRange)
-          return debouncedMarkerSec >= ep.timeSec - 60 && debouncedMarkerSec <= ep.endSec + 60;
-        return Math.abs(debouncedMarkerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
+          return markerSec >= ep.timeSec - 60 && markerSec <= ep.endSec + 60;
+        return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
       }),
     );
   }, [
@@ -137,13 +140,19 @@ const Monitor = () => {
     cameraGroupNum,
     monitoringCameras,
     filteredEventPoints,
-    debouncedMarkerSec,
+    markerSec,
   ]);
 
   const sortedCameras = useMemo(
     () => [...activeCameras].sort((a, b) => a.id - b.id),
     [activeCameras],
   );
+
+  useEffect(() => {
+    if (!isCameraReloading) return;
+    const t = setTimeout(() => setIsCameraReloading(false), 400);
+    return () => clearTimeout(t);
+  }, [isCameraReloading]);
 
   const expandedCameraIdRef = useRef<number | null>(null);
 
@@ -158,7 +167,11 @@ const Monitor = () => {
 
   useEffect(() => {
     const isFiltered =
-      isDirectTracker || isJoinCameraTracker || isJoinCameraSpecific || isCustomMode || (isTrackerTab && !!trackerOption);
+      isDirectTracker ||
+      isJoinCameraTracker ||
+      isJoinCameraSpecific ||
+      isCustomMode ||
+      (isTrackerTab && !!trackerOption);
     if (!isFiltered || expandedCamera === null) return;
     const id = expandedCameraIdRef.current;
     if (id !== null && !activeCameras.some((c) => c.id === id)) {
@@ -176,13 +189,28 @@ const Monitor = () => {
     handleExpandCamera,
   ]);
 
+  const handleActivitySelectGuarded = useCallback(
+    (cameraId: number, activityLabel: string, mode: "POINT" | "RANGE" = "POINT") => {
+      const hasDuplicate = allEventPoints.some(
+        (ep) =>
+          ep.cameraId === cameraId &&
+          ep.label === activityLabel &&
+          ep.timeSec === markerSec &&
+          ep.reviewed,
+      );
+      if (hasDuplicate) return;
+      handleActivitySelect(cameraId, activityLabel, mode);
+    },
+    [allEventPoints, handleActivitySelect, markerSec],
+  );
+
   const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
     openMenuCamera !== null
       ? (sortedCameras[openMenuCamera]?.id ?? null)
       : null,
-    handleActivitySelect,
+    handleActivitySelectGuarded,
   );
   const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
@@ -190,12 +218,15 @@ const Monitor = () => {
     expandedCamera !== null
       ? (sortedCameras[expandedCamera]?.id ?? null)
       : null,
-    handleActivitySelect,
+    handleActivitySelectGuarded,
   );
 
   const trackerMenuFilter = useMemo(
     () => (items: typeof allCameraMenuItems) => {
-      if (singleTrackerID && (isDirectTracker || isJoinCameraTracker || isJoinCameraSpecific))
+      if (
+        singleTrackerID &&
+        (isDirectTracker || isJoinCameraTracker || isJoinCameraSpecific)
+      )
         return items.filter((item) => item.id === singleTrackerID);
       if (isCustomMode && customTrackerIDs.length > 0) {
         const trackerIds = new Set<number>();
@@ -213,7 +244,17 @@ const Monitor = () => {
         return items.filter((item) => item.id === Number(trackerOption));
       return items;
     },
-    [isDirectTracker, isJoinCameraTracker, isJoinCameraSpecific, singleTrackerID, isCustomMode, customTrackerIDs, cameraToJoinTrackerMap, isTrackerTab, trackerOption],
+    [
+      isDirectTracker,
+      isJoinCameraTracker,
+      isJoinCameraSpecific,
+      singleTrackerID,
+      isCustomMode,
+      customTrackerIDs,
+      cameraToJoinTrackerMap,
+      isTrackerTab,
+      trackerOption,
+    ],
   );
 
   const cameraMenuItems = useMemo(
@@ -241,7 +282,9 @@ const Monitor = () => {
 
   const { timestamp, setTimestamp } = useMarkerState();
 
-  const timelineStartSec = timeStringToSec(snapshot?.timeline?.times?.start ?? "00:00:00");
+  const timelineStartSec = timeStringToSec(
+    snapshot?.timeline?.times?.start ?? "00:00:00",
+  );
 
   const trackerTargetSec = useMemo(() => {
     if (!isTrackerTab || !trackerOption) return timelineStartSec;
@@ -250,11 +293,15 @@ const Monitor = () => {
       .sort((a, b) => a.timeSec - b.timeSec)[0]?.timeSec;
   }, [isTrackerTab, trackerOption, filteredEventPoints, timelineStartSec]);
 
-  const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<number | undefined>(undefined);
+  const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<
+    number | undefined
+  >(undefined);
 
   useEffect(() => {
     if (isTrackerTab) return;
-    const first = [...filteredEventPoints].sort((a, b) => a.timeSec - b.timeSec)[0];
+    const first = [...filteredEventPoints].sort(
+      (a, b) => a.timeSec - b.timeSec,
+    )[0];
     setCameraGroupTargetSec(first?.timeSec);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraGroup]);
@@ -273,6 +320,7 @@ const Monitor = () => {
     markerTimeSec,
     cameraGroup,
     trackerOption ?? "",
+    customTrackerIDs,
   );
 
   const sessionDate = useSessionDate();
@@ -310,7 +358,9 @@ const Monitor = () => {
       cameraEventPoints: filteredEventPoints,
       onMarkerChange: handleMarkerChange,
       markerTimeSec,
-      targetMarkerSec: restoreMarkerSec ?? (isTrackerTab ? trackerTargetSec : cameraGroupTargetSec),
+      targetMarkerSec:
+        restoreMarkerSec ??
+        (isTrackerTab ? trackerTargetSec : cameraGroupTargetSec),
       onUpdateEventPoint: handleUpdateEventPoint,
       onPopOut: handlePopOut,
       headerLabel: "Compliance Violations" as const,
@@ -395,7 +445,11 @@ const Monitor = () => {
         gap: 1,
       }}
     >
-      <Box mt={"10px"} sx={{ flex: 9, minHeight: 0, height: 0 }}>
+      <Box
+        mt={"10px"}
+        mb={timelinePopped ? "10px" : "0"}
+        sx={{ flex: 9, minHeight: 0, height: 0 }}
+      >
         <CameraLayout
           key={`${cameraGroup}-${trackerOption ?? ""}`}
           count={activeCameras.length}

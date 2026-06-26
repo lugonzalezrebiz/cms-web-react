@@ -36,7 +36,7 @@ const CameraLayout = ({
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
   const { renderedCameras, exitingIds, skipAnimation } = useExitingCameras(
-    cameras,
+    loadState ? undefined : cameras,
     count,
     TRANSITION_MS,
   );

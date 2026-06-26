@@ -26,13 +26,6 @@ interface Props {
   monitoringID: string;
 }
 
-const abbrev = (name: string) =>
-  name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
 const CustomTrackerDialog = ({
   open,
   onClose,
@@ -113,14 +106,6 @@ const CustomTrackerDialog = ({
     onClose();
   };
 
-  const uniqueTrackerCount = useMemo(() => {
-    const trackers = new Set<string>();
-    for (const id of selected) {
-      const parent = camToParent.get(id);
-      trackers.add(parent ?? id);
-    }
-    return trackers.size;
-  }, [selected, camToParent]);
 
   return (
     <FormDialog
@@ -152,7 +137,6 @@ const CustomTrackerDialog = ({
         >
           {groups.flatMap((g) => {
             if (g.options?.length) {
-              const prefix = abbrev(g.title);
               return g.options.map((opt) => {
                 const enabled =
                   isEnabled(opt.value) || selected.includes(opt.value);
@@ -166,7 +150,7 @@ const CustomTrackerDialog = ({
                     }}
                   >
                     <TickBox
-                      label={`${prefix} (${opt.title})`}
+                      label={`${g.title} (${opt.title})`}
                       checked={selected.includes(opt.value)}
                       disabled={!enabled}
                       onChange={() => handleToggleFlat(opt.value)}
@@ -217,7 +201,7 @@ const CustomTrackerDialog = ({
           </Button>
           <Button
             fontSize="14px"
-            disabled={uniqueTrackerCount < 2}
+            disabled={selected.length < 2}
             onClick={handleCreate}
           >
             Create Custom Tracker Group

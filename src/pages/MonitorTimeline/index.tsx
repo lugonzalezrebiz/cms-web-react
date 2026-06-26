@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Box } from "@mui/system";
 import TimeLine from "../../components/TimeLine";
@@ -8,7 +8,9 @@ import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMa
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import useTrackers from "../../hooks/useTrackers";
-import { useMenuItems } from "../Monitor/hooks/useMenuItems";
+import useTrackerGrouping from "../../hooks/useTrackerGrouping";
+import { useFilteredEventPoints } from "../Monitor/hooks/useFilteredEventPoints";
+import { useFilteredMenuItems } from "../Monitor/hooks/useFilteredMenuItems";
 import { useDeleteEventPoint } from "../Monitor/hooks/useDeleteEventPoint";
 import { useEventPointsBroadcast } from "../Monitor/hooks/useEventPointsBroadcast";
 import { useBroadcastSync } from "./hooks/useBroadcastSync";
@@ -17,6 +19,7 @@ const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
   const monitoringID = searchParams.get("monitoringID") ?? "";
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
+  const { trackers: trackerGroupings } = useTrackerGrouping();
   const {
     snapshot,
     eventPoints: preloadedEventPoints,
@@ -61,62 +64,121 @@ const MonitorTimeline = () => {
       broadcastMutation,
     );
 
-  const { allMenuItems } = useMenuItems(trackers, handleActivitySelect);
-
   const [targetSec, setTargetSec] = useState<number | undefined>(undefined);
-  const { cameraGroup, trackerOption } = useBroadcastSync(
+  const { cameraGroup, trackerOption, customTrackerIDs } = useBroadcastSync(
     markerTimeSec,
     setTargetSec,
   );
 
+  // Reset broadcast target when filter changes so auto-pan fires immediately
+  const prevCameraGroupRef = useRef(cameraGroup);
+  if (prevCameraGroupRef.current !== cameraGroup) {
+    prevCameraGroupRef.current = cameraGroup;
+    if (targetSec !== undefined) setTargetSec(undefined);
+  }
+
+  // Tracker resolution (mirrors useTrackerGroupResolution but using broadcast state)
   const isTrackerTab = cameraGroup === "tracker";
+  const isCustomMode = cameraGroup === "__custom__";
+  const isCameraGroup = cameraGroup.startsWith("cam_");
+  const cameraSpecificId = isCameraGroup ? Number(cameraGroup.slice(4)) : NaN;
+  const cameraGroupNum = isCameraGroup ? NaN : Number(cameraGroup);
+
+  const joinCameraTrackerMap = useMemo(() => {
+    const map = new Map<number, { id: number; name: string }[]>();
+    for (const t of trackerGroupings)
+      if (t.joinCamera && t.cameras.length > 0) map.set(t.id, t.cameras);
+    return map;
+  }, [trackerGroupings]);
+
+  const cameraToJoinTrackerMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const [trackerId, cameras] of joinCameraTrackerMap)
+      for (const cam of cameras) map.set(cam.id, trackerId);
+    return map;
+  }, [joinCameraTrackerMap]);
+
+  const isJoinCameraTracker =
+    !isNaN(cameraGroupNum) && joinCameraTrackerMap.has(cameraGroupNum);
+  const isJoinCameraSpecific =
+    isCameraGroup &&
+    !isNaN(cameraSpecificId) &&
+    cameraToJoinTrackerMap.has(cameraSpecificId);
   const isDirectTracker =
-    !isTrackerTab &&
+    !isCameraGroup &&
     cameraGroup !== "" &&
     cameraGroup !== "0" &&
-    !isNaN(Number(cameraGroup));
-  const isCustomMode = cameraGroup === "__custom__";
+    !isNaN(cameraGroupNum) &&
+    !isJoinCameraTracker;
 
-  const [customTrackerIDs, setCustomTrackerIDs] = useState<number[]>([]);
+  const singleTrackerID = isDirectTracker
+    ? cameraGroupNum
+    : isJoinCameraSpecific
+      ? (cameraToJoinTrackerMap.get(cameraSpecificId) ?? 0)
+      : isJoinCameraTracker
+        ? cameraGroupNum
+        : isTrackerTab && trackerOption
+          ? Number(trackerOption)
+          : 0;
+
+  const filteredEventPoints = useFilteredEventPoints({
+    allEventPoints,
+    trackerGroupings,
+    trackers,
+    isJoinCameraTracker,
+    isJoinCameraSpecific,
+    isDirectTracker,
+    isCustomMode,
+    isTrackerTab,
+    cameraGroupNum,
+    cameraSpecificId,
+    singleTrackerID,
+    customTrackerIDs,
+    trackerOption,
+    joinCameraTrackerMap,
+    cameraToJoinTrackerMap,
+  });
+
+  const filteredMenuItems = useFilteredMenuItems({
+    trackers,
+    trackerGroupings,
+    handleActivitySelect,
+    isJoinCameraTracker,
+    isJoinCameraSpecific,
+    isDirectTracker,
+    isCustomMode,
+    isTrackerTab,
+    cameraGroupNum,
+    cameraSpecificId,
+    singleTrackerID,
+    customTrackerIDs,
+    trackerOption,
+    joinCameraTrackerMap,
+    cameraToJoinTrackerMap,
+  });
+
+  // Auto-pan targets — same logic as Monitor/index.tsx
+  const trackerTargetSec = useMemo(() => {
+    if (!isTrackerTab || !trackerOption) return undefined;
+    return filteredEventPoints
+      .filter((ep) => !ep.reviewed)
+      .sort((a, b) => a.timeSec - b.timeSec)[0]?.timeSec;
+  }, [isTrackerTab, trackerOption, filteredEventPoints]);
+
+  const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<
+    number | undefined
+  >(undefined);
 
   useEffect(() => {
-    if (!isCustomMode) return;
-    const channel = new BroadcastChannel("timeline-sync");
-    channel.addEventListener("message", (e: MessageEvent) => {
-      if (e.data?.type === "custom-group") {
-        setCustomTrackerIDs(e.data.ids as number[]);
-      }
-    });
-    return () => channel.close();
-  }, [isCustomMode]);
+    if (isTrackerTab) return;
+    const first = [...filteredEventPoints].sort(
+      (a, b) => a.timeSec - b.timeSec,
+    )[0];
+    setCameraGroupTargetSec(first?.timeSec);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraGroup]);
 
-  const filteredEventPoints = useMemo(() => {
-    if (isTrackerTab && trackerOption) {
-      const tracker = trackers.find((t) => t.id === Number(trackerOption));
-      if (tracker) return allEventPoints.filter((ep) => ep.label === tracker.name);
-    }
-    if (isDirectTracker) {
-      const tracker = trackers.find((t) => t.id === Number(cameraGroup));
-      if (tracker) return allEventPoints.filter((ep) => ep.label === tracker.name);
-    }
-    if (isCustomMode && customTrackerIDs.length > 0) {
-      const names = new Set(
-        trackers.filter((t) => customTrackerIDs.includes(t.id)).map((t) => t.name),
-      );
-      return allEventPoints.filter((ep) => names.has(ep.label));
-    }
-    return allEventPoints;
-  }, [allEventPoints, isTrackerTab, trackerOption, isDirectTracker, isCustomMode, cameraGroup, customTrackerIDs, trackers]);
-
-  const filteredMenuItems = useMemo(() => {
-    if (isTrackerTab && trackerOption)
-      return allMenuItems.filter((item) => item.id === Number(trackerOption));
-    if (isDirectTracker)
-      return allMenuItems.filter((item) => item.id === Number(cameraGroup));
-    if (isCustomMode && customTrackerIDs.length > 0)
-      return allMenuItems.filter((item) => customTrackerIDs.includes(item.id));
-    return allMenuItems;
-  }, [allMenuItems, isTrackerTab, trackerOption, isDirectTracker, isCustomMode, cameraGroup, customTrackerIDs]);
+  const autoTargetSec = isTrackerTab ? trackerTargetSec : cameraGroupTargetSec;
 
   const sessionDate = useSessionDate();
   useSaveMonitoring({
@@ -134,7 +196,7 @@ const MonitorTimeline = () => {
         cameraEventPoints={filteredEventPoints}
         onMarkerChange={handleMarkerChange}
         markerTimeSec={markerTimeSec}
-        targetMarkerSec={targetSec}
+        targetMarkerSec={targetSec ?? autoTargetSec}
         onUpdateEventPoint={handleUpdateEventPoint}
         onRemoveEventPoint={handleDeleteEventPoint}
         onConvertEventPointToLocal={handleConvertEventPoint}

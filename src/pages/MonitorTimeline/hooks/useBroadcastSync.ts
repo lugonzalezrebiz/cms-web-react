@@ -11,6 +11,7 @@ export const useBroadcastSync = (
 
   const [cameraGroup, setCameraGroup] = useState("0");
   const [trackerOption, setTrackerOption] = useState("");
+  const [customTrackerIDs, setCustomTrackerIDs] = useState<string[]>([]);
 
   useEffect(() => {
     const channel = new BroadcastChannel("timeline-sync");
@@ -23,6 +24,9 @@ export const useBroadcastSync = (
       if (e.data?.type === "filter") {
         setCameraGroup(e.data.cameraGroup as string);
         setTrackerOption(e.data.trackerOption as string);
+        if (Array.isArray(e.data.customTrackerIDs)) {
+          setCustomTrackerIDs(e.data.customTrackerIDs as string[]);
+        }
       }
     });
     channel.postMessage({ type: "request-sync" });
@@ -41,5 +45,5 @@ export const useBroadcastSync = (
     channelRef.current.postMessage({ type: "marker", sec: markerTimeSec, source: "popout" });
   }, [markerTimeSec]);
 
-  return { cameraGroup, trackerOption };
+  return { cameraGroup, trackerOption, customTrackerIDs };
 };

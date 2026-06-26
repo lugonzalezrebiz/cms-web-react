@@ -98,6 +98,7 @@ const TimeLine = ({
     setPanOffsetSec: state.setPanOffsetSec,
     visibleDuration: state.visibleDuration,
     totalSec: state.totalSec,
+    panOffsetSec: state.panOffsetSec,
   });
 
   useAutoSelectOnEventPoint({
