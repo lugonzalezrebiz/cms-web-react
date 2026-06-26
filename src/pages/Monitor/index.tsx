@@ -23,6 +23,7 @@ import {
   useRegisterMonitorActions,
   useCameraGroup,
 } from "../../contexts/useMonitorContext";
+import { useEventPointsBroadcast } from "./hooks/useEventPointsBroadcast";
 import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 
 const Monitor = () => {
@@ -36,6 +37,17 @@ const Monitor = () => {
   const timeEnd = currentAssignment?.close ?? null;
 
   const { cameraGroup, trackerOption } = useCameraGroup();
+  const [prevTrackerOption, setPrevTrackerOption] = useState(trackerOption);
+  const [isTrackerSwitching, setIsTrackerSwitching] = useState(false);
+  if (prevTrackerOption !== trackerOption) {
+    setPrevTrackerOption(trackerOption);
+    if (trackerOption) setIsTrackerSwitching(true);
+  }
+  useEffect(() => {
+    if (!isTrackerSwitching) return;
+    const t = setTimeout(() => setIsTrackerSwitching(false), 300);
+    return () => clearTimeout(t);
+  }, [isTrackerSwitching]);
   const isTrackerTab = cameraGroup === "tracker";
   const groupID =
     cameraGroup !== "0" && !isTrackerTab ? Number(cameraGroup) : 0;
@@ -169,6 +181,8 @@ const Monitor = () => {
     [trackerMenuFilter, allExpandedCameraMenuItems],
   );
 
+  const { broadcastMutation } = useEventPointsBroadcast(monitoringID);
+
   const { handleDeleteEventPoint, handleConvertEventPoint } =
     useDeleteEventPoint(
       monitoringID,
@@ -176,6 +190,7 @@ const Monitor = () => {
       handleRemoveEventPoint,
       handleRegisterPreloadedDelete,
       handleConvertToEditableLocal,
+      broadcastMutation,
     );
 
   // const { transactions } = useSalesTransactions(monitoringID);
@@ -203,6 +218,8 @@ const Monitor = () => {
   const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
+    cameraGroup,
+    trackerOption ?? "",
   );
 
   const sessionDate = useSessionDate();
@@ -337,7 +354,7 @@ const Monitor = () => {
           timestamp={timestamp}
           expandedCamera={expandedCamera}
           onExpandCamera={handleExpandCamera}
-          loadState={isCamerasLoading}
+          loadState={isCamerasLoading || isTrackerSwitching}
         />
       </Box>
 

@@ -96,13 +96,12 @@ export const CameraRow = ({
     sx={{
       display: "flex",
       gap: `${GAP}px`,
-      justifyContent: "center",
       minHeight: 0,
       overflow: "hidden",
       ...(rowHeight !== undefined && { height: rowHeight, flexShrink: 0 }),
     }}
   >
-    {Array.from({ length: rowCount }, (_, colIndex) => (
+    {Array.from({ length: maxCols }, (_, colIndex) => (
       <CameraRowCell
         key={colIndex}
         colIndex={colIndex}

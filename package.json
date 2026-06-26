@@ -13,7 +13,9 @@
 		"electron:build": "electron-vite build",
 		"electron:preview": "electron-vite preview",
 		"pack": "npm run electron:build && electron-builder --dir",
-		"dist": "npm run electron:build && electron-builder"
+		"dist": "npm run electron:build && electron-builder",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui"
 	},
 	"build": {
 		"appId": "com.rebiz.cmsweb",
@@ -31,13 +33,19 @@
 			"!**/node_modules/.cache/**"
 		],
 		"asar": true,
-		"mac": { "icon": "icons/darwin/icon.icns" },
+		"mac": {
+			"icon": "icons/darwin/icon.icns"
+		},
 		"win": {
-			"target": ["nsis"],
+			"target": [
+				"nsis"
+			],
 			"icon": "icons/win32/icon.ico",
 			"forceCodeSigning": false
 		},
-		"linux": { "icon": "icons/web/icon.png" },
+		"linux": {
+			"icon": "icons/web/icon.png"
+		},
 		"nsis": {
 			"oneClick": false,
 			"allowToChangeInstallationDirectory": true,
@@ -76,6 +84,7 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.1",
+		"@playwright/test": "^1.61.1",
 		"@types/electron": "^1.4.38",
 		"@types/node": "^24.10.1",
 		"@types/react": "^19.2.7",

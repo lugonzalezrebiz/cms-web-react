@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext, type DecodedToken } from "./AuthContextDef";
 import { crashLogger } from "../services/CrashLogger";
+import { apiClient } from "../config/apiClient";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setTokenState] = useState<string | null>(() =>
@@ -35,6 +36,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem("token");
     setTokenState(null);
   };
+
+  useEffect(() => {
+    const interceptorId = apiClient.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error?.response?.status === 401) logout();
+        return Promise.reject(error);
+      },
+    );
+    return () => apiClient.interceptors.response.eject(interceptorId);
+  }, [logout]);
 
   return (
     <AuthContext.Provider
