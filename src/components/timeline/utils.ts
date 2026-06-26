@@ -1,3 +1,6 @@
+export const assetUrl = (name: string): string =>
+  window.location.protocol === "file:" ? `./assets/${name}` : `/assets/${name}`;
+
 export const secToTimeString = (sec: number): string => {
   const h = Math.floor(sec / 3600).toString().padStart(2, "0");
   const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");
