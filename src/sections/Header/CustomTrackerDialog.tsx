@@ -27,7 +27,11 @@ interface Props {
 }
 
 const abbrev = (name: string) =>
-  name.split(/\s+/).map((w) => w[0]).join("").toUpperCase();
+  name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 
 const CustomTrackerDialog = ({
   open,
@@ -60,15 +64,15 @@ const CustomTrackerDialog = ({
     const map = new Map<string, string>();
     for (const g of groups)
       if (g.options?.length)
-        for (const opt of g.options)
-          map.set(opt.value, g.value);
+        for (const opt of g.options) map.set(opt.value, g.value);
     return map;
   }, [groups]);
 
   const anchorId = selected[0];
   const anchorCameras = useMemo(() => {
     if (!anchorId) return null;
-    if (anchorId.startsWith("cam_")) return new Set([Number(anchorId.slice(4))]);
+    if (anchorId.startsWith("cam_"))
+      return new Set([Number(anchorId.slice(4))]);
     return trackerCameraMap.get(anchorId) ?? null;
   }, [anchorId, trackerCameraMap]);
 
@@ -83,39 +87,8 @@ const CustomTrackerDialog = ({
       ? new Set([Number(value.slice(4))])
       : trackerCameraMap.get(value);
     if (!cams) return false;
-    for (const cam of cams)
-      if (anchorCameras.has(cam)) return true;
+    for (const cam of cams) if (anchorCameras.has(cam)) return true;
     return false;
-  };
-
-  const handleToggleParent = (group: GroupItem) => {
-    const childValues = group.options?.map((o) => o.value) ?? [];
-    setSelected((prev) => {
-      const hasParent = prev.includes(group.value);
-      const hasChildren = childValues.some((v) => prev.includes(v));
-      if (hasParent || hasChildren) {
-        // deselect parent and all children
-        return prev.filter((v) => v !== group.value && !childValues.includes(v));
-      }
-      // select parent (both cameras), remove any stale children
-      return [...prev.filter((v) => !childValues.includes(v)), group.value];
-    });
-  };
-
-  const handleToggleChild = (childValue: string, parentValue: string, siblingValues: string[]) => {
-    if (!isEnabled(childValue)) return;
-    setSelected((prev) => {
-      const parentWasSelected = prev.includes(parentValue);
-      const withoutParent = prev.filter((v) => v !== parentValue);
-      if (parentWasSelected) {
-        // expand parent to all siblings except the clicked one
-        const otherSiblings = siblingValues.filter((v) => v !== childValue);
-        return [...withoutParent, ...otherSiblings];
-      }
-      return withoutParent.includes(childValue)
-        ? withoutParent.filter((v) => v !== childValue)
-        : [...withoutParent, childValue];
-    });
   };
 
   const handleToggleFlat = (val: string) => {
@@ -169,50 +142,46 @@ const CustomTrackerDialog = ({
       </Box>
 
       <CustomScrollbarY height="200px" sx={{ mt: "16px", mb: "40px" }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
-          {groups.map((g) => {
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+            width: "100%",
+          }}
+        >
+          {groups.flatMap((g) => {
             if (g.options?.length) {
-              const childValues = g.options.map((o) => o.value);
-              const parentSelected = selected.includes(g.value);
-              const selectedChildren = childValues.filter((v) => selected.includes(v));
-              const allChildrenSelected = selectedChildren.length === childValues.length;
-              const someChildrenSelected = selectedChildren.length > 0;
-              const isParentEnabled = isEnabled(g.value) || someChildrenSelected || parentSelected;
               const prefix = abbrev(g.title);
-
-              return (
-                <Box key={g.value}>
-                  <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+              return g.options.map((opt) => {
+                const enabled =
+                  isEnabled(opt.value) || selected.includes(opt.value);
+                return (
+                  <Box
+                    key={opt.value}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
                     <TickBox
-                      label={`${g.title}`}
-                      checked={parentSelected || allChildrenSelected}
-                      indeterminate={!parentSelected && someChildrenSelected && !allChildrenSelected}
-                      disabled={!isParentEnabled}
-                      onChange={() => handleToggleParent(g)}
+                      label={`${prefix} (${opt.title})`}
+                      checked={selected.includes(opt.value)}
+                      disabled={!enabled}
+                      onChange={() => handleToggleFlat(opt.value)}
                     />
                   </Box>
-                  <Box sx={{ pl: "24px", display: "flex", flexDirection: "column", gap: "6px", mt: "6px" }}>
-                    {g.options.map((opt) => {
-                      const camEnabled = isEnabled(opt.value) || selected.includes(opt.value);
-                      return (
-                        <Box key={opt.value} sx={{ display: "flex", alignItems: "center" }}>
-                          <TickBox
-                            label={`${prefix}(${opt.title})`}
-                            checked={selected.includes(opt.value) || parentSelected}
-                            disabled={!camEnabled}
-                            onChange={() => handleToggleChild(opt.value, g.value, childValues)}
-                          />
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                </Box>
-              );
+                );
+              });
             }
 
             const enabled = isEnabled(g.value);
             return (
-              <Box key={g.value} sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+              <Box
+                key={g.value}
+                sx={{ display: "flex", alignItems: "center", width: "100%" }}
+              >
                 <TickBox
                   label={g.title}
                   value={g.value}
@@ -246,7 +215,11 @@ const CustomTrackerDialog = ({
           <Button color="secondary" fontSize="14px" onClick={handleClose}>
             Cancel
           </Button>
-          <Button fontSize="14px" disabled={uniqueTrackerCount < 2} onClick={handleCreate}>
+          <Button
+            fontSize="14px"
+            disabled={uniqueTrackerCount < 2}
+            onClick={handleCreate}
+          >
             Create Custom Tracker Group
           </Button>
         </Box>

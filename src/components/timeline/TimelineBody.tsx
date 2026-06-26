@@ -213,6 +213,9 @@ const TimelineBody = ({
             timelineStartSec={timelineStartSec}
             timelineEndSec={timelineEndSec}
             gridRef={gridRef}
+            setPanOffsetSec={setPanOffsetSec}
+            totalSec={totalSec}
+            currentMarkerSec={resolvedMarkerSec}
           />
         )}
       </Box>

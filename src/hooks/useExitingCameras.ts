@@ -24,7 +24,8 @@ export const useExitingCameras = (
   useEffect(() => {
     const incoming = [...(cameras ?? [])].sort((a, b) => a.id - b.id);
     const incomingIds = new Set(incoming.map((c) => c.id));
-    const leaving = prevCamerasRef.current.filter((c) => !incomingIds.has(c.id));
+    const prev = prevCamerasRef.current;
+    const leaving = prev.filter((c) => !incomingIds.has(c.id));
     prevCamerasRef.current = incoming;
 
     if (leaving.length === 0) {
@@ -32,8 +33,8 @@ export const useExitingCameras = (
       return () => clearTimeout(t);
     }
 
-    const remaining = prevCamerasRef.current.filter((c) => incomingIds.has(c.id));
-    const isFullReset = prevCamerasRef.current.length > 0 && remaining.length === 0;
+    const remaining = prev.filter((c) => incomingIds.has(c.id));
+    const isFullReset = prev.length > 0 && remaining.length === 0;
 
     if (isFullReset) {
       const t = setTimeout(() => setExitingCameras([]), 0);

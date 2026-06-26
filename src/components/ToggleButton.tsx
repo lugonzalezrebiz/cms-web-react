@@ -194,7 +194,9 @@ const ToggleButton = ({
                     group.selectOnClick
                       ? (e) => {
                           e.stopPropagation();
-                          handleOptionsClick(group.value, e);
+                          const btn = (e.currentTarget as Element).closest("button");
+                          setAnchorEl(btn ?? e.currentTarget);
+                          setActiveGroupValue(group.value);
                         }
                       : undefined
                   }

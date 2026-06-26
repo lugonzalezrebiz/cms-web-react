@@ -104,32 +104,40 @@ const Monitor = () => {
     cameraToJoinTrackerMap,
   });
 
+  const [debouncedMarkerSec, setDebouncedMarkerSec] = useState(markerSec);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedMarkerSec(markerSec), 250);
+    return () => clearTimeout(t);
+  }, [markerSec]);
+
+  const [isCameraReloading, setIsCameraReloading] = useState(false);
+  useEffect(() => {
+    setIsCameraReloading(true);
+    const t = setTimeout(() => setIsCameraReloading(false), 400);
+    return () => clearTimeout(t);
+  }, [cameraGroup, trackerOption]);
+
   const activeCameras = useMemo(() => {
     if (isJoinCameraTracker) {
       const cameraIds = new Set((joinCameraTrackerMap.get(cameraGroupNum) ?? []).map((c) => c.id));
       return monitoringCameras.filter((cam) => cameraIds.has(cam.id));
-    }
-    if (isJoinCameraSpecific) {
-      return monitoringCameras.filter((cam) => cam.id === cameraSpecificId);
     }
     return monitoringCameras.filter((camera) =>
       filteredEventPoints.some((ep) => {
         if (ep.cameraId !== camera.id) return false;
         const hasRange = ep.endSec > ep.startSec;
         if (hasRange)
-          return markerSec >= ep.timeSec - 60 && markerSec <= ep.endSec + 60;
-        return Math.abs(markerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
+          return debouncedMarkerSec >= ep.timeSec - 60 && debouncedMarkerSec <= ep.endSec + 60;
+        return Math.abs(debouncedMarkerSec - ep.timeSec) <= TAG_TOLERANCE_SEC;
       }),
     );
   }, [
     isJoinCameraTracker,
-    isJoinCameraSpecific,
     joinCameraTrackerMap,
     cameraGroupNum,
-    cameraSpecificId,
     monitoringCameras,
     filteredEventPoints,
-    markerSec,
+    debouncedMarkerSec,
   ]);
 
   const sortedCameras = useMemo(
@@ -242,6 +250,15 @@ const Monitor = () => {
       .sort((a, b) => a.timeSec - b.timeSec)[0]?.timeSec;
   }, [isTrackerTab, trackerOption, filteredEventPoints, timelineStartSec]);
 
+  const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (isTrackerTab) return;
+    const first = [...filteredEventPoints].sort((a, b) => a.timeSec - b.timeSec)[0];
+    setCameraGroupTargetSec(first?.timeSec);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraGroup]);
+
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
@@ -293,7 +310,7 @@ const Monitor = () => {
       cameraEventPoints: filteredEventPoints,
       onMarkerChange: handleMarkerChange,
       markerTimeSec,
-      targetMarkerSec: restoreMarkerSec ?? trackerTargetSec,
+      targetMarkerSec: restoreMarkerSec ?? (isTrackerTab ? trackerTargetSec : cameraGroupTargetSec),
       onUpdateEventPoint: handleUpdateEventPoint,
       onPopOut: handlePopOut,
       headerLabel: "Compliance Violations" as const,
@@ -317,6 +334,8 @@ const Monitor = () => {
       markerTimeSec,
       restoreMarkerSec,
       trackerTargetSec,
+      cameraGroupTargetSec,
+      isTrackerTab,
       handleUpdateEventPoint,
       handlePopOut,
       handleUndo,
@@ -378,6 +397,7 @@ const Monitor = () => {
     >
       <Box mt={"10px"} sx={{ flex: 9, minHeight: 0, height: 0 }}>
         <CameraLayout
+          key={`${cameraGroup}-${trackerOption ?? ""}`}
           count={activeCameras.length}
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
@@ -392,7 +412,7 @@ const Monitor = () => {
           timestamp={timestamp}
           expandedCamera={expandedCamera}
           onExpandCamera={handleExpandCamera}
-          loadState={isMonitoringLoading}
+          loadState={isMonitoringLoading || isCameraReloading}
         />
       </Box>
 

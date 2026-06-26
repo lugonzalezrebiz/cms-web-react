@@ -219,30 +219,53 @@ export const useTimelineKeyboard = ({
       if (isEditable) return;
       e.preventDefault();
 
+      const visibleDuration = totalSec / zoom;
+
+      const panTo = (targetSec: number) => {
+        const visibleEnd = panOffsetSec + visibleDuration;
+        if (targetSec < panOffsetSec || targetSec > visibleEnd) {
+          const margin = visibleDuration * 0.2;
+          const targetOffset = Math.max(0, Math.min(totalSec - visibleDuration, targetSec - margin));
+          const startOffset = panOffsetSec;
+          const duration = 500;
+          const startTime = performance.now();
+          const animate = (now: number) => {
+            const t = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            setPanOffsetSec(startOffset + (targetOffset - startOffset) * eased);
+            if (t < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      };
+
       if (e.ctrlKey || e.metaKey) {
         const currentSec = markerSec ?? timelineStartSec;
         const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+        let targetSec: number | undefined;
         if (e.key === "ArrowLeft") {
-          const prev = [...sorted].reverse().find((ep) => ep.timeSec < currentSec);
-          if (prev) setMarkerSec(prev.timeSec);
+          targetSec = [...sorted].reverse().find((ep) => ep.timeSec < currentSec)?.timeSec;
         } else {
-          const next = sorted.find((ep) => ep.timeSec > currentSec);
-          if (next) setMarkerSec(next.timeSec);
+          targetSec = sorted.find((ep) => ep.timeSec > currentSec)?.timeSec;
+        }
+        if (targetSec !== undefined) {
+          setMarkerSec(targetSec);
+          panTo(targetSec);
         }
         return;
       }
 
       if (selectedTracks.size > 0 && e.key !== "ArrowRight") return;
       const delta = e.key === "ArrowRight" ? 5 : -5;
-      setMarkerSec((prev) => {
-        const base = prev ?? timelineStartSec;
-        return Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
-      });
+      const base = markerSec ?? timelineStartSec;
+      const next = Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
+      setMarkerSec(next);
+      panTo(next);
     };
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints]);
+  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints, panOffsetSec, zoom, totalSec, setPanOffsetSec]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
   useEffect(() => {
