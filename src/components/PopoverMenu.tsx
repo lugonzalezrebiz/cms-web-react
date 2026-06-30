@@ -1,6 +1,7 @@
 import { Popover } from "@mui/material";
 import type { PopoverOrigin } from "@mui/material";
 import { Colors } from "../theme";
+import { assetUrl } from "../utils";
 import { Box } from "@mui/system";
 import type { ReactNode } from "react";
 
@@ -67,7 +68,7 @@ const PopoverMenu = ({
             cursor: "pointer",
           }}
         >
-          <img src="./assets/x-close.svg" alt="Close" />
+          <img src={assetUrl("x-close.svg")} alt="Close" />
         </Box>
         <Box>{children}</Box>
       </Box>

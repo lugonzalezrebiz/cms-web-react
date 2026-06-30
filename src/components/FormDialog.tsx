@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
+import { assetUrl } from "../utils";
 import Dialog from "./Dialog";
 import type { stateAssignments } from "./stateColors";
 import { AssignmentHeader } from "./StateBadge";
@@ -67,7 +68,7 @@ const FormDialog = ({
                 cursor: "pointer",
               }}
             >
-              <img onClick={onClose} src="./assets/x-close.svg" alt="" />
+              <img onClick={onClose} src={assetUrl("x-close.svg")} alt="" />
             </Box>
           </Box>
           {children}

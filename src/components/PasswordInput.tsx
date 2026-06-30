@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
+import { assetUrl } from "../utils";
 
 export interface PasswordValidation {
   valid: boolean;
@@ -85,7 +86,7 @@ const HintDot = styled(Box)({
 const ValidationRule = ({ valid, label }: PasswordValidation) => (
   <Box sx={{ display: "flex", alignItems: "center", gap: "6px" }}>
     {valid ? (
-      <img src="./assets/check-circle.svg" alt="" width={16} height={16} />
+      <img src={assetUrl("check-circle.svg")} alt="" width={16} height={16} />
     ) : (
       <HintDot />
     )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext, type DecodedToken } from "./AuthContextDef";
 import { crashLogger } from "../services/CrashLogger";
@@ -32,10 +32,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setTokenState(newToken);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     setTokenState(null);
-  };
+  }, []);
 
   useEffect(() => {
     const interceptorId = apiClient.interceptors.response.use(
