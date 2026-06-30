@@ -3,11 +3,13 @@ import { createContext } from "react";
 export interface MonitorState {
   handleDone: () => void;
   showFinalizeButton: boolean;
+  isDoneLoading: boolean;
 }
 
 export const MonitorStateContext = createContext<MonitorState>({
   handleDone: () => {},
   showFinalizeButton: false,
+  isDoneLoading: false,
 });
 
 export const MonitorSetterContext = createContext<(s: MonitorState) => void>(() => {});

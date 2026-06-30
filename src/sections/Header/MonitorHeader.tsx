@@ -191,7 +191,7 @@ const MonitorHeader = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone } = useMonitorState();
+  const { handleDone, isDoneLoading } = useMonitorState();
   const { cameraGroup, setCameraGroup, setCustomTrackerIDs } = useCameraGroup();
 
   useEffect(() => {
@@ -334,10 +334,10 @@ const MonitorHeader = ({
               <Button
                 sx={{ height: "36px" }}
                 fontSize="14px"
-                disabled={isAgent}
+                disabled={isAgent || isDoneLoading}
                 onClick={handleDone}
               >
-                Done
+                {isDoneLoading ? "loading..." : "Done"}
               </Button>
             </Box>
           </Box>

@@ -20,10 +20,7 @@ const useCompanies = () => {
 
   const companies = data?.companies ?? [];
 
-  const companyFilters = [
-    { label: "All Companies", value: "" },
-    ...companies.map((c) => ({ label: `${c.name}(${c.id})`, value: String(c.id) })),
-  ];
+  const companyFilters = companies.map((c) => ({ label: `${c.name}(${c.id})`, value: String(c.id) }));
 
   const getStoreFilters = (companyId: string) => {
     const selected = companies.find((c) => String(c.id) === companyId);

@@ -190,7 +190,11 @@ const Monitor = () => {
   ]);
 
   const handleActivitySelectGuarded = useCallback(
-    (cameraId: number, activityLabel: string, mode: "POINT" | "RANGE" = "POINT") => {
+    (
+      cameraId: number,
+      activityLabel: string,
+      mode: "POINT" | "RANGE" = "POINT",
+    ) => {
       const hasDuplicate = allEventPoints.some(
         (ep) =>
           ep.cameraId === cameraId &&
@@ -296,15 +300,35 @@ const Monitor = () => {
   const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<
     number | undefined
   >(undefined);
+  const cameraGroupInitializedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isTrackerTab) return;
+    cameraGroupInitializedRef.current = null;
     const first = [...filteredEventPoints].sort(
       (a, b) => a.timeSec - b.timeSec,
     )[0];
-    setCameraGroupTargetSec(first?.timeSec);
+    if (first !== undefined) {
+      setCameraGroupTargetSec(first.timeSec);
+      cameraGroupInitializedRef.current = cameraGroup;
+    } else {
+      setCameraGroupTargetSec(undefined);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraGroup]);
+
+  useEffect(() => {
+    if (isTrackerTab || cameraGroupInitializedRef.current !== null) return;
+    if (filteredEventPoints.length === 0) return;
+    const first = [...filteredEventPoints].sort(
+      (a, b) => a.timeSec - b.timeSec,
+    )[0];
+    if (first !== undefined) {
+      setCameraGroupTargetSec(first.timeSec);
+      cameraGroupInitializedRef.current = cameraGroup;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEventPoints]);
 
   // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
@@ -324,7 +348,7 @@ const Monitor = () => {
   );
 
   const sessionDate = useSessionDate();
-  const { handleDone } = useSaveMonitoring({
+  const { handleDone, isDoneLoading } = useSaveMonitoring({
     trackers,
     eventPoints: cameraEventPoints,
     sessionDate,
@@ -332,7 +356,7 @@ const Monitor = () => {
     onSuccess: cleanUp,
   });
 
-  useRegisterMonitorActions(handleDone, showFinalizeButton);
+  useRegisterMonitorActions(handleDone, showFinalizeButton, isDoneLoading);
 
   const filteredMenuItems = useFilteredMenuItems({
     trackers,
@@ -497,6 +521,7 @@ const Monitor = () => {
         date={date}
         timestamp={timestamp}
         onRemoveTag={handleDeleteEventPoint}
+        customHeight={timelinePopped ? "91%" : "70%"}
       />
     </Box>
   );

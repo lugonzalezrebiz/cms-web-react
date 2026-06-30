@@ -112,6 +112,145 @@ const CustomToggleButton = ({
   );
 };
 
+interface GroupToggleButtonProps {
+  group: GroupItem;
+  value: string;
+  handleOptionsClick: (
+    groupValue: string,
+    event: React.MouseEvent<HTMLElement | SVGSVGElement>,
+  ) => void;
+  setAnchorEl: (el: Element | null) => void;
+  setActiveGroupValue: (value: string | null) => void;
+}
+
+const GroupToggleButton = ({
+  group,
+  value,
+  handleOptionsClick,
+  setAnchorEl,
+  setActiveGroupValue,
+}: GroupToggleButtonProps) => {
+  const selectedOption = group.options?.find((o) => o.value === value);
+  const effectiveValue = selectedOption?.value ?? group.value;
+
+  return (
+    <StyledToggleButton
+      key={group.value}
+      value={effectiveValue}
+      onClick={
+        group.options && !group.selectOnClick
+          ? (e) => handleOptionsClick(group.value, e)
+          : undefined
+      }
+    >
+      <span className="toggle-label">
+        {selectedOption ? selectedOption.title : group.title}
+      </span>
+      {group.options && (
+        <KeyboardArrowDownIcon
+          sx={{ fontSize: 14, ml: 0.3 }}
+          onClick={
+            group.selectOnClick
+              ? (e) => {
+                  e.stopPropagation();
+                  const btn = (e.currentTarget as Element).closest("button");
+                  setAnchorEl(btn ?? e.currentTarget);
+                  setActiveGroupValue(group.value);
+                }
+              : undefined
+          }
+        />
+      )}
+    </StyledToggleButton>
+  );
+};
+
+const menuItemSx = {
+  fontFamily: Fonts.secondary,
+  fontSize: "12px",
+  p: "8px 16px",
+  color: Colors.lightBlack,
+  minHeight: 0,
+  height: "43px",
+  display: "block",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  "&&.Mui-selected": {
+    color: Colors.vividOrange,
+    backgroundColor: Colors.transparentVividOrange,
+  },
+  "&&.Mui-selected:hover": {
+    color: Colors.vividOrange,
+    backgroundColor: Colors.transparentVividOrange,
+  },
+};
+
+interface ToggleMenuItemsProps {
+  anchorEl: Element | null;
+  options?: GroupOption[];
+  value: string;
+  setValue: (value: string) => void;
+  handleClose: () => void;
+}
+
+const ToggleMenuItems = ({
+  anchorEl,
+  options,
+  value,
+  setValue,
+  handleClose,
+}: ToggleMenuItemsProps) => {
+  return (
+    <Menu
+      open={Boolean(anchorEl)}
+      anchorEl={anchorEl}
+      onClose={handleClose}
+      slots={{ transition: Grow }}
+      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      transformOrigin={{ vertical: "top", horizontal: "center" }}
+      marginThreshold={0}
+      slotProps={{
+        transition: { timeout: 5000 },
+        list: { disablePadding: true },
+        paper: {
+          sx: {
+            width: "100%",
+            maxWidth: "180px",
+            borderRadius: "8px",
+            bgcolor: Colors.white,
+            boxShadow: "0 2px 10px 0 rgba(0, 0, 0, 0.16)",
+            p: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          },
+        },
+      }}
+    >
+      {options?.length ? (
+        options.map((option) => (
+          <MenuItem
+            key={option.value}
+            selected={value === option.value}
+            onClick={() => {
+              setValue(option.value);
+              handleClose();
+            }}
+            sx={menuItemSx}
+          >
+            {option.title}
+          </MenuItem>
+        ))
+      ) : (
+        <MenuItem disabled sx={menuItemSx}>
+          No options available
+        </MenuItem>
+      )}
+    </Menu>
+  );
+};
+
 const ToggleButton = ({
   value,
   setValue,
@@ -168,43 +307,16 @@ const ToggleButton = ({
         onChange={handleCustom}
         aria-label={label}
       >
-        {groups.map((group) => {
-          const selectedOption = group.options?.find((o) => o.value === value);
-          // When an overflow option is active, use its value so ToggleButtonGroup marks this button as selected
-          const effectiveValue = selectedOption?.value ?? group.value;
-          return (
-            <StyledToggleButton
-              key={group.value}
-              value={effectiveValue}
-              onClick={
-                group.options && !group.selectOnClick
-                  ? (e) => handleOptionsClick(group.value, e)
-                  : undefined
-              }
-            >
-              <span className="toggle-label">
-                {selectedOption ? selectedOption.title : group.title}
-              </span>
-              {group.options && (
-                <KeyboardArrowDownIcon
-                  sx={{ fontSize: 14, ml: 0.3 }}
-                  onClick={
-                    group.selectOnClick
-                      ? (e) => {
-                          e.stopPropagation();
-                          const btn = (e.currentTarget as Element).closest(
-                            "button",
-                          );
-                          setAnchorEl(btn ?? e.currentTarget);
-                          setActiveGroupValue(group.value);
-                        }
-                      : undefined
-                  }
-                />
-              )}
-            </StyledToggleButton>
-          );
-        })}
+        {groups.map((group) => (
+          <GroupToggleButton
+            key={group.value}
+            group={group}
+            value={value}
+            handleOptionsClick={handleOptionsClick}
+            setAnchorEl={setAnchorEl}
+            setActiveGroupValue={setActiveGroupValue}
+          />
+        ))}
 
         {onCustomClick && (
           <CustomToggleButton
@@ -214,87 +326,13 @@ const ToggleButton = ({
         )}
       </StyledToggleGroup>
 
-      <Menu
-        open={Boolean(anchorEl)}
+      <ToggleMenuItems
         anchorEl={anchorEl}
-        onClose={handleClose}
-        slots={{ transition: Grow }}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        transformOrigin={{ vertical: "top", horizontal: "center" }}
-        marginThreshold={0}
-        slotProps={{
-          transition: { timeout: 5000 },
-          list: { disablePadding: true },
-          paper: {
-            sx: {
-              width: "100%",
-              maxWidth: "180px",
-              borderRadius: "8px",
-              bgcolor: Colors.white,
-              boxShadow: " 0 2px 10px 0 rgba(0, 0, 0, 0.16)",
-              p: 0,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            },
-          },
-        }}
-      >
-        {activeGroup?.options?.length ? (
-          activeGroup.options.map((option) => (
-            <MenuItem
-              key={option.value}
-              selected={value === option.value}
-              onClick={() => {
-                setValue(option.value);
-                handleClose();
-              }}
-              sx={{
-                fontFamily: Fonts.secondary,
-                fontSize: "12px",
-                fontWeight: 400,
-                color: Colors.lightBlack,
-                display: "block",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                p: "8px",
-                minHeight: 0,
-                height: "31px",
-                "&.Mui-selected": {
-                  color: Colors.vividOrange,
-                  backgroundColor: Colors.transparentVividOrange,
-                },
-                "&.Mui-selected:hover": {
-                  color: Colors.vividOrange,
-                  backgroundColor: "rgba(0,0,0,0.04)",
-                },
-              }}
-            >
-              {option.title}
-            </MenuItem>
-          ))
-        ) : (
-          <MenuItem
-            disabled
-            sx={{
-              fontFamily: Fonts.secondary,
-              fontSize: "12px",
-              fontWeight: 400,
-              color: Colors.lightBlack,
-              display: "block",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              p: "8px",
-              minHeight: 0,
-              height: "31px",
-            }}
-          >
-            No options available
-          </MenuItem>
-        )}
-      </Menu>
+        options={activeGroup?.options}
+        value={value}
+        setValue={setValue}
+        handleClose={handleClose}
+      />
     </Box>
   );
 };

@@ -20,7 +20,11 @@ const useIssueTypes = () => {
   );
 
   const options =
-    data?.issueTypes.map((t) => ({ label: t.name, value: String(t.id) })) ?? [];
+    data?.issueTypes.map((t) => ({
+      label: t.name,
+      value: String(t.id),
+      group: t.description,
+    })) ?? [];
 
   return { options, isLoading, isError };
 };

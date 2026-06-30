@@ -113,7 +113,11 @@ const ResetPasswordDialog = ({
   );
 
   const { validLength, validUpperCase, passwordsMatch, isValid } =
-    usePasswordValidation({ password: newPassword, confirmPassword, oldPassword });
+    usePasswordValidation({
+      password: newPassword,
+      confirmPassword,
+      oldPassword,
+    });
 
   const resetForm = () => {
     setOldPassword("");
@@ -273,7 +277,12 @@ const ResetPasswordDialog = ({
         )}
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-          <Button outfit color="secondary" onClick={handleClose}>
+          <Button
+            outfit
+            sx={{ height: "36px" }}
+            color="secondary"
+            onClick={handleClose}
+          >
             Cancel
           </Button>
           <Button
@@ -281,6 +290,7 @@ const ResetPasswordDialog = ({
             color="primary"
             type="submit"
             disabled={!isValid || isPending}
+            sx={{ height: "36px" }}
           >
             {isPending ? "Loading..." : "Reset Password"}
           </Button>

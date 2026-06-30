@@ -10,8 +10,12 @@ import Divider from "../../components/Divider";
 import Fix from "../../components/Fix";
 import usePopover from "./hooks/usePopover";
 import useNavigateWithQuery from "../../hooks/useNavigate";
-import NotificationMenu from "../../components/NotificationMenu";
+import NotificationMenu, { type Notification } from "../../components/NotificationMenu";
+import NotificationBell from "../../components/NotificationBell";
 import { useNotifications } from "../../hooks/useNotifications";
+import useAuth from "../../hooks/useAuth";
+import { ADMIN_ROLE } from "../../config";
+import TicketsDrawer from "../../pages/AdminForm/components/TicketsDrawer";
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -47,12 +51,22 @@ const AdminHeader = ({
   allowGoBack?: boolean;
 }) => {
   const [scrolled, setScrolled] = useState(false);
+  const [ticketsOpen, setTicketsOpen] = useState(false);
   const menuHeader = usePopover();
   const userPanelHeader = usePopover();
   const notificationHeader = usePopover();
   const navigate = useNavigateWithQuery();
-  const { notifications } = useNotifications();
+  const { notifications } = useNotifications(notificationHeader.open);
+  const { user } = useAuth();
+  const isAdmin = user?.roleID === ADMIN_ROLE;
   const goBack = () => navigate(-1);
+
+  const handleNotificationClick = (notif: Notification) => {
+    if (isAdmin && notif.meta?.type === "ticket_created") {
+      notificationHeader.handleClose();
+      setTicketsOpen(true);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 0);
@@ -140,10 +154,9 @@ const AdminHeader = ({
             </Box>
 
             <Box display={"flex"}>
-              <StyledImg
+              <NotificationBell
+                unreadCount={notifications.filter((n) => n.unread).length}
                 onClick={notificationHeader.handleOpen}
-                src="./assets/notification.svg"
-                alt="Notifications"
               />
               <StyledImg
                 onClick={userPanelHeader.handleOpen}
@@ -159,7 +172,9 @@ const AdminHeader = ({
           handleClose={notificationHeader.handleClose}
           open={notificationHeader.open}
           notifications={notifications}
+          onNotificationClick={handleNotificationClick}
         />
+        <TicketsDrawer open={ticketsOpen} onClose={() => setTicketsOpen(false)} />
 
         <UserPanel
           anchorEl={userPanelHeader.anchorEl}
