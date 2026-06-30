@@ -37,7 +37,7 @@ export const useTagsForCamera = (
             cameraEventPoints.some(
               (other) =>
                 other.id !== ep.id &&
-                other.cameraId === ep.cameraId &&
+                other.label === ep.label &&
                 !other.reviewed &&
                 other.timeSec === ep.timeSec,
             ),

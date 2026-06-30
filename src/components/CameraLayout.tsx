@@ -6,7 +6,7 @@ import CameraScrollableGrid from "./CameraLayout/CameraScrollableGrid";
 import CameraStaticGrid from "./CameraLayout/CameraStaticGrid";
 import {
   GAP,
-  TRANSITION_MS,
+  EXIT_TRANSITION_MS,
   getRowDistribution,
   type CameraLayoutProps,
   type SharedCameraItemProps,
@@ -36,9 +36,9 @@ const CameraLayout = ({
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
   const { renderedCameras, exitingIds, skipAnimation } = useExitingCameras(
-    cameras,
+    loadState ? undefined : cameras,
     count,
-    TRANSITION_MS,
+    EXIT_TRANSITION_MS + 240,
   );
   const getTagsForCamera = useTagsForCamera(
     cameraEventPoints,

@@ -30,6 +30,7 @@ const CameraCell = ({
         height: "100%",
         minHeight: 0,
         overflow: "hidden",
+        transition: skipAnimation ? "none" : `width 300ms ease-in-out`,
       }}
     >
       <CameraItem
@@ -49,6 +50,7 @@ const CameraCell = ({
         onControlledClose={onCloseMenu}
         isExiting={isExiting}
         skipAnimation={skipAnimation}
+        totalCameras={cameras?.length ?? 1}
       />
     </Box>
   );

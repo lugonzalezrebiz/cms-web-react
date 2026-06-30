@@ -5,23 +5,48 @@ import { Colors, Fonts } from "../theme";
 
 const UncheckedIcon = () => (
   <SvgIcon viewBox="0 0 24 24" sx={{ width: "16px", height: "16px" }}>
-    <rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="#b3b3b3" strokeWidth="1.5" />
+    <rect
+      x="3"
+      y="3"
+      width="18"
+      height="18"
+      rx="4"
+      fill="none"
+      stroke="#b3b3b3"
+      strokeWidth="1.5"
+    />
   </SvgIcon>
 );
 
 const CheckedIcon = () => (
   <SvgIcon viewBox="0 0 24 24" sx={{ width: "16px", height: "16px" }}>
     <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />
-    <path d="M7 13l3 3 7-7" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M7 13l3 3 7-7"
+      stroke="white"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </SvgIcon>
+);
+
+const IndeterminateIcon = () => (
+  <SvgIcon viewBox="0 0 24 24" sx={{ width: "16px", height: "16px", color: Colors.vividOrange }}>
+    <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />
+    <path d="M7 12h10" stroke="white" strokeWidth="2" strokeLinecap="round" />
   </SvgIcon>
 );
 
 export interface Props {
   label: string;
   checked?: boolean;
+  indeterminate?: boolean;
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   name?: string;
   value?: string;
+  disabled?: boolean;
   ref?: Ref<HTMLButtonElement>;
 }
 
@@ -54,13 +79,13 @@ const TickBoxStyled = styled(Checkbox, {
   width: "16px",
   marginBottom: "2.5px",
   marginRight: hasLabel ? "8px" : "0px",
-  "&.Mui-checked": {
+  "&.Mui-checked, &.Mui-indeterminate": {
     color: Colors.vividOrange,
   },
 }));
 
 const TickBox = memo(
-  ({ label, checked, onChange, name, value, ref }: Props) => {
+  ({ label, checked, indeterminate, onChange, name, value, disabled, ref }: Props) => {
     return (
       <TickBoxContainer>
         <TickBoxLabel
@@ -68,12 +93,15 @@ const TickBox = memo(
             <TickBoxStyled
               hasLabel={!!label}
               checked={checked}
+              indeterminate={indeterminate}
               onChange={onChange}
               name={name}
               value={value}
+              disabled={disabled}
               ref={ref}
               icon={<UncheckedIcon />}
               checkedIcon={<CheckedIcon />}
+              indeterminateIcon={<IndeterminateIcon />}
             />
           }
           label={label}

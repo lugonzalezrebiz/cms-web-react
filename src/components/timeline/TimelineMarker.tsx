@@ -10,6 +10,9 @@ interface TimelineMarkerProps {
   timelineStartSec: number;
   timelineEndSec: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
+  setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
+  totalSec: number;
+  currentMarkerSec: number;
 }
 
 export const TimelineMarker = ({
@@ -20,6 +23,9 @@ export const TimelineMarker = ({
   timelineStartSec,
   timelineEndSec,
   gridRef,
+  setPanOffsetSec,
+  totalSec,
+  currentMarkerSec,
 }: TimelineMarkerProps) => {
   const { isDraggingMarker, handleMouseDown } = useMarkerDrag(
     gridRef,
@@ -28,6 +34,9 @@ export const TimelineMarker = ({
     timelineStartSec,
     timelineEndSec,
     setMarkerSec,
+    setPanOffsetSec,
+    totalSec,
+    currentMarkerSec,
   );
 
   return (

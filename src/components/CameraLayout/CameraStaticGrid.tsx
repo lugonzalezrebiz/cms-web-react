@@ -35,6 +35,7 @@ const CameraStaticGrid = ({
       height: totalHeight,
       overflow: "hidden",
       p: "0px 10px 10px 10px",
+      transition: `grid-template-rows 300ms ease-in-out`,
     }}
   >
     {count === 0 && (exitingIds.size === 0 || skipAnimation) ? (

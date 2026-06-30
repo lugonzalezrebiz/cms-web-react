@@ -6,22 +6,37 @@ export const useTimelinePopout =(
   markerTimeSec: number | null,
   cameraGroup: string,
   trackerOption: string,
+  customTrackerIDs: string[] = [],
 ) =>{
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
   const [restoreMarkerSec, setRestoreMarkerSec] = useState<number | undefined>(undefined);
   const popoutRef = useRef<Window | null>(null);
+
+  // Clear restoreMarkerSec when the filter changes so toggle auto-pan works after popout closes
+  const prevCameraGroupRef2 = useRef(cameraGroup);
+  const prevTrackerOptionRef = useRef(trackerOption);
+  if (
+    prevCameraGroupRef2.current !== cameraGroup ||
+    prevTrackerOptionRef.current !== trackerOption
+  ) {
+    prevCameraGroupRef2.current = cameraGroup;
+    prevTrackerOptionRef.current = trackerOption;
+    if (restoreMarkerSec !== undefined) setRestoreMarkerSec(undefined);
+  }
   const channelRef = useRef<BroadcastChannel | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
   const markerTimeSecRef = useRef(markerTimeSec);
   const suppressSendRef = useRef(false);
   const cameraGroupRef = useRef(cameraGroup);
   const trackerOptionRef = useRef(trackerOption);
+  const customTrackerIDsRef = useRef(customTrackerIDs);
 
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; });
   useEffect(() => { markerTimeSecRef.current = markerTimeSec; }, [markerTimeSec]);
   useEffect(() => { cameraGroupRef.current = cameraGroup; }, [cameraGroup]);
   useEffect(() => { trackerOptionRef.current = trackerOption; }, [trackerOption]);
+  useEffect(() => { customTrackerIDsRef.current = customTrackerIDs; }, [customTrackerIDs]);
 
   useEffect(() => {
     if (!timelinePopped) return;
@@ -42,6 +57,7 @@ export const useTimelinePopout =(
           type: "filter",
           cameraGroup: cameraGroupRef.current,
           trackerOption: trackerOptionRef.current,
+          customTrackerIDs: customTrackerIDsRef.current,
         });
       }
     });
@@ -63,15 +79,19 @@ export const useTimelinePopout =(
 
   useEffect(() => {
     if (!timelinePopped) return;
-    channelRef.current?.postMessage({ type: "filter", cameraGroup, trackerOption });
-  }, [cameraGroup, trackerOption, timelinePopped]);
+    channelRef.current?.postMessage({ type: "filter", cameraGroup, trackerOption, customTrackerIDs });
+  }, [cameraGroup, trackerOption, customTrackerIDs, timelinePopped]);
 
   const handlePopOut = useCallback(() => {
     if (popoutRef.current && !popoutRef.current.closed) {
       popoutRef.current.focus();
       return;
     }
-    const route = `/monitor/timeline?${searchParams.toString()}`;
+    const params = new URLSearchParams(searchParams);
+    if (cameraGroup) params.set("cameraGroup", cameraGroup);
+    const currentSec = markerTimeSecRef.current;
+    if (currentSec !== null) params.set("markerSec", String(Math.round(currentSec)));
+    const route = `/monitor/timeline?${params.toString()}`;
     const url =
       window.location.protocol === "file:"
         ? `${window.location.href.split("#")[0]}#${route}`
@@ -95,7 +115,7 @@ export const useTimelinePopout =(
         popoutRef.current = null;
       }
     }, 500);
-  }, [searchParams]);
+  }, [searchParams, cameraGroup]);
 
   return { timelinePopped, handlePopOut, restoreMarkerSec };
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FlatRow, TimelineSnapshot } from "../types";
 
 interface UseTimelineBodyStateParams {
@@ -29,6 +29,41 @@ export const useTimelineBodyState = ({
   const [markerSec, setMarkerSec] = useState<number | null>(null);
   const [selectedEventPointId, setSelectedEventPointId] = useState<number | null>(null);
   const [editingEventPointId, setEditingEventPointId] = useState<number | null>(null);
+  // Smooth pan to marker when a different event point is selected and marker is off-screen
+  const panOffsetSecRef = useRef(0);
+  const visibleDurationRef = useRef(0);
+  const totalSecRef = useRef(totalSec);
+  const markerSecForPanRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    panOffsetSecRef.current = panOffsetSec;
+    visibleDurationRef.current = visibleDuration;
+    totalSecRef.current = totalSec;
+    markerSecForPanRef.current = markerSec;
+  });
+
+  useEffect(() => {
+    if (selectedEventPointId === null) return;
+    const marker = markerSecForPanRef.current;
+    if (marker === null) return;
+    const offset = panOffsetSecRef.current;
+    const vd = visibleDurationRef.current;
+    const total = totalSecRef.current;
+    if (marker >= offset && marker <= offset + vd) return;
+    const margin = vd * 0.2;
+    const targetOffset = Math.max(0, Math.min(total - vd, marker - margin));
+    const startOffset = offset;
+    const duration = 500;
+    const startTime = performance.now();
+    const animate = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setPanOffsetSec(startOffset + (targetOffset - startOffset) * eased);
+      if (t < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [selectedEventPointId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [completedSessions, setCompletedSessions] = useState<
     Record<number, { start: number; end: number }[]>
   >({});

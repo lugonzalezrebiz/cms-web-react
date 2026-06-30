@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import styled from "@emotion/styled";
 import {
   ToggleButton as MuiToggleButton,
@@ -20,6 +20,21 @@ interface GroupItem {
   value: string;
   title: string;
   options?: GroupOption[];
+  selectOnClick?: boolean;
+}
+
+interface CustomToggleButtonProps {
+  onCustomClick?: () => void;
+  customCreated?: boolean;
+}
+
+interface ToggleButtonProps {
+  value: string;
+  setValue: (value: string) => void;
+  label: string;
+  groups: GroupItem[];
+  onCustomClick?: () => void;
+  customCreated?: boolean;
 }
 
 const StyledToggleGroup = styled(ToggleButtonGroup)({
@@ -28,6 +43,7 @@ const StyledToggleGroup = styled(ToggleButtonGroup)({
   borderRadius: 30,
   height: "32px",
   width: "100%",
+  gap: "5px",
   boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.07)",
   "& .MuiToggleButtonGroup-lastButton": {
     margin: 0,
@@ -48,15 +64,15 @@ const StyledToggleButton = styled(MuiToggleButton)({
   fontWeight: "normal",
   backgroundColor: Colors.lightGray,
   border: "none",
-  margin: 0,
   fontSize: "14px",
   borderRadius: 35,
+  width: "100%",
   maxWidth: "120px",
   "& .toggle-label": {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
-    minWidth: 0,
+    minWidth: "50px",
   },
   "&.Mui-selected": {
     color: Colors.lightBlack,
@@ -71,27 +87,45 @@ const StyledToggleButton = styled(MuiToggleButton)({
   },
 });
 
+const CustomToggleButton = ({
+  onCustomClick,
+  customCreated,
+}: CustomToggleButtonProps) => {
+  return (
+    <StyledToggleButton value="__custom__">
+      <span className="toggle-label">Custom</span>
+      <img
+        onClick={(e) => {
+          e.stopPropagation();
+          onCustomClick?.();
+        }}
+        src={customCreated ? "./assets/edit-05.svg" : "./assets/plus-1.svg"}
+        alt=""
+        style={{
+          width: 14,
+          height: 14,
+          marginLeft: 4,
+          cursor: "pointer",
+        }}
+      />
+    </StyledToggleButton>
+  );
+};
+
 const ToggleButton = ({
   value,
   setValue,
   label,
   groups,
-  selectValue,
-  setSelectValue,
-}: {
-  value: string;
-  setValue: (value: string) => void;
-  label: string;
-  groups: GroupItem[];
-  selectValue?: string;
-  setSelectValue?: (value: string) => void;
-}) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  onCustomClick,
+  customCreated = false,
+}: ToggleButtonProps) => {
+  const [anchorEl, setAnchorEl] = useState<Element | null>(null);
   const [activeGroupValue, setActiveGroupValue] = useState<string | null>(null);
 
   const handleOptionsClick = (
     groupValue: string,
-    event: React.MouseEvent<HTMLElement>,
+    event: React.MouseEvent<HTMLElement | SVGSVGElement>,
   ) => {
     setAnchorEl(event.currentTarget);
     setActiveGroupValue(groupValue);
@@ -104,26 +138,46 @@ const ToggleButton = ({
 
   const activeGroup = groups.find((g) => g.value === activeGroupValue);
 
+  const handleCustom = (
+    _event: MouseEvent<HTMLElement>,
+    newValue: string | null,
+  ) => {
+    if (newValue === null) return;
+    if (newValue === "__custom__" && !customCreated) {
+      onCustomClick?.();
+      return;
+    }
+    const selectOnClickGroup = groups.find(
+      (g) => g.selectOnClick && g.options?.some((o) => o.value === newValue),
+    );
+    if (selectOnClickGroup) {
+      setValue(selectOnClickGroup.value);
+      return;
+    }
+    const isPlaceholder = groups.some(
+      (g) => g.value === newValue && g.options?.length && !g.selectOnClick,
+    );
+    if (!isPlaceholder) setValue(newValue);
+  };
+
   return (
     <Box>
       <StyledToggleGroup
         value={value}
         exclusive
-        onChange={(_event, newValue) => {
-          if (newValue !== null) setValue(newValue);
-        }}
+        onChange={handleCustom}
         aria-label={label}
       >
         {groups.map((group) => {
-          const selectedOption = group.options?.find(
-            (o) => o.value === selectValue,
-          );
+          const selectedOption = group.options?.find((o) => o.value === value);
+          // When an overflow option is active, use its value so ToggleButtonGroup marks this button as selected
+          const effectiveValue = selectedOption?.value ?? group.value;
           return (
             <StyledToggleButton
               key={group.value}
-              value={group.value}
+              value={effectiveValue}
               onClick={
-                group.options
+                group.options && !group.selectOnClick
                   ? (e) => handleOptionsClick(group.value, e)
                   : undefined
               }
@@ -132,11 +186,32 @@ const ToggleButton = ({
                 {selectedOption ? selectedOption.title : group.title}
               </span>
               {group.options && (
-                <KeyboardArrowDownIcon sx={{ fontSize: 14, ml: 0.3 }} />
+                <KeyboardArrowDownIcon
+                  sx={{ fontSize: 14, ml: 0.3 }}
+                  onClick={
+                    group.selectOnClick
+                      ? (e) => {
+                          e.stopPropagation();
+                          const btn = (e.currentTarget as Element).closest(
+                            "button",
+                          );
+                          setAnchorEl(btn ?? e.currentTarget);
+                          setActiveGroupValue(group.value);
+                        }
+                      : undefined
+                  }
+                />
               )}
             </StyledToggleButton>
           );
         })}
+
+        {onCustomClick && (
+          <CustomToggleButton
+            onCustomClick={onCustomClick}
+            customCreated={customCreated}
+          />
+        )}
       </StyledToggleGroup>
 
       <Menu
@@ -169,9 +244,9 @@ const ToggleButton = ({
           activeGroup.options.map((option) => (
             <MenuItem
               key={option.value}
-              selected={selectValue === option.value}
+              selected={value === option.value}
               onClick={() => {
-                setSelectValue?.(option.value);
+                setValue(option.value);
                 handleClose();
               }}
               sx={{
@@ -187,12 +262,12 @@ const ToggleButton = ({
                 minHeight: 0,
                 height: "31px",
                 "&.Mui-selected": {
-                  color: Colors.white,
-                  backgroundColor: Colors.vividOrange,
+                  color: Colors.vividOrange,
+                  backgroundColor: Colors.transparentVividOrange,
                 },
                 "&.Mui-selected:hover": {
-                  color: Colors.white,
-                  backgroundColor: Colors.vividOrange,
+                  color: Colors.vividOrange,
+                  backgroundColor: "rgba(0,0,0,0.04)",
                 },
               }}
             >
