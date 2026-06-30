@@ -9,7 +9,7 @@ import CameraOverlayMenu, {
   type CameraContextMenuItem,
 } from "./CameraOverlayMenu";
 import { usePopover } from "../../hooks/usePopover";
-import { TRANSITION_MS } from "./types";
+import { TRANSITION_MS, EXIT_TRANSITION_MS } from "./types";
 
 interface CameraItemProps {
   index: number;
@@ -32,6 +32,7 @@ interface CameraItemProps {
   date?: string;
   timestamp?: string;
   isExiting?: boolean;
+  totalCameras?: number;
 }
 
 export const CameraItem = ({
@@ -55,6 +56,7 @@ export const CameraItem = ({
   controlledOpen,
   onControlledClose,
   isExiting = false,
+  totalCameras = 1,
 }: CameraItemProps) => {
   const {
     open: localShowMenu,
@@ -121,13 +123,13 @@ export const CameraItem = ({
         },
         "@keyframes cameraFadeOut": {
           from: { opacity: 1, transform: "scale(1)" },
-          to: { opacity: 0, transform: "scale(0.95)" },
+          to: { opacity: 0, transform: "scale(1.04)" },
         },
         animation:
           empty || skipAnimation
             ? "none"
             : isExiting
-              ? `cameraFadeOut ${TRANSITION_MS}ms ease-in forwards`
+              ? `cameraFadeOut ${EXIT_TRANSITION_MS}ms ease-in-out ${Math.min((totalCameras - 1 - index) * 40, 240)}ms forwards`
               : `cameraFadeIn ${TRANSITION_MS}ms ease-out ${Math.min(index * 40, 240)}ms both`,
       }}
     >

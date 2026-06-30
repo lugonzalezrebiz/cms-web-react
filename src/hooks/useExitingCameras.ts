@@ -9,7 +9,6 @@ export const useExitingCameras = (
 ) => {
   const [prevCount, setPrevCount] = useState(count);
   if (prevCount !== count) setPrevCount(count);
-  const skipAnimation = prevCount <= 1 && count <= 1;
 
   const sortedCameras = useMemo(
     () => [...(cameras ?? [])].sort((a, b) => a.id - b.id),
@@ -20,6 +19,8 @@ export const useExitingCameras = (
   const [prevSortedCameras, setPrevSortedCameras] = useState<CameraInfo[]>([]);
   // Cameras kept in the DOM while fading out
   const [exitingCameras, setExitingCameras] = useState<CameraInfo[]>([]);
+
+  const skipAnimation = prevCount <= 1 && count <= 1 && exitingCameras.length === 0;
   // Subset of exitingCameras that have started their fade-out (set one RAF after mount)
   const [activelyExitingIds, setActivelyExitingIds] = useState<ReadonlySet<number>>(new Set<number>());
 

@@ -50,6 +50,7 @@ const CameraCell = ({
         onControlledClose={onCloseMenu}
         isExiting={isExiting}
         skipAnimation={skipAnimation}
+        totalCameras={cameras?.length ?? 1}
       />
     </Box>
   );

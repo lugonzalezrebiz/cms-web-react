@@ -4,6 +4,7 @@ import type { CameraEventPoint } from "../timeline/types";
 
 export const GAP = 8;
 export const TRANSITION_MS = 300;
+export const EXIT_TRANSITION_MS = 100;
 
 export interface SharedCameraItemProps {
   expandCamera: (index: number) => void;
