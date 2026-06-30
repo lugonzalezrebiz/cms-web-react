@@ -37,14 +37,6 @@ interface Params {
   cameraToJoinTrackerMap: Map<number, number>;
 }
 
-function buildPrefix(name: string) {
-  return name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-}
-
 const noop = (_i: number) => {};
 
 export function useFilteredMenuItems({
@@ -79,11 +71,10 @@ export function useFilteredMenuItems({
     if (isJoinCameraTracker) {
       const groupingTracker = trackerGroupings.find((t) => t.id === cameraGroupNum);
       if (groupingTracker) {
-        const prefix = buildPrefix(groupingTracker.name);
         return groupingTracker.cameras.map((cam) => ({
           id: cam.id * 10000 + groupingTracker.id,
-          name: `${prefix}(${cam.name})`,
-          label: `${prefix}(${cam.name})`,
+          name: `${groupingTracker.name} (${cam.name})`,
+          label: `${groupingTracker.name} (${cam.name})`,
           onClick: noop,
         }));
       }
@@ -93,14 +84,13 @@ export function useFilteredMenuItems({
       const trackerID = cameraToJoinTrackerMap.get(cameraSpecificId) ?? 0;
       const groupingTracker = trackerGroupings.find((t) => t.id === trackerID);
       if (groupingTracker) {
-        const prefix = buildPrefix(groupingTracker.name);
         const camName =
           groupingTracker.cameras.find((c) => c.id === cameraSpecificId)?.name ?? String(cameraSpecificId);
         return [
           {
             id: cameraSpecificId * 10000 + trackerID,
-            name: `${prefix}(${camName})`,
-            label: `${prefix}(${camName})`,
+            name: `${groupingTracker.name} (${camName})`,
+            label: `${groupingTracker.name} (${camName})`,
             onClick: noop,
           },
         ];
@@ -118,26 +108,24 @@ export function useFilteredMenuItems({
           const trackerId = cameraToJoinTrackerMap.get(camId);
           const tracker = trackerGroupings.find((t) => t.id === trackerId);
           if (!tracker) continue;
-          const prefix = buildPrefix(tracker.name);
           const camName = tracker.cameras.find((c) => c.id === camId)?.name ?? String(camId);
           const rowId = camId * 10000 + tracker.id;
           if (!addedIds.has(rowId)) {
             addedIds.add(rowId);
-            rows.push({ id: rowId, name: `${prefix}(${camName})`, label: `${prefix}(${camName})`, onClick: noop });
+            rows.push({ id: rowId, name: `${tracker.name} (${camName})`, label: `${tracker.name} (${camName})`, onClick: noop });
           }
         } else {
           const tracker = trackerGroupings.find((t) => t.id === Number(id));
           if (!tracker) continue;
           if (joinCameraTrackerMap.has(tracker.id)) {
-            const prefix = buildPrefix(tracker.name);
             for (const cam of tracker.cameras) {
               const rowId = cam.id * 10000 + tracker.id;
               if (!addedIds.has(rowId)) {
                 addedIds.add(rowId);
                 rows.push({
                   id: rowId,
-                  name: `${prefix}(${cam.name})`,
-                  label: `${prefix}(${cam.name})`,
+                  name: `${tracker.name} (${cam.name})`,
+                  label: `${tracker.name} (${cam.name})`,
                   onClick: noop,
                 });
               }

@@ -114,19 +114,21 @@ export const CameraItem = ({
         bgcolor: Colors.black,
         overflow: "hidden",
         borderRadius: 1,
-        opacity: isExiting ? 0 : 1,
-        transition: skipAnimation
-          ? "none"
-          : `opacity ${TRANSITION_MS}ms ease-in-out`,
+        pointerEvents: isExiting ? "none" : undefined,
         "@keyframes cameraFadeIn": {
           from: { opacity: 0, transform: "scale(0.96)" },
           to: { opacity: 1, transform: "scale(1)" },
         },
+        "@keyframes cameraFadeOut": {
+          from: { opacity: 1, transform: "scale(1)" },
+          to: { opacity: 0, transform: "scale(0.95)" },
+        },
         animation:
-          isExiting || empty || skipAnimation
+          empty || skipAnimation
             ? "none"
-            : `cameraFadeIn ${TRANSITION_MS}ms ease-out ${Math.min(index * 40, 240)}ms both`,
-        pointerEvents: isExiting ? "none" : undefined,
+            : isExiting
+              ? `cameraFadeOut ${TRANSITION_MS}ms ease-in forwards`
+              : `cameraFadeIn ${TRANSITION_MS}ms ease-out ${Math.min(index * 40, 240)}ms both`,
       }}
     >
       <img

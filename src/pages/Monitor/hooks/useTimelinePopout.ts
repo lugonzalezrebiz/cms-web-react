@@ -89,6 +89,8 @@ export const useTimelinePopout =(
     }
     const params = new URLSearchParams(searchParams);
     if (cameraGroup) params.set("cameraGroup", cameraGroup);
+    const currentSec = markerTimeSecRef.current;
+    if (currentSec !== null) params.set("markerSec", String(Math.round(currentSec)));
     const route = `/monitor/timeline?${params.toString()}`;
     const url =
       window.location.protocol === "file:"

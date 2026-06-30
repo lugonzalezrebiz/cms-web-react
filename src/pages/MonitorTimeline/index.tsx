@@ -64,7 +64,9 @@ const MonitorTimeline = () => {
       broadcastMutation,
     );
 
-  const [targetSec, setTargetSec] = useState<number | undefined>(undefined);
+  const markerSecParam = searchParams.get("markerSec");
+  const initialMarkerSec = markerSecParam !== null ? Number(markerSecParam) : undefined;
+  const [targetSec, setTargetSec] = useState<number | undefined>(initialMarkerSec);
   const { cameraGroup, trackerOption, customTrackerIDs } = useBroadcastSync(
     markerTimeSec,
     setTargetSec,
