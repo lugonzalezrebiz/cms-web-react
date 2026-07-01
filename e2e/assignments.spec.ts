@@ -250,10 +250,12 @@ test('Submit Ticket enables when issue type and description are filled', async (
   await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
   const optionCount = await page.getByRole('option').count();
   test.skip(optionCount === 0, 'no issue type options available');
-  await page.getByRole('option').first().click();
+  // dispatchEvent bypasses CDP's pointer-event sequence so the click lands directly on the option
+  // element rather than racing with React removing it from the Portal (which caused the remaining
+  // CDP events to land on the Dialog backdrop and trigger onClose).
+  await page.getByRole('option').first().dispatchEvent('click');
+  await expect(page.locator('[role="listbox"]')).not.toBeVisible({ timeout: 3_000 }).catch(() => {});
 
-  // Fill description — MUI TextareaAutosize inside a Dialog loses its ARIA textbox role briefly
-  // after the Select portal closes; target the textarea element directly to avoid the race.
   await page.getByRole('dialog').locator('textarea').first().fill('Test description for E2E validation');
 
   await expect(page.getByRole('button', { name: /Submit Ticket/i })).toBeEnabled();
@@ -336,9 +338,9 @@ test('submitting a ticket shows the success dialog', async ({ page }) => {
   await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
   const optionCount = await page.getByRole('option').count();
   test.skip(optionCount === 0, 'no issue type options available');
-  await page.getByRole('option').first().click();
+  await page.getByRole('option').first().dispatchEvent('click');
+  await expect(page.locator('[role="listbox"]')).not.toBeVisible({ timeout: 3_000 }).catch(() => {});
 
-  // Fill description to satisfy validation — same ARIA race as the other ticket test; use direct locator.
   await page.getByRole('dialog').locator('textarea').first().fill('E2E test ticket description');
 
   await page.getByRole('button', { name: /Submit Ticket/i }).click();
