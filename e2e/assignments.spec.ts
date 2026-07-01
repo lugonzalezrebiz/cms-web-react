@@ -245,15 +245,15 @@ test('Submit Ticket enables when issue type and description are filled', async (
   await openCardMenu(page);
   await page.getByText('Open a ticket').click();
 
-  // Select an issue type
+  // Select an issue type via keyboard — clicking a Portal option triggers the Dialog's onClose
+  // because MUI Select renders its listbox outside the Dialog DOM and any click in that Portal
+  // is seen as an "outside click" by the Dialog. Keyboard navigation stays within the Dialog.
   await page.getByRole('dialog').getByRole('combobox').click();
   await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
   const optionCount = await page.getByRole('option').count();
   test.skip(optionCount === 0, 'no issue type options available');
-  // dispatchEvent bypasses CDP's pointer-event sequence so the click lands directly on the option
-  // element rather than racing with React removing it from the Portal (which caused the remaining
-  // CDP events to land on the Dialog backdrop and trigger onClose).
-  await page.getByRole('option').first().dispatchEvent('click');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
   await expect(page.locator('[role="listbox"]')).not.toBeVisible({ timeout: 3_000 }).catch(() => {});
 
   await page.getByRole('dialog').locator('textarea').first().fill('Test description for E2E validation');
@@ -333,12 +333,13 @@ test('submitting a ticket shows the success dialog', async ({ page }) => {
   await page.getByText('Open a ticket').click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
-  // Select the first available issue type
+  // Select the first available issue type via keyboard — same Portal/Dialog issue as above.
   await page.getByRole('dialog').getByRole('combobox').click();
   await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
   const optionCount = await page.getByRole('option').count();
   test.skip(optionCount === 0, 'no issue type options available');
-  await page.getByRole('option').first().dispatchEvent('click');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
   await expect(page.locator('[role="listbox"]')).not.toBeVisible({ timeout: 3_000 }).catch(() => {});
 
   await page.getByRole('dialog').locator('textarea').first().fill('E2E test ticket description');
