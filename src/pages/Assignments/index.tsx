@@ -32,7 +32,7 @@ const Assignments = () => {
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
-  const effectiveCompany = company || companyFilters[1]?.value || "";
+  const effectiveCompany = company || companyFilters[0]?.value || "";
   const { assignments, isPending: isLoading } = useAssignments({
     companyID: effectiveCompany ? Number(effectiveCompany) : null,
     locationID: store ? Number(store) : null,

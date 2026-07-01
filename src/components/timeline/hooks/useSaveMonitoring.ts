@@ -67,14 +67,14 @@ export const useSaveMonitoring = ({
 }) => {
   const navigate = useNavigatePlain();
   const { user, token } = useAuth();
-  const { mutateAsync: mutateSave } = usePost<SaveResponse, SavePayload>(
+  const { mutateAsync: mutateSave, isPending: isSavePending } = usePost<SaveResponse, SavePayload>(
     `monitoring/${monitoringID}/save2`, {
       onSuccess: () => {
         onSuccess?.();
       },
     },
   );
-  const { mutateAsync: mutateFinish } = usePost<unknown, void>(
+  const { mutateAsync: mutateFinish, isPending: isFinishPending } = usePost<unknown, void>(
     `monitoring/${monitoringID}/review/finish`
   );
 
@@ -198,5 +198,5 @@ export const useSaveMonitoring = ({
     navigate("/assignments");
   }, [mutateSave, mutateFinish, navigate]);
 
-  return { handleDone };
+  return { handleDone, isDoneLoading: isSavePending || isFinishPending };
 };

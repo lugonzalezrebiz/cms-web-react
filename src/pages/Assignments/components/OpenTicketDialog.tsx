@@ -20,7 +20,9 @@ interface Props {
   selectedAssignment: Assignment;
 }
 
-const StyledTextarea = styled(TextareaAutosize)<{ hasError?: boolean }>(
+const StyledTextarea = styled(TextareaAutosize, {
+  shouldForwardProp: (prop) => prop !== "hasError",
+})<{ hasError?: boolean }>(
   ({ hasError }) => ({
     width: "100%",
     fontFamily: Fonts.secondary,
