@@ -54,7 +54,7 @@ jobs:
           VITE_ADMIN_TEST_PASS=${{ secrets.VITE_ADMIN_TEST_PASS }}
           EOF
 
-      - name: Check required secrets and backend connectivity
+      - name: Check required secrets
         run: |
           if [ -z "${{ secrets.VITE_HOST }}" ]; then
             echo "::error::VITE_HOST secret is not set. Add it in Settings → Secrets and variables → Actions."
@@ -68,13 +68,6 @@ jobs:
             echo "::error::VITE_ADMIN_TEST_USER or VITE_ADMIN_TEST_PASS secret is not set."
             exit 1
           fi
-          echo "Checking backend reachability at ${{ secrets.VITE_HOST }} ..."
-          if ! curl --silent --fail --max-time 10 "${{ secrets.VITE_HOST }}" > /dev/null 2>&1; then
-            echo "::error::Cannot reach VITE_HOST=${{ secrets.VITE_HOST }} from GitHub Actions runners."
-            echo "::error::If the backend is on a private network, switch to a self-hosted runner or add VPN access."
-            exit 1
-          fi
-          echo "Backend is reachable."
 
       - name: Run E2E tests
         run: npm run test:e2e
