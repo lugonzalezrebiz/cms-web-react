@@ -171,7 +171,6 @@ const menuItemSx = {
   p: "8px 16px",
   color: Colors.lightBlack,
   minHeight: 0,
-  height: "43px",
   display: "block",
   whiteSpace: "nowrap",
   overflow: "hidden",

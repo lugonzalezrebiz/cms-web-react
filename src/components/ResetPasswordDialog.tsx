@@ -278,6 +278,7 @@ const ResetPasswordDialog = ({
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
           <Button
+            fontSize="14px"
             outfit
             sx={{ height: "36px" }}
             color="secondary"
@@ -286,6 +287,7 @@ const ResetPasswordDialog = ({
             Cancel
           </Button>
           <Button
+            fontSize="14px"
             outfit
             color="primary"
             type="submit"

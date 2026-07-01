@@ -345,7 +345,7 @@ export const CameraItem = ({
           onClose={closeMenu}
           items={contextMenuItems}
           cameraId={cameraId ?? 0}
-          title="Select a Compliance Violations"
+          title="Select a Compliance Violation"
         />
       )}
     </Box>

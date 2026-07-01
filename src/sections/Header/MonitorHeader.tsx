@@ -337,7 +337,7 @@ const MonitorHeader = ({
                 disabled={isAgent || isDoneLoading}
                 onClick={handleDone}
               >
-                {isDoneLoading ? "loading..." : "Done"}
+                {isDoneLoading ? "Loading..." : "Done"}
               </Button>
             </Box>
           </Box>
