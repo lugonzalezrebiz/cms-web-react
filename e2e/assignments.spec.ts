@@ -252,8 +252,9 @@ test('Submit Ticket enables when issue type and description are filled', async (
   test.skip(optionCount === 0, 'no issue type options available');
   await page.getByRole('option').first().click();
 
-  // Fill description
-  await page.getByRole('dialog').getByRole('textbox').fill('Test description for E2E validation');
+  // Fill description — MUI TextareaAutosize inside a Dialog loses its ARIA textbox role briefly
+  // after the Select portal closes; target the textarea element directly to avoid the race.
+  await page.getByRole('dialog').locator('textarea').first().fill('Test description for E2E validation');
 
   await expect(page.getByRole('button', { name: /Submit Ticket/i })).toBeEnabled();
 });
@@ -337,8 +338,8 @@ test('submitting a ticket shows the success dialog', async ({ page }) => {
   test.skip(optionCount === 0, 'no issue type options available');
   await page.getByRole('option').first().click();
 
-  // Fill description to satisfy validation
-  await page.getByRole('dialog').getByRole('textbox').fill('E2E test ticket description');
+  // Fill description to satisfy validation — same ARIA race as the other ticket test; use direct locator.
+  await page.getByRole('dialog').locator('textarea').first().fill('E2E test ticket description');
 
   await page.getByRole('button', { name: /Submit Ticket/i }).click();
 
