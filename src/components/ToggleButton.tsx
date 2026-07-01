@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { Colors, Fonts } from "../theme";
-import { Box } from "@mui/system";
+import { Box, display } from "@mui/system";
 
 interface GroupOption {
   value: string;
@@ -168,9 +168,9 @@ const GroupToggleButton = ({
 const menuItemSx = {
   fontFamily: Fonts.secondary,
   fontSize: "12px",
-  p: "8px 16px",
+  p: "13px 16px",
   color: Colors.lightBlack,
-  minHeight: 0,
+  height: "43px",
   display: "block",
   whiteSpace: "nowrap",
   overflow: "hidden",

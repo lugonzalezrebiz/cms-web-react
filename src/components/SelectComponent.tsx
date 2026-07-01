@@ -91,7 +91,7 @@ const SelectComponent = ({
   setFilter,
   size,
   sizePaper,
-  font = "main",
+  font = "secondary",
 }: Props) => {
   const fontFamily = Fonts[font];
   return (
