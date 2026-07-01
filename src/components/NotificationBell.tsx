@@ -1,6 +1,7 @@
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
+import { assetUrl } from "../utils";
 
 const StyledImg = styled("img")({
   margin: "0 8px",
@@ -42,7 +43,7 @@ const NotificationBell = ({
     )}
     <StyledImg
       onClick={onClick}
-      src="./assets/notification.svg"
+      src={assetUrl("notification.svg")}
       alt="Notifications"
     />
   </Box>
