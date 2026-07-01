@@ -1,9 +1,7 @@
-import { useEffect, useRef } from "react";
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
-import { usePostCallback } from "../hooks/useApi";
 
 export interface Notification {
   id: number;
@@ -11,6 +9,7 @@ export interface Notification {
   timeAgo: string;
   date: string;
   unread: boolean;
+  meta?: Record<string, unknown>;
   // location?: string;
   // store?: string;
 }
@@ -20,6 +19,7 @@ interface Props {
   anchorEl: HTMLElement | null;
   handleClose: () => void;
   notifications: Notification[];
+  onNotificationClick?: (notif: Notification) => void;
 }
 
 const TitleRow = styled(Box)({
@@ -40,31 +40,19 @@ const TitleText = styled("p")({
   color: Colors.lightBlack,
 });
 
-const ScrollArea = styled(Box)({
-  overflowY: "auto",
-  display: "flex",
-  flexDirection: "column",
-  gap: "2px",
-  flex: 1,
-  "&::-webkit-scrollbar": { width: "4px" },
-  "&::-webkit-scrollbar-track": { background: "transparent" },
-  "&::-webkit-scrollbar-thumb": {
-    background: Colors.paleGray,
-    borderRadius: "4px",
-  },
-});
-
-const NotifRow = styled(Box)<{ unread?: boolean }>(({ unread }) => ({
+const NotifRow = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "unread",
+})<{ unread?: boolean }>(({ unread }) => ({
   display: "flex",
   alignItems: "flex-start",
   gap: "10px",
   padding: "10px 6px",
   borderRadius: 0,
-  "&:first-child": {
+  "&:first-of-type": {
     borderTopLeftRadius: "8px",
     borderTopRightRadius: "8px",
   },
-  "&:last-child": {
+  "&:last-of-type": {
     borderBottomLeftRadius: "8px",
     borderBottomRightRadius: "8px",
   },
@@ -125,36 +113,14 @@ const UnreadDot = styled(Box)({
   marginRight: "6px",
 });
 
-const AssignmentSubText = styled("p")({
-  fontFamily: Fonts.main,
-  fontSize: "14px",
-  fontWeight: 400,
-  color: Colors.lightBlack,
-  lineHeight: 1.43,
-});
-
 const NotificationMenu = ({
   anchorEl,
   open,
   handleClose,
   notifications,
+  onNotificationClick,
 }: Props) => {
   const unreadCount = notifications.filter((n) => n.unread).length;
-  const post = usePostCallback({ invalidateKey: ["notification/all"] });
-  const notificationsRef = useRef(notifications);
-  notificationsRef.current = notifications;
-
-  useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(() => {
-      notificationsRef.current
-        .filter((n) => n.unread)
-        .forEach(({ id }) => {
-          post(`notification/${id}/read`).catch(() => {});
-        });
-    }, 5_000);
-    return () => clearTimeout(timer);
-  }, [open, post]);
 
   return (
     <PopoverMenu
@@ -171,10 +137,17 @@ const NotificationMenu = ({
           flexDirection: "column",
           gap: "8px",
           overflow: "hidden",
+          maxHeight: "420px",
         }}
       >
         <TitleRow>
-          <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
             <TitleText>Notifications</TitleText>
             {unreadCount > 0 && (
               <Box
@@ -195,38 +168,31 @@ const NotificationMenu = ({
           </Box>
         </TitleRow>
 
-        <ScrollArea>
-          {notifications.map((notif) => {
-            return (
-              <NotifRow key={notif.id} unread={notif.unread}>
-                <InfoCol>
-                  <NameText>{notif.title}</NameText>
-                  {/* <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <img
-                      style={{ margin: "0 6px 0 0" }}
-                      src="./assets/building-07.svg"
-                      alt="Location"
-                    />
-                    <AssignmentSubText style={{ margin: "0 18px 0 0" }}>
-                      {notif.location}
-                    </AssignmentSubText>
-                    <img
-                      style={{ margin: "0 6px 0 0" }}
-                      src="./assets/building-02.svg"
-                      alt="Store"
-                    />
-                    <AssignmentSubText style={{ margin: 0 }}>
-                      {notif.store}
-                    </AssignmentSubText>
-                  </Box> */}
-                  <ActivityText title={notif.date}>{notif.date}</ActivityText>
-                  <TimeText>{notif.timeAgo}</TimeText>
-                </InfoCol>
-                {notif.unread && <UnreadDot />}
-              </NotifRow>
-            );
-          })}
-        </ScrollArea>
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          {notifications.map((notif) => (
+            <NotifRow
+              key={notif.id}
+              unread={notif.unread}
+              onClick={() => onNotificationClick?.(notif)}
+            >
+              <InfoCol>
+                <NameText>{notif.title}</NameText>
+                <ActivityText title={notif.date}>{notif.date}</ActivityText>
+                <TimeText>{notif.timeAgo}</TimeText>
+              </InfoCol>
+              {notif.unread && <UnreadDot />}
+            </NotifRow>
+          ))}
+        </Box>
       </Box>
     </PopoverMenu>
   );

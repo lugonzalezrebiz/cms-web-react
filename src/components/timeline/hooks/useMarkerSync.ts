@@ -24,6 +24,13 @@ export const useMarkerSync = ({
   panOffsetSec?: number;
 }) => {
   const prevTargetRef = useRef<number | undefined>(undefined);
+  // Skip the initial handleMarkerChange call when targetMarkerSec is already
+  // defined on mount. Effect 1 will set markerSec to the target, changing
+  // resolvedMarkerSec, which will re-trigger this effect with the correct value.
+  // Without this guard the re-mounting TimeLine briefly fires handleMarkerChange
+  // with timelineStartSec (the null-fallback), which jumps markerSec to the
+  // start and can trigger the auto-close effect in Monitor.
+  const skipInitialHandleRef = useRef(targetMarkerSec !== undefined);
 
   const panOffsetSecRef = useRef(panOffsetSec ?? 0);
   const visibleDurationRef = useRef(visibleDuration ?? 0);
@@ -70,6 +77,10 @@ export const useMarkerSync = ({
   }, [targetMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (skipInitialHandleRef.current) {
+      skipInitialHandleRef.current = false;
+      return;
+    }
     handleMarkerChange(resolvedMarkerSec);
   }, [resolvedMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
 };

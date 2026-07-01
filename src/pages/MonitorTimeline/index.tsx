@@ -170,15 +170,35 @@ const MonitorTimeline = () => {
   const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<
     number | undefined
   >(undefined);
+  const cameraGroupInitializedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isTrackerTab) return;
+    cameraGroupInitializedRef.current = null;
     const first = [...filteredEventPoints].sort(
       (a, b) => a.timeSec - b.timeSec,
     )[0];
-    setCameraGroupTargetSec(first?.timeSec);
+    if (first !== undefined) {
+      setCameraGroupTargetSec(first.timeSec);
+      cameraGroupInitializedRef.current = cameraGroup;
+    } else {
+      setCameraGroupTargetSec(undefined);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraGroup]);
+
+  useEffect(() => {
+    if (isTrackerTab || cameraGroupInitializedRef.current !== null) return;
+    if (filteredEventPoints.length === 0) return;
+    const first = [...filteredEventPoints].sort(
+      (a, b) => a.timeSec - b.timeSec,
+    )[0];
+    if (first !== undefined) {
+      setCameraGroupTargetSec(first.timeSec);
+      cameraGroupInitializedRef.current = cameraGroup;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEventPoints]);
 
   const autoTargetSec = isTrackerTab ? trackerTargetSec : cameraGroupTargetSec;
 

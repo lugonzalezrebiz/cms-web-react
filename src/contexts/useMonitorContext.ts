@@ -13,9 +13,10 @@ export const useCameraGroup = () => useContext(CameraGroupContext);
 export const useRegisterMonitorActions = (
   handleDone: () => void,
   showFinalizeButton: boolean,
+  isDoneLoading: boolean,
 ) => {
   const set = useMonitorSetter();
   useEffect(() => {
-    set({ handleDone, showFinalizeButton } satisfies MonitorState);
-  }, [handleDone, showFinalizeButton, set]);
+    set({ handleDone, showFinalizeButton, isDoneLoading } satisfies MonitorState);
+  }, [handleDone, showFinalizeButton, isDoneLoading, set]);
 };

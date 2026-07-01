@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
-import { useGet } from "./useApi";
+import { useEffect, useRef } from "react";
+import { useGet, usePostCallback } from "./useApi";
 import type { Notification } from "../components/NotificationMenu";
 
 interface ApiNotification {
@@ -31,7 +32,7 @@ function timeAgo(dateStr: string): string {
   return then.format("MMM D, YYYY");
 }
 
-export const useNotifications=()=> {
+export const useNotifications = (open: boolean) => {
   const { data, isPending, error } = useGet<NotificationsResponse>(
     "notification/all",
     undefined,
@@ -46,9 +47,29 @@ export const useNotifications=()=> {
     date: dayjs(n.date).format("MMMM D - YYYY"),
     unread: n.type === "GENERAL" ? false : !(n.read ?? false),
     timeAgo: timeAgo(n.date),
+    meta: n.meta,
     // location: undefined,
     // store: undefined,
   }));
 
+  const post = usePostCallback({ invalidateKey: ["notification/all"] });
+  const notificationsRef = useRef(notifications);
+
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      notificationsRef.current
+        .filter((n) => n.unread)
+        .forEach(({ id }) => {
+          post(`notification/${id}/read`).catch(() => {});
+        });
+    }, 5_000);
+    return () => clearTimeout(timer);
+  }, [open, post]);
+
   return { notifications, isPending, error };
-}
+};

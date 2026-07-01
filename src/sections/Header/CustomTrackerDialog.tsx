@@ -106,7 +106,6 @@ const CustomTrackerDialog = ({
     onClose();
   };
 
-
   return (
     <FormDialog
       open={open}
@@ -196,10 +195,16 @@ const CustomTrackerDialog = ({
           Unselect all
         </Box>
         <Box display="flex" gap={1} justifyContent="flex-end">
-          <Button color="secondary" fontSize="14px" onClick={handleClose}>
+          <Button
+            sx={{ height: "36px" }}
+            color="secondary"
+            fontSize="14px"
+            onClick={handleClose}
+          >
             Cancel
           </Button>
           <Button
+            sx={{ height: "36px" }}
             fontSize="14px"
             disabled={selected.length < 2}
             onClick={handleCreate}

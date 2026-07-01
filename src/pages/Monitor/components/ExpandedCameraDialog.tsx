@@ -19,6 +19,7 @@ export interface ExpandedCameraDialogProps {
   date?: string;
   timestamp?: string;
   onRemoveTag: (tagId: number) => void;
+  customHeight?: string;
 }
 
 export const ExpandedCameraDialog = ({
@@ -35,6 +36,7 @@ export const ExpandedCameraDialog = ({
   date,
   timestamp,
   onRemoveTag,
+  customHeight,
 }: ExpandedCameraDialogProps) => {
   return (
     <Dialog
@@ -43,7 +45,7 @@ export const ExpandedCameraDialog = ({
       onClose={onClose}
       maxWidth="100%"
       align="flex-start"
-      customHeight="70%"
+      customHeight={customHeight ? customHeight : "70%"}
     >
       {open && (
         <Box
