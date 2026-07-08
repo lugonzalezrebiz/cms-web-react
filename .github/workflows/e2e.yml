@@ -1,0 +1,83 @@
+name: E2E Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Create .env file
+        run: |
+          cat > .env << 'EOF'
+          VITE_HOST=${{ secrets.VITE_HOST }}
+          VITE_URL_API=${{ secrets.VITE_URL_API }}
+          VITE_REVIEWER_ROLE=${{ secrets.VITE_REVIEWER_ROLE }}
+          VITE_AGENT_ROLE=${{ secrets.VITE_AGENT_ROLE }}
+          VITE_ADMIN_ROLE=${{ secrets.VITE_ADMIN_ROLE }}
+          VITE_MONITORING_ID=${{ secrets.VITE_MONITORING_ID }}
+          VITE_USE_STATIC_IDS=${{ secrets.VITE_USE_STATIC_IDS }}
+          VITE_ASSIGNMENT_COMPLETED=${{ secrets.VITE_ASSIGNMENT_COMPLETED }}
+          VITE_PASSWORD_VALIDATION=${{ secrets.VITE_PASSWORD_VALIDATION }}
+          VITE_TEST_USER=${{ secrets.VITE_TEST_USER }}
+          VITE_TEST_PASS=${{ secrets.VITE_TEST_PASS }}
+          VITE_ADMIN_TEST_USER=${{ secrets.VITE_ADMIN_TEST_USER }}
+          VITE_ADMIN_TEST_PASS=${{ secrets.VITE_ADMIN_TEST_PASS }}
+          EOF
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.VITE_HOST }}" ]; then
+            echo "::error::VITE_HOST secret is not set. Add it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if [ -z "${{ secrets.VITE_TEST_USER }}" ] || [ -z "${{ secrets.VITE_TEST_PASS }}" ]; then
+            echo "::error::VITE_TEST_USER or VITE_TEST_PASS secret is not set."
+            exit 1
+          fi
+          if [ -z "${{ secrets.VITE_ADMIN_TEST_USER }}" ] || [ -z "${{ secrets.VITE_ADMIN_TEST_PASS }}" ]; then
+            echo "::error::VITE_ADMIN_TEST_USER or VITE_ADMIN_TEST_PASS secret is not set."
+            exit 1
+          fi
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
