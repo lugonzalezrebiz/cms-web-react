@@ -1,5 +1,6 @@
 import { Box, Popover } from "@mui/material";
 import { Colors, Fonts } from "../../theme";
+import { assetUrl } from "../../utils";
 import type { NavTab } from "./types";
 import { NAV_TABS } from "./constants";
 
@@ -92,7 +93,7 @@ const TimelineNavPopover = ({
                 },
               }}
             >
-              <img src={`./assets/${iconClass}.svg`} alt={label} />
+              <img src={assetUrl(`${iconClass}.svg`)} alt={label} />
               <span>{label}</span>
             </Box>
           </Box>

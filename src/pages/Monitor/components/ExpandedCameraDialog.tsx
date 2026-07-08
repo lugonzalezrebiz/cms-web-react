@@ -1,4 +1,5 @@
 import { Box } from "@mui/system";
+import { assetUrl } from "../../../utils";
 import Dialog from "../../../components/Dialog";
 import { CameraItem } from "../../../components/CameraLayout";
 import Button from "../../../components/Button";
@@ -62,7 +63,7 @@ export const ExpandedCameraDialog = ({
             title={`Camera ${cameraId ?? Number(cameraIndex) + 1} (${cameraName})`}
           >
             <Box sx={{ cursor: "pointer", marginRight: "16px" }}>
-              <img onClick={onClose} src="./assets/x-close.svg" alt="Close" />
+              <img onClick={onClose} src={assetUrl("x-close.svg")} alt="Close" />
             </Box>
           </Title>
           <Box

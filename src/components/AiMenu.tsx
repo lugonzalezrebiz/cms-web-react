@@ -1,5 +1,6 @@
 import { Box } from "@mui/system";
 import { Colors, Fonts } from "../theme";
+import { assetUrl } from "../utils";
 import PopoverMenu from "./PopoverMenu";
 import styled from "@emotion/styled";
 import { useState, useRef, useEffect } from "react";
@@ -97,7 +98,7 @@ const AiMenu = ({ anchorEl, open, handleClose }: Props) => {
               filter: "grayscale(30%)",
             }}
           >
-            <img style={{ height: "72px" }} src="./assets/ai.svg" alt="AI assistant" />
+            <img style={{ height: "72px" }} src={assetUrl("ai.svg")} alt="AI assistant" />
           </Box>
 
           <Box

@@ -3,6 +3,7 @@ import { Grid } from "@mui/system";
 import styled from "@emotion/styled";
 import { Box } from "@mui/material";
 import { Colors, Fonts } from "../theme";
+import { assetUrl } from "../utils";
 import Card from "./Card";
 import Divider from "./Divider";
 import {
@@ -209,7 +210,7 @@ export const NewAssignmentsCard = ({
         <Divider marginBottom="10px" />
       </Box>
       <Box display={"flex"} alignItems={"center"}>
-        <img src="./assets/message-text-square-01.svg" alt="Comments" />
+        <img src={assetUrl("message-text-square-01.svg")} alt="Comments" />
         <AssignmentComments>
           <span style={{ color: Colors.vividOrange }}>{comments}</span> Comments
         </AssignmentComments>

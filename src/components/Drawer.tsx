@@ -2,6 +2,7 @@ import { Divider, Drawer as DrawerMUI } from "@mui/material";
 import { Box } from "@mui/system";
 import Title from "./Title";
 import { Colors } from "../theme";
+import { assetUrl } from "../utils";
 import type { ReactNode } from "react";
 
 interface Props {
@@ -50,7 +51,7 @@ const Drawer = ({
           onClick={onClose}
           sx={{ cursor: "pointer", visibility: "hidden" }}
         >
-          <img src="./assets/x-close.svg" alt="" />
+          <img src={assetUrl("x-close.svg")} alt="" />
         </Box>
         {header ??
           (title && (

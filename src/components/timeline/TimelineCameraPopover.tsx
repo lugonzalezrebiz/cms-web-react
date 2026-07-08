@@ -1,6 +1,7 @@
 import { Box, Popover } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
+import { assetUrl } from "../../utils";
 import { CAMERA_OPTIONS } from "./constants";
 
 const MenuCameraContainer = styled(Box)({
@@ -76,7 +77,7 @@ const TimelineCameraPopover = ({
     <Box sx={{ width: "100%", height: "100%" }}>
       <TitleCameraMenu>
         Focused monitoring
-        <img src="./assets/plus-1.svg" alt="Add camera" />
+        <img src={assetUrl("plus-1.svg")} alt="Add camera" />
       </TitleCameraMenu>
       {CAMERA_OPTIONS.map((option) => {
         const isSelected = selectedOption === option;
@@ -102,7 +103,7 @@ const TimelineCameraPopover = ({
             >
               {option}
             </TextCameraMenu>
-            {isSelected && <img src="/assets/check.svg" alt="selected" />}
+            {isSelected && <img src={assetUrl("check.svg")} alt="selected" />}
           </MenuCameraContainer>
         );
       })}

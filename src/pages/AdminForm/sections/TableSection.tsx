@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { assetUrl } from "../../../utils";
 import { Colors } from "../../../theme";
 import { Box, Grid } from "@mui/system";
 import Title from "../../../components/Title";
@@ -194,7 +195,7 @@ const TableSection = () => {
             fontSize="14px"
           >
             <Box sx={{ display: "flex", alignItems: "center" }} mr={"4px"}>
-              <img src="./assets/plus.svg" alt="" />
+              <img src={assetUrl("plus.svg")} alt="" />
             </Box>
             <span>Create a New Employee</span>
           </Button>
