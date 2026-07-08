@@ -7,6 +7,7 @@ import useCompanies from "../../../hooks/useCompanies";
 import useAssignUserLocation from "../hooks/useAssignUserLocation";
 import { useState } from "react";
 import { Label, ErrorText } from "./StyledComponents";
+import { Colors, Fonts } from "../../../theme";
 
 interface AssignDialogProps {
   open: boolean;

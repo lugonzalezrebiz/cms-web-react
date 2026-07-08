@@ -1,9 +1,15 @@
 import { Radio, RadioGroup, FormControlLabel } from "@mui/material";
-import { Colors, Fonts } from "../../../theme";
+import { Colors, Fonts } from "../theme";
+
+export interface RadioButtonOption {
+  value: string;
+  label: string;
+}
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  options: RadioButtonOption[];
 }
 
 const radioSx = {
@@ -22,20 +28,23 @@ const labelStyle: React.CSSProperties = {
   lineHeight: 1.43,
 };
 
-const EmployeeTypeRadioGroup = ({ value, onChange }: Props) => (
+const RadioButtonGroup = ({ value, onChange, options }: Props) => (
   <RadioGroup
     row
     value={value}
     onChange={(e) => onChange(e.target.value)}
     sx={{ gap: "16px", ml: "-1px" }}
   >
-    <FormControlLabel
-      value="reviewer"
-      control={<Radio size="small" sx={radioSx} />}
-      label={<span style={labelStyle}>Reviewer</span>}
-      sx={{ m: 0 }}
-    />
+    {options.map((option) => (
+      <FormControlLabel
+        key={option.value}
+        value={option.value}
+        control={<Radio size="small" sx={radioSx} />}
+        label={<span style={labelStyle}>{option.label}</span>}
+        sx={{ m: 0 }}
+      />
+    ))}
   </RadioGroup>
 );
 
-export default EmployeeTypeRadioGroup;
+export default RadioButtonGroup;
