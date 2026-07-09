@@ -66,6 +66,14 @@ jobs:
             echo "::error::VITE_TEST_USER or VITE_TEST_PASS secret is not set."
             exit 1
           fi
+          if [ -z "${{ secrets.VITE_REVIEWER_ROLE }}" ] || [ -z "${{ secrets.VITE_AGENT_ROLE }}" ] || [ -z "${{ secrets.VITE_ADMIN_ROLE }}" ]; then
+            echo "::error::VITE_REVIEWER_ROLE, VITE_AGENT_ROLE or VITE_ADMIN_ROLE secret is not set. ProtectedRole compares these against the JWT's roleID — an empty value becomes 0 via Number(''), silently redirecting valid users away from protected routes instead of failing loudly."
+            exit 1
+          fi
+          if [ -z "${{ secrets.VITE_MONITORING_ID }}" ]; then
+            echo "::error::VITE_MONITORING_ID secret is not set."
+            exit 1
+          fi
           if [ -z "${{ secrets.VITE_ADMIN_TEST_USER }}" ] || [ -z "${{ secrets.VITE_ADMIN_TEST_PASS }}" ]; then
             echo "::error::VITE_ADMIN_TEST_USER or VITE_ADMIN_TEST_PASS secret is not set."
             exit 1
