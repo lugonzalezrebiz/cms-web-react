@@ -17,6 +17,9 @@ async function waitForTimeline(page: Page) {
 async function waitForTimelineDataReady(page: Page) {
   await waitForTimeline(page);
   await expect(page.getByText('loading...')).toHaveCount(0, { timeout: 15_000 }).catch(() => {});
+  // Under heavier load (e.g. CI running multiple workers) timelineStartSec can still shift
+  // briefly after the "loading..." text clears — give trailing data a moment to settle.
+  await page.waitForTimeout(500);
 }
 
 // Returns count of camera "Expand camera" buttons (only on non-empty camera cells).
@@ -701,6 +704,10 @@ test("closing the popup restores Monitor's timeline at the popup's last marker p
   const after = await popupTime.textContent();
   test.skip(after === before, 'marker did not move in the popup — no steppable content in this environment');
 
+  // Give the "marker" BroadcastChannel message time to reach Monitor and update its
+  // markerTimeSecRef before closing — otherwise closing too fast can race the broadcast
+  // and useTimelinePopout restores a stale marker instead of this one.
+  await page.waitForTimeout(500);
   await popup.close();
 
   // useTimelinePopout polls win.closed every 500ms, then sets restoreMarkerSec and
