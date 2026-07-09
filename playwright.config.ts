@@ -26,13 +26,17 @@ export default defineConfig({
       testMatch: '**/setup/admin-setup.ts',
     },
     {
+      name: 'setup-agent',
+      testMatch: '**/setup/agent-setup.ts',
+    },
+    {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/user.json',
       },
       dependencies: ['setup'],
-      testIgnore: '**/admin-form.spec.ts',
+      testIgnore: ['**/admin-form.spec.ts', '**/monitor-agent.spec.ts'],
     },
     {
       name: 'admin-chromium',
@@ -42,6 +46,15 @@ export default defineConfig({
       },
       dependencies: ['setup-admin'],
       testMatch: '**/admin-form.spec.ts',
+    },
+    {
+      name: 'agent-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'e2e/.auth/agent.json',
+      },
+      dependencies: ['setup-agent'],
+      testMatch: '**/monitor-agent.spec.ts',
     },
   ],
 });

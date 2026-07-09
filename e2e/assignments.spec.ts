@@ -121,6 +121,63 @@ test('changing company resets store selection', async ({ page }) => {
   await expect(storeSelect).toContainText(/All Stores|Select/);
 });
 
+test('company filter defaults to the first available company', async ({ page }) => {
+  // effectiveCompany = company || companyFilters[0]?.value — the select should show
+  // the first company's label on load, before the user picks anything.
+  const companySelect = page.getByRole('combobox').first();
+  await companySelect.click();
+  await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
+  const companyCount = await page.getByRole('option').count();
+  test.skip(companyCount === 0, 'no company options available in this environment');
+
+  const firstOptionText = await page.getByRole('option').first().textContent();
+  await page.keyboard.press('Escape');
+
+  await expect(companySelect).toHaveText(firstOptionText ?? '');
+});
+
+test("selecting a store updates the store select's displayed value", async ({ page }) => {
+  // getStoreFilters always puts "All Stores" (value "") first, and the select already
+  // shows that by default — so pick option 1 (a real store) to prove the round-trip works.
+  const storeSelect = page.getByRole('combobox').nth(1);
+  await storeSelect.click();
+  await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
+  const storeCount = await page.getByRole('option').count();
+  test.skip(storeCount < 2, 'no real store options available beyond "All Stores"');
+
+  const optionText = await page.getByRole('option').nth(1).textContent();
+  await page.getByRole('option').nth(1).click();
+
+  await expect(storeSelect).toHaveText(optionText ?? '');
+});
+
+test('selecting a store refetches assignments with the selected locationID', async ({ page }) => {
+  // useAssignments only includes locationID in the POST body once a store is picked
+  // (src/hooks/useAssignments.ts). Confirm the store select actually drives that refetch.
+  const requestBodies: Record<string, unknown>[] = [];
+  await page.route('**/location/assignments', async (route) => {
+    const req = route.request();
+    if (req.method() === 'POST') {
+      requestBodies.push(JSON.parse(req.postData() ?? '{}'));
+    }
+    await route.continue();
+  });
+
+  const storeSelect = page.getByRole('combobox').nth(1);
+  await storeSelect.click();
+  await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
+  const storeCount = await page.getByRole('option').count();
+  // Option 0 is "All Stores" (value "") — selecting it keeps locationID out of the body,
+  // so pick option 1 to exercise the actual locationID-filtering path.
+  test.skip(storeCount < 2, 'no real store options available beyond "All Stores"');
+
+  await page.getByRole('option').nth(1).click();
+  await page.waitForLoadState('networkidle');
+
+  const requestsWithLocation = requestBodies.filter((b) => 'locationID' in b);
+  expect(requestsWithLocation.length).toBeGreaterThan(0);
+});
+
 // ─── Assignments list ─────────────────────────────────────────────────────────
 
 test('assignments section shows cards or empty state', async ({ page }) => {

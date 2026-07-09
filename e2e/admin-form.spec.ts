@@ -27,6 +27,14 @@ async function openFirstUserDrawer(page: Page) {
   await page.locator('tbody tr').first().locator('td').nth(4).click();
 }
 
+// Opens the View Assignments drawer, then clicks Reset Password to open the Reset Password dialog.
+async function openResetPasswordDialog(page: Page) {
+  await openFirstUserDrawer(page);
+  await expect(page.getByText('Reset Password')).toBeVisible({ timeout: 5_000 });
+  await page.getByText('Reset Password').click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto(ADMIN_URL);
   // Wait for skeletons to clear — confirms both useAssignmentCount and useUsers have
@@ -172,6 +180,33 @@ test('filling all required fields enables the Create button', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Create' })).toBeEnabled({ timeout: 3_000 });
 });
 
+test('submitting a valid form creates the employee and closes the dialog', async ({ page }) => {
+  // Mock the POST /api/user call so the test does not depend on a real backend write.
+  // useCreateUser's onSuccess calls handleClose, which is what we're verifying here.
+  await page.route('**/user', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByRole('button', { name: /Create a New Employee/i }).click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  const dialog = page.getByRole('dialog');
+  const textInputs = dialog.locator('input:not([type="radio"]):not([type="checkbox"])');
+  await textInputs.nth(0).fill('Test Employee');
+  await textInputs.nth(1).fill('test@example.com');
+  await textInputs.nth(2).fill('testuser123');
+  await textInputs.nth(3).fill('TestPass1');
+
+  await expect(page.getByRole('button', { name: 'Create' })).toBeEnabled({ timeout: 3_000 });
+  await page.getByRole('button', { name: 'Create' }).click();
+
+  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 5_000 });
+});
+
 // ─── Assign dialog ────────────────────────────────────────────────────────────
 
 test('clicking ASSIGN button opens the Assign Assignment dialog', async ({ page }) => {
@@ -181,6 +216,19 @@ test('clicking ASSIGN button opens the Assign Assignment dialog', async ({ page 
   await page.getByRole('button', { name: 'ASSIGN' }).first().click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
   await expect(page.getByText('Assign Assignment')).toBeVisible();
+});
+
+test('clicking ASSIGN does not also open the View Assignments drawer', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  // ASSIGN's onClick calls e.stopPropagation() so the row's onClick (which opens the
+  // ViewAssignments drawer) must not also fire. "Reset Password" only renders inside that drawer.
+  await page.getByRole('button', { name: 'ASSIGN' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Assign Assignment')).toBeVisible();
+
+  await expect(page.getByText('Reset Password')).not.toBeVisible();
 });
 
 test('Assign dialog shows Company and Store selects', async ({ page }) => {
@@ -217,6 +265,45 @@ test('Cancel closes the Assign dialog', async ({ page }) => {
   await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
 });
 
+test('submitting a valid assign form shows the success dialog', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  // Mock the POST /api/user/:id/associate so the test does not depend on a real backend write.
+  // useAssignUserLocation's onSuccess shows the SuccessDialog ("User assigned successfully.").
+  await page.route('**/user/*/associate', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByRole('button', { name: 'ASSIGN' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  // Company defaults to the first company (effectiveCompany); only Store needs picking.
+  // Select it via keyboard — same Portal/Dialog click-interception issue as the ticket combobox.
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('combobox').nth(1).click();
+  await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
+  const optionCount = await page.getByRole('option').count();
+  test.skip(optionCount === 0, 'no store options available for the default company');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[role="listbox"]')).not.toBeVisible({ timeout: 3_000 }).catch(() => {});
+
+  await expect(page.getByRole('button', { name: 'Assign' })).toBeEnabled({ timeout: 3_000 });
+  await page.getByRole('button', { name: 'Assign' }).click();
+
+  // SuccessDialog renders alt="Success" (receipt-check.svg) and the confirmation message.
+  await expect(page.getByAltText('Success')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('User assigned successfully.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByAltText('Success')).not.toBeVisible();
+});
+
 // ─── View Assignments drawer (row click) ──────────────────────────────────────
 
 test('clicking a user row opens the View Assignments drawer', async ({ page }) => {
@@ -249,6 +336,100 @@ test('Reset Password link opens the Reset Password dialog', async ({ page }) => 
 
   await page.getByText('Reset Password').click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+});
+
+// ─── Reset Password dialog ────────────────────────────────────────────────────
+
+test('Reset Password dialog shows New Password and Confirm Password fields', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openResetPasswordDialog(page);
+
+  await expect(page.getByText('New Password')).toBeVisible();
+  await expect(page.getByText('Confirm Password')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
+});
+
+test('Reset button is disabled when the form is empty', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openResetPasswordDialog(page);
+
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeDisabled();
+});
+
+test('mismatched passwords show "Passwords do not match" and keep Reset disabled', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openResetPasswordDialog(page);
+
+  const dialog = page.getByRole('dialog');
+  const passwordInputs = dialog.locator('input[type="password"]');
+  await passwordInputs.nth(0).fill('ValidPass1');
+  await passwordInputs.nth(1).fill('DifferentPass1');
+
+  await expect(page.getByText('Passwords do not match')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeDisabled();
+});
+
+test('filling matching valid passwords enables the Reset button', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openResetPasswordDialog(page);
+
+  const dialog = page.getByRole('dialog');
+  const passwordInputs = dialog.locator('input[type="password"]');
+  await passwordInputs.nth(0).fill('ValidPass1');
+  await passwordInputs.nth(1).fill('ValidPass1');
+
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeEnabled({ timeout: 3_000 });
+});
+
+test('Cancel closes the Reset Password dialog without saving', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openResetPasswordDialog(page);
+
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
+});
+
+test('submitting a valid reset password form shows the success dialog', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  // Mock the POST /api/user/:id/reset-password so the test does not depend on a real backend write.
+  // ResetPasswordDialog's onSubmit success callback shows SuccessDialog with a confirmation message.
+  await page.route('**/user/*/reset-password', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await openResetPasswordDialog(page);
+
+  const dialog = page.getByRole('dialog');
+  const passwordInputs = dialog.locator('input[type="password"]');
+  await passwordInputs.nth(0).fill('ValidPass1');
+  await passwordInputs.nth(1).fill('ValidPass1');
+
+  await expect(page.getByRole('button', { name: 'Reset' })).toBeEnabled({ timeout: 3_000 });
+  await page.getByRole('button', { name: 'Reset' }).click();
+
+  // SuccessDialog renders alt="Success" (receipt-check.svg) and the confirmation message.
+  await expect(page.getByAltText('Success')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Password has been reset successfully.')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByAltText('Success')).not.toBeVisible();
 });
 
 test('View Assignments drawer shows "No assignments found" or assignment table', async ({ page }) => {
