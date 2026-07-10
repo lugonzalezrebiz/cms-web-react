@@ -5,7 +5,7 @@ import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../../theme";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
-import EmployeeTypeRadioGroup from "./EmployeeTypeRadioGroup";
+import RadioButtonGroup from "../../../components/RadioButtonGroup";
 import usePasswordValidation from "../../../hooks/usePasswordValidation";
 import useCreateUser from "../hooks/useCreateUser";
 import useCreateEmployeeForm from "../hooks/useCreateEmployeeForm";
@@ -75,9 +75,10 @@ const CreateEmployeeDialog = ({ open, onClose }: Props) => {
     <FormDialog open={open} onClose={handleClose} title="Create New Employee">
       <Box>
         <Label>Select type of employee</Label>
-        <EmployeeTypeRadioGroup
+        <RadioButtonGroup
           value={employeeType}
           onChange={setEmployeeType}
+          options={[{ value: "reviewer", label: "Reviewer" }]}
         />
       </Box>
 

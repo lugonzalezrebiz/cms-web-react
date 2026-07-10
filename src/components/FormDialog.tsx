@@ -47,7 +47,7 @@ const FormDialog = ({
 }: Props) => {
   return (
     <Dialog open={open} onClose={onClose} maxWidth={maxWidth} padding={padding}>
-      <form>
+      <form onSubmit={(e) => e.preventDefault()}>
         <Box sx={{ display: "flex", flexDirection: "column", gap }}>
           <Box
             sx={{
