@@ -16,6 +16,7 @@ import AdminHeader from "./sections/Header/AdminHeader";
 import AssignmentsHeader from "./sections/Header/AssignmentsHeader";
 import { MonitorProvider } from "./contexts/MonitorContext";
 import UpdatePrompt from "./components/UpdatePrompt";
+import VpnGuard from "./components/VpnGuard";
 import { crashLogger } from "./services/CrashLogger";
 
 function ProtectedRole({
@@ -35,7 +36,7 @@ function ProtectedRole({
 
 function App() {
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const { user } = useAuth();
+    const { user, authenticated } = useAuth();
     const location = useLocation();
 
     const toggleDrawer = () => setDrawerOpen((prev) => !prev);
@@ -77,6 +78,7 @@ function App() {
     return (
         <>
             <UpdatePrompt />
+            {authenticated && <VpnGuard />}
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route

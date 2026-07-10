@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("api", {
     crashContext: () => ipcRenderer.invoke("crash:context"),
     logCrash: (payload: unknown) => ipcRenderer.invoke("crash:log", payload),
 
+    checkVpn: () => ipcRenderer.invoke("vpn:check") as Promise<boolean>,
+
     checkForUpdates: () => ipcRenderer.invoke("update:check"),
     downloadUpdate: () => ipcRenderer.invoke("update:download"),
     installUpdate: () => ipcRenderer.invoke("update:install"),

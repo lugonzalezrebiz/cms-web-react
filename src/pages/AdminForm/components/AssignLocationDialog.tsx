@@ -106,7 +106,6 @@ const AssignLocationDialog = ({
         gap={"12px"}
       >
         <Box>
-          <Label>Location Type</Label>
           <RadioButtonGroup
             value={employeeType}
             onChange={setEmployeeType}
@@ -182,18 +181,15 @@ const AssignLocationDialog = ({
           />
           {errors.cityRegion && <ErrorText>{errors.cityRegion}</ErrorText>}
         </Box>
-        <Box>
-          <Label>IP</Label>
-          <StyledInput
-            fullWidth
-            size="small"
-            value={fields.ip}
-            onChange={(e) => setField("ip", e.target.value)}
-            error={!!errors.ip}
-          />
-          {errors.ip && <ErrorText>{errors.ip}</ErrorText>}
-        </Box>
-        <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+
+        <Box
+          sx={{
+            display: "flex",
+            gap: "12px",
+            justifyContent: "flex-end",
+            mt: "12px",
+          }}
+        >
           <Button
             fontSize="14px"
             sx={{ height: "36px" }}

@@ -9,7 +9,6 @@ export interface LocationRecord {
   addressLine2: string;
   country: string;
   cityRegion: string;
-  ip: string;
   dateRange: [MaybeDayjs, MaybeDayjs];
 }
 

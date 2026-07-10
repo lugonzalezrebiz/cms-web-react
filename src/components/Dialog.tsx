@@ -48,6 +48,13 @@ const DialogStyled = styled(DialogComponent, {
       height: customHeight ? "100%" : "auto",
       maxHeight: customHeight,
     },
+    "& .MuiDialogContent-root": {
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
+      "&::-webkit-scrollbar": {
+        display: "none",
+      },
+    },
   }),
 );
 

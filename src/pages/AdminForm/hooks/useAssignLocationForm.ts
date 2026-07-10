@@ -10,10 +10,7 @@ const schema = z.object({
   addressLine2: z.string().min(1, "Address Line 2 is required"),
   country: z.string().min(1, "Country is required"),
   cityRegion: z.string().min(1, "City/Region is required"),
-  ip: z
-    .string()
-    .min(1, "IP is required")
-    .refine((val) => z.ipv4().safeParse(val).success, "Enter a valid IP address"),
+ 
 });
 
 type Fields = z.infer<typeof schema>;
@@ -25,7 +22,6 @@ const initialFields: Fields = {
   addressLine2: "",
   country: "",
   cityRegion: "",
-  ip: "",
 };
 
 const useAssignLocationForm = () => {

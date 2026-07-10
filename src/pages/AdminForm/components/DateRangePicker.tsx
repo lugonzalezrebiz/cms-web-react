@@ -28,6 +28,7 @@ const StyledDateCalendar = styled(DateCalendar)({
   "&.MuiDateCalendar-root": {
     margin: "5px",
     width: "340px",
+    height: "auto",
     "& .MuiPickersCalendarHeader-root": {
       width: "100%",
       padding: 0,
@@ -35,7 +36,7 @@ const StyledDateCalendar = styled(DateCalendar)({
       "& .MuiPickersCalendarHeader-label": {
         fontSize: "16px",
         fontWeight: 600,
-        fontFamily: Fonts.secondary,
+        fontFamily: Fonts.main,
         marginLeft: "7px",
       },
       "& .MuiSvgIcon-root": {
@@ -45,20 +46,20 @@ const StyledDateCalendar = styled(DateCalendar)({
     "& .MuiDayCalendar-weekDayLabel": {
       fontSize: "14px",
       fontWeight: 500,
-      fontFamily: Fonts.secondary,
+      fontFamily: Fonts.main,
       color: Colors.charcoalNavy,
     },
     '& div[role="row"]': {
       justifyContent: "space-around",
     },
     "& .MuiDayCalendar-slideTransition": {
-      minHeight: "340px",
+      minHeight: "220px",
     },
     "& .MuiPickersDay-root": {
       height: "40px",
       width: "40px",
       fontSize: "14px",
-      fontFamily: Fonts.secondary,
+      fontFamily: Fonts.main,
     },
   },
 });
@@ -176,20 +177,20 @@ const RangeCalendar = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            fontFamily: Fonts.secondary,
+            fontFamily: Fonts.main,
             fontSize: "16px",
             fontWeight: 400,
             lineHeight: "24px",
             padding: "10px 14px",
             color: Colors.charcoalNavy,
             height: "44px",
-            borderRadius: "4px",
+            borderRadius: "8px",
             border: `1px solid ${Colors.paleGray}`,
             width: "368px",
           },
           "& input": {
             padding: 0,
-            fontFamily: Fonts.secondary,
+            fontFamily: Fonts.main,
             fontSize: "16px",
             color: Colors.dimGray,
           },
@@ -218,7 +219,8 @@ const RangeCalendar = ({
           sx={{
             position: "absolute",
             top: "44px",
-            right: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 10,
             boxShadow: "0 2px 10px 0 rgba(0, 0, 0, 0.16)",
             borderRadius: "14px",
@@ -230,7 +232,7 @@ const RangeCalendar = ({
                 borderRadius: "14px",
                 padding: "16px",
                 backgroundColor: "white",
-                width: "350px",
+                width: "344px",
               }}
             >
               <Box
@@ -246,7 +248,7 @@ const RangeCalendar = ({
                   sx={{
                     color: Colors.charcoalNavy,
                     fontWeight: 600,
-                    fontFamily: Fonts.secondary,
+                    fontFamily: Fonts.main,
                     marginRight: "5px",
                     fontSize: "18px",
                   }}
@@ -272,7 +274,7 @@ const RangeCalendar = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      fontFamily: Fonts.secondary,
+                      fontFamily: Fonts.main,
                       fontSize: "16px",
                       fontWeight: 400,
                       lineHeight: "24px",
@@ -284,7 +286,7 @@ const RangeCalendar = ({
                     },
                     "& input": {
                       padding: 0,
-                      fontFamily: Fonts.secondary,
+                      fontFamily: Fonts.main,
                       fontSize: "16px",
                       color: Colors.charcoalNavy,
                     },
@@ -303,7 +305,7 @@ const RangeCalendar = ({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      fontFamily: Fonts.secondary,
+                      fontFamily: Fonts.main,
                       fontSize: "16px",
                       fontWeight: 400,
                       lineHeight: "24px",
@@ -315,7 +317,7 @@ const RangeCalendar = ({
                     },
                     "& input": {
                       padding: 0,
-                      fontFamily: Fonts.secondary,
+                      fontFamily: Fonts.main,
                       fontSize: "16px",
                       color: Colors.charcoalNavy,
                     },
@@ -403,7 +405,6 @@ const RangeCalendar = ({
                   display: "flex",
                   justifyContent: "flex-end",
                   gap: "12px",
-                  mt: 2,
                 }}
               >
                 <Button
