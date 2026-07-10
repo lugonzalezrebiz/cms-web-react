@@ -13,6 +13,7 @@ import ViewAssignmentsDialog from "../components/ViewAssignmentsDialog";
 import { ADMIN_ROLE, AGENT_ROLE, REVIEWER_ROLE } from "../../../config";
 import useUsers, { type User } from "../hooks/useUsers";
 import StateBadge from "../../../components/StateBadge";
+import AssignLocationDialog from "../components/AssignLocationDialog";
 
 const TableSection = () => {
   const { users, isLoading } = useUsers();
@@ -21,6 +22,8 @@ const TableSection = () => {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assignLocationDialogOpen, setAssignLocationDialogOpen] =
+    useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<
     | {
@@ -142,6 +145,30 @@ const TableSection = () => {
         </Box>
       ),
     },
+    {
+      title: "",
+      key: "location",
+      width: "50px",
+      align: "left",
+      render: (value: number) => (
+        <Box display="flex" justifyContent="center" width="70px">
+          <Button
+            square
+            sx={{ height: "20px" }}
+            fontSize="12px"
+            color="secondary"
+            outfit
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedEmployee({ id: value, name: "", role: "" });
+              setAssignLocationDialogOpen(true);
+            }}
+          >
+            LOCATION
+          </Button>
+        </Box>
+      ),
+    },
   ];
 
   const rows = useMemo(
@@ -162,6 +189,7 @@ const TableSection = () => {
         email: user.email,
         active: user.active ? "Yes" : "No",
         assign: user.id,
+        location: user.id,
       })),
     [users, selectedIds],
   );
@@ -232,6 +260,11 @@ const TableSection = () => {
       <AssignDialog
         open={assignDialogOpen}
         onClose={() => setAssignDialogOpen(false)}
+        employeeId={selectedEmployee?.id}
+      />
+      <AssignLocationDialog
+        open={assignLocationDialogOpen}
+        onClose={() => setAssignLocationDialogOpen(false)}
         employeeId={selectedEmployee?.id}
       />
       <ViewAssignmentsDialog

@@ -9,6 +9,10 @@ import useUserAssignments, {
 } from "../../../hooks/useUserAssignments";
 import useDissociateAssignment from "../hooks/useDissociateAssignment";
 import useResetPassword from "../hooks/useResetPassword";
+import {
+  useLocationRecords,
+  removeLocationRecord,
+} from "../hooks/useLocationRecords";
 import { Colors, Fonts } from "../../../theme";
 import StateBadge from "../../../components/StateBadge";
 import styled from "@emotion/styled";
@@ -251,6 +255,13 @@ const ViewAssignmentsDialog = ({
     dateFormat: "short",
   });
 
+  const locationRecords = useLocationRecords(employeeId);
+
+  const handleDeleteLocation = (id: number) => {
+    if (employeeId === undefined) return;
+    removeLocationRecord(employeeId, id);
+  };
+
   const {
     resetPassword,
     isPending: resetPending,
@@ -269,7 +280,7 @@ const ViewAssignmentsDialog = ({
       rowColor: Colors.vividOrange,
     },
     {
-      title: "LOCATION",
+      title: "STORE",
       key: "location",
       width: "60px",
       align: "center",
@@ -319,6 +330,56 @@ const ViewAssignmentsDialog = ({
     };
   });
 
+  const locationColumns: Column[] = [
+    {
+      title: "# PHONE",
+      key: "phoneNumber",
+      width: "70px",
+      align: "center",
+      rowColor: Colors.vividOrange,
+    },
+    {
+      title: "ADDRESS LINE 1",
+      key: "addressLine1",
+      width: "60px",
+      align: "center",
+    },
+    {
+      title: "COUNTRY",
+      key: "country",
+      width: "60px",
+      align: "center",
+    },
+    {
+      title: "CITY/REGION",
+      key: "cityRegion",
+      width: "60px",
+      align: "center",
+    },
+    {
+      title: "",
+      key: "delete",
+      width: "15px",
+      align: "right",
+      render: (value: { id: number }) => (
+        <DeleteButton
+          companyID={value.id}
+          locationID={value.id}
+          pendingKey={null}
+          onDelete={() => handleDeleteLocation(value.id)}
+        />
+      ),
+    },
+  ];
+
+  const locationRows = locationRecords.map((record) => ({
+    phoneNumber: record.phone,
+    addressLine1: record.addressLine1,
+    country: record.country,
+    cityRegion: record.cityRegion,
+    delete: { id: record.id },
+  }));
+
   return (
     <>
       <Drawer
@@ -332,7 +393,7 @@ const ViewAssignmentsDialog = ({
           />
         }
       >
-        <Box mt="20px" display="flex" flexDirection="column" height="99%">
+        <Box mt="20px" display="flex" flexDirection="column" height="40%">
           <Box mb="4px" pl="16px">
             <Title>Assignments</Title>
           </Box>
@@ -363,6 +424,62 @@ const ViewAssignmentsDialog = ({
                 <Table
                   columns={columns}
                   rows={rows}
+                  mainColumnWidth="120px"
+                  mainRowWidth="120px"
+                  TableCellWidth="120px"
+                  rowWidth="120px"
+                  scrollContainerRef={scrollContainerRef}
+                  disableOverflow
+                  loading={isLoading}
+                />
+                {errorMessage && (
+                  <Box
+                    sx={{
+                      mt: "8px",
+                      px: "8px",
+                      color: Colors.red,
+                      fontFamily: Fonts.main,
+                      fontSize: "12px",
+                    }}
+                  >
+                    {errorMessage}
+                  </Box>
+                )}
+              </Box>
+            </CustomScrollbarY>
+          )}
+        </Box>
+        <Box mt="29px" display="flex" flexDirection="column" height="49%">
+          <Box mb="4px" pl="16px">
+            <Title>Locations</Title>
+          </Box>
+          {!isLoading && locationRows.length === 0 ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "120px",
+                color: Colors.dimGray,
+                fontFamily: Fonts.main,
+                fontSize: "14px",
+              }}
+            >
+              No locations found for this employee
+            </Box>
+          ) : (
+            <CustomScrollbarY
+              ref={scrollContainerRef}
+              maxHeight="95%"
+              thumbLength={15}
+              scrollX
+              xThumbLength={15}
+              sx={{ width: "100%", height: "100%" }}
+            >
+              <Box height={"100%"}>
+                <Table
+                  columns={locationColumns}
+                  rows={locationRows}
                   mainColumnWidth="120px"
                   mainRowWidth="120px"
                   TableCellWidth="120px"
