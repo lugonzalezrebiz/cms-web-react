@@ -10,7 +10,6 @@ const schema = z.object({
   addressLine2: z.string().min(1, "Address Line 2 is required"),
   country: z.string().min(1, "Country is required"),
   cityRegion: z.string().min(1, "City/Region is required"),
- 
 });
 
 type Fields = z.infer<typeof schema>;

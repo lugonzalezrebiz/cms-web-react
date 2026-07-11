@@ -315,14 +315,13 @@ test('clicking LOCATION button opens the Create Location dialog', async ({ page 
   await expect(page.getByText('Create Location')).toBeVisible();
 });
 
-test('Create Location dialog shows Location Type radios and all required fields', async ({ page }) => {
+test('Create Location dialog shows employee type radios and all required fields', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
   await page.getByRole('button', { name: 'LOCATION' }).first().click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
-  await expect(page.getByText('Location Type')).toBeVisible();
   await expect(page.getByText('Permanent')).toBeVisible();
   await expect(page.getByText('Temporary', { exact: true })).toBeVisible();
 
@@ -331,7 +330,6 @@ test('Create Location dialog shows Location Type radios and all required fields'
   await expect(page.getByText('Address Line 2')).toBeVisible();
   await expect(page.getByText('Country')).toBeVisible();
   await expect(page.getByText('City/Region')).toBeVisible();
-  await expect(page.getByText('IP', { exact: true })).toBeVisible();
 });
 
 test('Create button is disabled when the Create Location form is empty', async ({ page }) => {
@@ -382,7 +380,7 @@ test('applying a date range fills the Temporary Period field', async ({ page }) 
   await expect(rangeField).not.toHaveValue('- to -');
 });
 
-test('entering an invalid IP shows an inline validation error', async ({ page }) => {
+test('entering an invalid phone number shows an inline validation error', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
@@ -390,16 +388,15 @@ test('entering an invalid IP shows an inline validation error', async ({ page })
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
   const dialog = page.getByRole('dialog');
-  await dialog.locator('input[type="tel"]').fill('1234567');
-  // Remaining text fields in form order: Address Line 1, Address Line 2, Country, City/Region, IP
+  // Remaining text fields in form order: Address Line 1, Address Line 2, Country, City/Region
   const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
   await textInputs.nth(0).fill('123 Main St');
   await textInputs.nth(1).fill('Apt 4B');
   await textInputs.nth(2).fill('USA');
   await textInputs.nth(3).fill('Miami');
-  await textInputs.nth(4).fill('not-an-ip');
+  await dialog.locator('input[type="tel"]').fill('123');
 
-  await expect(page.getByText('Enter a valid IP address')).toBeVisible();
+  await expect(page.getByText('Enter a valid phone number')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Create' })).toBeDisabled();
 });
 
@@ -417,7 +414,6 @@ test('filling all required fields with valid data enables the Create button', as
   await textInputs.nth(1).fill('Apt 4B');
   await textInputs.nth(2).fill('USA');
   await textInputs.nth(3).fill('Miami');
-  await textInputs.nth(4).fill('192.168.1.1');
 
   await expect(page.getByRole('button', { name: 'Create' })).toBeEnabled({ timeout: 3_000 });
 });
@@ -449,7 +445,6 @@ test('creating a location shows success and the record appears in the employee L
   await textInputs.nth(1).fill('Apt 4B');
   await textInputs.nth(2).fill('USA');
   await textInputs.nth(3).fill('Miami');
-  await textInputs.nth(4).fill('192.168.1.1');
 
   await page.getByRole('button', { name: 'Create' }).click();
   await expect(page.getByText('Location created successfully.')).toBeVisible({ timeout: 5_000 });
