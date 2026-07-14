@@ -32,6 +32,7 @@ const Assignments = () => {
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
+  const companySelectFilters = [{ label: "All companies", value: "" }, ...companyFilters];
   const effectiveCompany = company;
   const { assignments: rawAssignments, isPending: isLoading } = useAssignments({
     companyID: effectiveCompany ? Number(effectiveCompany) : 0,
@@ -105,7 +106,7 @@ const Assignments = () => {
           >
             <Box mr={{ xs: "0px", sm: "20px" }}>
               <SelectComponent
-                filters={companyFilters}
+                filters={companySelectFilters}
                 filter={effectiveCompany}
                 setFilter={handleSetCompany}
               />
