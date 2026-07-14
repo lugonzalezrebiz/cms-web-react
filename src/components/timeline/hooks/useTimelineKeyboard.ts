@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
+import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import type { CameraEventPoint, FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
@@ -68,15 +69,18 @@ export const useTimelineKeyboard = ({
   onRedo,
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
-  onDeleteRef.current = onDeleteEventPoint;
   const onEditRef = useRef(onEditEventPoint);
-  onEditRef.current = onEditEventPoint;
   const onUndoRef = useRef(onUndo);
-  onUndoRef.current = onUndo;
   const onRedoRef = useRef(onRedo);
-  onRedoRef.current = onRedo;
+  useEffect(() => {
+    onDeleteRef.current = onDeleteEventPoint;
+    onEditRef.current = onEditEventPoint;
+    onUndoRef.current = onUndo;
+    onRedoRef.current = onRedo;
+  });
   const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const navigate = useNavigateWithQuery();
+  const { imagesInterval } = useCompanyConfig();
 
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
@@ -195,6 +199,7 @@ export const useTimelineKeyboard = ({
     setShowPunchOut,
     punchOutTimerRef,
     setGoToTimeOpen,
+    setMarkerSec,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -256,7 +261,7 @@ export const useTimelineKeyboard = ({
       }
 
       if (selectedTracks.size > 0 && e.key !== "ArrowRight") return;
-      const delta = e.key === "ArrowRight" ? 5 : -5;
+      const delta = e.key === "ArrowRight" ? imagesInterval : -imagesInterval;
       const base = markerSec ?? timelineStartSec;
       const next = Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
       setMarkerSec(next);
@@ -265,7 +270,7 @@ export const useTimelineKeyboard = ({
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints, panOffsetSec, zoom, totalSec, setPanOffsetSec]);
+  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints, panOffsetSec, zoom, totalSec, setPanOffsetSec, imagesInterval]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
   useEffect(() => {

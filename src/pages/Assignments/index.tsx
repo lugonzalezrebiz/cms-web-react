@@ -32,10 +32,15 @@ const Assignments = () => {
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
-  const effectiveCompany = company || companyFilters[0]?.value || "";
-  const { assignments, isPending: isLoading } = useAssignments({
-    companyID: effectiveCompany ? Number(effectiveCompany) : null,
+  const effectiveCompany = company;
+  const { assignments: rawAssignments, isPending: isLoading } = useAssignments({
+    companyID: effectiveCompany ? Number(effectiveCompany) : 0,
     locationID: store ? Number(store) : null,
+  });
+  const assignments = rawAssignments.filter((a) => {
+    if (effectiveCompany && a.location !== Number(effectiveCompany)) return false;
+    if (store && a.store !== Number(store)) return false;
+    return true;
   });
   const { cards, isLoading: isCardsLoading } = useAssignmentCount();
 
