@@ -10,7 +10,6 @@ import { LoginStep } from "./constants";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import PasswordResetSuccess from "./components/PasswordResetSuccess";
-import LocationGuard from "../../components/LocationGuard";
 
 const SubTitle = styled("p")({
   color: Colors.main,
@@ -102,8 +101,6 @@ const Login = () => {
     setError,
     loading,
     handleLogin,
-    locationBlocked,
-    dismissLocationBlocked,
   } = useLogin();
 
   function backToLogin() {
@@ -118,15 +115,6 @@ const Login = () => {
       justifyContent="center"
       alignItems="center"
     >
-      {locationBlocked && (
-        <LocationGuard
-          onRetry={() => {
-            dismissLocationBlocked();
-            handleLogin();
-          }}
-          onDismiss={dismissLocationBlocked}
-        />
-      )}
       <Card sx={{ width: "500px", margin: "5%" }}>
         <Box padding="20px">
           <Box display="flex" flexDirection="column" alignItems="center">

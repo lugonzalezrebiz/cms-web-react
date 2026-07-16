@@ -80,7 +80,7 @@ jobs:
             exit 1
           fi
           if [ "${{ secrets.VITE_STRICT_GEOLOCATION }}" != "true" ]; then
-            echo "::error::VITE_STRICT_GEOLOCATION secret is not set to \"true\" — e2e/vpn-guard.spec.ts's LocationGuard tests require it, since useLogin.ts only blocks login behind LocationGuard when this flag is on."
+            echo "::error::VITE_STRICT_GEOLOCATION secret is not set to \"true\" — e2e/vpn-guard.spec.ts's LocationGuard tests require it, since LocationGuardProvider only blocks behind LocationGuard when this flag is on."
             exit 1
           fi
 

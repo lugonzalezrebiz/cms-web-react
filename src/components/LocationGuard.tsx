@@ -1,12 +1,15 @@
-import { useState } from "react";
 import { Box, Dialog, Typography } from "@mui/material";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../theme";
 import Button from "./Button";
 
 interface LocationGuardProps {
+  open: boolean;
+  authenticated: boolean;
+  opening: boolean;
+  onOpenSettings: () => void;
   onRetry: () => void;
-  onDismiss: () => void;
+  onCancel: () => void;
 }
 
 const LinkLabel = styled("button")({
@@ -28,20 +31,14 @@ const canOpenSettings =
   typeof window !== "undefined" && !!window.api?.openLocationSettings;
 
 export default function LocationGuard({
+  open,
+  authenticated,
+  opening,
+  onOpenSettings,
   onRetry,
-  onDismiss,
+  onCancel,
 }: LocationGuardProps) {
-  const [opening, setOpening] = useState(false);
-
-  const handleOpenSettings = async () => {
-    if (!window.api?.openLocationSettings) return;
-    setOpening(true);
-    try {
-      await window.api.openLocationSettings();
-    } finally {
-      setOpening(false);
-    }
-  };
+  if (!open) return null;
 
   return (
     <Dialog
@@ -74,9 +71,11 @@ export default function LocationGuard({
         Location access required
       </Typography>
       <Typography color="text.secondary" mb={3}>
-        {canOpenSettings
-          ? "Enable location services for this app to log in."
-          : "Enable location permissions for this site in your browser to log in."}
+        {authenticated
+          ? "Location access was lost. Re-enable it to keep using the app, or log out."
+          : canOpenSettings
+            ? "Enable location services for this app to log in."
+            : "Enable location permissions for this site in your browser to log in."}
       </Typography>
 
       {canOpenSettings && (
@@ -85,7 +84,7 @@ export default function LocationGuard({
           outfit
           square
           disabled={opening}
-          onClick={handleOpenSettings}
+          onClick={onOpenSettings}
           style={{ marginBottom: "10px" }}
         >
           {opening ? "Opening settings..." : "Open Location Settings"}
@@ -97,8 +96,8 @@ export default function LocationGuard({
       </Button>
 
       <Box display="flex" justifyContent="center">
-        <LinkLabel type="button" onClick={onDismiss}>
-          Cancel
+        <LinkLabel type="button" onClick={onCancel}>
+          {authenticated ? "Log Out" : "Cancel"}
         </LinkLabel>
       </Box>
     </Dialog>

@@ -1,53 +1,35 @@
 import { useState } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useAuth from "../../../hooks/useAuth";
+import useLocationGuard from "../../../hooks/useLocationGuard";
 import { usePost } from "../../../hooks/useApi";
 import { STRICT_GEOLOCATION } from "../../../config";
 
 type LoginResponse = { success: boolean; token: string };
 type LoginPayload = { username: string; password: string; lat?: number; lon?: number };
 
-const GEOLOCATION_TIMEOUT_MS = 5000;
-
-// Resolves to null (rather than rejecting) on denial, timeout, or an environment
-// without geolocation support, so callers can decide how to react.
-function getGeolocation(): Promise<{ lat: number; lon: number } | null> {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      resolve(null);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) =>
-        resolve({ lat: position.coords.latitude, lon: position.coords.longitude }),
-      () => resolve(null),
-      { timeout: GEOLOCATION_TIMEOUT_MS, maximumAge: 0 },
-    );
-  });
-}
-
 const useLogin = () => {
   const navigate = useNavigateWithQuery();
   const { setToken } = useAuth();
+  const { checkNow } = useLocationGuard();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [resolvingLocation, setResolvingLocation] = useState(false);
-  const [locationBlocked, setLocationBlocked] = useState(false);
 
   const { mutateAsync, isPending } = usePost<LoginResponse, LoginPayload>("auth/login");
   const loading = resolvingLocation || isPending;
 
   const handleLogin = async () => {
     setError("");
-    setLocationBlocked(false);
 
     setResolvingLocation(true);
-    const location = await getGeolocation();
+    const location = await checkNow();
     setResolvingLocation(false);
 
+    // STRICT_GEOLOCATION blocking is enforced by LocationGuardProvider, which
+    // checkNow() just re-armed if the permission is still missing.
     if (!location && STRICT_GEOLOCATION) {
-      setLocationBlocked(true);
       return;
     }
 
@@ -82,8 +64,6 @@ const useLogin = () => {
     setError,
     loading,
     handleLogin,
-    locationBlocked,
-    dismissLocationBlocked: () => setLocationBlocked(false),
   };
 };
 

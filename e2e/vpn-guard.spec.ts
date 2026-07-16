@@ -106,23 +106,20 @@ test('re-detecting a VPN after logout shows the overlay again on next login', as
   await expect(vpnCard(page).getByText(/^\d{1,2}$/)).toHaveText('10');
 });
 
-// ─── LocationGuard (src/components/LocationGuard.tsx) ──────────────────────────
+// ─── LocationGuard (src/components/LocationGuard.tsx + src/contexts/LocationGuardProvider.tsx) ──
 //
-// useLogin.ts only sets locationBlocked when geolocation resolves to null AND
-// STRICT_GEOLOCATION is on (.env has VITE_STRICT_GEOLOCATION=true, so the dev
-// server this suite runs against has it enabled). Whether an unset browser-context
-// permission makes navigator.geolocation.getCurrentPosition deny immediately or
-// just hang varies by platform/Chromium build, so navigator.geolocation itself is
-// stubbed directly here for a deterministic result — the same approach mockVpnApi
-// uses for window.api, since window.api.openLocationSettings is also Electron-
-// preload-only and mocked the same way.
-
-async function attemptLogin(page: Page, username = 'anyuser', password = 'anypass') {
-  await page.goto('/login');
-  await page.locator('#username').fill(username);
-  await page.locator('#password').fill(password);
-  await page.getByRole('button', { name: 'Log In' }).click();
-}
+// LocationGuardProvider wraps the whole app (like VpnGuard's polling, but always —
+// not gated on `authenticated`) and polls geolocation on an interval, only ever
+// blocking when STRICT_GEOLOCATION is on (.env has VITE_STRICT_GEOLOCATION=true, so
+// the dev server this suite runs against has it enabled). The dialog it renders is
+// authenticated-aware: pre-login the trailing link reads "Cancel" and just hides the
+// dialog (re-armed on the next login attempt); once authenticated it reads "Log Out"
+// and actually logs the session out, since there's no safe way to "dismiss" a missing
+// permission while already signed in. Whether an unset browser-context permission makes
+// navigator.geolocation.getCurrentPosition deny immediately or just hang varies by
+// platform/Chromium build, so navigator.geolocation itself is stubbed directly here for
+// a deterministic result — the same approach mockVpnApi uses for window.api, since
+// window.api.openLocationSettings is also Electron-preload-only and mocked the same way.
 
 async function mockGeolocation(page: Page, result: 'granted' | 'denied') {
   await page.addInitScript((mode) => {
@@ -178,65 +175,92 @@ async function mockLocationSettingsApi(page: Page) {
   });
 }
 
-test('shows the location guard when geolocation permission is denied', async ({ page }) => {
+// Authenticated case: runs under the project's default (already signed-in) storageState,
+// same as the VPN tests above, since LocationGuardProvider polls regardless of route.
+test('shows the location guard when an authenticated session loses geolocation, and Log Out signs out', async ({ page }) => {
   await mockGeolocation(page, 'denied');
-  await attemptLogin(page);
+  await page.goto('/assignments');
+
   await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+  // No "Cancel" escape hatch once authenticated — dismissing is only safe by logging out.
+  await expect(page.getByRole('button', { name: 'Cancel' })).not.toBeVisible();
+
+  await page.getByRole('button', { name: 'Log Out' }).click();
+  await expect(page).toHaveURL(/\/login/, { timeout: 5_000 });
 });
 
-test('does not show an "Open Location Settings" button in the browser build', async ({ page }) => {
-  // window.api only exists behind the Electron preload — the web build has no OS
-  // settings deep link to offer, so it must fall back to plain instructions.
-  await mockGeolocation(page, 'denied');
-  await attemptLogin(page);
-  await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
-  await expect(page.getByRole('button', { name: 'Open Location Settings' })).not.toBeVisible();
-  await expect(
-    page.getByText('Enable location permissions for this site in your browser to log in.'),
-  ).toBeVisible();
-});
+// Pre-login case: forces an unauthenticated storageState so `authenticated` is false and
+// the dialog renders its "Cancel" (dismiss-only) variant instead of "Log Out".
+test.describe('unauthenticated', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
 
-test('shows an "Open Location Settings" button that calls window.api when available (desktop)', async ({ page }) => {
-  await mockGeolocation(page, 'denied');
-  await mockLocationSettingsApi(page);
-  await attemptLogin(page);
-  await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+  async function attemptLogin(page: Page, username = 'anyuser', password = 'anypass') {
+    await page.goto('/login');
+    await page.locator('#username').fill(username);
+    await page.locator('#password').fill(password);
+    await page.getByRole('button', { name: 'Log In' }).click();
+  }
 
-  const settingsButton = page.getByRole('button', { name: 'Open Location Settings' });
-  await expect(settingsButton).toBeVisible();
-  await settingsButton.click();
+  test('shows the location guard when geolocation permission is denied', async ({ page }) => {
+    await mockGeolocation(page, 'denied');
+    await attemptLogin(page);
+    await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+  });
 
-  await expect
-    .poll(() => page.evaluate(() => (window as { __openLocationSettingsCalls?: number }).__openLocationSettingsCalls ?? 0))
-    .toBe(1);
-});
+  test('does not show an "Open Location Settings" button in the browser build', async ({ page }) => {
+    // window.api only exists behind the Electron preload — the web build has no OS
+    // settings deep link to offer, so it must fall back to plain instructions.
+    await mockGeolocation(page, 'denied');
+    await attemptLogin(page);
+    await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('button', { name: 'Open Location Settings' })).not.toBeVisible();
+    await expect(
+      page.getByText('Enable location permissions for this site in your browser to log in.'),
+    ).toBeVisible();
+  });
 
-test('Cancel dismisses the location guard and returns to the login form', async ({ page }) => {
-  await mockGeolocation(page, 'denied');
-  await attemptLogin(page);
-  await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+  test('shows an "Open Location Settings" button that calls window.api when available (desktop)', async ({ page }) => {
+    await mockGeolocation(page, 'denied');
+    await mockLocationSettingsApi(page);
+    await attemptLogin(page);
+    await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
 
-  await page.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByText('Location access required')).not.toBeVisible();
-  await expect(page.locator('#username')).toBeVisible();
-});
+    const settingsButton = page.getByRole('button', { name: 'Open Location Settings' });
+    await expect(settingsButton).toBeVisible();
+    await settingsButton.click();
 
-test('Try Again re-attempts geolocation and re-shows the guard while still denied', async ({ page }) => {
-  await mockGeolocation(page, 'denied');
-  await attemptLogin(page);
-  await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+    await expect
+      .poll(() => page.evaluate(() => (window as { __openLocationSettingsCalls?: number }).__openLocationSettingsCalls ?? 0))
+      .toBe(1);
+  });
 
-  await page.getByRole('button', { name: 'Try Again' }).click();
+  test('Cancel dismisses the location guard and returns to the login form', async ({ page }) => {
+    await mockGeolocation(page, 'denied');
+    await attemptLogin(page);
+    await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
 
-  // The mocked navigator.geolocation still denies, so it re-shows instead of proceeding.
-  await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
-});
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByText('Location access required')).not.toBeVisible();
+    await expect(page.locator('#username')).toBeVisible();
+  });
 
-test('does not show the location guard and logs in normally when geolocation succeeds', async ({ page }) => {
-  await mockGeolocation(page, 'granted');
+  test('Try Again re-attempts geolocation and re-shows the guard while still denied', async ({ page }) => {
+    await mockGeolocation(page, 'denied');
+    await attemptLogin(page);
+    await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
 
-  await attemptLogin(page, process.env.VITE_TEST_USER ?? '', process.env.VITE_TEST_PASS ?? '');
-  await page.waitForURL('**/assignments**', { timeout: 10_000 });
+    await page.getByRole('button', { name: 'Try Again' }).click();
 
-  await expect(page.getByText('Location access required')).not.toBeVisible();
+    // The mocked navigator.geolocation still denies, so it re-shows instead of proceeding.
+    await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
+  });
+
+  test('does not show the location guard and logs in normally when geolocation succeeds', async ({ page }) => {
+    await mockGeolocation(page, 'granted');
+
+    await attemptLogin(page, process.env.VITE_TEST_USER ?? '', process.env.VITE_TEST_PASS ?? '');
+    await page.waitForURL('**/assignments**', { timeout: 10_000 });
+
+    await expect(page.getByText('Location access required')).not.toBeVisible();
+  });
 });
