@@ -442,10 +442,12 @@ test('creating a location shows success and the record appears in the employee L
   const dialog = page.getByRole('dialog');
   await dialog.locator('input[type="tel"]').fill('12345678');
   const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
-  await textInputs.nth(0).fill('123 Main St');
-  await textInputs.nth(1).fill('Apt 4B');
-  await textInputs.nth(2).fill('USA');
-  await textInputs.nth(3).fill('Miami');
+  // A real, geocodable address — the backend rejects addresses it can't resolve
+  // to coordinates (422), so a placeholder like "123 Main St" isn't reliable here.
+  await textInputs.nth(0).fill('1600 Amphitheatre Parkway');
+  await textInputs.nth(1).fill('');
+  await textInputs.nth(2).fill('United States');
+  await textInputs.nth(3).fill('Mountain View');
 
   await page.getByRole('button', { name: 'Create' }).click();
   await expect(page.getByText('Location created successfully.')).toBeVisible({ timeout: 5_000 });
@@ -460,11 +462,11 @@ test('creating a location shows success and the record appears in the employee L
   await expect(page.getByText('Locations')).toBeVisible();
 
   const drawerPaper = page.locator('.MuiDrawer-paper');
-  const locationRow = drawerPaper.locator('tbody tr').filter({ hasText: '123 Main St' });
+  const locationRow = drawerPaper.locator('tbody tr').filter({ hasText: '1600 Amphitheatre Parkway' }).first();
   await expect(locationRow).toBeVisible({ timeout: 5_000 });
   await expect(locationRow.getByText('12345678')).toBeVisible();
-  await expect(locationRow.getByText('USA')).toBeVisible();
-  await expect(locationRow.getByText('Miami')).toBeVisible();
+  await expect(locationRow.getByText('United States')).toBeVisible();
+  await expect(locationRow.getByText('Mountain View')).toBeVisible();
 });
 
 // ─── View Assignments drawer (row click) ──────────────────────────────────────
