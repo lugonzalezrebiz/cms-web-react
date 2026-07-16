@@ -201,9 +201,13 @@ test.describe('unauthenticated', () => {
     await page.getByRole('button', { name: 'Log In' }).click();
   }
 
+  // LocationGuardProvider's background poll fires on mount regardless of route or
+  // auth state, so a denied permission pops the guard as soon as /login loads —
+  // no login attempt required. Its backdrop then blocks the Login button underneath,
+  // so these cases navigate directly instead of going through attemptLogin().
   test('shows the location guard when geolocation permission is denied', async ({ page }) => {
     await mockGeolocation(page, 'denied');
-    await attemptLogin(page);
+    await page.goto('/login');
     await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
   });
 
@@ -211,7 +215,7 @@ test.describe('unauthenticated', () => {
     // window.api only exists behind the Electron preload — the web build has no OS
     // settings deep link to offer, so it must fall back to plain instructions.
     await mockGeolocation(page, 'denied');
-    await attemptLogin(page);
+    await page.goto('/login');
     await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
     await expect(page.getByRole('button', { name: 'Open Location Settings' })).not.toBeVisible();
     await expect(
@@ -222,7 +226,7 @@ test.describe('unauthenticated', () => {
   test('shows an "Open Location Settings" button that calls window.api when available (desktop)', async ({ page }) => {
     await mockGeolocation(page, 'denied');
     await mockLocationSettingsApi(page);
-    await attemptLogin(page);
+    await page.goto('/login');
     await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
 
     const settingsButton = page.getByRole('button', { name: 'Open Location Settings' });
@@ -236,7 +240,7 @@ test.describe('unauthenticated', () => {
 
   test('Cancel dismisses the location guard and returns to the login form', async ({ page }) => {
     await mockGeolocation(page, 'denied');
-    await attemptLogin(page);
+    await page.goto('/login');
     await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
 
     await page.getByRole('button', { name: 'Cancel' }).click();
@@ -246,7 +250,7 @@ test.describe('unauthenticated', () => {
 
   test('Try Again re-attempts geolocation and re-shows the guard while still denied', async ({ page }) => {
     await mockGeolocation(page, 'denied');
-    await attemptLogin(page);
+    await page.goto('/login');
     await expect(page.getByText('Location access required')).toBeVisible({ timeout: 5_000 });
 
     await page.getByRole('button', { name: 'Try Again' }).click();
