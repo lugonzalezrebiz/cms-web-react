@@ -706,14 +706,16 @@ test("closing the popup restores Monitor's timeline at the popup's last marker p
 
   // Give the "marker" BroadcastChannel message time to reach Monitor and update its
   // markerTimeSecRef before closing — otherwise closing too fast can race the broadcast
-  // and useTimelinePopout restores a stale marker instead of this one.
-  await page.waitForTimeout(500);
+  // and useTimelinePopout restores a stale marker instead of this one. Both sides of the
+  // sync (popout's send effect, Monitor's receive) go through a React state->effect
+  // round trip, so under load (e.g. CI) this can take noticeably longer than locally.
+  await page.waitForTimeout(1_500);
   await popup.close();
 
   // useTimelinePopout polls win.closed every 500ms, then sets restoreMarkerSec and
   // timelinePopped=false — Monitor's own TimeLine remounts at that restored marker position.
   const monitorTime = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
-  await expect(monitorTime).toHaveText(after!, { timeout: 5_000 });
+  await expect(monitorTime).toHaveText(after!, { timeout: 10_000 });
 });
 
 test("changing the tracker filter in Monitor updates the popped-out timeline's event points", async ({ page }) => {

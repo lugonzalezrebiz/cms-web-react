@@ -45,6 +45,11 @@ export const useTimelinePopout =(
 
     channel.addEventListener("message", (e: MessageEvent) => {
       if (e.data?.type === "marker" && e.data?.source === "popout") {
+        // Update the ref synchronously here rather than relying solely on the
+        // markerTimeSec state->effect roundtrip below — that path can lag behind
+        // the popup-closed poll (setInterval, every 500ms) under load, causing
+        // the poll to restore a stale marker position.
+        markerTimeSecRef.current = e.data.sec as number;
         suppressSendRef.current = true;
         onMarkerChangeRef.current(e.data.sec as number);
       }
