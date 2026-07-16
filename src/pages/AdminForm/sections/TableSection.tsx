@@ -30,6 +30,7 @@ const TableSection = () => {
         id: number;
         name: string;
         role: string;
+        active?: boolean;
       }
     | undefined
   >(undefined);
@@ -60,7 +61,7 @@ const TableSection = () => {
             : user.roleID === REVIEWER_ROLE
               ? "Reviewer"
               : String(user.roleID);
-      setSelectedEmployee({ id: user.id, name: user.name, role });
+      setSelectedEmployee({ id: user.id, name: user.name, role, active: user.active });
       setViewDialogOpen(true);
     }
   };
@@ -273,6 +274,7 @@ const TableSection = () => {
         employeeId={selectedEmployee?.id}
         name={selectedEmployee?.name}
         role={selectedEmployee?.role}
+        active={selectedEmployee?.active}
       />
     </Box>
   );
