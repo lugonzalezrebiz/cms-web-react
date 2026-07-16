@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Typography } from "@mui/material";
+import { Dialog, Typography } from "@mui/material";
 import { Colors } from "../theme";
 import useAuth from "../hooks/useAuth";
 
@@ -53,39 +53,41 @@ function VpnCountdownOverlay({ onExpire }: { onExpire: () => void }) {
   }, [onExpire]);
 
   return (
-    <Box
-      sx={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 2000,
-        display: "grid",
-        placeItems: "center",
-        bgcolor: Colors.mistWhite,
-        p: 3,
+    <Dialog
+      open
+      disableEscapeKeyDown
+      onClose={(_event, reason) => {
+        if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+      }}
+      slotProps={{
+        paper: {
+          sx: {
+            width: "min(480px, 100%)",
+            border: `1px solid ${Colors.borderGray}`,
+            borderRadius: 3,
+            p: 4,
+            textAlign: "center",
+            boxShadow: "0 24px 80px rgba(15, 23, 42, 0.08)",
+            m: 3,
+          },
+        },
+        backdrop: {
+          sx: {
+            backdropFilter: "blur(4px)",
+          },
+        },
       }}
     >
-      <Box
-        sx={{
-          width: "min(480px, 100%)",
-          bgcolor: Colors.white,
-          border: `1px solid ${Colors.borderGray}`,
-          borderRadius: 3,
-          p: 4,
-          textAlign: "center",
-          boxShadow: "0 24px 80px rgba(15, 23, 42, 0.08)",
-        }}
-      >
-        <Typography variant="h5" fontWeight={700} mb={1}>
-          VPN detected
-        </Typography>
-        <Typography color="text.secondary" mb={3}>
-          Using a VPN while signed in is not allowed. Disable it now or you will
-          be signed out automatically.
-        </Typography>
-        <Typography variant="h2" fontWeight={700} color={Colors.vividOrange}>
-          {secondsLeft}
-        </Typography>
-      </Box>
-    </Box>
+      <Typography variant="h5" fontWeight={700} mb={1}>
+        VPN detected
+      </Typography>
+      <Typography color="text.secondary" mb={3}>
+        Using a VPN while signed in is not allowed. Disable it now or you will
+        be signed out automatically.
+      </Typography>
+      <Typography variant="h2" fontWeight={700} color={Colors.vividOrange}>
+        {secondsLeft}
+      </Typography>
+    </Dialog>
   );
 }
