@@ -33,19 +33,21 @@ const useLogin = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [resolvingLocation, setResolvingLocation] = useState(false);
+  const [locationBlocked, setLocationBlocked] = useState(false);
 
   const { mutateAsync, isPending } = usePost<LoginResponse, LoginPayload>("auth/login");
   const loading = resolvingLocation || isPending;
 
   const handleLogin = async () => {
     setError("");
+    setLocationBlocked(false);
 
     setResolvingLocation(true);
     const location = await getGeolocation();
     setResolvingLocation(false);
 
     if (!location && STRICT_GEOLOCATION) {
-      setError("Location access is required to log in. Please enable location permissions.");
+      setLocationBlocked(true);
       return;
     }
 
@@ -71,7 +73,18 @@ const useLogin = () => {
     }
   };
 
-  return { username, setUsername, password, setPassword, error, setError, loading, handleLogin };
+  return {
+    username,
+    setUsername,
+    password,
+    setPassword,
+    error,
+    setError,
+    loading,
+    handleLogin,
+    locationBlocked,
+    dismissLocationBlocked: () => setLocationBlocked(false),
+  };
 };
 
 export default useLogin;
