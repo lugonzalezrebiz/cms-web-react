@@ -48,6 +48,7 @@ jobs:
           VITE_USE_STATIC_IDS=${{ secrets.VITE_USE_STATIC_IDS }}
           VITE_ASSIGNMENT_COMPLETED=${{ secrets.VITE_ASSIGNMENT_COMPLETED }}
           VITE_PASSWORD_VALIDATION=${{ secrets.VITE_PASSWORD_VALIDATION }}
+          VITE_STRICT_GEOLOCATION=${{ secrets.VITE_STRICT_GEOLOCATION }}
           VITE_TEST_USER=${{ secrets.VITE_TEST_USER }}
           VITE_TEST_PASS=${{ secrets.VITE_TEST_PASS }}
           VITE_ADMIN_TEST_USER=${{ secrets.VITE_ADMIN_TEST_USER }}
@@ -76,6 +77,10 @@ jobs:
           fi
           if [ -z "${{ secrets.VITE_AGENT_TEST_USER }}" ] || [ -z "${{ secrets.VITE_AGENT_TEST_PASS }}" ]; then
             echo "::error::VITE_AGENT_TEST_USER or VITE_AGENT_TEST_PASS secret is not set."
+            exit 1
+          fi
+          if [ "${{ secrets.VITE_STRICT_GEOLOCATION }}" != "true" ]; then
+            echo "::error::VITE_STRICT_GEOLOCATION secret is not set to \"true\" — e2e/vpn-guard.spec.ts's LocationGuard tests require it, since useLogin.ts only blocks login behind LocationGuard when this flag is on."
             exit 1
           fi
 
