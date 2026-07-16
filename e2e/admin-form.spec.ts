@@ -367,7 +367,7 @@ test('picking a due date fills the Due Date field', async ({ page }) => {
   await expect(page.getByText('Due Date')).toBeVisible({ timeout: 3_000 });
 
   const dialog = page.getByRole('dialog');
-  const dueDateField = dialog.locator('input[readonly]').first();
+  const dueDateField = dialog.locator('input[placeholder="MM/DD/YYYY"]');
   await expect(dueDateField).toHaveValue('');
 
   // CalendarComponent's minDate is today — grab any enabled day (single-date picker,
@@ -676,7 +676,7 @@ test('clicking the Enable/Disable User toggle opens a confirm dialog with Yes/No
   await toggle.click();
 
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
-  await expect(page.getByRole('button', { name: /^Yes,/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
 
   // "No" dismisses the confirmation without changing anything
@@ -707,7 +707,7 @@ test('confirming the toggle flips the Enable/Disable User label', async ({ page 
 
   await toggle.click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
-  await page.getByRole('button', { name: /^Yes,/ }).click();
+  await page.getByRole('button', { name: 'Yes' }).click();
 
   await expect(page.getByText(expectedAfter, { exact: true })).toBeVisible({ timeout: 5_000 });
 });
