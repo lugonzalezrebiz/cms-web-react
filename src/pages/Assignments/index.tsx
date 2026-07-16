@@ -32,14 +32,18 @@ const Assignments = () => {
   const [company, setCompany] = useState("");
   const [store, setStore] = useState("");
   const { companyFilters, getStoreFilters } = useCompanies();
-  const companySelectFilters = [{ label: "All companies", value: "" }, ...companyFilters];
+  const companySelectFilters = [
+    { label: "All Companies", value: "" },
+    ...companyFilters,
+  ];
   const effectiveCompany = company;
   const { assignments: rawAssignments, isPending: isLoading } = useAssignments({
     companyID: effectiveCompany ? Number(effectiveCompany) : 0,
     locationID: store ? Number(store) : null,
   });
   const assignments = rawAssignments.filter((a) => {
-    if (effectiveCompany && a.location !== Number(effectiveCompany)) return false;
+    if (effectiveCompany && a.location !== Number(effectiveCompany))
+      return false;
     if (store && a.store !== Number(store)) return false;
     return true;
   });
@@ -78,147 +82,158 @@ const Assignments = () => {
   return (
     <CustomScrollbarY thumbLength={15} bottom={2} maxHeight="100%">
       {(hasScroll) => (
-      <Box sx={{ p: 2, pr: hasScroll ? 0 : 2, display: "flex", flexDirection: "column", gap: 2 }}>
-        <Grid container spacing={2} mb={2}>
-          {isCardsLoading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                  <CardSkeleton variant="header" title={cards[i]?.title} />
-                </Grid>
-              ))
-            : cards.map((card) => (
-                <Grid key={card.title} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                  <HeaderCard
-                    title={card.title}
-                    current={card.current}
-                    image={activityIcon}
-                  />
-                </Grid>
-              ))}
-        </Grid>
-
-        <Title margin={false} title="Assignments">
-          <Grid
-            container
-            sx={{
-              justifyContent: { xs: "center", sm: "flex-start" },
-            }}
-          >
-            <Box mr={{ xs: "0px", sm: "20px" }}>
-              <SelectComponent
-                filters={companySelectFilters}
-                filter={effectiveCompany}
-                setFilter={handleSetCompany}
-              />
-            </Box>
-            <SelectComponent
-              filters={getStoreFilters(effectiveCompany)}
-              filter={store}
-              setFilter={setStore}
-            />
+        <Box
+          sx={{
+            p: 2,
+            pr: hasScroll ? 0 : 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Grid container spacing={2} mb={2}>
+            {isCardsLoading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                    <CardSkeleton variant="header" title={cards[i]?.title} />
+                  </Grid>
+                ))
+              : cards.map((card) => (
+                  <Grid
+                    key={card.title}
+                    size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}
+                  >
+                    <HeaderCard
+                      title={card.title}
+                      current={card.current}
+                      image={activityIcon}
+                    />
+                  </Grid>
+                ))}
           </Grid>
-        </Title>
-        <Grid container spacing={2} mb={2}>
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <CardSkeleton variant="assignment" />
-              </Grid>
-            ))
-          ) : assignments.filter((a) => a.state !== "Error").length === 0 ? (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <CardSkeleton variant="none" />
+
+          <Title margin={false} title="Assignments">
+            <Grid
+              container
+              sx={{
+                justifyContent: { xs: "center", sm: "flex-start" },
+              }}
+            >
+              <Box mr={{ xs: "0px", sm: "20px" }}>
+                <SelectComponent
+                  filters={companySelectFilters}
+                  filter={effectiveCompany}
+                  setFilter={handleSetCompany}
+                />
+              </Box>
+              <SelectComponent
+                filters={getStoreFilters(effectiveCompany)}
+                filter={store}
+                setFilter={setStore}
+              />
             </Grid>
-          ) : (
-            assignments
-              .filter((a) => a.state !== "Error")
-              .map((a, i) => (
+          </Title>
+          <Grid container spacing={2} mb={2}>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
                 <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                  <NewAssignmentsCard
-                    {...a}
-                    onClick={() => handleNavigate(a)}
-                    openMenu={(e) => {
-                      setSelectedAssignment(a);
-                      cardMenu.handleOpen(e);
-                    }}
-                    isCompleted={a.statusName === "resource.review.completed"}
-                  />
+                  <CardSkeleton variant="assignment" />
                 </Grid>
               ))
-          )}
-        </Grid>
-        <Title
-          margin={false}
-          showDivider={false}
-          title="Rejected Assignments"
-        />
-        <Box mt={-1}>
-          <Divider />
-        </Box>
-        <Grid container spacing={2}>
-          {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => (
-              <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <CardSkeleton variant="assignment" />
+            ) : assignments.filter((a) => a.state !== "Error").length === 0 ? (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <CardSkeleton variant="none" />
               </Grid>
-            ))
-          ) : assignments.filter((a) => a.state === "Error").length === 0 ? (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-              <CardSkeleton variant="none" />
-            </Grid>
-          ) : (
-            assignments
-              .filter((a) => a.state === "Error")
-              .map((a, i) => (
+            ) : (
+              assignments
+                .filter((a) => a.state !== "Error")
+                .map((a, i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                    <NewAssignmentsCard
+                      {...a}
+                      onClick={() => handleNavigate(a)}
+                      openMenu={(e) => {
+                        setSelectedAssignment(a);
+                        cardMenu.handleOpen(e);
+                      }}
+                      isCompleted={a.statusName === "resource.review.completed"}
+                    />
+                  </Grid>
+                ))
+            )}
+          </Grid>
+          <Title
+            margin={false}
+            showDivider={false}
+            title="Rejected Assignments"
+          />
+          <Box mt={-1}>
+            <Divider />
+          </Box>
+          <Grid container spacing={2}>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
                 <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                  <NewAssignmentsCard
-                    {...a}
-                    onClick={() => handleNavigate(a)}
-                    openMenu={(e) => {
-                      setSelectedAssignment(a);
-                      cardMenu.handleOpen(e);
-                    }}
-                  />
+                  <CardSkeleton variant="assignment" />
                 </Grid>
               ))
-          )}
-        </Grid>
+            ) : assignments.filter((a) => a.state === "Error").length === 0 ? (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                <CardSkeleton variant="none" />
+              </Grid>
+            ) : (
+              assignments
+                .filter((a) => a.state === "Error")
+                .map((a, i) => (
+                  <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
+                    <NewAssignmentsCard
+                      {...a}
+                      onClick={() => handleNavigate(a)}
+                      openMenu={(e) => {
+                        setSelectedAssignment(a);
+                        cardMenu.handleOpen(e);
+                      }}
+                    />
+                  </Grid>
+                ))
+            )}
+          </Grid>
 
-        <DropDownMenu
-          anchorEl={cardMenu.anchorEl}
-          open={cardMenu.open}
-          options={dropdownOptions(handleOpenTicketDialog, handleOpenDialog)}
-          handleClose={cardMenu.handleClose}
-        />
+          <DropDownMenu
+            anchorEl={cardMenu.anchorEl}
+            open={cardMenu.open}
+            options={dropdownOptions(handleOpenTicketDialog, handleOpenDialog)}
+            handleClose={cardMenu.handleClose}
+          />
 
-        <InfoAssignment
-          handleCloseDialog={handleCloseDialog}
-          dialogOpen={dialogOpen}
-          selectedAssignment={selectedAssignment}
-        />
-
-        {selectedAssignment && (
-          <OpenTicketDialog
-            open={ticketDialogOpen}
-            onClose={handleCloseTicketDialog}
-            onSuccess={() => setTicketSuccessOpen(true)}
+          <InfoAssignment
+            handleCloseDialog={handleCloseDialog}
+            dialogOpen={dialogOpen}
             selectedAssignment={selectedAssignment}
           />
-        )}
 
-        <SuccessDialog
-          open={ticketSuccessOpen}
-          onClose={() => setTicketSuccessOpen(false)}
-          message={
-            <>
-              The ticket has been created successfully.
-              <br />
-              As soon as it gets resolved the assignment would be back on your
-              dashboard.
-            </>
-          }
-        />
-      </Box>
+          {selectedAssignment && (
+            <OpenTicketDialog
+              open={ticketDialogOpen}
+              onClose={handleCloseTicketDialog}
+              onSuccess={() => setTicketSuccessOpen(true)}
+              selectedAssignment={selectedAssignment}
+            />
+          )}
+
+          <SuccessDialog
+            open={ticketSuccessOpen}
+            onClose={() => setTicketSuccessOpen(false)}
+            message={
+              <>
+                The ticket has been created successfully.
+                <br />
+                As soon as it gets resolved the assignment would be back on your
+                dashboard.
+              </>
+            }
+          />
+        </Box>
       )}
     </CustomScrollbarY>
   );

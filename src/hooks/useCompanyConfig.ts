@@ -21,7 +21,7 @@ const useCompanyConfig = () => {
   const companyID = Number(searchParams.get("company") ?? 0);
 
   const { data, isLoading } = useGet<CompanyConfigResponse>(
-    `company/${companyID}/config`,
+    `company/${companyID}/config?name=images.interval`,
     undefined,
     {
       enabled: !!companyID,
