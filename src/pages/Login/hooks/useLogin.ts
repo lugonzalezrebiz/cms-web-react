@@ -17,7 +17,13 @@ const useLogin = () => {
   const [error, setError] = useState("");
   const [resolvingLocation, setResolvingLocation] = useState(false);
 
-  const { mutateAsync, isPending } = usePost<LoginResponse, LoginPayload>("auth/login");
+  const { mutateAsync, isPending } = usePost<LoginResponse, LoginPayload>("auth/login", {
+    getBody: ({ username, password }) => ({ username, password }),
+    getHeaders: ({ lat, lon }) => ({
+      ...(lat !== undefined && { "x-lat": String(lat) }),
+      ...(lon !== undefined && { "x-lon": String(lon) }),
+    }),
+  });
   const loading = resolvingLocation || isPending;
 
   const handleLogin = async () => {

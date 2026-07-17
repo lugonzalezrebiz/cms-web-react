@@ -151,6 +151,8 @@ export const usePost = <TData = unknown, TVariables = unknown>(
   options?: UseMutationOptions<TData, Error, TVariables> & {
     invalidateKey?: string[];
     requestConfig?: RequestConfig;
+    getBody?: (variables: TVariables) => unknown;
+    getHeaders?: (variables: TVariables) => Record<string, string> | undefined;
   }
 ) => {
   const queryClient = useQueryClient();
@@ -159,12 +161,14 @@ export const usePost = <TData = unknown, TVariables = unknown>(
   return useMutation<TData, Error, TVariables>({
     ...options,
     mutationFn: async (data: TVariables) => {
+      const body = options?.getBody ? options.getBody(data) : data;
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      const res = await apiClient.post<TData>(url, data, {
+      const res = await apiClient.post<TData>(url, body, {
         ...(options?.requestConfig || {}),
         headers: {
           ...(options?.requestConfig?.headers || {}),
           ...(headers || {}),
+          ...(options?.getHeaders?.(data) || {}),
         },
       });
       return res.data;

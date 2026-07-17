@@ -37,7 +37,7 @@ function ProtectedRole({
 
 function App() {
     const [drawerOpen, setDrawerOpen] = useState(false);
-    const { user, authenticated } = useAuth();
+    const { user } = useAuth();
     const location = useLocation();
 
     const toggleDrawer = () => setDrawerOpen((prev) => !prev);
@@ -79,7 +79,7 @@ function App() {
     return (
         <LocationGuardProvider>
             <UpdatePrompt />
-            {authenticated && <VpnGuard />}
+            <VpnGuard />
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route

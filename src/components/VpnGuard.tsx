@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Dialog, Typography } from "@mui/material";
 import { Colors } from "../theme";
 import useAuth from "../hooks/useAuth";
@@ -11,7 +11,7 @@ export default function VpnGuard() {
   const [vpnActive, setVpnActive] = useState(false);
 
   useEffect(() => {
-    if (!authenticated || !window.api?.checkVpn) return;
+    if (!window.api?.checkVpn) return;
 
     let cancelled = false;
     const poll = async () => {
@@ -29,29 +29,28 @@ export default function VpnGuard() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [authenticated]);
+  }, []);
 
-  // Remounted fresh every time vpnActive flips to true, so the countdown
-  // always starts from GRACE_PERIOD_MS without needing a reset effect.
   if (!vpnActive) return null;
+
+  // Pre-login there's no session to expire, so just block access without a
+  // countdown/grace period. Switching component type on login/logout forces a
+  // fresh mount, so the countdown always restarts from GRACE_PERIOD_MS.
+  if (!authenticated) {
+    return (
+      <VpnDialog description="VPN connections are not allowed. Please disable your VPN to log in." />
+    );
+  }
   return <VpnCountdownOverlay onExpire={logout} />;
 }
 
-function VpnCountdownOverlay({ onExpire }: { onExpire: () => void }) {
-  const [secondsLeft, setSecondsLeft] = useState(GRACE_PERIOD_MS / 1000);
-
-  useEffect(() => {
-    // Timestamp-based so the countdown stays accurate even if the tab is throttled.
-    const deadline = Date.now() + GRACE_PERIOD_MS;
-    const tick = () => {
-      const remaining = deadline - Date.now();
-      setSecondsLeft(Math.max(0, Math.ceil(remaining / 1000)));
-      if (remaining <= 0) onExpire();
-    };
-    const interval = setInterval(tick, 250);
-    return () => clearInterval(interval);
-  }, [onExpire]);
-
+function VpnDialog({
+  description,
+  extra,
+}: {
+  description: ReactNode;
+  extra?: ReactNode;
+}) {
   return (
     <Dialog
       open
@@ -79,15 +78,39 @@ function VpnCountdownOverlay({ onExpire }: { onExpire: () => void }) {
       }}
     >
       <Typography variant="h5" fontWeight={700} mb={1}>
-        VPN detected
+        VPN Detected
       </Typography>
       <Typography color="text.secondary" mb={3}>
-        Using a VPN while signed in is not allowed. Disable it now or you will
-        be signed out automatically.
+        {description}
       </Typography>
-      <Typography variant="h2" fontWeight={700} color={Colors.vividOrange}>
-        {secondsLeft}
-      </Typography>
+      {extra}
     </Dialog>
+  );
+}
+
+function VpnCountdownOverlay({ onExpire }: { onExpire: () => void }) {
+  const [secondsLeft, setSecondsLeft] = useState(GRACE_PERIOD_MS / 1000);
+
+  useEffect(() => {
+    // Timestamp-based so the countdown stays accurate even if the tab is throttled.
+    const deadline = Date.now() + GRACE_PERIOD_MS;
+    const tick = () => {
+      const remaining = deadline - Date.now();
+      setSecondsLeft(Math.max(0, Math.ceil(remaining / 1000)));
+      if (remaining <= 0) onExpire();
+    };
+    const interval = setInterval(tick, 250);
+    return () => clearInterval(interval);
+  }, [onExpire]);
+
+  return (
+    <VpnDialog
+      description="Using a VPN while signed in is not allowed. Disable it now or you will be signed out automatically."
+      extra={
+        <Typography variant="h2" fontWeight={700} color={Colors.vividOrange}>
+          {secondsLeft}
+        </Typography>
+      }
+    />
   );
 }

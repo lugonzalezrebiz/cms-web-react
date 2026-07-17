@@ -7,8 +7,9 @@ interface LocationGuardProps {
   open: boolean;
   authenticated: boolean;
   opening: boolean;
+  checking: boolean;
+  secondsUntilCheck: number;
   onOpenSettings: () => void;
-  onRetry: () => void;
   onCancel: () => void;
 }
 
@@ -25,8 +26,6 @@ const LinkLabel = styled("button")({
   textDecoration: "none",
 });
 
-// Electron builds expose window.api.openLocationSettings; browser builds don't, since
-// the browser already owns its own location-permission prompt/padlock UI.
 const canOpenSettings =
   typeof window !== "undefined" && !!window.api?.openLocationSettings;
 
@@ -34,8 +33,8 @@ export default function LocationGuard({
   open,
   authenticated,
   opening,
+  secondsUntilCheck,
   onOpenSettings,
-  onRetry,
   onCancel,
 }: LocationGuardProps) {
   if (!open) return null;
@@ -68,14 +67,14 @@ export default function LocationGuard({
       }}
     >
       <Typography variant="h5" fontWeight={700} mb={1}>
-        Location access required
+        Enable Location Access
       </Typography>
       <Typography color="text.secondary" mb={3}>
         {authenticated
-          ? "Location access was lost. Re-enable it to keep using the app, or log out."
+          ? "Location access has been disabled. Re-enable it to continue using the app, or log out."
           : canOpenSettings
             ? "Enable location services for this app to log in."
-            : "Enable location permissions for this site in your browser to log in."}
+            : "Location access is required to use this app."}
       </Typography>
 
       {canOpenSettings && (
@@ -91,14 +90,24 @@ export default function LocationGuard({
         </Button>
       )}
 
-      <Button fullWidth outfit square color="secondary" onClick={onRetry}>
-        Try Again
-      </Button>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        gap={1}
+        mb={2}
+      >
+        <Typography color="text.secondary" fontSize="14px">
+          Rechecking in {secondsUntilCheck}s
+        </Typography>
+      </Box>
 
       <Box display="flex" justifyContent="center">
-        <LinkLabel type="button" onClick={onCancel}>
-          {authenticated ? "Log Out" : "Cancel"}
-        </LinkLabel>
+        {authenticated && (
+          <LinkLabel type="button" onClick={onCancel}>
+            Log Out
+          </LinkLabel>
+        )}
       </Box>
     </Dialog>
   );
