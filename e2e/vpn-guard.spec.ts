@@ -84,7 +84,10 @@ test('leaving the VPN active for the full grace period logs the user out', async
   // GRACE_PERIOD_MS is 10s in VpnGuard.tsx; logout() clears the token, ProtectedRole
   // then redirects away from the authenticated route.
   await expect(page).toHaveURL(/\/login/, { timeout: 12_000 });
-  await expect(page.getByText('VPN detected')).not.toBeVisible();
+  // The VPN is still active (the mock never turned off), so the pre-login VpnDialog
+  // re-blocks the login page too — just without a countdown/grace period this time.
+  await expect(page.getByText('VPN detected')).toBeVisible();
+  await expect(vpnCard(page).getByText(/^\d{1,2}$/)).not.toBeVisible();
 });
 
 test('re-detecting a VPN after logout shows the overlay again on next login', async ({ page }) => {
@@ -92,8 +95,12 @@ test('re-detecting a VPN after logout shows the overlay again on next login', as
   await page.goto('/assignments');
   await expect(page).toHaveURL(/\/login/, { timeout: 12_000 });
 
-  // Logging back in swaps the pre-login VpnDialog for a freshly mounted
-  // VpnCountdownOverlay, so the countdown always restarts back at 10s.
+  // The pre-login overlay blocks the login form while the VPN reads active, so disable
+  // it first to actually reach the form, then log in and re-activate it afterward: a
+  // freshly mounted VpnCountdownOverlay should restart the countdown back at 10s.
+  await setVpnActive(page, false);
+  await expect(page.getByText('VPN detected')).not.toBeVisible({ timeout: 5_000 });
+
   // STRICT_GEOLOCATION would otherwise block this re-login behind LocationGuard instead.
   await page.context().grantPermissions(['geolocation']);
   await page.context().setGeolocation({ latitude: 40.7128, longitude: -74.006 });
@@ -102,6 +109,7 @@ test('re-detecting a VPN after logout shows the overlay again on next login', as
   await page.getByRole('button', { name: 'Log In' }).click();
   await page.waitForURL('**/assignments**');
 
+  await setVpnActive(page, true);
   await expect(page.getByText('VPN detected')).toBeVisible({ timeout: 5_000 });
   await expect(vpnCard(page).getByText(/^\d{1,2}$/)).toHaveText('10');
 });
