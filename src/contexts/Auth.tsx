@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
+import { useQueryClient } from "@tanstack/react-query";
 import { AuthContext, type DecodedToken } from "./AuthContextDef";
 import { crashLogger } from "../services/CrashLogger";
 import { apiClient } from "../config/apiClient";
@@ -8,6 +9,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setTokenState] = useState<string | null>(() =>
     localStorage.getItem("token"),
   );
+  const queryClient = useQueryClient();
 
   const user = useMemo<DecodedToken | null>(() => {
     if (!token) return null;
@@ -30,12 +32,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const setToken = (newToken: string) => {
     localStorage.setItem("token", newToken);
     setTokenState(newToken);
+    queryClient.clear();
   };
 
   const logout = useCallback(() => {
     localStorage.removeItem("token");
     setTokenState(null);
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   useEffect(() => {
     const interceptorId = apiClient.interceptors.response.use(

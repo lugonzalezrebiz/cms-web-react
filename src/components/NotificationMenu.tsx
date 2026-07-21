@@ -77,7 +77,9 @@ const NameText = styled("p")({
   fontWeight: 600,
   lineHeight: 1.43,
   color: Colors.lightBlack,
-  whiteSpace: "nowrap",
+  display: "-webkit-box",
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: "vertical",
   overflow: "hidden",
   textOverflow: "ellipsis",
 });
@@ -185,7 +187,7 @@ const NotificationMenu = ({
               onClick={() => onNotificationClick?.(notif)}
             >
               <InfoCol>
-                <NameText>{notif.title}</NameText>
+                <NameText title={notif.title}>{notif.title}</NameText>
                 <ActivityText title={notif.date}>{notif.date}</ActivityText>
                 <TimeText>{notif.timeAgo}</TimeText>
               </InfoCol>

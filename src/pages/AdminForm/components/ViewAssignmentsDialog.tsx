@@ -25,7 +25,7 @@ import DeleteButton from "./ViewAssignmentsDialog/DeleteButton";
 import ExpandedDetails from "./ViewAssignmentsDialog/ExpandedDetails";
 import ExpandedLocationDetails from "./ViewAssignmentsDialog/ExpandedLocationDetails";
 import ExpandedIncidentDetails from "./ViewAssignmentsDialog/ExpandedIncidentDetails";
-import { formatEnumLabel } from "./ViewAssignmentsDialog/utils";
+import { formatEnumLabel } from "../../../utils/format";
 
 interface Props {
   open: boolean;
@@ -317,12 +317,12 @@ const ViewAssignmentsDialog = ({
           height="100%"
           boxSizing="border-box"
           gap="24px"
-          sx={{ overflow: "hidden" }}
+          sx={{ overflow: "hidden", pb: "5px" }}
         >
           <Box
             display="flex"
             flexDirection="column"
-            sx={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}
+            sx={{ flex: "1 1 0", minHeight: 0, overflow: "hidden", mt: "20px" }}
           >
             <Box mb="4px" pl="16px">
               <Title>Incidents</Title>
@@ -347,10 +347,12 @@ const ViewAssignmentsDialog = ({
                 maxHeight="95%"
                 thumbLength={15}
                 scrollX
+                top={45}
+                bottom={2}
                 xThumbLength={15}
                 sx={{ width: "100%", height: "100%", minHeight: 0 }}
               >
-                <Box height={"100%"}>
+                <Box>
                   <Table
                     columns={incidentColumns}
                     rows={incidentRows}
@@ -394,10 +396,12 @@ const ViewAssignmentsDialog = ({
                 maxHeight="95%"
                 thumbLength={15}
                 scrollX
+                top={45}
+                bottom={2}
                 xThumbLength={15}
                 sx={{ width: "100%", height: "100%", minHeight: 0 }}
               >
-                <Box height={"100%"}>
+                <Box>
                   <Table
                     columns={columns}
                     rows={rows}
@@ -454,6 +458,7 @@ const ViewAssignmentsDialog = ({
                 maxHeight="95%"
                 thumbLength={15}
                 scrollX
+                top={45}
                 bottom={2}
                 xThumbLength={15}
                 sx={{
@@ -463,7 +468,7 @@ const ViewAssignmentsDialog = ({
                   overflow: "hidden",
                 }}
               >
-                <Box height={"100%"}>
+                <Box>
                   <Table
                     columns={locationColumns}
                     rows={locationRows}
