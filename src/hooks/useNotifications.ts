@@ -71,5 +71,9 @@ export const useNotifications = (open: boolean) => {
     return () => clearTimeout(timer);
   }, [open, post]);
 
-  return { notifications, isPending, error };
+  const markAsRead = (id: number) => {
+    post(`notification/${id}/read`).catch(() => {});
+  };
+
+  return { notifications, isPending, error, markAsRead };
 };

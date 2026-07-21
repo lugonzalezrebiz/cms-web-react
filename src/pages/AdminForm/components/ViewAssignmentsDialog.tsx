@@ -16,7 +16,7 @@ import useDeactivateApprovedLocation from "../hooks/useDeactivateApprovedLocatio
 import useIncidents from "../hooks/useIncidents";
 import useToggleUserActive from "../hooks/useToggleUserActive";
 import { Colors, Fonts } from "../../../theme";
-import ConfirmDialog from "../../../components/ConfirmDialog";
+import SuccessDialog from "../../../components/SuccessDialog";
 import ResetPasswordDialog from "./ResetPasswordDialog";
 import EmployeeDrawerHeader from "./ViewAssignmentsDialog/EmployeeDrawerHeader";
 import AssignmentToggle from "./ViewAssignmentsDialog/AssignmentToggle";
@@ -65,12 +65,12 @@ const ViewAssignmentsDialog = ({
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const [localActive, setLocalActive] = useState(active);
   const [syncedEmployeeId, setSyncedEmployeeId] = useState(employeeId);
-  const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
+  const [toggleSuccessOpen, setToggleSuccessOpen] = useState(false);
 
   if (employeeId !== syncedEmployeeId) {
     setSyncedEmployeeId(employeeId);
     setLocalActive(active);
-    setConfirmToggleOpen(false);
+    setToggleSuccessOpen(false);
   }
 
   const {
@@ -79,12 +79,12 @@ const ViewAssignmentsDialog = ({
     errorMessage: toggleActiveError,
   } = useToggleUserActive(employeeId);
 
-  const confirmToggleActive = () => {
+  const handleToggleActive = () => {
     if (localActive === undefined || togglingActive) return;
     const next = !localActive;
     toggleActive(next, () => {
       setLocalActive(next);
-      setConfirmToggleOpen(false);
+      setToggleSuccessOpen(true);
     });
   };
 
@@ -174,16 +174,9 @@ const ViewAssignmentsDialog = ({
 
   const locationColumns: Column[] = [
     {
-      title: "# PHONE",
-      key: "phoneNumber",
-      width: "70px",
-      align: "center",
-      rowColor: Colors.vividOrange,
-    },
-    {
-      title: "ADDRESS LINE 1",
-      key: "addressLine1",
-      width: "60px",
+      title: "ADDRESS",
+      key: "address",
+      width: "100px",
       align: "center",
     },
     {
@@ -201,7 +194,7 @@ const ViewAssignmentsDialog = ({
     {
       title: "",
       key: "detail",
-      width: "40px",
+      width: "30px",
       align: "left",
       rowColor: Colors.vividOrange,
       render: (value: { key: string }) => (
@@ -217,8 +210,8 @@ const ViewAssignmentsDialog = ({
     {
       title: "",
       key: "delete",
-      width: "15px",
-      align: "right",
+      width: "10px",
+      align: "center",
       render: (value: { id: number }) => (
         <DeleteButton
           companyID={value.id}
@@ -234,8 +227,9 @@ const ViewAssignmentsDialog = ({
     const key = String(location.id);
     const isExpanded = locationActiveKey === key;
     return {
-      phoneNumber: location.phone,
-      addressLine1: location.addressLine1,
+      address:
+        location.addressLine1 +
+        (location.addressLine2 ? `, ${location.addressLine2}` : ""),
       country: location.country,
       cityRegion: location.city,
       detail: { key },
@@ -312,165 +306,192 @@ const ViewAssignmentsDialog = ({
             role={role}
             active={localActive}
             onResetPassword={() => setResetPasswordOpen(true)}
-            onToggleActive={() => setConfirmToggleOpen(true)}
+            onToggleActive={handleToggleActive}
             toggleActiveError={toggleActiveError}
           />
         }
       >
-        <Box mt="20px" display="flex" flexDirection="column" height="30%">
-          <Box mb="4px" pl="16px">
-            <Title>Assignments</Title>
-          </Box>
-          {!isLoading && rows.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "120px",
-                color: Colors.dimGray,
-                fontFamily: Fonts.main,
-                fontSize: "14px",
-              }}
-            >
-              No assignments found for this employee
+        <Box
+          display="flex"
+          flexDirection="column"
+          height="100%"
+          boxSizing="border-box"
+          gap="24px"
+          sx={{ overflow: "hidden" }}
+        >
+          <Box
+            display="flex"
+            flexDirection="column"
+            sx={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}
+          >
+            <Box mb="4px" pl="16px">
+              <Title>Incidents</Title>
             </Box>
-          ) : (
-            <CustomScrollbarY
-              ref={scrollContainerRef}
-              maxHeight="95%"
-              thumbLength={15}
-              scrollX
-              xThumbLength={15}
-              sx={{ width: "100%", height: "100%" }}
-            >
-              <Box height={"100%"}>
-                <Table
-                  columns={columns}
-                  rows={rows}
-                  mainColumnWidth="120px"
-                  mainRowWidth="120px"
-                  TableCellWidth="120px"
-                  rowWidth="120px"
-                  scrollContainerRef={scrollContainerRef}
-                  disableOverflow
-                  loading={isLoading}
-                />
-                {errorMessage && (
-                  <Box
-                    sx={{
-                      mt: "8px",
-                      px: "8px",
-                      color: Colors.red,
-                      fontFamily: Fonts.main,
-                      fontSize: "12px",
-                    }}
-                  >
-                    {errorMessage}
-                  </Box>
-                )}
+            {!incidentsLoading && incidentRows.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "120px",
+                  color: Colors.dimGray,
+                  fontFamily: Fonts.main,
+                  fontSize: "14px",
+                }}
+              >
+                No incidents found for this employee
               </Box>
-            </CustomScrollbarY>
-          )}
-        </Box>
-        <Box mt="24px" display="flex" flexDirection="column" height="30%">
-          <Box mb="4px" pl="16px">
-            <Title>Locations</Title>
+            ) : (
+              <CustomScrollbarY
+                ref={scrollContainerRef}
+                maxHeight="95%"
+                thumbLength={15}
+                scrollX
+                xThumbLength={15}
+                sx={{ width: "100%", height: "100%", minHeight: 0 }}
+              >
+                <Box height={"100%"}>
+                  <Table
+                    columns={incidentColumns}
+                    rows={incidentRows}
+                    mainColumnWidth="120px"
+                    mainRowWidth="120px"
+                    TableCellWidth="120px"
+                    rowWidth="120px"
+                    scrollContainerRef={scrollContainerRef}
+                    disableOverflow
+                    loading={incidentsLoading}
+                  />
+                </Box>
+              </CustomScrollbarY>
+            )}
           </Box>
-          {!locationsLoading && locationRows.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "120px",
-                color: Colors.dimGray,
-                fontFamily: Fonts.main,
-                fontSize: "14px",
-              }}
-            >
-              No locations found for this employee
+          <Box
+            display="flex"
+            flexDirection="column"
+            sx={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}
+          >
+            <Box mb="4px" pl="16px">
+              <Title>Assignments</Title>
             </Box>
-          ) : (
-            <CustomScrollbarY
-              ref={scrollContainerRef}
-              maxHeight="95%"
-              thumbLength={15}
-              scrollX
-              xThumbLength={15}
-              sx={{ width: "100%", height: "100%" }}
-            >
-              <Box height={"100%"}>
-                <Table
-                  columns={locationColumns}
-                  rows={locationRows}
-                  mainColumnWidth="120px"
-                  mainRowWidth="120px"
-                  TableCellWidth="120px"
-                  rowWidth="120px"
-                  scrollContainerRef={scrollContainerRef}
-                  disableOverflow
-                  loading={locationsLoading}
-                />
-                {deactivateLocationError && (
-                  <Box
-                    sx={{
-                      mt: "8px",
-                      px: "8px",
-                      color: Colors.red,
-                      fontFamily: Fonts.main,
-                      fontSize: "12px",
-                    }}
-                  >
-                    {deactivateLocationError}
-                  </Box>
-                )}
+            {!isLoading && rows.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "120px",
+                  color: Colors.dimGray,
+                  fontFamily: Fonts.main,
+                  fontSize: "14px",
+                }}
+              >
+                No assignments found for this employee
               </Box>
-            </CustomScrollbarY>
-          )}
-        </Box>
-        <Box mt="24px" display="flex" flexDirection="column" height="30%">
-          <Box mb="4px" pl="16px">
-            <Title>Incidents</Title>
+            ) : (
+              <CustomScrollbarY
+                ref={scrollContainerRef}
+                maxHeight="95%"
+                thumbLength={15}
+                scrollX
+                xThumbLength={15}
+                sx={{ width: "100%", height: "100%", minHeight: 0 }}
+              >
+                <Box height={"100%"}>
+                  <Table
+                    columns={columns}
+                    rows={rows}
+                    mainColumnWidth="120px"
+                    mainRowWidth="120px"
+                    TableCellWidth="120px"
+                    rowWidth="120px"
+                    scrollContainerRef={scrollContainerRef}
+                    disableOverflow
+                    loading={isLoading}
+                  />
+                  {errorMessage && (
+                    <Box
+                      sx={{
+                        mt: "8px",
+                        px: "8px",
+                        color: Colors.red,
+                        fontFamily: Fonts.main,
+                        fontSize: "12px",
+                      }}
+                    >
+                      {errorMessage}
+                    </Box>
+                  )}
+                </Box>
+              </CustomScrollbarY>
+            )}
           </Box>
-          {!incidentsLoading && incidentRows.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "120px",
-                color: Colors.dimGray,
-                fontFamily: Fonts.main,
-                fontSize: "14px",
-              }}
-            >
-              No incidents found for this employee
+          <Box
+            display="flex"
+            flexDirection="column"
+            sx={{ flex: "1 1 0", minHeight: 0 }}
+          >
+            <Box mb="4px" pl="16px">
+              <Title>Locations</Title>
             </Box>
-          ) : (
-            <CustomScrollbarY
-              ref={scrollContainerRef}
-              maxHeight="95%"
-              thumbLength={15}
-              scrollX
-              xThumbLength={15}
-              sx={{ width: "100%", height: "100%" }}
-            >
-              <Box height={"100%"}>
-                <Table
-                  columns={incidentColumns}
-                  rows={incidentRows}
-                  mainColumnWidth="120px"
-                  mainRowWidth="120px"
-                  TableCellWidth="120px"
-                  rowWidth="120px"
-                  scrollContainerRef={scrollContainerRef}
-                  disableOverflow
-                  loading={incidentsLoading}
-                />
+            {!locationsLoading && locationRows.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "120px",
+                  color: Colors.dimGray,
+                  fontFamily: Fonts.main,
+                  fontSize: "14px",
+                }}
+              >
+                No locations found for this employee
               </Box>
-            </CustomScrollbarY>
-          )}
+            ) : (
+              <CustomScrollbarY
+                ref={scrollContainerRef}
+                maxHeight="95%"
+                thumbLength={15}
+                scrollX
+                bottom={2}
+                xThumbLength={15}
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  minHeight: 0,
+                  overflow: "hidden",
+                }}
+              >
+                <Box height={"100%"}>
+                  <Table
+                    columns={locationColumns}
+                    rows={locationRows}
+                    mainColumnWidth="120px"
+                    mainRowWidth="120px"
+                    TableCellWidth="120px"
+                    rowWidth="120px"
+                    scrollContainerRef={scrollContainerRef}
+                    disableOverflow
+                    loading={locationsLoading}
+                  />
+                  {deactivateLocationError && (
+                    <Box
+                      sx={{
+                        mt: "8px",
+                        px: "8px",
+                        color: Colors.red,
+                        fontFamily: Fonts.main,
+                        fontSize: "12px",
+                      }}
+                    >
+                      {deactivateLocationError}
+                    </Box>
+                  )}
+                </Box>
+              </CustomScrollbarY>
+            )}
+          </Box>
         </Box>
       </Drawer>
 
@@ -482,17 +503,13 @@ const ViewAssignmentsDialog = ({
         errorMessage={resetError}
       />
 
-      <ConfirmDialog
-        open={confirmToggleOpen}
-        onClose={() => setConfirmToggleOpen(false)}
-        onConfirm={confirmToggleActive}
-        isPending={togglingActive}
-        confirmLabel={localActive ? "Yes" : "Yes"}
-        cancelLabel="No"
+      <SuccessDialog
+        open={toggleSuccessOpen}
+        onClose={() => setToggleSuccessOpen(false)}
         message={
           localActive
-            ? `Disable ${name ? `${name}'s` : "this"} account? They'll lose access to the monitoring system immediately, until you re-enable it.`
-            : `Enable ${name ? `${name}'s` : "this"} account? They'll regain access to the monitoring system immediately.`
+            ? `${name ? `${name}'s` : "The"} account has been enabled. They now have access to the monitoring system.`
+            : `${name ? `${name}'s` : "The"} account has been disabled. They've lost access to the monitoring system.`
         }
       />
     </>

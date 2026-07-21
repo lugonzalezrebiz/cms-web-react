@@ -464,9 +464,12 @@ test('creating a location shows success and the record appears in the employee L
   const drawerPaper = page.locator('.MuiDrawer-paper');
   const locationRow = drawerPaper.locator('tbody tr').filter({ hasText: '1600 Amphitheatre Parkway' }).first();
   await expect(locationRow).toBeVisible({ timeout: 5_000 });
-  await expect(locationRow.getByText('12345678')).toBeVisible();
   await expect(locationRow.getByText('United States')).toBeVisible();
   await expect(locationRow.getByText('Mountain View')).toBeVisible();
+
+  // Phone number moved out of the row into the expanded Details section.
+  await locationRow.getByText('Details', { exact: true }).click();
+  await expect(drawerPaper.getByText('12345678')).toBeVisible({ timeout: 3_000 });
 });
 
 // ─── View Assignments drawer (row click) ──────────────────────────────────────
@@ -620,7 +623,7 @@ test('View Assignments drawer shows Locations table or its empty state', async (
   await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
   await expect(page.getByText('Locations')).toBeVisible({ timeout: 5_000 });
 
-  const hasTable = await page.getByText('# PHONE').isVisible({ timeout: 5_000 }).catch(() => false);
+  const hasTable = await page.getByText('ADDRESS', { exact: true }).isVisible({ timeout: 5_000 }).catch(() => false);
   const hasEmpty = await page.getByText('No locations found for this employee').isVisible().catch(() => false);
   expect(hasTable || hasEmpty).toBe(true);
 });
@@ -645,15 +648,20 @@ test('expanding a row via Details reveals its expanded fields', async ({ page })
   await openFirstUserDrawer(page);
   await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
 
-  // DetailToggle ("Details") is shared by the Locations and Incidents tables — the
-  // first one in DOM order belongs to a Locations row, if any locations exist.
+  // DetailToggle ("Details") is shared by the Incidents and Locations tables — the
+  // first one in DOM order belongs to an Incidents row (Incidents renders above
+  // Locations), if any incidents exist, otherwise a Locations row.
   const drawerPaper = page.locator('.MuiDrawer-paper');
   const detailsToggles = drawerPaper.getByText('Details', { exact: true });
   const toggleCount = await detailsToggles.count();
   test.skip(toggleCount === 0, 'no locations or incidents rows available to expand');
 
   await detailsToggles.first().click();
-  await expect(drawerPaper.getByText('Created At').first()).toBeVisible({ timeout: 3_000 });
+  // Incidents expand into "Occurrences In 1 Hour Window" / "Last Seen At";
+  // Locations expand into "Phone" / "Created At" — either confirms the row expanded.
+  await expect(
+    drawerPaper.getByText(/^(Occurrences In 1 Hour Window|Created At)$/).first(),
+  ).toBeVisible({ timeout: 3_000 });
 });
 
 test('drawer header shows an Enable/Disable User toggle', async ({ page }) => {
@@ -666,28 +674,7 @@ test('drawer header shows an Enable/Disable User toggle', async ({ page }) => {
   await expect(page.getByText(/^(Disable|Enable) User$/)).toBeVisible({ timeout: 5_000 });
 });
 
-test('clicking the Enable/Disable User toggle opens a confirm dialog with Yes/No', async ({ page }) => {
-  const count = await waitForUsersTable(page);
-  test.skip(count === 0, 'no users loaded in this environment');
-
-  await openFirstUserDrawer(page);
-  await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
-
-  const toggle = page.getByText(/^(Disable|Enable) User$/);
-  const label = await toggle.textContent();
-  await toggle.click();
-
-  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
-  await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'No' })).toBeVisible();
-
-  // "No" dismisses the confirmation without changing anything
-  await page.getByRole('button', { name: 'No' }).click();
-  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
-  await expect(page.getByText(label!, { exact: true })).toBeVisible();
-});
-
-test('confirming the toggle flips the Enable/Disable User label', async ({ page }) => {
+test('clicking the Enable/Disable User toggle flips the label and shows a success dialog', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
@@ -707,11 +694,18 @@ test('confirming the toggle flips the Enable/Disable User label', async ({ page 
   const before = await toggle.textContent();
   const expectedAfter = before === 'Disable User' ? 'Enable User' : 'Disable User';
 
+  // The toggle now applies immediately — no Yes/No confirmation step.
   await toggle.click();
-  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
-  await page.getByRole('button', { name: 'Yes' }).click();
 
   await expect(page.getByText(expectedAfter, { exact: true })).toBeVisible({ timeout: 5_000 });
+
+  // SuccessDialog renders alt="Success" (receipt-check.svg) and a confirmation message.
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByAltText('Success')).toBeVisible();
+  await expect(page.getByText(/account has been (enabled|disabled)/i)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
 });
 
 // ─── Tickets drawer ───────────────────────────────────────────────────────────

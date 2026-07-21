@@ -10,12 +10,14 @@ const ExpandedIncidentDetails = ({
   isExpanded: boolean;
 }) => {
   const items: { label: string; value: string }[] = [
-    { label: "Occurrences", value: String(incident.occurrenceCount) },
     {
-      label: "Created At",
-      value: dayjs(incident.createdAt).format("MMM D, YYYY"),
+      label: "Occurrences In 1 Hour Window",
+      value: String(incident.occurrenceCount),
     },
-    { label: "Origin", value: incident.metadata?.origin || "-" },
+    {
+      label: "Last Seen At",
+      value: dayjs(incident.createdAt).format("MMM D, YYYY h:mm A"),
+    },
   ];
 
   return <ExpandedDetailRow items={items} isExpanded={isExpanded} />;

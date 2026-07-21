@@ -60,12 +60,15 @@ const AdminHeader = ({
   const userPanelHeader = usePopover();
   const notificationHeader = usePopover();
   const navigate = useNavigateWithQuery();
-  const { notifications } = useNotifications(notificationHeader.open);
+  const { notifications, markAsRead } = useNotifications(notificationHeader.open);
   const { user } = useAuth();
   const isAdmin = user?.roleID === ADMIN_ROLE;
   const goBack = () => navigate(-1);
 
   const handleNotificationClick = (notif: Notification) => {
+    if (notif.unread) {
+      markAsRead(notif.id);
+    }
     if (isAdmin && notif.meta?.type === "ticket_created") {
       notificationHeader.handleClose();
       setTicketsOpen(true);
