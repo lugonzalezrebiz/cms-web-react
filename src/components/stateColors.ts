@@ -15,6 +15,9 @@ export type stateAssignments =
   | "Closed"
   | "Pending_Reporter"
   | "Pending_Support"
+  | "HIGH"
+  | "MEDIUM"
+  | "LOW"
   ;
 
 export const stateColors: Record<
@@ -35,6 +38,9 @@ export const stateColors: Record<
   Closed: { border: Colors.blushRed, bg: Colors.palePink, color: Colors.blushRed },
   Pending_Reporter: { border: Colors.goldenAmber, bg: Colors.creamYellow, color: Colors.goldenAmber },
   Pending_Support: { border: Colors.goldenAmber, bg: Colors.creamYellow, color: Colors.goldenAmber },
+  HIGH: { border: Colors.blushRed, bg: Colors.palePink, color: Colors.blushRed },
+  MEDIUM: { border: Colors.goldenAmber, bg: Colors.creamYellow, color: Colors.goldenAmber },
+  LOW: { border: Colors.leafGreen, bg: Colors.mintFoam, color: Colors.leafGreen },
 };
 
 export type ticketState = "Open" | "Resolved" | "Other" | "Closed" | "Pending_Reporter" | "Pending_Support";

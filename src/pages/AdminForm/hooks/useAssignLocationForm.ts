@@ -7,13 +7,9 @@ const schema = z.object({
     .min(1, "Phone number is required")
     .regex(/^\+?[0-9]{7,15}$/, "Enter a valid phone number"),
   addressLine1: z.string().min(1, "Address Line 1 is required"),
-  addressLine2: z.string().min(1, "Address Line 2 is required"),
+  addressLine2: z.string(),
   country: z.string().min(1, "Country is required"),
   cityRegion: z.string().min(1, "City/Region is required"),
-  ip: z
-    .string()
-    .min(1, "IP is required")
-    .refine((val) => z.ipv4().safeParse(val).success, "Enter a valid IP address"),
 });
 
 type Fields = z.infer<typeof schema>;
@@ -25,7 +21,6 @@ const initialFields: Fields = {
   addressLine2: "",
   country: "",
   cityRegion: "",
-  ip: "",
 };
 
 const useAssignLocationForm = () => {
