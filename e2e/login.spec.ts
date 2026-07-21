@@ -46,6 +46,6 @@ test('sends geolocation as x-latitude/x-longitude headers instead of in the requ
   expect(headers['x-longitude']).toBe('-74.006');
 
   const body = JSON.parse(request.postData() ?? '{}');
-  expect(body).not.toHaveProperty('lat');
-  expect(body).not.toHaveProperty('lon');
+  expect(body).not.toHaveProperty('latitude');
+  expect(body).not.toHaveProperty('longitude');
 });
