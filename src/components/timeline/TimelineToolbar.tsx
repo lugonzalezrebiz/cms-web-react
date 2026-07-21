@@ -7,6 +7,7 @@ import { assetUrl } from "../../utils";
 import type { NavTab, TimelineSnapshot } from "./types";
 import TimelineNavPopover from "./TimelineNavPopover";
 import { usePopover } from "./hooks/usePopover";
+import useCompanyConfig from "../../hooks/useCompanyConfig";
 
 interface Props {
   snapshot: TimelineSnapshot;
@@ -49,6 +50,7 @@ const SmallSize = ({
 }: Props) => {
   const [activeTab, setActiveTab] = useState<NavTab>("compliances");
   const navPopover = usePopover();
+  const { imagesInterval } = useCompanyConfig();
 
   return (
     <Grid
@@ -175,7 +177,7 @@ const SmallSize = ({
             alt="Previous event point"
           />
         </Box>
-        <Box mr={"8px"} onClick={() => onStepMarker(-600)}>
+        <Box mr={"8px"} onClick={() => onStepMarker(-imagesInterval)}>
           <img
             style={{ cursor: "pointer" }}
             src={assetUrl("chevron-left.svg")}
@@ -214,7 +216,7 @@ const SmallSize = ({
             />
           </Box>
         </Box>
-        <Box onClick={() => onStepMarker(+600)}>
+        <Box onClick={() => onStepMarker(imagesInterval)}>
           <img
             style={{ cursor: "pointer" }}
             src={assetUrl("chevron-right.svg")}
@@ -349,6 +351,7 @@ const NormalSize = ({
 }: Props) => {
   const [activeTab, setActiveTab] = useState<NavTab>("compliances");
   const navPopover = usePopover();
+  const { imagesInterval } = useCompanyConfig();
 
   return (
     <Box display={"flex"} alignItems={"center"} bgcolor={Colors.white}>
@@ -456,7 +459,7 @@ const NormalSize = ({
           <Box
             sx={{ display: "flex" }}
             mr={"8px"}
-            onClick={() => onStepMarker(-600)}
+            onClick={() => onStepMarker(-imagesInterval)}
           >
             <img
               style={{ cursor: "pointer" }}
@@ -500,7 +503,7 @@ const NormalSize = ({
               />
             </Box>
           </Box>
-          <Box sx={{ display: "flex" }} onClick={() => onStepMarker(+600)}>
+          <Box sx={{ display: "flex" }} onClick={() => onStepMarker(imagesInterval)}>
             <img
               style={{ cursor: "pointer" }}
               src={assetUrl("chevron-right.svg")}

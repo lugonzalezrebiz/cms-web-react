@@ -31,7 +31,7 @@ const useAssignments = ({
   locationID?: number | null;
 }) => {
   const body = {
-    companyID: companyID ?? 0,
+    ...(companyID ? { companyID } : {}),
     ...(locationID ? { locationID } : {}),
   };
 

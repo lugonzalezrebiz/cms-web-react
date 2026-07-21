@@ -101,10 +101,10 @@ test('keyboard shortcuts icon opens shortcuts menu', async ({ page }) => {
 });
 
 test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
-  // Mirrors KEYBOARD_SHORTCUTS in src/sections/Header/MonitorHeader.tsx
-  const labels = [
-    'Move marker back 5 sec',
-    'Move marker forward 5 sec',
+  // Mirrors getKeyboardShortcuts in src/sections/Header/MonitorHeader.tsx — the marker
+  // step labels are built from useCompanyConfig's imagesInterval (company/{id}/config's
+  // "images.interval"), so match any number rather than a hardcoded "5 sec".
+  const staticLabels = [
     'Previous event point',
     'Next event point',
     'Go back',
@@ -122,7 +122,9 @@ test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
   await page.locator('img[src*="keyboard-02"]').click();
   await expect(page.getByText('Keyboard shortcuts')).toBeVisible({ timeout: 5_000 });
 
-  for (const label of labels) {
+  await expect(page.getByText(/^Move marker back \d+ sec$/)).toBeVisible();
+  await expect(page.getByText(/^Move marker forward \d+ sec$/)).toBeVisible();
+  for (const label of staticLabels) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
   await page.keyboard.press('Escape');
