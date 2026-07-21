@@ -20,8 +20,8 @@ const useLogin = () => {
   const { mutateAsync, isPending } = usePost<LoginResponse, LoginPayload>("auth/login", {
     getBody: ({ username, password }) => ({ username, password }),
     getHeaders: ({ lat, lon }) => ({
-      ...(lat !== undefined && { "x-lat": String(lat) }),
-      ...(lon !== undefined && { "x-lon": String(lon) }),
+      ...(lat !== undefined && { "x-latitude": String(lat) }),
+      ...(lon !== undefined && { "x-longitude": String(lon) }),
     }),
   });
   const loading = resolvingLocation || isPending;

@@ -29,9 +29,9 @@ test('invalid credentials show error message', async ({ page }) => {
   await expect(page.getByText(/invalid username|connection error/i)).toBeVisible();
 });
 
-// useLogin.ts sends the resolved coordinates as x-lat/x-lon headers (getHeaders in
+// useLogin.ts sends the resolved coordinates as x-latitude/x-longitude headers (getHeaders in
 // usePost) instead of body fields, so the request body only ever carries credentials.
-test('sends geolocation as x-lat/x-lon headers instead of in the request body', async ({ page }) => {
+test('sends geolocation as x-latitude/x-longitude headers instead of in the request body', async ({ page }) => {
   await page.goto('/');
   await page.locator('#username').fill(process.env.VITE_TEST_USER ?? '');
   await page.locator('#password').fill(process.env.VITE_TEST_PASS ?? '');
@@ -42,8 +42,8 @@ test('sends geolocation as x-lat/x-lon headers instead of in the request body', 
   ]);
 
   const headers = request.headers();
-  expect(headers['x-lat']).toBe('40.7128');
-  expect(headers['x-lon']).toBe('-74.006');
+  expect(headers['x-latitude']).toBe('40.7128');
+  expect(headers['x-longitude']).toBe('-74.006');
 
   const body = JSON.parse(request.postData() ?? '{}');
   expect(body).not.toHaveProperty('lat');
