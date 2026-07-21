@@ -5,7 +5,7 @@ export const useBroadcastSync = (
   onMarkerChange: (sec: number) => void,
 ) => {
   const channelRef = useRef<BroadcastChannel | null>(null);
-  const suppressBroadcastRef = useRef(false);
+  const lastReceivedSecRef = useRef<number | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; }, [onMarkerChange]);
 
@@ -14,11 +14,12 @@ export const useBroadcastSync = (
   const [customTrackerIDs, setCustomTrackerIDs] = useState<string[]>([]);
 
   useEffect(() => {
+    lastReceivedSecRef.current = null;
     const channel = new BroadcastChannel("timeline-sync");
     channelRef.current = channel;
     channel.addEventListener("message", (e: MessageEvent) => {
       if (e.data?.type === "marker" && e.data?.source === "monitor") {
-        suppressBroadcastRef.current = true;
+        lastReceivedSecRef.current = e.data.sec as number;
         onMarkerChangeRef.current(e.data.sec as number);
       }
       if (e.data?.type === "filter") {
@@ -38,10 +39,7 @@ export const useBroadcastSync = (
 
   useEffect(() => {
     if (markerTimeSec === null || !channelRef.current) return;
-    if (suppressBroadcastRef.current) {
-      suppressBroadcastRef.current = false;
-      return;
-    }
+    if (lastReceivedSecRef.current === markerTimeSec) return;
     channelRef.current.postMessage({ type: "marker", sec: markerTimeSec, source: "popout" });
   }, [markerTimeSec]);
 
