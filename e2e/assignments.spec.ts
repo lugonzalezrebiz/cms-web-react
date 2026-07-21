@@ -121,22 +121,24 @@ test('changing company resets store selection', async ({ page }) => {
   await expect(storeSelect).toContainText(/All Stores|Select/);
 });
 
-test('company filter defaults to the first available company', async ({ page }) => {
-  // effectiveCompany = company || companyFilters[0]?.value — the select should show
-  // the first company's label on load, before the user picks anything.
+test('company filter defaults to "All Companies"', async ({ page }) => {
+  // company state starts as "" and Assignments always puts { label: "All Companies", value: "" }
+  // first in companySelectFilters — the select should show that label on load, before the user picks anything.
+  const companySelect = page.getByRole('combobox').first();
+  await expect(companySelect).toHaveText('All Companies');
+});
+
+test("selecting a store updates the store select's displayed value", async ({ page }) => {
+  // Company defaults to "All Companies", which has no real locations — pick a real company
+  // first so getStoreFilters actually returns stores beyond "All Stores".
   const companySelect = page.getByRole('combobox').first();
   await companySelect.click();
   await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
   const companyCount = await page.getByRole('option').count();
-  test.skip(companyCount === 0, 'no company options available in this environment');
+  test.skip(companyCount < 2, 'no real company options available in this environment');
+  await page.getByRole('option').nth(1).click();
+  await page.waitForLoadState('networkidle');
 
-  const firstOptionText = await page.getByRole('option').first().textContent();
-  await page.keyboard.press('Escape');
-
-  await expect(companySelect).toHaveText(firstOptionText ?? '');
-});
-
-test("selecting a store updates the store select's displayed value", async ({ page }) => {
   // getStoreFilters always puts "All Stores" (value "") first, and the select already
   // shows that by default — so pick option 1 (a real store) to prove the round-trip works.
   const storeSelect = page.getByRole('combobox').nth(1);
@@ -162,6 +164,16 @@ test('selecting a store refetches assignments with the selected locationID', asy
     }
     await route.continue();
   });
+
+  // Company defaults to "All Companies", which has no real locations — pick a real company
+  // first so the store select actually offers a real locationID to select.
+  const companySelect = page.getByRole('combobox').first();
+  await companySelect.click();
+  await expect(page.getByRole('option').first()).toBeVisible({ timeout: 5_000 });
+  const companyCount = await page.getByRole('option').count();
+  test.skip(companyCount < 2, 'no real company options available in this environment');
+  await page.getByRole('option').nth(1).click();
+  await page.waitForLoadState('networkidle');
 
   const storeSelect = page.getByRole('combobox').nth(1);
   await storeSelect.click();

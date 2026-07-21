@@ -101,10 +101,10 @@ test('keyboard shortcuts icon opens shortcuts menu', async ({ page }) => {
 });
 
 test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
-  // Mirrors KEYBOARD_SHORTCUTS in src/sections/Header/MonitorHeader.tsx
-  const labels = [
-    'Move marker back 5 sec',
-    'Move marker forward 5 sec',
+  // Mirrors getKeyboardShortcuts in src/sections/Header/MonitorHeader.tsx — the marker
+  // step labels are built from useCompanyConfig's imagesInterval (company/{id}/config's
+  // "images.interval"), so match any number rather than a hardcoded "5 sec".
+  const staticLabels = [
     'Previous event point',
     'Next event point',
     'Go back',
@@ -122,7 +122,9 @@ test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
   await page.locator('img[src*="keyboard-02"]').click();
   await expect(page.getByText('Keyboard shortcuts')).toBeVisible({ timeout: 5_000 });
 
-  for (const label of labels) {
+  await expect(page.getByText(/^Move marker back \d+ sec$/)).toBeVisible();
+  await expect(page.getByText(/^Move marker forward \d+ sec$/)).toBeVisible();
+  for (const label of staticLabels) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
   await page.keyboard.press('Escape');
@@ -706,14 +708,16 @@ test("closing the popup restores Monitor's timeline at the popup's last marker p
 
   // Give the "marker" BroadcastChannel message time to reach Monitor and update its
   // markerTimeSecRef before closing — otherwise closing too fast can race the broadcast
-  // and useTimelinePopout restores a stale marker instead of this one.
-  await page.waitForTimeout(500);
+  // and useTimelinePopout restores a stale marker instead of this one. Both sides of the
+  // sync (popout's send effect, Monitor's receive) go through a React state->effect
+  // round trip, so under load (e.g. CI) this can take noticeably longer than locally.
+  await page.waitForTimeout(1_500);
   await popup.close();
 
   // useTimelinePopout polls win.closed every 500ms, then sets restoreMarkerSec and
   // timelinePopped=false — Monitor's own TimeLine remounts at that restored marker position.
   const monitorTime = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
-  await expect(monitorTime).toHaveText(after!, { timeout: 5_000 });
+  await expect(monitorTime).toHaveText(after!, { timeout: 10_000 });
 });
 
 test("changing the tracker filter in Monitor updates the popped-out timeline's event points", async ({ page }) => {

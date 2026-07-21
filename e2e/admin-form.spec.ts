@@ -342,20 +342,20 @@ test('Create button is disabled when the Create Location form is empty', async (
   await expect(page.getByRole('button', { name: 'Create' })).toBeDisabled();
 });
 
-test('selecting Temporary reveals the Temporary Period date range picker', async ({ page }) => {
+test('selecting Temporary reveals the Due Date picker', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
   await page.getByRole('button', { name: 'LOCATION' }).first().click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
-  await expect(page.getByText('Temporary Period')).not.toBeVisible();
+  await expect(page.getByText('Due Date')).not.toBeVisible();
 
   await page.getByText('Temporary', { exact: true }).click();
-  await expect(page.getByText('Temporary Period')).toBeVisible({ timeout: 3_000 });
+  await expect(page.getByText('Due Date')).toBeVisible({ timeout: 3_000 });
 });
 
-test('applying a date range fills the Temporary Period field', async ({ page }) => {
+test('picking a due date fills the Due Date field', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
@@ -363,21 +363,19 @@ test('applying a date range fills the Temporary Period field', async ({ page }) 
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
   await page.getByText('Temporary', { exact: true }).click();
-  await expect(page.getByText('Temporary Period')).toBeVisible({ timeout: 3_000 });
+  await expect(page.getByText('Due Date')).toBeVisible({ timeout: 3_000 });
 
   const dialog = page.getByRole('dialog');
-  const rangeField = dialog.locator('input[readonly]').first();
-  await expect(rangeField).toHaveValue('- to -');
+  const dueDateField = dialog.locator('input[placeholder="MM/DD/YYYY"]');
+  await expect(dueDateField).toHaveValue('');
 
-  // disablePast means only today/future days are clickable — grab any enabled one
-  // and click it twice to pick a single-day range, then confirm with Apply.
-  await page.getByAltText('calendar').click();
+  // CalendarComponent's minDate is today — grab any enabled day (single-date picker,
+  // selecting a day auto-commits and closes, unlike the old range picker's Apply flow).
+  await dialog.getByAltText('calendar').click();
   const enabledDay = page.locator('.MuiPickersDay-root:not(.Mui-disabled)').first();
   await enabledDay.click();
-  await enabledDay.click();
-  await page.getByRole('button', { name: 'Apply' }).click();
 
-  await expect(rangeField).not.toHaveValue('- to -');
+  await expect(dueDateField).not.toHaveValue('');
 });
 
 test('entering an invalid phone number shows an inline validation error', async ({ page }) => {
@@ -397,6 +395,26 @@ test('entering an invalid phone number shows an inline validation error', async 
   await dialog.locator('input[type="tel"]').fill('123');
 
   await expect(page.getByText('Enter a valid phone number')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create' })).toBeDisabled();
+});
+
+test('Create button stays disabled for Temporary type until a due date is picked', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await page.getByRole('button', { name: 'LOCATION' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  const dialog = page.getByRole('dialog');
+  await page.getByText('Temporary', { exact: true }).click();
+
+  await dialog.locator('input[type="tel"]').fill('12345678');
+  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([readonly])');
+  await textInputs.nth(0).fill('123 Main St');
+  await textInputs.nth(1).fill('Apt 4B');
+  await textInputs.nth(2).fill('USA');
+  await textInputs.nth(3).fill('Miami');
+
   await expect(page.getByRole('button', { name: 'Create' })).toBeDisabled();
 });
 
@@ -433,18 +451,22 @@ test('creating a location shows success and the record appears in the employee L
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
-  // useLocationRecords is an in-memory-only store (no backend endpoint yet) — this
-  // creates a fake record scoped to this test's page session, nothing is persisted.
+  // Both AssignLocationDialog (create) and the Locations table in
+  // ViewAssignmentsDialog (read) now hit the real
+  // POST/GET user/{userID}/approved-locations endpoints, and creation
+  // invalidates that query, so the new row should show up live.
   await page.getByRole('button', { name: 'LOCATION' }).first().click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
   const dialog = page.getByRole('dialog');
   await dialog.locator('input[type="tel"]').fill('12345678');
   const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
-  await textInputs.nth(0).fill('123 Main St');
-  await textInputs.nth(1).fill('Apt 4B');
-  await textInputs.nth(2).fill('USA');
-  await textInputs.nth(3).fill('Miami');
+  // A real, geocodable address — the backend rejects addresses it can't resolve
+  // to coordinates (422), so a placeholder like "123 Main St" isn't reliable here.
+  await textInputs.nth(0).fill('1600 Amphitheatre Parkway');
+  await textInputs.nth(1).fill('');
+  await textInputs.nth(2).fill('United States');
+  await textInputs.nth(3).fill('Mountain View');
 
   await page.getByRole('button', { name: 'Create' }).click();
   await expect(page.getByText('Location created successfully.')).toBeVisible({ timeout: 5_000 });
@@ -453,21 +475,23 @@ test('creating a location shows success and the record appears in the employee L
   await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
 
   // LOCATION was clicked on the first row — open that same user's View Assignments
-  // drawer and confirm the fake record shows up in its Locations table.
+  // drawer and confirm the newly created location shows up in its Locations table.
   await openFirstUserDrawer(page);
   await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
   await expect(page.getByText('Locations')).toBeVisible();
 
   const drawerPaper = page.locator('.MuiDrawer-paper');
-  const locationRow = drawerPaper.locator('tbody tr').filter({ hasText: '123 Main St' });
+  const locationRow = drawerPaper.locator('tbody tr').filter({ hasText: '1600 Amphitheatre Parkway' }).first();
   await expect(locationRow).toBeVisible({ timeout: 5_000 });
-  await expect(locationRow.getByText('12345678')).toBeVisible();
-  await expect(locationRow.getByText('USA')).toBeVisible();
-  await expect(locationRow.getByText('Miami')).toBeVisible();
+  await expect(locationRow.getByText('United States')).toBeVisible();
+  await expect(locationRow.getByText('Mountain View')).toBeVisible();
 
-  await locationRow.getByAltText('delete').click();
-  await expect(locationRow).not.toBeVisible({ timeout: 3_000 });
-  await expect(page.getByText('No locations found for this employee')).toBeVisible({ timeout: 3_000 });
+  // Phone number moved out of the row into the expanded Details section, which
+  // Table renders as the immediately following <tr>. Scope to it — "12345678" is
+  // a shared phone number across other seeded rows in this table.
+  await locationRow.getByText('Details', { exact: true }).click();
+  const expandedRow = locationRow.locator('xpath=following-sibling::tr[1]');
+  await expect(expandedRow.getByText('12345678')).toBeVisible({ timeout: 3_000 });
 });
 
 // ─── View Assignments drawer (row click) ──────────────────────────────────────
@@ -609,6 +633,101 @@ test('View Assignments drawer shows "No assignments found" or assignment table',
   const hasTable = await page.getByText('COMPANY').isVisible({ timeout: 5_000 }).catch(() => false);
   const hasEmpty = await page.getByText('No assignments found for this employee').isVisible().catch(() => false);
   expect(hasTable || hasEmpty).toBe(true);
+});
+
+// ─── Locations & Incidents tables, user status toggle (View Assignments drawer) ─
+
+test('View Assignments drawer shows Locations table or its empty state', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openFirstUserDrawer(page);
+  await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Locations')).toBeVisible({ timeout: 5_000 });
+
+  const hasTable = await page.getByText('ADDRESS', { exact: true }).isVisible({ timeout: 5_000 }).catch(() => false);
+  const hasEmpty = await page.getByText('No locations found for this employee').isVisible().catch(() => false);
+  expect(hasTable || hasEmpty).toBe(true);
+});
+
+test('View Assignments drawer shows Incidents table or its empty state', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openFirstUserDrawer(page);
+  await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Incidents')).toBeVisible({ timeout: 5_000 });
+
+  const hasTable = await page.getByText('SEVERITY').isVisible({ timeout: 5_000 }).catch(() => false);
+  const hasEmpty = await page.getByText('No incidents found for this employee').isVisible().catch(() => false);
+  expect(hasTable || hasEmpty).toBe(true);
+});
+
+test('expanding a row via Details reveals its expanded fields', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openFirstUserDrawer(page);
+  await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
+
+  // DetailToggle ("Details") is shared by the Incidents and Locations tables — the
+  // first one in DOM order belongs to an Incidents row (Incidents renders above
+  // Locations), if any incidents exist, otherwise a Locations row.
+  const drawerPaper = page.locator('.MuiDrawer-paper');
+  const detailsToggles = drawerPaper.getByText('Details', { exact: true });
+  const toggleCount = await detailsToggles.count();
+  test.skip(toggleCount === 0, 'no locations or incidents rows available to expand');
+
+  await detailsToggles.first().click();
+  // Incidents expand into "Occurrences In 1 Hour Window" / "Last Seen At";
+  // Locations expand into "Phone" / "Created At" — either confirms the row expanded.
+  await expect(
+    drawerPaper.getByText(/^(Occurrences In 1 Hour Window|Created At)$/).first(),
+  ).toBeVisible({ timeout: 3_000 });
+});
+
+test('drawer header shows an Enable/Disable User toggle', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await openFirstUserDrawer(page);
+  await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
+
+  await expect(page.getByText(/^(Disable|Enable) User$/)).toBeVisible({ timeout: 5_000 });
+});
+
+test('clicking the Enable/Disable User toggle flips the label and shows a success dialog', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  // Mock the PATCH so the test does not depend on a real backend write.
+  await page.route('**/user/*/status', async (route) => {
+    if (route.request().method() === 'PATCH') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await openFirstUserDrawer(page);
+  await expect(page.getByRole('presentation').first()).toBeVisible({ timeout: 5_000 });
+
+  const toggle = page.getByText(/^(Disable|Enable) User$/);
+  const before = await toggle.textContent();
+  const expectedAfter = before === 'Disable User' ? 'Enable User' : 'Disable User';
+
+  // The toggle now applies immediately — no Yes/No confirmation step.
+  await toggle.click();
+
+  await expect(page.getByText(expectedAfter, { exact: true })).toBeVisible({ timeout: 5_000 });
+
+  // SuccessDialog renders alt="Success" (receipt-check.svg) and a confirmation message.
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByAltText('Success')).toBeVisible();
+  await expect(page.getByText(/account has been (enabled|disabled)/i)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 3_000 });
 });
 
 // ─── Tickets drawer ───────────────────────────────────────────────────────────

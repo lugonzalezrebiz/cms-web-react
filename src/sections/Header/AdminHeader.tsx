@@ -16,6 +16,7 @@ import { useNotifications } from "../../hooks/useNotifications";
 import useAuth from "../../hooks/useAuth";
 import { ADMIN_ROLE } from "../../config";
 import TicketsDrawer from "../../pages/AdminForm/components/TicketsDrawer";
+import ViewAssignmentsDialog from "../../pages/AdminForm/components/ViewAssignmentsDialog";
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -52,19 +53,37 @@ const AdminHeader = ({
 }) => {
   const [scrolled, setScrolled] = useState(false);
   const [ticketsOpen, setTicketsOpen] = useState(false);
+  const [incidentEmployee, setIncidentEmployee] = useState<
+    { id: number; name?: string } | undefined
+  >(undefined);
   const menuHeader = usePopover();
   const userPanelHeader = usePopover();
   const notificationHeader = usePopover();
   const navigate = useNavigateWithQuery();
-  const { notifications } = useNotifications(notificationHeader.open);
+  const { notifications, markAsRead } = useNotifications(notificationHeader.open);
   const { user } = useAuth();
   const isAdmin = user?.roleID === ADMIN_ROLE;
   const goBack = () => navigate(-1);
 
   const handleNotificationClick = (notif: Notification) => {
+    if (notif.unread) {
+      markAsRead(notif.id);
+    }
     if (isAdmin && notif.meta?.type === "ticket_created") {
       notificationHeader.handleClose();
       setTicketsOpen(true);
+      return;
+    }
+    if (
+      isAdmin &&
+      notif.meta?.type === "incident_logged" &&
+      typeof notif.meta.userID === "number"
+    ) {
+      notificationHeader.handleClose();
+      setIncidentEmployee({
+        id: notif.meta.userID,
+        name: notif.meta.userName as string | undefined,
+      });
     }
   };
 
@@ -175,6 +194,12 @@ const AdminHeader = ({
           onNotificationClick={handleNotificationClick}
         />
         <TicketsDrawer open={ticketsOpen} onClose={() => setTicketsOpen(false)} />
+        <ViewAssignmentsDialog
+          open={!!incidentEmployee}
+          onClose={() => setIncidentEmployee(undefined)}
+          employeeId={incidentEmployee?.id}
+          name={incidentEmployee?.name}
+        />
 
         <UserPanel
           anchorEl={userPanelHeader.anchorEl}

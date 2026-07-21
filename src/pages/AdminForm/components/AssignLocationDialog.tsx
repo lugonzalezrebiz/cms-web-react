@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Box } from "@mui/system";
 import { Collapse, OutlinedInput } from "@mui/material";
 import styled from "@emotion/styled";
+import dayjs from "dayjs";
 import FormDialog from "../../../components/FormDialog";
 import Button from "../../../components/Button";
 import SuccessDialog from "../../../components/SuccessDialog";
 import RadioButtonGroup from "../../../components/RadioButtonGroup";
-import RangeCalendar, { type MaybeDayjs } from "./DateRangePicker";
+import CalendarComponent from "../../../components/CalendarComponent";
 import useAssignLocationForm from "../hooks/useAssignLocationForm";
-import { addLocationRecord } from "../hooks/useLocationRecords";
+import useCreateApprovedLocation from "../hooks/useCreateApprovedLocation";
 import { Label, ErrorText } from "./StyledComponents";
 import { Colors, Fonts } from "../../../theme";
 
@@ -52,23 +53,26 @@ const AssignLocationDialog = ({
   employeeId,
 }: AssignLocationDialogProps) => {
   const [employeeType, setEmployeeType] = useState("permanent");
-  const [dateRange, setDateRange] = useState<[MaybeDayjs, MaybeDayjs]>([
-    null,
-    null,
-  ]);
-  const [dateRangeError, setDateRangeError] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [dueDateError, setDueDateError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const { fields, errors, isValid, setField, validate, reset } =
     useAssignLocationForm();
+  const {
+    create,
+    isPending,
+    errorMessage: createError,
+    clearError,
+  } = useCreateApprovedLocation(employeeId);
 
   const isTemporary = employeeType === "temporary";
-  const isRangeValid =
-    !isTemporary || (dateRange[0] !== null && dateRange[1] !== null);
+  const isDueDateValid = !isTemporary || dueDate !== null;
 
   const clearForm = () => {
     setEmployeeType("permanent");
-    setDateRange([null, null]);
-    setDateRangeError(null);
+    setDueDate(null);
+    setDueDateError(null);
+    clearError();
     reset();
   };
 
@@ -77,12 +81,23 @@ const AssignLocationDialog = ({
     onClose();
   };
 
-  const handleAssign = () => {
+  const handleAssign = async () => {
     if (employeeId === undefined) return;
     const fieldsValid = validate();
-    setDateRangeError(isRangeValid ? null : "Select a temporary period");
-    if (!fieldsValid || !isRangeValid) return;
-    addLocationRecord(employeeId, { employeeType, dateRange, ...fields });
+    setDueDateError(isDueDateValid ? null : "Select a due date");
+    if (!fieldsValid || !isDueDateValid) return;
+    const ok = await create({
+      phone: fields.phone,
+      address_line_1: fields.addressLine1,
+      address_line_2: fields.addressLine2,
+      country: fields.country,
+      city: fields.cityRegion,
+      location_type: isTemporary ? "Temporary" : "Permanent",
+      ...(isTemporary && dueDate
+        ? { due_date: dayjs(dueDate).format("YYYY-MM-DD") }
+        : {}),
+    });
+    if (!ok) return;
     clearForm();
     setShowSuccess(true);
   };
@@ -112,17 +127,19 @@ const AssignLocationDialog = ({
             options={EMPLOYEE_TYPE_OPTIONS}
           />
         </Box>
-        <Collapse in={employeeType === "temporary"} unmountOnExit>
+        <Collapse in={isTemporary} unmountOnExit>
           <Box>
-            <Label>Temporary Period</Label>
-            <RangeCalendar
-              defaultRange={dateRange}
-              onApply={(range) => {
-                setDateRange(range);
-                setDateRangeError(null);
+            <Label>Due Date</Label>
+            <CalendarComponent
+              selectedDate={dueDate}
+              onChange={(date) => {
+                setDueDate(date);
+                setDueDateError(null);
               }}
+              minDate={dayjs()}
+              size="100%"
             />
-            {dateRangeError && <ErrorText>{dateRangeError}</ErrorText>}
+            {dueDateError && <ErrorText>{dueDateError}</ErrorText>}
           </Box>
         </Collapse>
         <Box>
@@ -181,7 +198,7 @@ const AssignLocationDialog = ({
           />
           {errors.cityRegion && <ErrorText>{errors.cityRegion}</ErrorText>}
         </Box>
-
+        {createError && <ErrorText>{createError}</ErrorText>}
         <Box
           sx={{
             display: "flex",
@@ -204,7 +221,9 @@ const AssignLocationDialog = ({
             sx={{ height: "36px", width: "100px" }}
             color="primary"
             onClick={handleAssign}
-            disabled={employeeId === undefined || !isValid || !isRangeValid}
+            disabled={
+              employeeId === undefined || !isValid || !isDueDateValid || isPending
+            }
             outfit
           >
             Create

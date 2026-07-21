@@ -29,22 +29,23 @@ import CustomTrackerDialog from "./CustomTrackerDialog";
 import useTrackerOptions from "./hooks/useTrackerOptions";
 import { AGENT_ROLE } from "../../config";
 import useAuth from "../../hooks/useAuth";
+import useCompanyConfig from "../../hooks/useCompanyConfig";
 
 const isMac =
   typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
 const alt = isMac ? "⌥" : "Alt";
 
-const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
+const getKeyboardShortcuts = (imagesInterval: number): KeyboardMenuData => ({
   title: "Keyboard shortcuts",
   items: [
     {
       keys: [{ type: "img", src: "./assets/arrow-narrow-left.svg" }],
-      label: "Move marker back 5 sec",
+      label: `Move marker back ${imagesInterval} sec`,
     },
     {
       keys: [{ type: "img", src: "./assets/arrow-narrow-right.svg" }],
-      label: "Move marker forward 5 sec",
+      label: `Move marker forward ${imagesInterval} sec`,
     },
     {
       keys: [
@@ -113,7 +114,7 @@ const KEYBOARD_SHORTCUTS: KeyboardMenuData = {
       label: "Zoom out",
     },
   ],
-};
+});
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -176,6 +177,8 @@ const MonitorHeader = ({
   } = useMonitorParams();
   const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments({ companyID, locationID });
+  const { imagesInterval } = useCompanyConfig();
+  const keyboardShortcuts = getKeyboardShortcuts(imagesInterval);
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??
@@ -361,7 +364,7 @@ const MonitorHeader = ({
         anchorEl={keyboardMenu.anchorEl}
         open={keyboardMenu.open}
         handleClose={keyboardMenu.handleClose}
-        data={KEYBOARD_SHORTCUTS}
+        data={keyboardShortcuts}
       />
 
       <UserPanel
