@@ -467,9 +467,12 @@ test('creating a location shows success and the record appears in the employee L
   await expect(locationRow.getByText('United States')).toBeVisible();
   await expect(locationRow.getByText('Mountain View')).toBeVisible();
 
-  // Phone number moved out of the row into the expanded Details section.
+  // Phone number moved out of the row into the expanded Details section, which
+  // Table renders as the immediately following <tr>. Scope to it — "12345678" is
+  // a shared phone number across other seeded rows in this table.
   await locationRow.getByText('Details', { exact: true }).click();
-  await expect(drawerPaper.getByText('12345678')).toBeVisible({ timeout: 3_000 });
+  const expandedRow = locationRow.locator('xpath=following-sibling::tr[1]');
+  await expect(expandedRow.getByText('12345678')).toBeVisible({ timeout: 3_000 });
 });
 
 // ─── View Assignments drawer (row click) ──────────────────────────────────────
