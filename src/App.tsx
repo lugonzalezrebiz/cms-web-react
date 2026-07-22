@@ -16,6 +16,8 @@ import AdminHeader from "./sections/Header/AdminHeader";
 import AssignmentsHeader from "./sections/Header/AssignmentsHeader";
 import { MonitorProvider } from "./contexts/MonitorContext";
 import UpdatePrompt from "./components/UpdatePrompt";
+import VpnGuard from "./components/VpnGuard";
+import { LocationGuardProvider } from "./contexts/LocationGuardProvider";
 import { crashLogger } from "./services/CrashLogger";
 
 function ProtectedRole({
@@ -75,8 +77,9 @@ function App() {
     }, []);
 
     return (
-        <>
+        <LocationGuardProvider>
             <UpdatePrompt />
+            <VpnGuard />
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route
@@ -152,7 +155,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-        </>
+        </LocationGuardProvider>
     );
 }
 

@@ -27,7 +27,7 @@ export const useTimelinePopout =(
   const channelRef = useRef<BroadcastChannel | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
   const markerTimeSecRef = useRef(markerTimeSec);
-  const suppressSendRef = useRef(false);
+  const lastReceivedSecRef = useRef<number | null>(null);
   const cameraGroupRef = useRef(cameraGroup);
   const trackerOptionRef = useRef(trackerOption);
   const customTrackerIDsRef = useRef(customTrackerIDs);
@@ -40,17 +40,13 @@ export const useTimelinePopout =(
 
   useEffect(() => {
     if (!timelinePopped) return;
+    lastReceivedSecRef.current = null;
     const channel = new BroadcastChannel("timeline-sync");
     channelRef.current = channel;
 
     channel.addEventListener("message", (e: MessageEvent) => {
       if (e.data?.type === "marker" && e.data?.source === "popout") {
-        // Update the ref synchronously here rather than relying solely on the
-        // markerTimeSec state->effect roundtrip below — that path can lag behind
-        // the popup-closed poll (setInterval, every 500ms) under load, causing
-        // the poll to restore a stale marker position.
-        markerTimeSecRef.current = e.data.sec as number;
-        suppressSendRef.current = true;
+        lastReceivedSecRef.current = e.data.sec as number;
         onMarkerChangeRef.current(e.data.sec as number);
       }
       if (e.data?.type === "request-sync") {
@@ -75,10 +71,7 @@ export const useTimelinePopout =(
 
   useEffect(() => {
     if (!timelinePopped || markerTimeSec === null) return;
-    if (suppressSendRef.current) {
-      suppressSendRef.current = false;
-      return;
-    }
+    if (lastReceivedSecRef.current === markerTimeSec) return;
     channelRef.current?.postMessage({ type: "marker", sec: markerTimeSec, source: "monitor" });
   }, [markerTimeSec, timelinePopped]);
 

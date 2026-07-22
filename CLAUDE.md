@@ -39,6 +39,7 @@ Copy `.env` and set at minimum:
 | `VITE_USE_STATIC_IDS`                                        | `true` to hard-code IDs instead of reading from URL params |
 | `VITE_ASSIGNMENT_COMPLETED`                                  | Feature flag for completed-assignment UI                   |
 | `VITE_PASSWORD_VALIDATION`                                   | Set to `false` to disable password strength rules          |
+| `VITE_STRICT_GEOLOCATION`                                    | `true` to block login when lat/lon can't be obtained       |
 
 In Electron, `.env` is also loaded by the main process via `dotenv`; `DVR_BASE` controls where local DVR files are read from.
 

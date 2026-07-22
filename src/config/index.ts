@@ -26,3 +26,4 @@ export const ADMIN_ROLE = Number(import.meta.env.VITE_ADMIN_ROLE);
 export const USE_STATIC_IDS = import.meta.env.VITE_USE_STATIC_IDS === "true";
 export const ASSIGNMENT_COMPLETED = import.meta.env.VITE_ASSIGNMENT_COMPLETED === "true";
 export const PASSWORD_VALIDATION = import.meta.env.VITE_PASSWORD_VALIDATION !== "false";
+export const STRICT_GEOLOCATION = import.meta.env.VITE_STRICT_GEOLOCATION === "true";

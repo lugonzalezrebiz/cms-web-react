@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol, Menu, globalShortcut } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, Menu, globalShortcut, session, shell } from "electron";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
@@ -11,6 +11,39 @@ const { autoUpdater } = updater;
 config({ path: path.join(app.getAppPath(), ".env") });
 
 const DVR_BASE = process.env.DVR_BASE ?? path.join(os.homedir(), "DVR Bot");
+
+// Interface name/description patterns used by common VPN clients and OS-level tunnel adapters.
+// On macOS, "tun"/"utun" interfaces are also created by the OS itself (e.g. iCloud Private
+// Relay, AirDrop) even with no VPN active, so they're excluded from the check there.
+const VPN_INTERFACE_PATTERN =
+    os.platform() === "darwin"
+        ? /(vpn|tap|ppp|wg|wireguard|nordlynx|zerotier|tailscale|openvpn|pia|l2tp|ipsec|pptp)/i
+        : /(vpn|tun|tap|ppp|wg|wireguard|nordlynx|utun|zerotier|tailscale|openvpn|pia|l2tp|ipsec|pptp)/i;
+
+function isVpnActive() {
+    const interfaces = os.networkInterfaces();
+    return Object.entries(interfaces).some(([name, addresses]) => {
+        if (!VPN_INTERFACE_PATTERN.test(name)) return false;
+        return (addresses ?? []).some((addr) => !addr.internal);
+    });
+}
+
+// Deep-links into the OS's location-privacy settings pane so the user doesn't have to
+// hunt for it. Resolves to false when the current platform has no known deep link.
+async function openLocationSettings(): Promise<boolean> {
+    const platform = os.platform();
+    if (platform === "win32") {
+        await shell.openExternal("ms-settings:privacy-location");
+        return true;
+    }
+    if (platform === "darwin") {
+        await shell.openExternal(
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices",
+        );
+        return true;
+    }
+    return false;
+}
 
 type CrashLogPayload = {
     eventType: string;
@@ -303,6 +336,9 @@ function createWindow() {
         });
     });
 
+    ipcMain.handle("vpn:check", () => isVpnActive());
+    ipcMain.handle("location:openSettings", () => openLocationSettings());
+
     win.webContents.on("unresponsive", () => {
         void sendCrashLog({
             eventType: "renderer-unresponsive",
@@ -433,8 +469,21 @@ function createWindow() {
     }
 }
 
+// Electron denies all permission requests (geolocation, camera, etc.) by default and shows
+// no prompt UI of its own — without this, navigator.geolocation fails silently as if the
+// user had denied it.
+function setupPermissions() {
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+        callback(permission === "geolocation");
+    });
+    session.defaultSession.setPermissionCheckHandler(
+        (_webContents, permission) => permission === "geolocation",
+    );
+}
+
 app.whenReady().then(() => {
     Menu.setApplicationMenu(null); // Disable default menu
+    setupPermissions();
 
     // Register protocol BEFORE creating the window
     protocol.handle("dvr", async (request) => {

@@ -34,6 +34,12 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/user.json',
+        // LocationGuardProvider polls geolocation on every authenticated page (not just
+        // Login), and storageState only carries cookies/localStorage — not the permission
+        // grant setup/*.ts made when creating that storageState — so it must be re-granted
+        // here or every authenticated-flow test would trip the guard.
+        permissions: ['geolocation'],
+        geolocation: { latitude: 40.7128, longitude: -74.006 },
       },
       dependencies: ['setup'],
       testIgnore: ['**/admin-form.spec.ts', '**/monitor-agent.spec.ts'],
@@ -43,6 +49,8 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/admin.json',
+        permissions: ['geolocation'],
+        geolocation: { latitude: 40.7128, longitude: -74.006 },
       },
       dependencies: ['setup-admin'],
       testMatch: '**/admin-form.spec.ts',
@@ -52,6 +60,8 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/agent.json',
+        permissions: ['geolocation'],
+        geolocation: { latitude: 40.7128, longitude: -74.006 },
       },
       dependencies: ['setup-agent'],
       testMatch: '**/monitor-agent.spec.ts',

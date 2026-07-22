@@ -109,7 +109,7 @@ const TableSection = () => {
     {
       title: "ACTIVE",
       key: "active",
-      width: "70px",
+      width: "40px",
       align: "center",
       render: (value: string) => (
         <StateBadge
@@ -126,7 +126,7 @@ const TableSection = () => {
     {
       title: "",
       key: "assign",
-      width: "46px",
+      width: "35px",
       align: "left",
       render: (value: number) => (
         <Box display="flex" justifyContent="center" width="70px">
@@ -149,10 +149,10 @@ const TableSection = () => {
     {
       title: "",
       key: "location",
-      width: "50px",
+      width: "60px",
       align: "left",
       render: (value: number) => (
-        <Box display="flex" justifyContent="center" width="70px">
+        <Box display="flex" justifyContent="center" width="90px">
           <Button
             square
             sx={{ height: "20px" }}

@@ -121,7 +121,6 @@ const AssignLocationDialog = ({
         gap={"12px"}
       >
         <Box>
-          <Label>Location Type</Label>
           <RadioButtonGroup
             value={employeeType}
             onChange={setEmployeeType}
@@ -200,7 +199,14 @@ const AssignLocationDialog = ({
           {errors.cityRegion && <ErrorText>{errors.cityRegion}</ErrorText>}
         </Box>
         {createError && <ErrorText>{createError}</ErrorText>}
-        <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: "12px",
+            justifyContent: "flex-end",
+            mt: "12px",
+          }}
+        >
           <Button
             fontSize="14px"
             sx={{ height: "36px" }}

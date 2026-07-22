@@ -315,14 +315,13 @@ test('clicking LOCATION button opens the Create Location dialog', async ({ page 
   await expect(page.getByText('Create Location')).toBeVisible();
 });
 
-test('Create Location dialog shows Location Type radios and all required fields', async ({ page }) => {
+test('Create Location dialog shows employee type radios and all required fields', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
   await page.getByRole('button', { name: 'LOCATION' }).first().click();
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
-  await expect(page.getByText('Location Type')).toBeVisible();
   await expect(page.getByText('Permanent')).toBeVisible();
   await expect(page.getByText('Temporary', { exact: true })).toBeVisible();
 
@@ -377,6 +376,26 @@ test('picking a due date fills the Due Date field', async ({ page }) => {
   await enabledDay.click();
 
   await expect(dueDateField).not.toHaveValue('');
+});
+
+test('entering an invalid phone number shows an inline validation error', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await page.getByRole('button', { name: 'LOCATION' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  const dialog = page.getByRole('dialog');
+  // Remaining text fields in form order: Address Line 1, Address Line 2, Country, City/Region
+  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
+  await textInputs.nth(0).fill('123 Main St');
+  await textInputs.nth(1).fill('Apt 4B');
+  await textInputs.nth(2).fill('USA');
+  await textInputs.nth(3).fill('Miami');
+  await dialog.locator('input[type="tel"]').fill('123');
+
+  await expect(page.getByText('Enter a valid phone number')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create' })).toBeDisabled();
 });
 
 test('Create button stays disabled for Temporary type until a due date is picked', async ({ page }) => {

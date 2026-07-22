@@ -15,6 +15,8 @@ declare global {
             dvrBasePath: () => Promise<string>;
             crashContext: () => Promise<Record<string, unknown>>;
             logCrash: (payload: unknown) => Promise<unknown>;
+            checkVpn: () => Promise<boolean>;
+            openLocationSettings: () => Promise<boolean>;
             timestamps: (params: {
                 company: number;
                 location: number;
