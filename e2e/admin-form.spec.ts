@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 
 // AdminForm renders at /assignments when the logged-in user has ADMIN_ROLE.
 // This file uses the admin-chromium project (storageState: e2e/.auth/admin.json).
@@ -27,6 +27,21 @@ async function openFirstUserDrawer(page: Page) {
   await page.locator('tbody tr').first().locator('td').nth(4).click();
 }
 
+// Country and City/Region in the Create Location dialog are MUI Autocompletes — typing
+// text alone does not update form state, an option must be selected from the popup.
+async function selectAutocompleteOption(
+  page: Page,
+  combobox: Locator,
+  query: string,
+  optionName: string,
+) {
+  await combobox.click();
+  await combobox.fill(query);
+  const option = page.getByRole('option', { name: optionName, exact: true }).first();
+  await expect(option).toBeVisible({ timeout: 5_000 });
+  await option.click();
+}
+
 // Opens the View Assignments drawer, then clicks Reset Password to open the Reset Password dialog.
 async function openResetPasswordDialog(page: Page) {
   await openFirstUserDrawer(page);
@@ -36,6 +51,19 @@ async function openResetPasswordDialog(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Address Line 1 in the Create Location dialog debounces a live call to Nominatim
+  // (OpenStreetMap's geocoding service) as the user types, and clicking the map does a
+  // reverse-geocode call. Mock both so these tests stay deterministic and don't hit a
+  // third-party service or its rate limit during CI runs.
+  await page.route('https://nominatim.openstreetmap.org/**', async (route) => {
+    const url = new URL(route.request().url());
+    const body =
+      url.pathname === '/reverse'
+        ? JSON.stringify({ display_name: 'Mocked Address', address: {} })
+        : '[]';
+    await route.fulfill({ status: 200, contentType: 'application/json', body });
+  });
+
   await page.goto(ADMIN_URL);
   // Wait for skeletons to clear — confirms both useAssignmentCount and useUsers have
   // resolved and React has finished rendering. .catch() prevents a timeout from failing
@@ -330,6 +358,23 @@ test('Create Location dialog shows employee type radios and all required fields'
   await expect(page.getByText('Address Line 2')).toBeVisible();
   await expect(page.getByText('Country')).toBeVisible();
   await expect(page.getByText('City/Region')).toBeVisible();
+
+  // Country and City/Region are MUI Autocompletes (combobox role), not plain text inputs.
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('combobox')).toHaveCount(2);
+});
+
+test('Create Location dialog renders a location picker map', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  await page.getByRole('button', { name: 'LOCATION' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  // LocationMap renders react-leaflet's MapContainer, which mounts a .leaflet-container div.
+  await expect(page.getByRole('dialog').locator('.leaflet-container')).toBeVisible({
+    timeout: 5_000,
+  });
 });
 
 test('Create button is disabled when the Create Location form is empty', async ({ page }) => {
@@ -386,12 +431,13 @@ test('entering an invalid phone number shows an inline validation error', async 
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
   const dialog = page.getByRole('dialog');
-  // Remaining text fields in form order: Address Line 1, Address Line 2, Country, City/Region
-  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
+  // Field order: Country, City/Region (MUI Autocompletes — an option must be selected),
+  // then Address Line 1, Address Line 2 (plain text inputs).
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami');
+  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])');
   await textInputs.nth(0).fill('123 Main St');
   await textInputs.nth(1).fill('Apt 4B');
-  await textInputs.nth(2).fill('USA');
-  await textInputs.nth(3).fill('Miami');
   await dialog.locator('input[type="tel"]').fill('123');
 
   await expect(page.getByText('Enter a valid phone number')).toBeVisible();
@@ -409,11 +455,13 @@ test('Create button stays disabled for Temporary type until a due date is picked
   await page.getByText('Temporary', { exact: true }).click();
 
   await dialog.locator('input[type="tel"]').fill('12345678');
-  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([readonly])');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami');
+  const textInputs = dialog.locator(
+    'input:not([type="tel"]):not([type="radio"]):not([role="combobox"]):not([readonly])',
+  );
   await textInputs.nth(0).fill('123 Main St');
   await textInputs.nth(1).fill('Apt 4B');
-  await textInputs.nth(2).fill('USA');
-  await textInputs.nth(3).fill('Miami');
 
   await expect(page.getByRole('button', { name: 'Create' })).toBeDisabled();
 });
@@ -427,11 +475,11 @@ test('filling all required fields with valid data enables the Create button', as
 
   const dialog = page.getByRole('dialog');
   await dialog.locator('input[type="tel"]').fill('12345678');
-  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami');
+  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])');
   await textInputs.nth(0).fill('123 Main St');
   await textInputs.nth(1).fill('Apt 4B');
-  await textInputs.nth(2).fill('USA');
-  await textInputs.nth(3).fill('Miami');
 
   await expect(page.getByRole('button', { name: 'Create' })).toBeEnabled({ timeout: 3_000 });
 });
@@ -460,13 +508,13 @@ test('creating a location shows success and the record appears in the employee L
 
   const dialog = page.getByRole('dialog');
   await dialog.locator('input[type="tel"]').fill('12345678');
-  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"])');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Mountain View', 'Mountain View');
+  const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])');
   // A real, geocodable address — the backend rejects addresses it can't resolve
   // to coordinates (422), so a placeholder like "123 Main St" isn't reliable here.
   await textInputs.nth(0).fill('1600 Amphitheatre Parkway');
   await textInputs.nth(1).fill('');
-  await textInputs.nth(2).fill('United States');
-  await textInputs.nth(3).fill('Mountain View');
 
   await page.getByRole('button', { name: 'Create' }).click();
   await expect(page.getByText('Location created successfully.')).toBeVisible({ timeout: 5_000 });
