@@ -1,7 +1,11 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { useEffect, useRef } from "react";
 import { useGet, usePostCallback } from "./useApi";
 import type { Notification } from "../components/NotificationMenu";
+import { formatEnumLabel } from "../utils/format";
+
+dayjs.extend(utc);
 
 interface ApiNotification {
   id: number;
@@ -19,9 +23,26 @@ interface NotificationsResponse {
   notifications: ApiNotification[];
 }
 
+function formatNotificationTitle(n: ApiNotification): string {
+  if (n.meta?.type === "incident_logged") {
+    const { userName, incidentType, incidentReason, severity } = n.meta as {
+      userName?: string;
+      incidentType?: string;
+      incidentReason?: string;
+      severity?: string;
+    };
+    if (userName && incidentType && incidentReason && severity) {
+      return `Incident ${formatEnumLabel(incidentType)} (${formatEnumLabel(
+        incidentReason,
+      )}) logged for ${userName}, severity ${formatEnumLabel(severity)}.`;
+    }
+  }
+  return n.message;
+}
+
 function timeAgo(dateStr: string): string {
   const now = dayjs();
-  const then = dayjs(dateStr);
+  const then = dayjs.utc(dateStr);
   const mins = now.diff(then, "minute");
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
@@ -43,8 +64,8 @@ export const useNotifications = (open: boolean) => {
     data?.success ? data.notifications : []
   ).map((n) => ({
     id: n.id,
-    title: n.message,
-    date: dayjs(n.date).format("MMMM D - YYYY"),
+    title: formatNotificationTitle(n),
+    date: dayjs.utc(n.date).format("MMMM D - YYYY"),
     unread: n.type === "GENERAL" ? false : !(n.read ?? false),
     timeAgo: timeAgo(n.date),
     meta: n.meta,
