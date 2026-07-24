@@ -61,6 +61,9 @@ const buildShortAddress = (
 const pickCity = (address: NominatimAddress | undefined): string | undefined =>
   address?.city || address?.town || address?.village || address?.municipality;
 
+const shortenDisplayName = (displayName: string): string =>
+  displayName.split(",").slice(0, 2).join(",").trim();
+
 const useAddressGeocoding = (
   address: string,
   onAddressResolved: (location: ResolvedLocation) => void,
@@ -95,7 +98,7 @@ const useAddressGeocoding = (
         setSuggestions(
           data.map((result) => ({
             id: String(result.place_id),
-            label: result.display_name,
+            label: shortenDisplayName(result.display_name),
             position: {
               lat: parseFloat(result.lat),
               lng: parseFloat(result.lon),

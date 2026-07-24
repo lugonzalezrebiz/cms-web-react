@@ -1,14 +1,19 @@
 import { useMemo, useState } from "react";
 import dayjs from "dayjs";
-import { Country, City } from "country-state-city";
+import { Country, City, State } from "country-state-city";
 import useAssignLocationForm from "./useAssignLocationForm";
 import useCreateApprovedLocation from "./useCreateApprovedLocation";
 import useAddressGeocoding from "./useAddressGeocoding";
 import type { LatLng, ResolvedLocation } from "./useAddressGeocoding";
+import { stringSimilarity } from "../utils/stringSimilarity";
+
+const ADDRESS_SIMILARITY_THRESHOLD = 0.5;
 
 export interface SelectOption {
   label: string;
   code: string;
+  /** Value submitted to the backend; falls back to `label` when omitted (e.g. countries). */
+  value?: string;
 }
 
 export const COUNTRY_OPTIONS: SelectOption[] = Country.getAllCountries().map(
@@ -48,25 +53,37 @@ const useAssignLocationDialog = ({
 
   const cityOptions: SelectOption[] = useMemo(() => {
     if (!countryOption) return [];
+    const stateNameByCode = new Map(
+      State.getStatesOfCountry(countryOption.code).map((state) => [
+        state.isoCode,
+        state.name,
+      ]),
+    );
     return (City.getCitiesOfCountry(countryOption.code) ?? []).map(
-      (city, index) => ({
-        label: city.name,
-        code: `${city.name}-${city.stateCode}-${index}`,
-      }),
+      (city, index) => {
+        const stateName = stateNameByCode.get(city.stateCode);
+        return {
+          label: stateName ? `${city.name}, ${stateName}` : city.name,
+          code: `${city.name}-${city.stateCode}-${index}`,
+          value: city.name,
+        };
+      },
     );
   }, [countryOption]);
 
-  const geocodeQuery = [
-    fields.addressLine1,
-    fields.addressLine2,
-    fields.cityRegion,
-    fields.country,
-  ]
-    .filter((part) => part.trim().length > 0)
-    .join(", ");
+  const geocodeQuery = fields.addressLine1.trim()
+    ? [fields.addressLine1, fields.addressLine2, fields.cityRegion, fields.country]
+        .filter((part) => part.trim().length > 0)
+        .join(", ")
+    : "";
 
   const handleLocationResolved = (resolved: ResolvedLocation) => {
-    setField("addressLine1", resolved.address);
+    const isSameAddress =
+      stringSimilarity(fields.addressLine1, resolved.address) >=
+      ADDRESS_SIMILARITY_THRESHOLD;
+    if (!isSameAddress) {
+      setField("addressLine1", resolved.address);
+    }
     if (!resolved.countryCode) return;
     const matchedCountry = COUNTRY_OPTIONS.find(
       (option) =>
@@ -85,14 +102,20 @@ const useAssignLocationDialog = ({
     const matchedCity = citiesOfCountry.find(
       (city) => city.name.toLowerCase() === resolved.city?.toLowerCase(),
     );
+    const matchedState = matchedCity
+      ? State.getStateByCodeAndCountry(matchedCity.stateCode, matchedCountry.code)
+      : undefined;
     const cityOpt: SelectOption = matchedCity
       ? {
-          label: matchedCity.name,
+          label: matchedState
+            ? `${matchedCity.name}, ${matchedState.name}`
+            : matchedCity.name,
           code: `${matchedCity.name}-${matchedCity.stateCode}`,
+          value: matchedCity.name,
         }
-      : { label: resolved.city, code: "custom" };
+      : { label: resolved.city, code: "custom", value: resolved.city };
     setCityOption(cityOpt);
-    setField("cityRegion", cityOpt.label);
+    setField("cityRegion", cityOpt.value ?? cityOpt.label);
   };
 
   const {
@@ -138,7 +161,7 @@ const useAssignLocationDialog = ({
 
   const handleCityChange = (newValue: SelectOption | null) => {
     setCityOption(newValue);
-    setField("cityRegion", newValue?.label ?? "");
+    setField("cityRegion", newValue?.value ?? newValue?.label ?? "");
   };
 
   const handleSuggestionSelect = (suggestion: Parameters<typeof selectSuggestion>[0]) => {
@@ -165,6 +188,9 @@ const useAssignLocationDialog = ({
       location_type: isTemporary ? "Temporary" : "Permanent",
       ...(isTemporary && dueDate
         ? { due_date: dayjs(dueDate).format("YYYY-MM-DD") }
+        : {}),
+      ...(position
+        ? { latitude: position.lat, longitude: position.lng }
         : {}),
     });
     if (!ok) return;

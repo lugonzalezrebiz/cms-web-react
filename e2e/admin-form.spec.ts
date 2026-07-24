@@ -377,6 +377,44 @@ test('Create Location dialog renders a location picker map', async ({ page }) =>
   });
 });
 
+test('address suggestions stay hidden until Address Line 1 has text, then show a shortened label', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  // Override the beforeEach mock for this test only: return a real-shaped result so we
+  // can assert the suggestion label is shortened to its first two comma sections.
+  await page.route('https://nominatim.openstreetmap.org/search**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { place_id: 1, lat: '25.77', lon: '-80.19', display_name: 'Miami, Miami-Dade County, Florida, USA' },
+      ]),
+    });
+  });
+
+  await page.getByRole('button', { name: 'LOCATION' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  const dialog = page.getByRole('dialog');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami, Florida');
+
+  // Selecting Country/City alone must not trigger a forward search — wait past the
+  // 800ms debounce window and confirm no suggestion shows up yet.
+  await page.waitForTimeout(1_000);
+  await expect(page.getByText('Miami, Miami-Dade County')).not.toBeVisible();
+
+  const addressLine1 = dialog
+    .locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])')
+    .nth(0);
+  await addressLine1.fill('123 Main St');
+
+  // Suggestion label is shortened to the first two display_name sections, not the full string.
+  await expect(page.getByText('Miami, Miami-Dade County')).toBeVisible({ timeout: 3_000 });
+  await expect(page.getByText('Miami, Miami-Dade County, Florida, USA')).not.toBeVisible();
+});
+
 test('Create button is disabled when the Create Location form is empty', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
@@ -434,7 +472,7 @@ test('entering an invalid phone number shows an inline validation error', async 
   // Field order: Country, City/Region (MUI Autocompletes — an option must be selected),
   // then Address Line 1, Address Line 2 (plain text inputs).
   await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
-  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami, Florida');
   const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])');
   await textInputs.nth(0).fill('123 Main St');
   await textInputs.nth(1).fill('Apt 4B');
@@ -456,7 +494,7 @@ test('Create button stays disabled for Temporary type until a due date is picked
 
   await dialog.locator('input[type="tel"]').fill('12345678');
   await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
-  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami, Florida');
   const textInputs = dialog.locator(
     'input:not([type="tel"]):not([type="radio"]):not([role="combobox"]):not([readonly])',
   );
@@ -476,7 +514,7 @@ test('filling all required fields with valid data enables the Create button', as
   const dialog = page.getByRole('dialog');
   await dialog.locator('input[type="tel"]').fill('12345678');
   await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
-  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami, Florida');
   const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])');
   await textInputs.nth(0).fill('123 Main St');
   await textInputs.nth(1).fill('Apt 4B');
@@ -509,7 +547,7 @@ test('creating a location shows success and the record appears in the employee L
   const dialog = page.getByRole('dialog');
   await dialog.locator('input[type="tel"]').fill('12345678');
   await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
-  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Mountain View', 'Mountain View');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Mountain View', 'Mountain View, California');
   const textInputs = dialog.locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])');
   // A real, geocodable address — the backend rejects addresses it can't resolve
   // to coordinates (422), so a placeholder like "123 Main St" isn't reliable here.
@@ -540,6 +578,45 @@ test('creating a location shows success and the record appears in the employee L
   await locationRow.getByText('Details', { exact: true }).click();
   const expandedRow = locationRow.locator('xpath=following-sibling::tr[1]');
   await expect(expandedRow.getByText('12345678')).toBeVisible({ timeout: 3_000 });
+});
+
+test('correcting the location on the map sends latitude/longitude with the create request', async ({ page }) => {
+  const count = await waitForUsersTable(page);
+  test.skip(count === 0, 'no users loaded in this environment');
+
+  let capturedBody: { latitude?: number; longitude?: number } | null = null;
+  await page.route('**/approved-locations', async (route) => {
+    if (route.request().method() === 'POST') {
+      capturedBody = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByRole('button', { name: 'LOCATION' }).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
+
+  const dialog = page.getByRole('dialog');
+  await dialog.locator('input[type="tel"]').fill('12345678');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
+  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami, Florida');
+
+  // Clicking the map drops a pin and triggers the mocked reverse-geocode call (see
+  // beforeEach), which auto-fills Address Line 1 since it starts empty — this is what
+  // sets `position`, which handleAssign then sends as latitude/longitude.
+  await dialog.locator('.leaflet-container').click({ position: { x: 120, y: 120 } });
+  const addressLine1 = dialog
+    .locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])')
+    .nth(0);
+  await expect(addressLine1).toHaveValue('Mocked Address', { timeout: 3_000 });
+
+  await expect(page.getByRole('button', { name: 'Create' })).toBeEnabled({ timeout: 3_000 });
+  await page.getByRole('button', { name: 'Create' }).click();
+
+  await expect(page.getByText('Location created successfully.')).toBeVisible({ timeout: 5_000 });
+  expect(capturedBody?.latitude).toEqual(expect.any(Number));
+  expect(capturedBody?.longitude).toEqual(expect.any(Number));
 });
 
 // ─── View Assignments drawer (row click) ──────────────────────────────────────
