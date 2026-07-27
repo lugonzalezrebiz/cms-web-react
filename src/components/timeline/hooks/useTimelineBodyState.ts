@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type React from "react";
 import type { FlatRow, TimelineSnapshot } from "../types";
 
 interface UseTimelineBodyStateParams {
@@ -8,6 +9,7 @@ interface UseTimelineBodyStateParams {
   timelineStartSec: number;
   timelineEndSec: number;
   firstActivitySec: number;
+  blockForwardAdvance?: boolean;
 }
 
 export const useTimelineBodyState = ({
@@ -15,6 +17,7 @@ export const useTimelineBodyState = ({
   timelineStartSec,
   timelineEndSec,
   firstActivitySec,
+  blockForwardAdvance = false,
 }: UseTimelineBodyStateParams) => {
   const totalSec = 24 * 3600;
   const startSec = 0;
@@ -130,9 +133,31 @@ export const useTimelineBodyState = ({
 
   const STEP_SEC = 5;
 
+  const guardedSetMarkerSec = useCallback<
+    React.Dispatch<React.SetStateAction<number | null>>
+  >(
+    (update) => {
+      setMarkerSec((prev) => {
+        const candidate =
+          typeof update === "function"
+            ? (update as (p: number | null) => number | null)(prev)
+            : update;
+        if (candidate === null) return candidate;
+        const resolvedPrev = prev ?? timelineStartSec;
+        if (blockForwardAdvance && candidate > resolvedPrev) return prev;
+        return candidate;
+      });
+    },
+    [blockForwardAdvance, timelineStartSec],
+  );
+
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
+      if (blockForwardAdvance) {
+        setIsPlaying(false);
+        return;
+      }
       setMarkerSec((prev) => {
         const next = (prev ?? timelineStartSec) + STEP_SEC;
         if (next >= timelineEndSec) {
@@ -143,7 +168,7 @@ export const useTimelineBodyState = ({
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [isPlaying, timelineStartSec, timelineEndSec]);
+  }, [isPlaying, timelineStartSec, timelineEndSec, blockForwardAdvance]);
 
   // Enable auto-follow whenever playback starts
   useEffect(() => {
@@ -207,7 +232,7 @@ export const useTimelineBodyState = ({
     dragStartOffset,
     setDragStartOffset,
     markerSec,
-    setMarkerSec,
+    setMarkerSec: guardedSetMarkerSec,
     selectedEventPointId,
     setSelectedEventPointId,
     editingEventPointId,

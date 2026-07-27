@@ -14,6 +14,7 @@ import { Box, display } from "@mui/system";
 interface GroupOption {
   value: string;
   title: string;
+  hasAI?: boolean;
 }
 
 interface GroupItem {
@@ -21,6 +22,7 @@ interface GroupItem {
   title: string;
   options?: GroupOption[];
   selectOnClick?: boolean;
+  hasAI?: boolean;
 }
 
 interface CustomToggleButtonProps {
@@ -161,6 +163,13 @@ const GroupToggleButton = ({
           }
         />
       )}
+      {group.hasAI && (
+        <img
+          src="./assets/ai.svg"
+          alt=""
+          style={{ width: 14, height: 14, marginLeft: 4, flexShrink: 0 }}
+        />
+      )}
     </StyledToggleButton>
   );
 };
@@ -238,7 +247,24 @@ const ToggleMenuItems = ({
             }}
             sx={menuItemSx}
           >
-            {option.title}
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {option.title}
+              </span>
+              {option.hasAI && (
+                <img
+                  src="./assets/ai.svg"
+                  alt=""
+                  style={{ width: 14, height: 14, marginLeft: 6, flexShrink: 0 }}
+                />
+              )}
+            </Box>
           </MenuItem>
         ))
       ) : (

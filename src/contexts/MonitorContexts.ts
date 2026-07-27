@@ -4,12 +4,14 @@ export interface MonitorState {
   handleDone: () => void;
   showFinalizeButton: boolean;
   isDoneLoading: boolean;
+  unreviewedTrackerIds: Set<number>;
 }
 
 export const MonitorStateContext = createContext<MonitorState>({
   handleDone: () => {},
   showFinalizeButton: false,
   isDoneLoading: false,
+  unreviewedTrackerIds: new Set(),
 });
 
 export const MonitorSetterContext = createContext<(s: MonitorState) => void>(() => {});

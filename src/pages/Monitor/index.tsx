@@ -7,10 +7,8 @@ import { useExpandedCamera } from "../../hooks/useExpandedCamera";
 import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
 import useTrackers from "../../hooks/useTrackers";
 import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
-// import { useSalesTransactions } from "./hooks/useSalesTransactions";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
-// import { usePosCarousel } from "./hooks/usePosCarousel";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { timeStringToSec } from "../../components/timeline/utils";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
@@ -83,10 +81,48 @@ const Monitor = () => {
     cameras: monitoringCameras,
     loading: isMonitoringLoading,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-  const allEventPoints = useMemo(
-    () => [...cameraEventPoints, ...preloadedEventPoints],
-    [cameraEventPoints, preloadedEventPoints],
+  const [acceptedEventIds, setAcceptedEventIds] = useState<Set<number>>(
+    new Set(),
   );
+  const [rejectedEventIds, setRejectedEventIds] = useState<Set<number>>(
+    new Set(),
+  );
+
+  const handleAcceptEventPoint = useCallback((id: number) => {
+    setAcceptedEventIds((prev) => new Set(prev).add(id));
+  }, []);
+
+  const handleRejectEventPoint = useCallback((id: number) => {
+    setRejectedEventIds((prev) => new Set(prev).add(id));
+  }, []);
+
+  const allEventPoints = useMemo(
+    () =>
+      [...cameraEventPoints, ...preloadedEventPoints].map((ep) => {
+        if (rejectedEventIds.has(ep.id)) return { ...ep, rejected: true };
+        if (acceptedEventIds.has(ep.id)) return { ...ep, accepted: true };
+        return ep;
+      }),
+    [cameraEventPoints, preloadedEventPoints, acceptedEventIds, rejectedEventIds],
+  );
+
+  const unreviewedTrackerIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const t of trackerGroupings) {
+      const cameraIds =
+        t.joinCamera && t.cameras.length > 0
+          ? new Set(t.cameras.map((c) => c.id))
+          : null;
+      const hasUnreviewed = allEventPoints.some(
+        (ep) =>
+          !ep.reviewed &&
+          ep.label === t.name &&
+          (!cameraIds || cameraIds.has(ep.cameraId)),
+      );
+      if (hasUnreviewed) ids.add(t.id);
+    }
+    return ids;
+  }, [trackerGroupings, allEventPoints]);
 
   const filteredEventPoints = useFilteredEventPoints({
     allEventPoints,
@@ -146,6 +182,22 @@ const Monitor = () => {
   const sortedCameras = useMemo(
     () => [...activeCameras].sort((a, b) => a.id - b.id),
     [activeCameras],
+  );
+
+  const hasPendingReview = useMemo(
+    () =>
+      activeCameras.some((camera) =>
+        filteredEventPoints.some(
+          (ep) =>
+            ep.cameraId === camera.id &&
+            ep.reviewed === false &&
+            !ep.rejected &&
+            !ep.accepted &&
+            markerSec >= ep.startSec &&
+            markerSec <= ep.endSec,
+        ),
+      ),
+    [activeCameras, filteredEventPoints, markerSec],
   );
 
   useEffect(() => {
@@ -356,7 +408,12 @@ const Monitor = () => {
     onSuccess: cleanUp,
   });
 
-  useRegisterMonitorActions(handleDone, showFinalizeButton, isDoneLoading);
+  useRegisterMonitorActions(
+    handleDone,
+    showFinalizeButton,
+    isDoneLoading,
+    unreviewedTrackerIds,
+  );
 
   const filteredMenuItems = useFilteredMenuItems({
     trackers,
@@ -400,6 +457,7 @@ const Monitor = () => {
       expandedIcon: !expandedCamera,
       rowsLoadState: isTrackersLoading,
       loadState: isMonitoringLoading || isTrackersLoading,
+      blockForwardAdvance: hasPendingReview,
     }),
     [
       snapshot,
@@ -423,20 +481,36 @@ const Monitor = () => {
       expandedCamera,
       isTrackersLoading,
       isMonitoringLoading,
+      hasPendingReview,
     ],
   );
 
   const expandedCameraTags = useMemo(() => {
     if (expandedCamera === null) return [];
+    const activePoints = filteredEventPoints.filter(
+      (ep) =>
+        ep.cameraId === sortedCameras[expandedCamera]?.id &&
+        markerSec >= ep.startSec &&
+        markerSec <= ep.endSec,
+    );
+
     const seen = new Set<string>();
-    return filteredEventPoints
-      .filter(
-        (ep) =>
-          ep.cameraId === sortedCameras[expandedCamera]?.id &&
-          markerSec >= ep.startSec &&
-          markerSec <= ep.endSec,
-      )
+    return activePoints
+      .sort((a, b) => (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0))
       .filter((ep) => {
+        const isUndecidedUnreviewed =
+          ep.reviewed === false && !ep.accepted && !ep.rejected;
+        const hasReviewedTwin =
+          isUndecidedUnreviewed &&
+          activePoints.some(
+            (other) =>
+              other.id !== ep.id &&
+              other.label === ep.label &&
+              other.reviewed === true &&
+              other.timeSec === ep.timeSec,
+          );
+        if (hasReviewedTwin) return true;
+
         if (seen.has(ep.label)) return false;
         seen.add(ep.label);
         return true;
@@ -446,6 +520,8 @@ const Monitor = () => {
         name: ep.label,
         label: ep.label,
         reviewed: ep.reviewed,
+        rejected: ep.rejected,
+        accepted: ep.accepted,
         overlapsUnreviewed:
           ep.reviewed &&
           filteredEventPoints.some(
@@ -483,6 +559,8 @@ const Monitor = () => {
           cameraEventPoints={filteredEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleDeleteEventPoint}
+          onAcceptEventPoint={handleAcceptEventPoint}
+          onRejectEventPoint={handleRejectEventPoint}
           cameras={activeCameras}
           company={company}
           location={location}
@@ -521,6 +599,8 @@ const Monitor = () => {
         date={date}
         timestamp={timestamp}
         onRemoveTag={handleDeleteEventPoint}
+        onAcceptTag={handleAcceptEventPoint}
+        onRejectTag={handleRejectEventPoint}
         customHeight={timelinePopped ? "91%" : "70%"}
       />
     </Box>

@@ -32,6 +32,7 @@ const TimeLine = ({
   expandedIcon = false,
   rowsLoadState,
   loadState,
+  blockForwardAdvance = false,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -56,6 +57,7 @@ const TimeLine = ({
   expandedIcon: boolean;
   rowsLoadState?: boolean;
   loadState?: boolean;
+  blockForwardAdvance?: boolean;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -86,6 +88,7 @@ const TimeLine = ({
     timelineStartSec,
     timelineEndSec,
     firstActivitySec,
+    blockForwardAdvance,
   });
 
   useMarkerSync({

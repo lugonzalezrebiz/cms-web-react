@@ -194,7 +194,7 @@ const MonitorHeader = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, isDoneLoading } = useMonitorState();
+  const { handleDone, isDoneLoading, unreviewedTrackerIds } = useMonitorState();
   const { cameraGroup, setCameraGroup, setCustomTrackerIDs } = useCameraGroup();
 
   useEffect(() => {
@@ -208,11 +208,13 @@ const MonitorHeader = ({
       /* ignore invalid JSON */
     }
   }, [monitoringID, setCustomTrackerIDs]);
-  const { trackerOptions } = useTrackerOptions();
+  const { trackerOptions } = useTrackerOptions(unreviewedTrackerIds);
 
-  const allGroups = [...trackerOptions].sort(
-    (a, b) => (b.options ? 1 : 0) - (a.options ? 1 : 0),
-  );
+  const allGroups = [...trackerOptions].sort((a, b) => {
+    const aiDiff = (b.hasAI ? 1 : 0) - (a.hasAI ? 1 : 0);
+    if (aiDiff !== 0) return aiDiff;
+    return (b.options ? 1 : 0) - (a.options ? 1 : 0);
+  });
 
   useEffect(() => {
     if (cameraGroup === "tracker" && allGroups.length > 0) {
@@ -228,6 +230,7 @@ const MonitorHeader = ({
             value: "__other__",
             title: "Other",
             options: overflowGroups,
+            hasAI: overflowGroups.some((g) => g.hasAI),
           },
         ]
       : []),

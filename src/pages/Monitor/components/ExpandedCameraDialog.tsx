@@ -20,6 +20,8 @@ export interface ExpandedCameraDialogProps {
   date?: string;
   timestamp?: string;
   onRemoveTag: (tagId: number) => void;
+  onAcceptTag?: (tagId: number) => void;
+  onRejectTag?: (tagId: number) => void;
   customHeight?: string;
 }
 
@@ -37,6 +39,8 @@ export const ExpandedCameraDialog = ({
   date,
   timestamp,
   onRemoveTag,
+  onAcceptTag,
+  onRejectTag,
   customHeight,
 }: ExpandedCameraDialogProps) => {
   return (
@@ -83,6 +87,8 @@ export const ExpandedCameraDialog = ({
               date={date}
               timestamp={timestamp}
               onRemoveTag={onRemoveTag}
+              onAcceptTag={onAcceptTag}
+              onRejectTag={onRejectTag}
               cameraLabel={false}
             />
           </Box>

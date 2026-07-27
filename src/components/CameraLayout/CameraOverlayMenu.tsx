@@ -10,6 +10,8 @@ export interface CameraContextMenuItem {
   shortcut?: string;
   dividerAfter?: boolean;
   reviewed?: boolean;
+  rejected?: boolean;
+  accepted?: boolean;
   overlapsUnreviewed?: boolean;
   onClick: (cameraId: number) => void;
 }

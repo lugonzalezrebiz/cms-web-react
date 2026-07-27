@@ -9,6 +9,8 @@ export const MonitorProvider = ({ children }: { children: ReactNode }) => {
   const [state, setStateInternal] = useState({
     handleDone: () => {},
     showFinalizeButton: false,
+    isDoneLoading: false,
+    unreviewedTrackerIds: new Set<number>(),
   });
 
   const setState = useCallback((s: typeof state) => setStateInternal(s), []);
