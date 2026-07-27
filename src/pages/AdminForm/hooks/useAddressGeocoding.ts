@@ -3,17 +3,10 @@ import axios from "axios";
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org";
 const DEBOUNCE_MS = 800;
-const SUGGESTION_LIMIT = 5;
 
 export interface LatLng {
   lat: number;
   lng: number;
-}
-
-export interface AddressSuggestion {
-  id: string;
-  label: string;
-  position: LatLng;
 }
 
 export interface ResolvedLocation {
@@ -36,10 +29,8 @@ interface NominatimAddress {
 }
 
 interface NominatimSearchResult {
-  place_id: number;
   lat: string;
   lon: string;
-  display_name: string;
 }
 
 interface NominatimReverseResult {
@@ -61,17 +52,13 @@ const buildShortAddress = (
 const pickCity = (address: NominatimAddress | undefined): string | undefined =>
   address?.city || address?.town || address?.village || address?.municipality;
 
-const shortenDisplayName = (displayName: string): string =>
-  displayName.split(",").slice(0, 2).join(",").trim();
-
 const useAddressGeocoding = (
   address: string,
   onAddressResolved: (location: ResolvedLocation) => void,
 ) => {
   const [position, setPosition] = useState<LatLng | null>(null);
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const skipNextSearch = useRef(false);
+  const hasManualSelection = useRef(false);
 
   useEffect(() => {
     if (skipNextSearch.current) {
@@ -79,34 +66,20 @@ const useAddressGeocoding = (
       return;
     }
     const trimmed = address.trim();
-    if (!trimmed) {
-      setSuggestions([]);
-      return;
-    }
+    if (!trimmed) return;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(async () => {
-      setIsSearching(true);
       try {
         const { data } = await axios.get<NominatimSearchResult[]>(
           `${NOMINATIM_BASE_URL}/search`,
           {
-            params: { format: "json", q: trimmed, limit: SUGGESTION_LIMIT },
+            params: { format: "json", q: trimmed, limit: 1 },
             signal: controller.signal,
           },
         );
-        setSuggestions(
-          data.map((result) => ({
-            id: String(result.place_id),
-            label: shortenDisplayName(result.display_name),
-            position: {
-              lat: parseFloat(result.lat),
-              lng: parseFloat(result.lon),
-            },
-          })),
-        );
         const topResult = data[0];
-        if (topResult) {
+        if (topResult && !hasManualSelection.current) {
           setPosition({
             lat: parseFloat(topResult.lat),
             lng: parseFloat(topResult.lon),
@@ -114,8 +87,6 @@ const useAddressGeocoding = (
         }
       } catch {
         // Ignore geocoding errors (e.g. no results, network issue, aborted request).
-      } finally {
-        setIsSearching(false);
       }
     }, DEBOUNCE_MS);
 
@@ -125,14 +96,9 @@ const useAddressGeocoding = (
     };
   }, [address]);
 
-  const selectSuggestion = (suggestion: AddressSuggestion) => {
-    setPosition(suggestion.position);
-    setSuggestions([]);
-  };
-
   const handleLocationSelect = async (newPosition: LatLng) => {
+    hasManualSelection.current = true;
     setPosition(newPosition);
-    setSuggestions([]);
     try {
       const { data } = await axios.get<NominatimReverseResult>(
         `${NOMINATIM_BASE_URL}/reverse`,
@@ -161,15 +127,12 @@ const useAddressGeocoding = (
 
   const resetPosition = () => {
     skipNextSearch.current = false;
+    hasManualSelection.current = false;
     setPosition(null);
-    setSuggestions([]);
   };
 
   return {
     position,
-    suggestions,
-    isSearching,
-    selectSuggestion,
     handleLocationSelect,
     resetPosition,
   };

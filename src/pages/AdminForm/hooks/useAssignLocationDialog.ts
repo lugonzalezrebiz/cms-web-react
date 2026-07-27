@@ -4,7 +4,7 @@ import { Country, City, State } from "country-state-city";
 import useAssignLocationForm from "./useAssignLocationForm";
 import useCreateApprovedLocation from "./useCreateApprovedLocation";
 import useAddressGeocoding from "./useAddressGeocoding";
-import type { LatLng, ResolvedLocation } from "./useAddressGeocoding";
+import type { ResolvedLocation } from "./useAddressGeocoding";
 import { stringSimilarity } from "../utils/stringSimilarity";
 
 const ADDRESS_SIMILARITY_THRESHOLD = 0.5;
@@ -120,13 +120,9 @@ const useAssignLocationDialog = ({
 
   const {
     position,
-    suggestions,
-    selectSuggestion,
-    handleLocationSelect: resolveLocationSelect,
+    handleLocationSelect: handleMapLocationSelect,
     resetPosition,
   } = useAddressGeocoding(geocodeQuery, handleLocationResolved);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [previewPosition, setPreviewPosition] = useState<LatLng | null>(null);
 
   const isTemporary = employeeType === "temporary";
   const isDueDateValid = !isTemporary || dueDate !== null;
@@ -162,16 +158,6 @@ const useAssignLocationDialog = ({
   const handleCityChange = (newValue: SelectOption | null) => {
     setCityOption(newValue);
     setField("cityRegion", newValue?.value ?? newValue?.label ?? "");
-  };
-
-  const handleSuggestionSelect = (suggestion: Parameters<typeof selectSuggestion>[0]) => {
-    setPreviewPosition(null);
-    selectSuggestion(suggestion);
-  };
-
-  const handleMapLocationSelect = (newPosition: LatLng) => {
-    setPreviewPosition(null);
-    resolveLocationSelect(newPosition);
   };
 
   const handleAssign = async () => {
@@ -221,12 +207,6 @@ const useAssignLocationDialog = ({
     handleCountryChange,
     handleCityChange,
     position,
-    suggestions,
-    showSuggestions,
-    setShowSuggestions,
-    previewPosition,
-    setPreviewPosition,
-    handleSuggestionSelect,
     handleMapLocationSelect,
     createError,
     isPending,

@@ -377,19 +377,18 @@ test('Create Location dialog renders a location picker map', async ({ page }) =>
   });
 });
 
-test('address suggestions stay hidden until Address Line 1 has text, then show a shortened label', async ({ page }) => {
+test('typing an address auto-centers the map pin without showing a suggestions list', async ({ page }) => {
   const count = await waitForUsersTable(page);
   test.skip(count === 0, 'no users loaded in this environment');
 
-  // Override the beforeEach mock for this test only: return a real-shaped result so we
-  // can assert the suggestion label is shortened to its first two comma sections.
+  // Override the beforeEach mock for this test only: return a single geocodable result.
+  // The suggestions dropdown was removed — Address Line 1 no longer lists candidates,
+  // it just moves the map pin to the top search hit in the background.
   await page.route('https://nominatim.openstreetmap.org/search**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify([
-        { place_id: 1, lat: '25.77', lon: '-80.19', display_name: 'Miami, Miami-Dade County, Florida, USA' },
-      ]),
+      body: JSON.stringify([{ lat: '25.77', lon: '-80.19' }]),
     });
   });
 
@@ -397,22 +396,18 @@ test('address suggestions stay hidden until Address Line 1 has text, then show a
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5_000 });
 
   const dialog = page.getByRole('dialog');
-  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(0), 'United States', 'United States');
-  await selectAutocompleteOption(page, dialog.getByRole('combobox').nth(1), 'Miami', 'Miami, Florida');
-
-  // Selecting Country/City alone must not trigger a forward search — wait past the
-  // 800ms debounce window and confirm no suggestion shows up yet.
-  await page.waitForTimeout(1_000);
-  await expect(page.getByText('Miami, Miami-Dade County')).not.toBeVisible();
-
   const addressLine1 = dialog
     .locator('input:not([type="tel"]):not([type="radio"]):not([role="combobox"])')
     .nth(0);
   await addressLine1.fill('123 Main St');
 
-  // Suggestion label is shortened to the first two display_name sections, not the full string.
-  await expect(page.getByText('Miami, Miami-Dade County')).toBeVisible({ timeout: 3_000 });
-  await expect(page.getByText('Miami, Miami-Dade County, Florida, USA')).not.toBeVisible();
+  // No dropdown/listbox of address candidates should ever appear under the field.
+  await page.waitForTimeout(1_000);
+  await expect(dialog.getByRole('listbox')).toHaveCount(0);
+
+  // The debounced search still runs in the background and drops the pin (pinIcon's
+  // SVG path, identified by its fill color) once it resolves.
+  await expect(dialog.locator('path[fill="#fa5f02"]')).toBeVisible({ timeout: 3_000 });
 });
 
 test('Create button is disabled when the Create Location form is empty', async ({ page }) => {

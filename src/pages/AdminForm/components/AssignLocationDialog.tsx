@@ -133,12 +133,6 @@ const AssignLocationDialog = ({
     handleCountryChange,
     handleCityChange,
     position,
-    suggestions,
-    showSuggestions,
-    setShowSuggestions,
-    previewPosition,
-    setPreviewPosition,
-    handleSuggestionSelect,
     handleMapLocationSelect,
     createError,
     isPending,
@@ -241,61 +235,17 @@ const AssignLocationDialog = ({
                   <ErrorText>{errors.cityRegion}</ErrorText>
                 )}
               </Box>
-              <Box sx={{ position: "relative" }}>
+              <Box>
                 <Label>Address Line 1</Label>
                 <StyledInput
                   fullWidth
                   size="small"
                   value={fields.addressLine1}
                   onChange={(e) => setField("addressLine1", e.target.value)}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setShowSuggestions(false)}
                   error={!!errors.addressLine1}
                 />
                 {errors.addressLine1 && (
                   <ErrorText>{errors.addressLine1}</ErrorText>
-                )}
-                {showSuggestions && suggestions.length > 0 && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      zIndex: 10,
-                      mt: "4px",
-                      maxHeight: "220px",
-                      overflowY: "auto",
-                      backgroundColor: Colors.white,
-                      border: `1px solid ${Colors.paleGray}`,
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px 0 rgba(16, 24, 40, 0.1)",
-                    }}
-                  >
-                    {suggestions.map((suggestion) => (
-                      <Box
-                        key={suggestion.id}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleSuggestionSelect(suggestion);
-                        }}
-                        onMouseEnter={() =>
-                          setPreviewPosition(suggestion.position)
-                        }
-                        onMouseLeave={() => setPreviewPosition(null)}
-                        sx={{
-                          padding: "8px 14px",
-                          fontFamily: Fonts.main,
-                          fontSize: "13px",
-                          color: Colors.dimGray,
-                          cursor: "pointer",
-                          "&:hover": { backgroundColor: Colors.offWhite },
-                        }}
-                      >
-                        {suggestion.label}
-                      </Box>
-                    ))}
-                  </Box>
                 )}
               </Box>
               <Box>
@@ -326,7 +276,7 @@ const AssignLocationDialog = ({
               }}
             >
               <LocationMap
-                position={previewPosition ?? position}
+                position={position}
                 onLocationSelect={handleMapLocationSelect}
                 height="437px"
               />
