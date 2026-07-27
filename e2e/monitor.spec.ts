@@ -501,6 +501,67 @@ test('creating a custom tracker group filters the timeline to the selected track
   }
 });
 
+// ─── Camera Groups AI indicator (unreviewedTrackerIds) ────────────────────────
+// useTrackerOptions tags each tracker group with hasAI when Monitor/index.tsx's
+// unreviewedTrackerIds (shared via MonitorStateContext) includes it — ToggleButton then
+// renders public/assets/ai.svg to the right of the group's label.
+
+test('tracker groups with pending AI events show the ai.svg icon', async ({ page }) => {
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const aiIcons = group.locator('img[src*="ai.svg"]');
+  const count = await aiIcons.count();
+  test.skip(count === 0, 'no tracker groups have pending AI events in this environment');
+
+  await expect(aiIcons.first()).toBeVisible();
+});
+
+test('tracker groups with the AI icon are sorted before those without it', async ({ page }) => {
+  // MonitorHeader's allGroups sort: hasAI groups first, so any group without the icon
+  // should never precede one that has it.
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const trackerButtons = group.getByRole('button').filter({ hasNotText: 'Custom' });
+  const buttonCount = await trackerButtons.count();
+  test.skip(buttonCount < 2, 'need at least 2 tracker buttons to verify ordering');
+
+  const hasIconFlags: boolean[] = [];
+  for (let i = 0; i < buttonCount; i++) {
+    const iconCount = await trackerButtons.nth(i).locator('img[src*="ai.svg"]').count();
+    hasIconFlags.push(iconCount > 0);
+  }
+  test.skip(
+    !hasIconFlags.includes(true) || !hasIconFlags.includes(false),
+    'no mix of AI/non-AI tracker groups to verify ordering in this environment',
+  );
+
+  let seenWithoutIcon = false;
+  for (const hasIcon of hasIconFlags) {
+    if (!hasIcon) {
+      seenWithoutIcon = true;
+    } else {
+      expect(seenWithoutIcon, 'a group with the AI icon appeared after one without it').toBe(false);
+    }
+  }
+});
+
+test('"Other" dropdown shows the ai.svg icon next to overflow trackers with pending AI events', async ({ page }) => {
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const otherButton = group.getByRole('button', { name: /^Other/ });
+  const hasOther = (await otherButton.count()) > 0;
+  test.skip(!hasOther, 'no overflow "Other" group in this environment');
+
+  await otherButton.click();
+  const menu = page.getByRole('menu');
+  const menuVisible = await menu.isVisible({ timeout: 3_000 }).catch(() => false);
+  test.skip(!menuVisible, '"Other" did not open a dropdown menu in this environment');
+
+  const menuIcons = menu.locator('img[src*="ai.svg"]');
+  const iconCount = await menuIcons.count();
+  test.skip(iconCount === 0, 'no overflow tracker has pending AI events in this environment');
+  await expect(menuIcons.first()).toBeVisible();
+
+  await page.keyboard.press('Escape');
+});
+
 // ─── Camera area ──────────────────────────────────────────────────────────────
 
 test('camera area shows loading state or camera grid', async ({ page }) => {
@@ -1091,6 +1152,144 @@ test('removing a tag from the camera chip also removes it from the timeline', as
   // Same underlying event point — its a11y button in the timeline should be gone too
   const pointByLabel = page.getByRole('button', { name: label ?? '', exact: true });
   await expect(pointByLabel).toHaveCount(0, { timeout: 5_000 });
+});
+
+// ─── Camera tag accept/reject (AI review) ─────────────────────────────────────
+// CameraItem renders ✓/✕ buttons instead of the single remove "✕" for tags whose
+// underlying event point is unreviewed (reviewed===false) and not yet decided —
+// onAcceptTag/onRejectTag flow up to Monitor/index.tsx's handleAcceptEventPoint/
+// handleRejectEventPoint, which mark the point accepted/rejected (local-only, reset on
+// reload). Accepted turns the chip Colors.royalBlue (#4285F4 → rgb(66, 133, 244));
+// rejected turns it Colors.red (#E80000 → rgb(232, 0, 0)).
+
+// Selects the first unreviewed event point (if any), moves the marker onto it, and
+// returns the chip Box locator (the colored parent of the tag's name span) once it's
+// visible on a camera cell. Skips the test gracefully if no such point/chip is available.
+async function selectUnreviewedTagChip(page: Page) {
+  const unreviewedButton = page.getByRole('button', { name: /, unreviewed$/ }).first();
+  await unreviewedButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const count = await unreviewedButton.count();
+  test.skip(count === 0, 'no unreviewed event points available in this environment');
+
+  const label = await unreviewedButton.getAttribute('aria-label');
+  const tagName = label?.split(' at ')[0] ?? '';
+  test.skip(!tagName, 'could not read event point label');
+
+  await unreviewedButton.dispatchEvent('click');
+
+  const cameraCells = page.getByAltText('Expand camera').locator('xpath=../..');
+  const tagNameSpans = cameraCells.locator('span', { hasText: tagName });
+  await tagNameSpans.first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+  const spanCount = await tagNameSpans.count();
+  test.skip(spanCount === 0, 'unreviewed tag is not visible on any on-screen camera in this environment');
+
+  // Usually there's exactly one chip for this label. But if a reviewed "twin" overlaps
+  // at the same time (rendered green, per useTagsForCamera's overlap bypass), both chips
+  // share this tagName — pick the pending one specifically via its ✓ (accept) button.
+  for (let i = 0; i < spanCount; i++) {
+    const candidate = tagNameSpans.nth(i).locator('xpath=..');
+    const hasAcceptButton = (await candidate.getByText('✓').count()) > 0;
+    if (hasAcceptButton) return candidate;
+  }
+
+  test.skip(true, 'pending tag chip with accept/reject buttons not found on screen');
+  return tagNameSpans.first().locator('xpath=..');
+}
+
+test('unreviewed camera tag shows accept (✓) and reject (✕) buttons instead of remove', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await expect(chip.getByText('✓')).toBeVisible();
+  await expect(chip.getByText('✕')).toBeVisible();
+});
+
+test('accepting an unreviewed tag turns it a different blue and hides the buttons', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await chip.getByText('✓').click();
+
+  await expect(chip.getByText('✓')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip.getByText('✕')).not.toBeVisible();
+  await expect(chip).toHaveCSS('background-color', 'rgb(66, 133, 244)', { timeout: 3_000 });
+});
+
+test('rejecting an unreviewed tag turns it red and hides the buttons', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await chip.getByText('✕').click();
+
+  await expect(chip.getByText('✓')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip.getByText('✕')).not.toBeVisible();
+  await expect(chip).toHaveCSS('background-color', 'rgb(232, 0, 0)', { timeout: 3_000 });
+});
+
+// ─── Forward-navigation gating on pending (blue) tags ─────────────────────────
+// Monitor/index.tsx's hasPendingReview blocks any forward marker movement
+// (useTimelineBodyState's guardedSetMarkerSec) while an on-screen camera has an
+// unreviewed, undecided tag at the current marker position — accepting or rejecting it
+// clears the block. Only genuinely pending (blue) tags count; already-reviewed
+// (orange/green) ones never block.
+
+test('timeline cannot advance forward while a pending unreviewed tag is on screen', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  await selectUnreviewedTagChip(page);
+
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const before = await timeDisplay.textContent();
+
+  await page.getByAltText('Step forward').click();
+  await expect(timeDisplay).toHaveText(before ?? '', { timeout: 2_000 });
+
+  await page.keyboard.press('ArrowRight');
+  await expect(timeDisplay).toHaveText(before ?? '', { timeout: 2_000 });
+});
+
+test('accepting the blocking tag unblocks forward navigation', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const blocked = await timeDisplay.textContent();
+
+  await chip.getByText('✓').click();
+  // Wait for the accept to actually re-render (clearing blockForwardAdvance) before
+  // advancing — otherwise Step forward can race the state update and stay blocked.
+  await expect(chip.getByText('✓')).not.toBeVisible({ timeout: 3_000 });
+
+  await page.getByAltText('Step forward').click();
+  await expect(timeDisplay).not.toHaveText(blocked ?? '', { timeout: 3_000 });
+});
+
+test('rejecting the blocking tag unblocks forward navigation', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const blocked = await timeDisplay.textContent();
+
+  await chip.getByText('✕').click();
+  // Wait for the reject to actually re-render (clearing blockForwardAdvance) before
+  // advancing — otherwise Step forward can race the state update and stay blocked.
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+
+  await page.getByAltText('Step forward').click();
+  await expect(timeDisplay).not.toHaveText(blocked ?? '', { timeout: 3_000 });
 });
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
