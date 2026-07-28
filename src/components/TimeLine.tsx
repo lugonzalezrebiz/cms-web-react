@@ -8,6 +8,7 @@ import { useFlatRows } from "./timeline/hooks/useFlatRows";
 import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
+import { useAutoSelectOnMarkerOverDiamond } from "./timeline/hooks/useAutoSelectOnMarkerOverDiamond";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 
@@ -25,6 +26,7 @@ const TimeLine = ({
   canUndo,
   canRedo,
   onRemoveEventPoint,
+  onAcceptEventPoint,
   onConvertEventPointToLocal,
   viewMode = "camera",
   menuItems = [],
@@ -50,9 +52,10 @@ const TimeLine = ({
   canUndo?: boolean;
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
+  onAcceptEventPoint?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   viewMode?: "camera" | "activity";
-  menuItems?: { id: number; name: string }[];
+  menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
   expandedIcon: boolean;
   rowsLoadState?: boolean;
@@ -109,6 +112,17 @@ const TimeLine = ({
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
     setSelectedEventPointId: state.setSelectedEventPointId,
+  });
+
+  useAutoSelectOnMarkerOverDiamond({
+    flatRows,
+    cameraEventPoints: mergedEventPoints,
+    resolvedMarkerSec: state.resolvedMarkerSec,
+    visibleDuration: state.visibleDuration,
+    gridRef: state.gridRef,
+    isActivityMode,
+    iTrackId: state.iTrackId,
+    setITrackId: state.setITrackId,
   });
 
   const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
@@ -182,14 +196,6 @@ const TimeLine = ({
     state.setSelectedEventPointId(null);
   };
 
-  const handleEditEventPoint = () => {
-    if (!targetEventPoint?.reviewed) return;
-    const newId =
-      onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
-    state.setEditingEventPointId(newId);
-    state.setSelectedEventPointId(newId);
-  };
-
   const handleEditEventPointById = (id: number) => {
     const ep = mergedEventPoints.find((p) => p.id === id);
     if (!ep?.reviewed) return;
@@ -203,7 +209,7 @@ const TimeLine = ({
     state.setSelectedEventPointId(id);
   };
 
-  const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
+  useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
     setITrackId: state.setITrackId,
@@ -227,8 +233,9 @@ const TimeLine = ({
     totalSec: state.totalSec,
     gridRef: state.gridRef,
     cameraEventPoints: mergedEventPoints,
+    menuItems,
     onDeleteEventPoint: handleDeleteEventPoint,
-    onEditEventPoint: handleEditEventPoint,
+    onAcceptEventPoint,
     onUndo,
     onRedo,
   });
@@ -304,8 +311,6 @@ const TimeLine = ({
         onEditEventPoint={handleEditEventPointById}
         onConvertEventPointToLocal={onConvertEventPointToLocal}
         onEnterEditMode={handleEnterEditMode}
-        goToTimeOpen={goToTimeOpen}
-        setGoToTimeOpen={setGoToTimeOpen}
         rowsLoadState={rowsLoadState}
         loadState={loadState}
       />

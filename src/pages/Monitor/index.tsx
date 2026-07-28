@@ -22,6 +22,8 @@ import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
 import { useTrackerGroupResolution } from "./hooks/useTrackerGroupResolution";
 import { useFilteredEventPoints } from "./hooks/useFilteredEventPoints";
 import { useFilteredMenuItems } from "./hooks/useFilteredMenuItems";
+import NoReviewGuard from "../../components/NoReviewGuard";
+import useNavigateWithQuery from "../../hooks/useNavigate";
 
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
@@ -41,6 +43,7 @@ const Monitor = () => {
     trackerOption,
     customTrackerIDs,
     trackerGroupings,
+    isTrackerGroupingsLoading,
     isTrackerTab,
     isCustomMode,
     cameraSpecificId,
@@ -55,6 +58,7 @@ const Monitor = () => {
 
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
+  const navigate = useNavigateWithQuery();
 
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
 
@@ -123,6 +127,11 @@ const Monitor = () => {
     }
     return ids;
   }, [trackerGroupings, allEventPoints]);
+
+  const isReviewDataLoading =
+    isMonitoringLoading || isTrackersLoading || isTrackerGroupingsLoading;
+  const hasNothingToReview =
+    !isReviewDataLoading && unreviewedTrackerIds.size === 0;
 
   const filteredEventPoints = useFilteredEventPoints({
     allEventPoints,
@@ -450,6 +459,7 @@ const Monitor = () => {
       canUndo,
       canRedo,
       onRemoveEventPoint: handleDeleteEventPoint,
+      onAcceptEventPoint: handleAcceptEventPoint,
       onConvertEventPointToLocal: handleConvertEventPoint,
       viewMode: "activity" as const,
       menuItems: filteredMenuItems,
@@ -475,6 +485,7 @@ const Monitor = () => {
       canUndo,
       canRedo,
       handleDeleteEventPoint,
+      handleAcceptEventPoint,
       handleConvertEventPoint,
       filteredMenuItems,
       rangeSessions,
@@ -552,16 +563,15 @@ const Monitor = () => {
       >
         <CameraLayout
           key={`${cameraGroup}-${trackerOption ?? ""}`}
-          count={activeCameras.length}
+          count={sortedCameras.length}
           maxHeight="100%"
           contextMenuItems={cameraMenuItems}
           onMenuOpen={setOpenMenuCamera}
           cameraEventPoints={filteredEventPoints}
           markerSec={markerSec}
           onRemoveEventPoint={handleDeleteEventPoint}
-          onAcceptEventPoint={handleAcceptEventPoint}
           onRejectEventPoint={handleRejectEventPoint}
-          cameras={activeCameras}
+          cameras={sortedCameras}
           company={company}
           location={location}
           date={date}
@@ -599,10 +609,10 @@ const Monitor = () => {
         date={date}
         timestamp={timestamp}
         onRemoveTag={handleDeleteEventPoint}
-        onAcceptTag={handleAcceptEventPoint}
         onRejectTag={handleRejectEventPoint}
         customHeight={timelinePopped ? "91%" : "70%"}
       />
+      <NoReviewGuard open={hasNothingToReview} onGoBack={() => navigate(-1)} />
     </Box>
   );
 };

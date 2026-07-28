@@ -5,7 +5,8 @@ import { useCameraGroup } from "../../../contexts/useMonitorContext";
 
 export function useTrackerGroupResolution() {
   const { cameraGroup, trackerOption, customTrackerIDs } = useCameraGroup();
-  const { trackers: trackerGroupings } = useTrackerGrouping();
+  const { trackers: trackerGroupings, isLoading: isTrackerGroupingsLoading } =
+    useTrackerGrouping();
 
   const isTrackerTab = cameraGroup === "tracker";
   const isCustomMode = cameraGroup === "__custom__";
@@ -57,6 +58,7 @@ export function useTrackerGroupResolution() {
     trackerOption,
     customTrackerIDs,
     trackerGroupings,
+    isTrackerGroupingsLoading,
     isTrackerTab,
     isCustomMode,
     isCameraGroup,

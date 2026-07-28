@@ -37,8 +37,6 @@ interface Params {
   cameraToJoinTrackerMap: Map<number, number>;
 }
 
-const noop = (_i: number) => {};
-
 export function useFilteredMenuItems({
   trackers,
   trackerGroupings,
@@ -56,6 +54,9 @@ export function useFilteredMenuItems({
   joinCameraTrackerMap,
   cameraToJoinTrackerMap,
 }: Params): MenuItem[] {
+  const getMode = (trackerId: number): "POINT" | "RANGE" =>
+    trackers.find((t) => t.id === trackerId)?.mode ?? "POINT";
+
   const menuItems = useMemo<MenuItem[]>(
     () =>
       trackers.map((t) => ({
@@ -71,11 +72,13 @@ export function useFilteredMenuItems({
     if (isJoinCameraTracker) {
       const groupingTracker = trackerGroupings.find((t) => t.id === cameraGroupNum);
       if (groupingTracker) {
-        return groupingTracker.cameras.map((cam) => ({
+        const mode = getMode(groupingTracker.id);
+        const sortedCameras = [...groupingTracker.cameras].sort((a, b) => a.id - b.id);
+        return sortedCameras.map((cam) => ({
           id: cam.id * 10000 + groupingTracker.id,
           name: `${groupingTracker.name} (${cam.name})`,
           label: `${groupingTracker.name} (${cam.name})`,
-          onClick: noop,
+          onClick: () => handleActivitySelect(cam.id, groupingTracker.name, mode),
         }));
       }
     }
@@ -91,7 +94,12 @@ export function useFilteredMenuItems({
             id: cameraSpecificId * 10000 + trackerID,
             name: `${groupingTracker.name} (${camName})`,
             label: `${groupingTracker.name} (${camName})`,
-            onClick: noop,
+            onClick: () =>
+              handleActivitySelect(
+                cameraSpecificId,
+                groupingTracker.name,
+                getMode(trackerID),
+              ),
           },
         ];
       }
@@ -112,13 +120,21 @@ export function useFilteredMenuItems({
           const rowId = camId * 10000 + tracker.id;
           if (!addedIds.has(rowId)) {
             addedIds.add(rowId);
-            rows.push({ id: rowId, name: `${tracker.name} (${camName})`, label: `${tracker.name} (${camName})`, onClick: noop });
+            const mode = getMode(tracker.id);
+            rows.push({
+              id: rowId,
+              name: `${tracker.name} (${camName})`,
+              label: `${tracker.name} (${camName})`,
+              onClick: () => handleActivitySelect(camId, tracker.name, mode),
+            });
           }
         } else {
           const tracker = trackerGroupings.find((t) => t.id === Number(id));
           if (!tracker) continue;
           if (joinCameraTrackerMap.has(tracker.id)) {
-            for (const cam of tracker.cameras) {
+            const mode = getMode(tracker.id);
+            const sortedCameras = [...tracker.cameras].sort((a, b) => a.id - b.id);
+            for (const cam of sortedCameras) {
               const rowId = cam.id * 10000 + tracker.id;
               if (!addedIds.has(rowId)) {
                 addedIds.add(rowId);
@@ -126,7 +142,7 @@ export function useFilteredMenuItems({
                   id: rowId,
                   name: `${tracker.name} (${cam.name})`,
                   label: `${tracker.name} (${cam.name})`,
-                  onClick: noop,
+                  onClick: () => handleActivitySelect(cam.id, tracker.name, mode),
                 });
               }
             }

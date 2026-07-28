@@ -83,15 +83,12 @@ const getKeyboardShortcuts = (imagesInterval: number): KeyboardMenuData => ({
       label: "Redo",
     },
     {
-      keys: [{ type: "text", label: "E", fontSize: "16px" }],
-      label: "Edit selected event point",
+      keys: [{ type: "text", label: "I", fontSize: "16px" }],
+      label: "Create / accept event point on selected line",
     },
     {
-      keys: [
-        { type: "text", label: "Shift", fontSize: "12px" },
-        { type: "text", label: "G", fontSize: "16px" },
-      ],
-      label: "Go to specific time",
+      keys: [{ type: "text", label: "1-9, 0", fontSize: "14px" }],
+      label: "Select tracker line",
     },
     {
       keys: [{ type: "text", label: "H", fontSize: "16px" }],
@@ -215,22 +212,23 @@ const MonitorHeader = ({
     if (aiDiff !== 0) return aiDiff;
     return (b.options ? 1 : 0) - (a.options ? 1 : 0);
   });
+  const aiGroups = allGroups.filter((g) => g.hasAI);
 
   useEffect(() => {
-    if (cameraGroup === "tracker" && allGroups.length > 0) {
-      setCameraGroup(allGroups[0].value);
+    if (cameraGroup === "tracker" && aiGroups.length > 0) {
+      setCameraGroup(aiGroups[0].value);
     }
-  }, [cameraGroup, allGroups, setCameraGroup]);
-  const overflowGroups = allGroups.slice(MAX_VISIBLE);
+  }, [cameraGroup, aiGroups, setCameraGroup]);
+  const overflowGroups = aiGroups.slice(MAX_VISIBLE);
   const cameraGroups = [
-    ...allGroups.slice(0, MAX_VISIBLE),
+    ...aiGroups.slice(0, MAX_VISIBLE),
     ...(overflowGroups.length > 0
       ? [
           {
             value: "__other__",
             title: "Other",
             options: overflowGroups,
-            hasAI: overflowGroups.some((g) => g.hasAI),
+            hasAI: true,
           },
         ]
       : []),

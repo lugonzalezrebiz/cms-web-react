@@ -6,7 +6,6 @@ import { TimelineRowList } from "./TimelineRowList";
 import { TimelineTimeRuler } from "./TimelineTimeRuler";
 import { TimelineGridRows } from "./TimelineGridRows";
 import { TimelineMarker } from "./TimelineMarker";
-import { GoToTimeDialog } from "./GoToTimeDialog";
 
 export interface TimelineBodyViewProps {
   flatRows: FlatRow[];
@@ -56,8 +55,6 @@ export interface TimelineBodyViewProps {
   onEditEventPoint?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   onEnterEditMode?: (id: number) => void;
-  goToTimeOpen: boolean;
-  setGoToTimeOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onUserPan?: () => void;
   rowsLoadState?: boolean;
   loadState?: boolean;
@@ -108,8 +105,6 @@ const TimelineBody = ({
   onEditEventPoint,
   onConvertEventPointToLocal,
   onEnterEditMode,
-  goToTimeOpen,
-  setGoToTimeOpen,
   onUserPan,
   rowsLoadState,
   loadState,
@@ -219,14 +214,6 @@ const TimelineBody = ({
           />
         )}
       </Box>
-
-      <GoToTimeDialog
-        open={goToTimeOpen}
-        onClose={() => setGoToTimeOpen(false)}
-        onConfirm={(sec) => setMarkerSec(sec)}
-        timelineStartSec={timelineStartSec}
-        timelineEndSec={timelineEndSec}
-      />
     </Box>
   );
 };

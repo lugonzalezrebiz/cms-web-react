@@ -20,7 +20,6 @@ interface CameraItemProps {
   contextMenuItems: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
-  onAcceptTag?: (tagId: number) => void;
   onRejectTag?: (tagId: number) => void;
   cameraLabel?: boolean;
   disableOverlay?: boolean;
@@ -54,7 +53,6 @@ export const CameraItem = ({
   date,
   timestamp,
   onRemoveTag,
-  onAcceptTag,
   onRejectTag,
   cameraLabel = true,
   controlledOpen,
@@ -241,13 +239,11 @@ export const CameraItem = ({
                 gap: "4px",
                 bgcolor: tag.rejected
                   ? Colors.red
-                  : tag.accepted
-                    ? Colors.royalBlue
-                    : tag.overlapsUnreviewed
-                      ? Colors.leafGreen
-                      : tag.reviewed === false
-                        ? Colors.blue
-                        : Colors.main,
+                  : tag.overlapsUnreviewed
+                    ? Colors.leafGreen
+                    : tag.reviewed === false
+                      ? Colors.blue
+                      : Colors.main,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",
@@ -270,41 +266,22 @@ export const CameraItem = ({
                 {tag.name}
               </span>
               {tag.reviewed === false && !tag.rejected && !tag.accepted ? (
-                <>
-                  <Box
-                    component="span"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onAcceptTag?.(tag.id);
-                    }}
-                    sx={{
-                      cursor: "pointer",
-                      lineHeight: 1,
-                      opacity: 0.8,
-                      fontSize: 10,
-                      fontWeight: 700,
-                      "&:hover": { opacity: 1 },
-                    }}
-                  >
-                    ✓
-                  </Box>
-                  <Box
-                    component="span"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRejectTag?.(tag.id);
-                    }}
-                    sx={{
-                      cursor: "pointer",
-                      lineHeight: 1,
-                      opacity: 0.8,
-                      fontSize: 10,
-                      "&:hover": { opacity: 1 },
-                    }}
-                  >
-                    ✕
-                  </Box>
-                </>
+                <Box
+                  component="span"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRejectTag?.(tag.id);
+                  }}
+                  sx={{
+                    cursor: "pointer",
+                    lineHeight: 1,
+                    opacity: 0.8,
+                    fontSize: 10,
+                    "&:hover": { opacity: 1 },
+                  }}
+                >
+                  ✕
+                </Box>
               ) : (
                 tag.reviewed !== false &&
                 !tag.rejected && (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import type { CameraEventPoint, FlatRow } from "../types";
@@ -33,8 +33,9 @@ interface UseTimelineKeyboardParams {
   isPlaying: boolean;
   setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   cameraEventPoints?: CameraEventPoint[];
+  menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
   onDeleteEventPoint?: () => void;
-  onEditEventPoint?: () => void;
+  onAcceptEventPoint?: (id: number) => void;
   onUndo?: () => void;
   onRedo?: () => void;
 }
@@ -63,22 +64,22 @@ export const useTimelineKeyboard = ({
   isPlaying: _isPlaying,
   setIsPlaying,
   cameraEventPoints,
+  menuItems,
   onDeleteEventPoint,
-  onEditEventPoint,
+  onAcceptEventPoint,
   onUndo,
   onRedo,
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
-  const onEditRef = useRef(onEditEventPoint);
+  const onAcceptRef = useRef(onAcceptEventPoint);
   const onUndoRef = useRef(onUndo);
   const onRedoRef = useRef(onRedo);
   useEffect(() => {
     onDeleteRef.current = onDeleteEventPoint;
-    onEditRef.current = onEditEventPoint;
+    onAcceptRef.current = onAcceptEventPoint;
     onUndoRef.current = onUndo;
     onRedoRef.current = onRedo;
   });
-  const [goToTimeOpen, setGoToTimeOpen] = useState(false);
   const navigate = useNavigateWithQuery();
   const { imagesInterval } = useCompanyConfig();
 
@@ -96,43 +97,35 @@ export const useTimelineKeyboard = ({
     return () => el.removeEventListener("mousemove", onMouseMove);
   }, [gridRef]);
 
-  // ── "i" (punch-in cycle) and "o" (punch-out all) ────────────────────────
+  // ── "i" (new event point on selected line) and "o" (punch-out all) ──────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
-      // if (e.key === "i") {
-      //   if (iTrackId === null) return;
-      //   const currentMarker = markerSec ?? timelineStartSec;
-      //
-      //   if (activeSessionStarts[iTrackId] !== undefined) {
-      //     // Already building → deselect current (keep building), advance focus to next
-      //     setSelectedTracks((prev) => {
-      //       const next = new Set(prev);
-      //       next.delete(iTrackId);
-      //       return next;
-      //     });
-      //
-      //     const currentIndex = selectableRows.findIndex((r) => r.id === iTrackId);
-      //     const nextIndex = (currentIndex + 1) % selectableRows.length;
-      //     const nextTrack = selectableRows[nextIndex]?.id ?? null;
-      //     setITrackId(nextTrack);
-      //
-      //     // Select next track (re-select if already building); building starts on next "i"
-      //     if (nextTrack !== null) {
-      //       setSelectedTracks(new Set([nextTrack]));
-      //     }
-      //   } else {
-      //     // Not yet building → start session for focused track (single selection)
-      //     setSelectedTracks(new Set([iTrackId]));
-      //     setActiveSessionStarts((prev) => ({
-      //       ...prev,
-      //       [iTrackId]: currentMarker,
-      //     }));
-      //   }
-      // } else
-      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+      if (
+        e.key === "i" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        iTrackId !== null
+      ) {
+        const row = selectableRows.find((r) => r.id === iTrackId);
+        const currentMarker = markerSec ?? timelineStartSec;
+        const pending = cameraEventPoints?.find(
+          (ep) =>
+            ep.reviewed === false &&
+            !ep.rejected &&
+            ep.timeSec === currentMarker &&
+            ep.label === row?.name &&
+            (row?.parentCameraId === undefined ||
+              ep.cameraId === row.parentCameraId),
+        );
+        if (pending) onAcceptRef.current?.(pending.id);
+
+        const item = menuItems?.find((m) => m.id === iTrackId);
+        item?.onClick?.(iTrackId);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         onUndoRef.current?.();
       } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
@@ -140,13 +133,19 @@ export const useTimelineKeyboard = ({
         onRedoRef.current?.();
       } else if (e.key === "Delete") {
         onDeleteRef.current?.();
-      } else if (e.key === "e") {
-        onEditRef.current?.();
-      } else if (e.key === "G" && e.shiftKey) {
-        e.preventDefault();
-        setGoToTimeOpen(true);
       } else if (e.key === "h") {
         setMarkerSec(timelineStartSec);
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && /^[0-9]$/.test(e.key)) {
+        const position = e.key === "0" ? 10 : Number(e.key);
+        const row = selectableRows[position - 1];
+        if (row) {
+          setITrackId(row.id);
+          setSelectedTracks(
+            activeSessionStarts[row.id] !== undefined
+              ? new Set([row.id])
+              : new Set(),
+          );
+        }
       }
       // else if (e.key === "o") {
       //   const currentMarker = markerSec ?? timelineStartSec;
@@ -198,8 +197,9 @@ export const useTimelineKeyboard = ({
     setCompletedSessions,
     setShowPunchOut,
     punchOutTimerRef,
-    setGoToTimeOpen,
     setMarkerSec,
+    menuItems,
+    cameraEventPoints,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -318,6 +318,4 @@ export const useTimelineKeyboard = ({
     window.addEventListener("keydown", handleZoom);
     return () => window.removeEventListener("keydown", handleZoom);
   }, [zoom, panOffsetSec, totalSec, gridRef, setZoom, setPanOffsetSec]);
-
-  return { goToTimeOpen, setGoToTimeOpen };
 };

@@ -30,7 +30,6 @@ const CameraLayout = ({
   cameraEventPoints = [],
   markerSec = 0,
   onRemoveEventPoint,
-  onAcceptEventPoint,
   onRejectEventPoint,
   onExpandCamera: handleExpandCamera,
   loadState = false,
@@ -56,7 +55,6 @@ const CameraLayout = ({
   const sharedProps: SharedCameraItemProps = {
     expandCamera: handleExpandCamera,
     onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
-    onAcceptTag: (tagId) => onAcceptEventPoint?.(tagId),
     onRejectTag: (tagId) => onRejectEventPoint?.(tagId),
     getTagsForCamera,
     contextMenuItems,
