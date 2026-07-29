@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import TimelineBody from "./timeline/TimelineBody";
-import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
+import type { CameraEventPoint, PlayWindow, TimelineSnapshot } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
@@ -11,6 +11,7 @@ import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEvent
 import { useAutoSelectOnMarkerOverDiamond } from "./timeline/hooks/useAutoSelectOnMarkerOverDiamond";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
+import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
 
 const TimeLine = ({
   cameraEventPoints,
@@ -34,7 +35,7 @@ const TimeLine = ({
   expandedIcon = false,
   rowsLoadState,
   loadState,
-  blockForwardAdvance = false,
+  pendingReviewWallSec,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -60,7 +61,7 @@ const TimeLine = ({
   expandedIcon: boolean;
   rowsLoadState?: boolean;
   loadState?: boolean;
-  blockForwardAdvance?: boolean;
+  pendingReviewWallSec?: number;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -84,6 +85,11 @@ const TimeLine = ({
     : cameraRowsData.selectableRows;
   const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
 
+  // Playback window for the currently selected diamond — derived from `state` further
+  // below, so it's threaded into useTimelineBodyState via a ref (a reactive prop would
+  // be circular: the window depends on state.selectedEventPointId, which this hook owns).
+  const playWindowRef = useRef<PlayWindow | undefined>(undefined);
+
   const state = useTimelineBodyState({
     snapshot,
     flatRows,
@@ -91,7 +97,8 @@ const TimeLine = ({
     timelineStartSec,
     timelineEndSec,
     firstActivitySec,
-    blockForwardAdvance,
+    pendingReviewWallSec,
+    playWindowRef,
   });
 
   useMarkerSync({
@@ -123,9 +130,10 @@ const TimeLine = ({
     isActivityMode,
     iTrackId: state.iTrackId,
     setITrackId: state.setITrackId,
+    selectedEventPointId: state.selectedEventPointId,
+    setSelectedEventPointId: state.setSelectedEventPointId,
+    isPlaying: state.isPlaying,
   });
-
-  const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
 
   const handleStepMarker = (delta: number) => {
     const next = Math.max(
@@ -190,6 +198,34 @@ const TimeLine = ({
     [state.selectedEventPointId, mergedEventPoints, eventPointUnderMarker],
   );
 
+  // Reviewing a selected diamond: play its clip (RANGE bounds, or ±TAG_TOLERANCE_SEC
+  // around a POINT) instead of the whole timeline, then snap back to its center.
+  const playWindow = useMemo<PlayWindow | undefined>(() => {
+    if (!targetEventPoint) return undefined;
+    if (targetEventPoint.mode === "RANGE" && targetEventPoint.endSec > targetEventPoint.timeSec) {
+      return {
+        start: targetEventPoint.timeSec,
+        end: targetEventPoint.endSec,
+        center: (targetEventPoint.timeSec + targetEventPoint.endSec) / 2,
+      };
+    }
+    return {
+      start: Math.max(timelineStartSec, targetEventPoint.timeSec - TAG_TOLERANCE_SEC),
+      end: Math.min(timelineEndSec, targetEventPoint.timeSec + TAG_TOLERANCE_SEC),
+      center: targetEventPoint.timeSec,
+    };
+  }, [targetEventPoint, timelineStartSec, timelineEndSec]);
+
+  useEffect(() => {
+    playWindowRef.current = playWindow;
+  }, [playWindow]);
+
+  const handleTogglePlay = () => {
+    const next = !state.isPlaying;
+    if (next && playWindow) state.setMarkerSec(playWindow.start);
+    state.setIsPlaying(next);
+  };
+
   const handleDeleteEventPoint = () => {
     if (!targetEventPoint?.reviewed) return;
     onRemoveEventPoint?.(targetEventPoint.id);
@@ -224,8 +260,6 @@ const TimeLine = ({
     setMarkerSec: state.setMarkerSec,
     setShowPunchOut: state.setShowPunchOut,
     punchOutTimerRef: state.punchOutTimerRef,
-    isPlaying: state.isPlaying,
-    setIsPlaying: state.setIsPlaying,
     zoom: state.zoom,
     setZoom: state.setZoom,
     panOffsetSec: state.panOffsetSec,
@@ -238,6 +272,7 @@ const TimeLine = ({
     onAcceptEventPoint,
     onUndo,
     onRedo,
+    onTogglePlay: handleTogglePlay,
   });
 
   return (
@@ -313,6 +348,7 @@ const TimeLine = ({
         onEnterEditMode={handleEnterEditMode}
         rowsLoadState={rowsLoadState}
         loadState={loadState}
+        pendingReviewWallSec={pendingReviewWallSec}
       />
     </Box>
   );

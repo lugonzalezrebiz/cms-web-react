@@ -953,6 +953,40 @@ test('Space toggles Play/Pause', async ({ page }) => {
   await expect(page.getByAltText('Play')).toBeVisible({ timeout: 3_000 });
 });
 
+test('pressing Space with a diamond selected jumps the marker to the start of its review clip, not forward', async ({ page }) => {
+  // TimeLine's playWindow (useTimelineBodyState) scopes playback to the selected
+  // diamond's own clip: handleTogglePlay snaps the marker to playWindow.start (its own
+  // timeSec for a RANGE point, or timeSec - TAG_TOLERANCE_SEC for a POINT) synchronously,
+  // *before* the 1s-interval ticking begins — so right after Space, the marker should
+  // never read later than the diamond's own time, only at or before it.
+  await waitForTimelineDataReady(page);
+
+  const reviewedButton = page.getByRole('button', { name: /, reviewed$/ }).first();
+  await reviewedButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const count = await reviewedButton.count();
+  test.skip(count === 0, 'no reviewed event points available in this environment');
+
+  const label = await reviewedButton.getAttribute('aria-label');
+  const m = label?.match(/ at (\d{2}):(\d{2}):(\d{2}),/);
+  test.skip(!m, 'could not read event point time from aria-label');
+  const epSec = Number(m![1]) * 3600 + Number(m![2]) * 60 + Number(m![3]);
+
+  await reviewedButton.dispatchEvent('click');
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  await expect(timeDisplay).toHaveText(`${m![1]}:${m![2]}:${m![3]}`, { timeout: 3_000 });
+
+  await page.keyboard.press('Space');
+  await expect(page.getByAltText('Pause')).toBeVisible({ timeout: 1_000 });
+
+  const text = await timeDisplay.textContent();
+  const [h, mnt, s] = (text ?? '00:00:00').split(':').map(Number);
+  const sec = h * 3600 + mnt * 60 + s;
+  expect(sec).toBeLessThanOrEqual(epSec);
+
+  // Restore state
+  await page.keyboard.press('Space');
+});
+
 test('ArrowRight and ArrowLeft move the timeline marker', async ({ page }) => {
   await waitForTimelineDataReady(page);
   const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
@@ -1179,13 +1213,35 @@ test('removing a tag from the camera chip also removes it from the timeline', as
 // tag's name span) once it's visible on a camera cell. Skips the test gracefully if no
 // such point/chip is available.
 async function selectUnreviewedTagChip(page: Page) {
-  const unreviewedButton = page.getByRole('button', { name: /, unreviewed$/ }).first();
-  await unreviewedButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
-  const count = await unreviewedButton.count();
+  const unreviewedButtons = page.getByRole('button', { name: /, unreviewed$/ });
+  await unreviewedButtons.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const count = await unreviewedButtons.count();
   test.skip(count === 0, 'no unreviewed event points available in this environment');
 
-  const label = await unreviewedButton.getAttribute('aria-label');
-  const tagName = label?.split(' at ')[0] ?? '';
+  // pendingReviewWallSec (Monitor/index.tsx) blocks selecting anything later than the
+  // globally earliest unresolved point — EventRow's selectEp silently no-ops if you try
+  // to select past it. DOM order isn't guaranteed chronological, so pick the earliest
+  // by parsing the "<label> at HH:MM:SS, unreviewed" aria-label, not just .first().
+  const labels = await unreviewedButtons.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('aria-label') ?? ''),
+  );
+  const parseTimeSec = (label: string) => {
+    const m = label.match(/ at (\d{2}):(\d{2}):(\d{2}),/);
+    return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : Infinity;
+  };
+  let earliestIndex = 0;
+  let earliestSec = Infinity;
+  labels.forEach((label, i) => {
+    const sec = parseTimeSec(label);
+    if (sec < earliestSec) {
+      earliestSec = sec;
+      earliestIndex = i;
+    }
+  });
+
+  const unreviewedButton = unreviewedButtons.nth(earliestIndex);
+  const label = labels[earliestIndex];
+  const tagName = label.split(' at ')[0] ?? '';
   test.skip(!tagName, 'could not read event point label');
 
   await unreviewedButton.dispatchEvent('click');
@@ -1245,11 +1301,13 @@ test('rejecting an unreviewed tag turns it red and hides the buttons', async ({ 
 });
 
 // ─── Forward-navigation gating on pending (blue) tags ─────────────────────────
-// Monitor/index.tsx's hasPendingReview blocks any forward marker movement
-// (useTimelineBodyState's guardedSetMarkerSec) while an on-screen camera has an
-// unreviewed, undecided tag at the current marker position — accepting or rejecting it
-// clears the block. Only genuinely pending (blue) tags count; already-reviewed
-// (orange/green) ones never block.
+// Monitor/index.tsx's pendingReviewWallSec is the timeSec of the earliest unresolved
+// (unreviewed, undecided) tag in the current view — useTimelineBodyState's
+// guardedSetMarkerSec clamps any forward marker movement (drag, arrows, Step forward,
+// play) to that position, and EventRow's selectEp refuses to select diamonds past it.
+// Accepting (via "i") or rejecting the blocking tag moves the wall forward (or clears
+// it). Only genuinely pending (blue) tags count; already-reviewed (orange/green) ones
+// never form a wall.
 
 test('timeline cannot advance forward while a pending unreviewed tag is on screen', async ({ page }) => {
   await waitForTimelineDataReady(page);
@@ -1278,8 +1336,9 @@ test('accepting the blocking tag (via "i") unblocks forward navigation', async (
   const blocked = await timeDisplay.textContent();
 
   await page.keyboard.press('i');
-  // Wait for the accept to actually re-render (clearing blockForwardAdvance) before
-  // advancing — otherwise Step forward can race the state update and stay blocked.
+  // Wait for the accept to actually re-render (moving pendingReviewWallSec past this
+  // point) before advancing — otherwise Step forward can race the state update and
+  // stay blocked.
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
 
   await page.getByAltText('Step forward').click();
@@ -1296,8 +1355,9 @@ test('rejecting the blocking tag unblocks forward navigation', async ({ page }) 
   const blocked = await timeDisplay.textContent();
 
   await chip.getByText('✕').click();
-  // Wait for the reject to actually re-render (clearing blockForwardAdvance) before
-  // advancing — otherwise Step forward can race the state update and stay blocked.
+  // Wait for the reject to actually re-render (moving pendingReviewWallSec past this
+  // point) before advancing — otherwise Step forward can race the state update and
+  // stay blocked.
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
 
   await page.getByAltText('Step forward').click();

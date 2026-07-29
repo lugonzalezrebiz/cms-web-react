@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type React from "react";
-import type { FlatRow, TimelineSnapshot } from "../types";
+import type { FlatRow, PlayWindow, TimelineSnapshot } from "../types";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
@@ -9,7 +9,16 @@ interface UseTimelineBodyStateParams {
   timelineStartSec: number;
   timelineEndSec: number;
   firstActivitySec: number;
-  blockForwardAdvance?: boolean;
+  // Earliest timeSec of an unresolved (unreviewed, undecided) event point in the current
+  // view — the marker can never be moved past it until it's accepted or rejected.
+  // undefined means nothing is pending — no restriction.
+  pendingReviewWallSec?: number;
+  // When a diamond is selected, playback is scoped to reviewing just that clip (start,
+  // end, and the position the marker snaps back to once playback finishes) instead of
+  // the whole timeline. A ref (not a reactive value) because the window is derived from
+  // this hook's own selectedEventPointId/resolvedMarkerSec — a plain prop would be
+  // circular. undefined/.current undefined means play across the whole timeline.
+  playWindowRef?: React.RefObject<PlayWindow | undefined>;
 }
 
 export const useTimelineBodyState = ({
@@ -17,7 +26,8 @@ export const useTimelineBodyState = ({
   timelineStartSec,
   timelineEndSec,
   firstActivitySec,
-  blockForwardAdvance = false,
+  pendingReviewWallSec,
+  playWindowRef,
 }: UseTimelineBodyStateParams) => {
   const totalSec = 24 * 3600;
   const startSec = 0;
@@ -131,7 +141,7 @@ export const useTimelineBodyState = ({
     setOpenDialog(true);
   };
 
-  const STEP_SEC = 5;
+  const STEP_SEC = 1;
 
   const guardedSetMarkerSec = useCallback<
     React.Dispatch<React.SetStateAction<number | null>>
@@ -143,23 +153,41 @@ export const useTimelineBodyState = ({
             ? (update as (p: number | null) => number | null)(prev)
             : update;
         if (candidate === null) return candidate;
-        const resolvedPrev = prev ?? timelineStartSec;
-        if (blockForwardAdvance && candidate > resolvedPrev) return prev;
+        if (
+          pendingReviewWallSec !== undefined &&
+          candidate > pendingReviewWallSec
+        ) {
+          return pendingReviewWallSec;
+        }
         return candidate;
       });
     },
-    [blockForwardAdvance, timelineStartSec],
+    [pendingReviewWallSec],
   );
 
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
-      if (blockForwardAdvance) {
-        setIsPlaying(false);
-        return;
-      }
       setMarkerSec((prev) => {
-        const next = (prev ?? timelineStartSec) + STEP_SEC;
+        const base = prev ?? timelineStartSec;
+        const next = base + STEP_SEC;
+
+        // Reviewing a selected clip: play only within its window, then snap back to
+        // its center once done — not gated by pendingReviewWallSec, since watching the
+        // flagged clip itself (including just past it) is exactly what review requires.
+        const playWindow = playWindowRef?.current;
+        if (playWindow) {
+          if (next >= playWindow.end) {
+            setIsPlaying(false);
+            return playWindow.center;
+          }
+          return next;
+        }
+
+        if (pendingReviewWallSec !== undefined && next > pendingReviewWallSec) {
+          setIsPlaying(false);
+          return pendingReviewWallSec > base ? pendingReviewWallSec : base;
+        }
         if (next >= timelineEndSec) {
           setIsPlaying(false);
           return timelineEndSec;
@@ -168,7 +196,7 @@ export const useTimelineBodyState = ({
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [isPlaying, timelineStartSec, timelineEndSec, blockForwardAdvance]);
+  }, [isPlaying, timelineStartSec, timelineEndSec, pendingReviewWallSec]);
 
   // Enable auto-follow whenever playback starts
   useEffect(() => {

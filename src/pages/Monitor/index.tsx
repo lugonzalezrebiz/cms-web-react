@@ -193,21 +193,18 @@ const Monitor = () => {
     [activeCameras],
   );
 
-  const hasPendingReview = useMemo(
-    () =>
-      activeCameras.some((camera) =>
-        filteredEventPoints.some(
-          (ep) =>
-            ep.cameraId === camera.id &&
-            ep.reviewed === false &&
-            !ep.rejected &&
-            !ep.accepted &&
-            markerSec >= ep.startSec &&
-            markerSec <= ep.endSec,
-        ),
-      ),
-    [activeCameras, filteredEventPoints, markerSec],
-  );
+  // Earliest timeSec of an unresolved (unreviewed, undecided) event point in the
+  // currently selected tracker/camera view — the marker (drag, arrows, step, diamond
+  // selection) can never move past it until it's accepted (via "i") or rejected.
+  // undefined means nothing pending — no restriction.
+  const pendingReviewWallSec = useMemo(() => {
+    let wall: number | undefined;
+    for (const ep of filteredEventPoints) {
+      if (ep.reviewed !== false || ep.rejected || ep.accepted) continue;
+      if (wall === undefined || ep.timeSec < wall) wall = ep.timeSec;
+    }
+    return wall;
+  }, [filteredEventPoints]);
 
   useEffect(() => {
     if (!isCameraReloading) return;
@@ -467,7 +464,7 @@ const Monitor = () => {
       expandedIcon: !expandedCamera,
       rowsLoadState: isTrackersLoading,
       loadState: isMonitoringLoading || isTrackersLoading,
-      blockForwardAdvance: hasPendingReview,
+      pendingReviewWallSec,
     }),
     [
       snapshot,
@@ -492,7 +489,7 @@ const Monitor = () => {
       expandedCamera,
       isTrackersLoading,
       isMonitoringLoading,
-      hasPendingReview,
+      pendingReviewWallSec,
     ],
   );
 

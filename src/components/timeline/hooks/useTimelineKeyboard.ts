@@ -30,14 +30,13 @@ interface UseTimelineKeyboardParams {
   setPanOffsetSec: React.Dispatch<React.SetStateAction<number>>;
   totalSec: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
-  isPlaying: boolean;
-  setIsPlaying: React.Dispatch<React.SetStateAction<boolean>>;
   cameraEventPoints?: CameraEventPoint[];
   menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
   onDeleteEventPoint?: () => void;
   onAcceptEventPoint?: (id: number) => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onTogglePlay?: () => void;
 }
 
 export const useTimelineKeyboard = ({
@@ -61,24 +60,25 @@ export const useTimelineKeyboard = ({
   setPanOffsetSec,
   totalSec,
   gridRef,
-  isPlaying: _isPlaying,
-  setIsPlaying,
   cameraEventPoints,
   menuItems,
   onDeleteEventPoint,
   onAcceptEventPoint,
   onUndo,
   onRedo,
+  onTogglePlay,
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
   const onUndoRef = useRef(onUndo);
   const onRedoRef = useRef(onRedo);
+  const onTogglePlayRef = useRef(onTogglePlay);
   useEffect(() => {
     onDeleteRef.current = onDeleteEventPoint;
     onAcceptRef.current = onAcceptEventPoint;
     onUndoRef.current = onUndo;
     onRedoRef.current = onRedo;
+    onTogglePlayRef.current = onTogglePlay;
   });
   const navigate = useNavigateWithQuery();
   const { imagesInterval } = useCompanyConfig();
@@ -280,11 +280,11 @@ export const useTimelineKeyboard = ({
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
       e.preventDefault();
-      setIsPlaying((prev) => !prev);
+      onTogglePlayRef.current?.();
     };
     window.addEventListener("keydown", handleSpace);
     return () => window.removeEventListener("keydown", handleSpace);
-  }, [setIsPlaying]);
+  }, []);
 
   // ── + / - keys: zoom centered on mouse position ───────────────────────────
   useEffect(() => {

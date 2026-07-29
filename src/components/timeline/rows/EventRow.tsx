@@ -281,6 +281,7 @@ export interface EventRowProps {
   onExitEditMode: () => void;
   onStartMove: (epId: number, e: React.MouseEvent, maxSec: number) => void;
   onEditEventPoint?: (id: number) => void;
+  pendingReviewWallSec?: number;
 }
 
 export const EventRow = memo(
@@ -302,6 +303,7 @@ export const EventRow = memo(
     onExitEditMode,
     onStartMove,
     onEditEventPoint,
+    pendingReviewWallSec,
   }: EventRowProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -533,11 +535,16 @@ export const EventRow = memo(
 
     const selectEp = useCallback(
       (ep: CameraEventPoint) => {
+        if (
+          pendingReviewWallSec !== undefined &&
+          ep.timeSec > pendingReviewWallSec
+        )
+          return;
         setMarkerSec(ep.timeSec);
         setSelectedEventPointId(ep.id);
         setITrackId(row.id);
       },
-      [setMarkerSec, setSelectedEventPointId, setITrackId, row.id],
+      [setMarkerSec, setSelectedEventPointId, setITrackId, row.id, pendingReviewWallSec],
     );
 
     // -------------------------------------------------------------------------
@@ -583,11 +590,15 @@ export const EventRow = memo(
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
         const ep = getHitEp(px, py, rect.width, rect.height);
-        if (ep?.mode === "RANGE" && ep.reviewed) {
+        if (
+          ep?.mode === "RANGE" &&
+          ep.reviewed &&
+          !(pendingReviewWallSec !== undefined && ep.timeSec > pendingReviewWallSec)
+        ) {
           onEditEventPoint?.(ep.id);
         }
       },
-      [getHitEp, onEditEventPoint],
+      [getHitEp, onEditEventPoint, pendingReviewWallSec],
     );
 
     const handleMouseDown = useCallback(

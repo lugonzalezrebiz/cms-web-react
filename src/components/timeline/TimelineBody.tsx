@@ -58,6 +58,7 @@ export interface TimelineBodyViewProps {
   onUserPan?: () => void;
   rowsLoadState?: boolean;
   loadState?: boolean;
+  pendingReviewWallSec?: number;
 }
 
 const TimelineBody = ({
@@ -108,6 +109,7 @@ const TimelineBody = ({
   onUserPan,
   rowsLoadState,
   loadState,
+  pendingReviewWallSec,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -197,6 +199,7 @@ const TimelineBody = ({
           onConvertEventPointToLocal={onConvertEventPointToLocal}
           onEnterEditMode={onEnterEditMode}
           loadState={loadState}
+          pendingReviewWallSec={pendingReviewWallSec}
         />
 
         {!loadState && (
