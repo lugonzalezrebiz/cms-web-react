@@ -237,13 +237,11 @@ export const CameraItem = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                bgcolor: tag.rejected
-                  ? Colors.red
-                  : tag.overlapsUnreviewed
-                    ? Colors.leafGreen
-                    : tag.reviewed === false
-                      ? Colors.blue
-                      : Colors.main,
+                bgcolor: tag.overlapsUnreviewed
+                  ? Colors.leafGreen
+                  : tag.reviewed === false
+                    ? Colors.blue
+                    : Colors.main,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",
@@ -265,7 +263,7 @@ export const CameraItem = ({
               >
                 {tag.name}
               </span>
-              {tag.reviewed === false && !tag.rejected && !tag.accepted ? (
+              {tag.reviewed === false && !tag.rejected ? (
                 <Box
                   component="span"
                   onClick={(e) => {

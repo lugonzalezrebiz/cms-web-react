@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type React from "react";
 import type { FlatRow, PlayWindow, TimelineSnapshot } from "../types";
+import useCompanyConfig from "../../../hooks/useCompanyConfig";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
@@ -29,6 +30,7 @@ export const useTimelineBodyState = ({
   pendingReviewWallSec,
   playWindowRef,
 }: UseTimelineBodyStateParams) => {
+  const { imagesInterval } = useCompanyConfig();
   const totalSec = 24 * 3600;
   const startSec = 0;
 
@@ -101,6 +103,12 @@ export const useTimelineBodyState = ({
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
 
+  const DIAMOND_HALF_PX = 17 / Math.SQRT2;
+  const effectivePendingReviewWallSec =
+    pendingReviewWallSec !== undefined
+      ? pendingReviewWallSec + DIAMOND_HALF_PX / pixelsPerSecond
+      : undefined;
+
   const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
   const MIN_PIXELS_PER_TICK = 60;
   const tickStepSec = TICK_STEPS.find((s) => s * pixelsPerSecond >= MIN_PIXELS_PER_TICK) ?? 21600;
@@ -141,7 +149,7 @@ export const useTimelineBodyState = ({
     setOpenDialog(true);
   };
 
-  const STEP_SEC = 1;
+  const STEP_SEC = imagesInterval;
 
   const guardedSetMarkerSec = useCallback<
     React.Dispatch<React.SetStateAction<number | null>>
@@ -154,15 +162,15 @@ export const useTimelineBodyState = ({
             : update;
         if (candidate === null) return candidate;
         if (
-          pendingReviewWallSec !== undefined &&
-          candidate > pendingReviewWallSec
+          effectivePendingReviewWallSec !== undefined &&
+          candidate > effectivePendingReviewWallSec
         ) {
-          return pendingReviewWallSec;
+          return effectivePendingReviewWallSec;
         }
         return candidate;
       });
     },
-    [pendingReviewWallSec],
+    [effectivePendingReviewWallSec],
   );
 
   useEffect(() => {
@@ -184,9 +192,14 @@ export const useTimelineBodyState = ({
           return next;
         }
 
-        if (pendingReviewWallSec !== undefined && next > pendingReviewWallSec) {
+        if (
+          effectivePendingReviewWallSec !== undefined &&
+          next > effectivePendingReviewWallSec
+        ) {
           setIsPlaying(false);
-          return pendingReviewWallSec > base ? pendingReviewWallSec : base;
+          return effectivePendingReviewWallSec > base
+            ? effectivePendingReviewWallSec
+            : base;
         }
         if (next >= timelineEndSec) {
           setIsPlaying(false);
@@ -196,7 +209,13 @@ export const useTimelineBodyState = ({
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [isPlaying, timelineStartSec, timelineEndSec, pendingReviewWallSec]);
+  }, [
+    isPlaying,
+    timelineStartSec,
+    timelineEndSec,
+    effectivePendingReviewWallSec,
+    imagesInterval,
+  ]);
 
   // Enable auto-follow whenever playback starts
   useEffect(() => {
@@ -261,6 +280,7 @@ export const useTimelineBodyState = ({
     setDragStartOffset,
     markerSec,
     setMarkerSec: guardedSetMarkerSec,
+    setMarkerSecRaw: setMarkerSec,
     selectedEventPointId,
     setSelectedEventPointId,
     editingEventPointId,
@@ -293,5 +313,6 @@ export const useTimelineBodyState = ({
     handleOnOpenDialog,
     openDialog,
     disableAutoFollow,
+    pendingReviewWallSec: effectivePendingReviewWallSec,
   };
 };

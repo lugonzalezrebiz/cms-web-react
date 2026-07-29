@@ -1,7 +1,11 @@
 import { Box } from "@mui/material";
 import { memo, useEffect, useMemo, useRef } from "react";
 import TimelineBody from "./timeline/TimelineBody";
-import type { CameraEventPoint, PlayWindow, TimelineSnapshot } from "./timeline/types";
+import type {
+  CameraEventPoint,
+  PlayWindow,
+  TimelineSnapshot,
+} from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
@@ -85,10 +89,8 @@ const TimeLine = ({
     : cameraRowsData.selectableRows;
   const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
 
-  // Playback window for the currently selected diamond — derived from `state` further
-  // below, so it's threaded into useTimelineBodyState via a ref (a reactive prop would
-  // be circular: the window depends on state.selectedEventPointId, which this hook owns).
   const playWindowRef = useRef<PlayWindow | undefined>(undefined);
+  const suppressAutoSelectUntilRef = useRef(0);
 
   const state = useTimelineBodyState({
     snapshot,
@@ -116,9 +118,12 @@ const TimeLine = ({
 
   useAutoSelectOnEventPoint({
     cameraEventPoints: mergedEventPoints,
+    flatRows,
+    isActivityMode,
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
     setSelectedEventPointId: state.setSelectedEventPointId,
+    suppressUntilRef: suppressAutoSelectUntilRef,
   });
 
   useAutoSelectOnMarkerOverDiamond({
@@ -202,7 +207,10 @@ const TimeLine = ({
   // around a POINT) instead of the whole timeline, then snap back to its center.
   const playWindow = useMemo<PlayWindow | undefined>(() => {
     if (!targetEventPoint) return undefined;
-    if (targetEventPoint.mode === "RANGE" && targetEventPoint.endSec > targetEventPoint.timeSec) {
+    if (
+      targetEventPoint.mode === "RANGE" &&
+      targetEventPoint.endSec > targetEventPoint.timeSec
+    ) {
       return {
         start: targetEventPoint.timeSec,
         end: targetEventPoint.endSec,
@@ -210,8 +218,14 @@ const TimeLine = ({
       };
     }
     return {
-      start: Math.max(timelineStartSec, targetEventPoint.timeSec - TAG_TOLERANCE_SEC),
-      end: Math.min(timelineEndSec, targetEventPoint.timeSec + TAG_TOLERANCE_SEC),
+      start: Math.max(
+        timelineStartSec,
+        targetEventPoint.timeSec - TAG_TOLERANCE_SEC,
+      ),
+      end: Math.min(
+        timelineEndSec,
+        targetEventPoint.timeSec + TAG_TOLERANCE_SEC,
+      ),
       center: targetEventPoint.timeSec,
     };
   }, [targetEventPoint, timelineStartSec, timelineEndSec]);
@@ -273,6 +287,12 @@ const TimeLine = ({
     onUndo,
     onRedo,
     onTogglePlay: handleTogglePlay,
+    setMarkerSecRaw: state.setMarkerSecRaw,
+    suppressAutoSelectUntilRef,
+    selectedEventPointId: state.selectedEventPointId,
+    setSelectedEventPointId: state.setSelectedEventPointId,
+    flatRows,
+    isActivityMode,
   });
 
   return (
@@ -348,7 +368,7 @@ const TimeLine = ({
         onEnterEditMode={handleEnterEditMode}
         rowsLoadState={rowsLoadState}
         loadState={loadState}
-        pendingReviewWallSec={pendingReviewWallSec}
+        pendingReviewWallSec={state.pendingReviewWallSec}
       />
     </Box>
   );

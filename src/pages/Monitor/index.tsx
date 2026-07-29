@@ -10,7 +10,10 @@ import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraE
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
 import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
-import { timeStringToSec } from "../../components/timeline/utils";
+import {
+  timeStringToSec,
+  hasReviewedTwin,
+} from "../../components/timeline/utils";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
@@ -107,7 +110,12 @@ const Monitor = () => {
         if (acceptedEventIds.has(ep.id)) return { ...ep, accepted: true };
         return ep;
       }),
-    [cameraEventPoints, preloadedEventPoints, acceptedEventIds, rejectedEventIds],
+    [
+      cameraEventPoints,
+      preloadedEventPoints,
+      acceptedEventIds,
+      rejectedEventIds,
+    ],
   );
 
   const unreviewedTrackerIds = useMemo(() => {
@@ -121,7 +129,8 @@ const Monitor = () => {
         (ep) =>
           !ep.reviewed &&
           ep.label === t.name &&
-          (!cameraIds || cameraIds.has(ep.cameraId)),
+          (!cameraIds || cameraIds.has(ep.cameraId)) &&
+          !hasReviewedTwin(ep, allEventPoints),
       );
       if (hasUnreviewed) ids.add(t.id);
     }
@@ -193,17 +202,17 @@ const Monitor = () => {
     [activeCameras],
   );
 
-  // Earliest timeSec of an unresolved (unreviewed, undecided) event point in the
-  // currently selected tracker/camera view — the marker (drag, arrows, step, diamond
-  // selection) can never move past it until it's accepted (via "i") or rejected.
-  // undefined means nothing pending — no restriction.
   const pendingReviewWallSec = useMemo(() => {
-    let wall: number | undefined;
+    let earliest: (typeof filteredEventPoints)[number] | undefined;
     for (const ep of filteredEventPoints) {
-      if (ep.reviewed !== false || ep.rejected || ep.accepted) continue;
-      if (wall === undefined || ep.timeSec < wall) wall = ep.timeSec;
+      if (ep.reviewed !== false || ep.rejected) continue;
+      if (hasReviewedTwin(ep, filteredEventPoints)) continue;
+      if (earliest === undefined || ep.timeSec < earliest.timeSec) earliest = ep;
     }
-    return wall;
+    if (!earliest) return undefined;
+    return earliest.mode === "RANGE" && earliest.endSec > earliest.timeSec
+      ? earliest.endSec
+      : earliest.timeSec;
   }, [filteredEventPoints]);
 
   useEffect(() => {
@@ -340,8 +349,6 @@ const Monitor = () => {
       broadcastMutation,
     );
 
-  // const { transactions } = useSalesTransactions(monitoringID);
-
   const { timestamp, setTimestamp } = useMarkerState();
 
   const timelineStartSec = timeStringToSec(
@@ -387,8 +394,6 @@ const Monitor = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredEventPoints]);
-
-  // const { current, goTo, prev, next, currentCameraId, currentTimeSec, attended, toggleAttended, handleDone: handlePosDone } = usePosCarousel(transactions, setPosMarkerSec);
 
   const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
     useTimelineMarker({
@@ -504,21 +509,11 @@ const Monitor = () => {
 
     const seen = new Set<string>();
     return activePoints
-      .sort((a, b) => (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0))
+      .sort(
+        (a, b) =>
+          (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0),
+      )
       .filter((ep) => {
-        const isUndecidedUnreviewed =
-          ep.reviewed === false && !ep.accepted && !ep.rejected;
-        const hasReviewedTwin =
-          isUndecidedUnreviewed &&
-          activePoints.some(
-            (other) =>
-              other.id !== ep.id &&
-              other.label === ep.label &&
-              other.reviewed === true &&
-              other.timeSec === ep.timeSec,
-          );
-        if (hasReviewedTwin) return true;
-
         if (seen.has(ep.label)) return false;
         seen.add(ep.label);
         return true;
@@ -537,7 +532,7 @@ const Monitor = () => {
               other.id !== ep.id &&
               other.cameraId === ep.cameraId &&
               !other.reviewed &&
-              other.timeSec === ep.timeSec,
+              Math.abs(other.timeSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
           ),
         onClick: () => {},
       }));

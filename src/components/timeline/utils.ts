@@ -1,3 +1,19 @@
+import type { CameraEventPoint } from "./types";
+import { TAG_TOLERANCE_SEC } from "../../hooks/useTagsForCamera";
+
+export const hasReviewedTwin = (
+  ep: CameraEventPoint,
+  points: CameraEventPoint[],
+): boolean =>
+  points.some(
+    (other) =>
+      other.id !== ep.id &&
+      other.cameraId === ep.cameraId &&
+      other.label === ep.label &&
+      other.reviewed === true &&
+      Math.abs(other.timeSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
+  );
+
 export const secToTimeString = (sec: number): string => {
   const h = Math.floor(sec / 3600).toString().padStart(2, "0");
   const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");

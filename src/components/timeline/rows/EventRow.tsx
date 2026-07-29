@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
 import { secToTimeString, secToPixelX } from "../utils";
+import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
 
 const ROW_HEIGHT = 32.8;
 const DIAMOND_SIZE = 17;
@@ -167,7 +168,7 @@ function drawFrame(
             (other) =>
               other.id !== ep.id &&
               !other.reviewed &&
-              other.timeSec === ep.timeSec,
+              Math.abs(other.timeSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
           );
         const activeColor = overlapsBlue
           ? Colors.leafGreen

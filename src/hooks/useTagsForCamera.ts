@@ -17,6 +17,9 @@ export const useTagsForCamera = (
         return markerSec >= ep.startSec && markerSec <= ep.endSec;
       });
 
+      // Only one chip per label, ever — reviewed (green/orange) wins over unreviewed
+      // (blue) when both exist for the same label, so sort reviewed first and keep
+      // just the first occurrence per label.
       const seen = new Set<string>();
       return activePoints
         .sort(
@@ -24,24 +27,6 @@ export const useTagsForCamera = (
             (a.reviewed === false ? 1 : 0) - (b.reviewed === false ? 1 : 0),
         )
         .filter((ep) => {
-          // An undecided unreviewed point that overlaps a reviewed twin (the
-          // green tag) must stay visible alongside it so it can be
-          // accepted/rejected — otherwise it's stuck blocking the timeline
-          // with no way to resolve it. Once decided, fall back to the normal
-          // per-label dedupe so only the green tag remains.
-          const isUndecidedUnreviewed =
-            ep.reviewed === false && !ep.accepted && !ep.rejected;
-          const hasReviewedTwin =
-            isUndecidedUnreviewed &&
-            activePoints.some(
-              (other) =>
-                other.id !== ep.id &&
-                other.label === ep.label &&
-                other.reviewed === true &&
-                other.timeSec === ep.timeSec,
-            );
-          if (hasReviewedTwin) return true;
-
           if (seen.has(ep.label)) return false;
           seen.add(ep.label);
           return true;
@@ -60,7 +45,7 @@ export const useTagsForCamera = (
                 other.id !== ep.id &&
                 other.label === ep.label &&
                 !other.reviewed &&
-                other.timeSec === ep.timeSec,
+                Math.abs(other.timeSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
             ),
           onClick: () => {},
         }));

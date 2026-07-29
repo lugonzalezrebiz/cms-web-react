@@ -1197,12 +1197,20 @@ test('removing a tag from the camera chip also removes it from the timeline', as
 
 // ─── Camera tag accept (via "i") / reject (AI review) ─────────────────────────
 // CameraItem no longer renders an accept button — pressing "i" (useTimelineKeyboard)
-// while the tag's line/time is selected is the accept action: it marks the underlying
-// point accepted (Monitor/index.tsx's handleAcceptEventPoint, local-only, reset on
-// reload) AND creates a reviewed:true duplicate at the same time/camera/label. Only a
-// reject "✕" button remains on the chip for tags whose point is unreviewed
-// (reviewed===false) and not yet decided — onRejectTag flows up to
-// handleRejectEventPoint, which turns the chip Colors.red (#E80000 → rgb(232, 0, 0)).
+// is the accept action. It acts on whichever point is currently selected
+// (selectedEventPointId, set by clicking the point's a11y button or diamond — not by
+// exact marker-time matching), and does three things: (1) marks it accepted
+// (Monitor/index.tsx's handleAcceptEventPoint — local-only, reset on reload — the
+// original point's own `reviewed` flag never flips), (2) creates a brand new
+// reviewed:true duplicate at the same time/camera/label via the tracker's menu item,
+// bound to the ORIGINAL point's own cameraId (not the row's tracker id, which matters
+// for activity-mode rows spanning multiple cameras), and (3) jumps the marker forward
+// to and selects the next still-genuinely-pending point (one with no reviewed twin), if
+// any exists. "Accepted" is therefore always derived live from the presence of a
+// reviewed twin (hasReviewedTwin), never a permanent flag — deleting the twin reverts
+// the original point to pending. Only a reject "✕" button remains on the chip for tags
+// whose point is unreviewed (reviewed===false) and not yet decided — onRejectTag flows
+// up to handleRejectEventPoint, which just hides the button; the chip stays blue.
 // Accepting resolves to Colors.leafGreen (#40B731 → rgb(64, 183, 49)) because the
 // surviving (reviewed) duplicate still overlaps the original, still-unreviewed point
 // (useTagsForCamera's overlapsUnreviewed).
@@ -1288,7 +1296,29 @@ test('pressing "i" on the selected line accepts the pending tag and turns its ch
   await expect(chip).toHaveCSS('background-color', 'rgb(64, 183, 49)', { timeout: 3_000 });
 });
 
-test('rejecting an unreviewed tag turns it red and hides the buttons', async ({ page }) => {
+test('pressing "i" creates a reviewed twin instead of flipping the original point reviewed', async ({ page }) => {
+  // Auto-approval must be live/derived (hasReviewedTwin), not a permanent flag — the
+  // original point should still carry ", unreviewed" in its a11y label after "i", with
+  // resolution coming entirely from a new ", reviewed" duplicate alongside it.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const unreviewedButtons = page.getByRole('button', { name: /, unreviewed$/ });
+  const reviewedButtons = page.getByRole('button', { name: /, reviewed$/ });
+  await unreviewedButtons.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const unreviewedCountBefore = await unreviewedButtons.count();
+  test.skip(unreviewedCountBefore === 0, 'no unreviewed event points available in this environment');
+  const reviewedCountBefore = await reviewedButtons.count();
+
+  await selectUnreviewedTagChip(page);
+  await page.keyboard.press('i');
+
+  await expect(reviewedButtons).toHaveCount(reviewedCountBefore + 1, { timeout: 5_000 });
+  await expect(unreviewedButtons).toHaveCount(unreviewedCountBefore, { timeout: 3_000 });
+});
+
+test('rejecting an unreviewed tag hides the button and leaves it blue', async ({ page }) => {
   await waitForTimelineDataReady(page);
   const cameraCount = await getCameraCount(page);
   test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
@@ -1297,17 +1327,19 @@ test('rejecting an unreviewed tag turns it red and hides the buttons', async ({ 
   await chip.getByText('✕').click();
 
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
-  await expect(chip).toHaveCSS('background-color', 'rgb(232, 0, 0)', { timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(6, 160, 246)', { timeout: 3_000 });
 });
 
 // ─── Forward-navigation gating on pending (blue) tags ─────────────────────────
-// Monitor/index.tsx's pendingReviewWallSec is the timeSec of the earliest unresolved
-// (unreviewed, undecided) tag in the current view — useTimelineBodyState's
-// guardedSetMarkerSec clamps any forward marker movement (drag, arrows, Step forward,
-// play) to that position, and EventRow's selectEp refuses to select diamonds past it.
-// Accepting (via "i") or rejecting the blocking tag moves the wall forward (or clears
-// it). Only genuinely pending (blue) tags count; already-reviewed (orange/green) ones
-// never form a wall.
+// Monitor/index.tsx's pendingReviewWallSec is derived from the earliest unresolved
+// (unreviewed, undecided, no reviewed twin) tag in the current view — its own
+// timeSec/endSec, nudged out to that diamond's own pixel border in
+// useTimelineBodyState (not further out by a whole tolerance window). guardedSetMarkerSec
+// clamps any forward marker movement (drag, arrows, Step forward, play) to that
+// position, and EventRow's selectEp refuses to select diamonds past it. Accepting (via
+// "i") or rejecting the blocking tag moves the wall forward (or clears it). Only
+// genuinely pending (blue, no reviewed twin) tags count; already-reviewed
+// (orange/green) ones never form a wall.
 
 test('timeline cannot advance forward while a pending unreviewed tag is on screen', async ({ page }) => {
   await waitForTimelineDataReady(page);

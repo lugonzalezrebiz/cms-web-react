@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
+import { hasReviewedTwin } from "../utils";
 import type { CameraEventPoint, FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
@@ -37,6 +38,12 @@ interface UseTimelineKeyboardParams {
   onUndo?: () => void;
   onRedo?: () => void;
   onTogglePlay?: () => void;
+  setMarkerSecRaw?: React.Dispatch<React.SetStateAction<number | null>>;
+  suppressAutoSelectUntilRef?: React.RefObject<number>;
+  selectedEventPointId?: number | null;
+  setSelectedEventPointId?: React.Dispatch<React.SetStateAction<number | null>>;
+  flatRows?: FlatRow[];
+  isActivityMode?: boolean;
 }
 
 export const useTimelineKeyboard = ({
@@ -67,6 +74,12 @@ export const useTimelineKeyboard = ({
   onUndo,
   onRedo,
   onTogglePlay,
+  setMarkerSecRaw,
+  suppressAutoSelectUntilRef,
+  selectedEventPointId,
+  setSelectedEventPointId,
+  flatRows,
+  isActivityMode,
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
@@ -82,6 +95,28 @@ export const useTimelineKeyboard = ({
   });
   const navigate = useNavigateWithQuery();
   const { imagesInterval } = useCompanyConfig();
+
+  const panTo = useCallback(
+    (targetSec: number) => {
+      const visibleDuration = totalSec / zoom;
+      const visibleEnd = panOffsetSec + visibleDuration;
+      if (targetSec < panOffsetSec || targetSec > visibleEnd) {
+        const margin = visibleDuration * 0.2;
+        const targetOffset = Math.max(0, Math.min(totalSec - visibleDuration, targetSec - margin));
+        const startOffset = panOffsetSec;
+        const duration = 500;
+        const startTime = performance.now();
+        const animate = (now: number) => {
+          const t = Math.min((now - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - t, 3);
+          setPanOffsetSec(startOffset + (targetOffset - startOffset) * eased);
+          if (t < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+      }
+    },
+    [totalSec, zoom, panOffsetSec, setPanOffsetSec],
+  );
 
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
@@ -110,21 +145,43 @@ export const useTimelineKeyboard = ({
         !e.altKey &&
         iTrackId !== null
       ) {
-        const row = selectableRows.find((r) => r.id === iTrackId);
         const currentMarker = markerSec ?? timelineStartSec;
         const pending = cameraEventPoints?.find(
           (ep) =>
+            ep.id === selectedEventPointId &&
+            ep.reviewed === false &&
+            !ep.rejected,
+        );
+        if (pending) {
+          onAcceptRef.current?.(pending.id);
+          if (suppressAutoSelectUntilRef)
+            suppressAutoSelectUntilRef.current = Date.now() + 1500;
+          const item = menuItems?.find((m) => m.id === iTrackId);
+          item?.onClick?.(pending.cameraId);
+        }
+
+        const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+        const nextTarget = sorted.find(
+          (ep) =>
+            ep.timeSec >= currentMarker &&
+            ep.id !== pending?.id &&
             ep.reviewed === false &&
             !ep.rejected &&
-            ep.timeSec === currentMarker &&
-            ep.label === row?.name &&
-            (row?.parentCameraId === undefined ||
-              ep.cameraId === row.parentCameraId),
+            !hasReviewedTwin(ep, cameraEventPoints ?? []),
         );
-        if (pending) onAcceptRef.current?.(pending.id);
-
-        const item = menuItems?.find((m) => m.id === iTrackId);
-        item?.onClick?.(iTrackId);
+        if (nextTarget) {
+          (setMarkerSecRaw ?? setMarkerSec)(nextTarget.timeSec);
+          panTo(nextTarget.timeSec);
+          const targetRow = flatRows?.find((r) =>
+            isActivityMode
+              ? r.kind === "activity" && r.name === nextTarget.label
+              : r.kind === "event" &&
+                r.parentCameraId === nextTarget.cameraId &&
+                r.name === nextTarget.label,
+          );
+          if (targetRow) setITrackId(targetRow.id);
+          setSelectedEventPointId?.(nextTarget.id);
+        }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
         onUndoRef.current?.();
@@ -139,6 +196,27 @@ export const useTimelineKeyboard = ({
         const position = e.key === "0" ? 10 : Number(e.key);
         const row = selectableRows[position - 1];
         if (row) {
+          const pendingPoints = (cameraEventPoints ?? []).filter(
+            (ep) =>
+              ep.reviewed === false &&
+              !ep.rejected &&
+              !hasReviewedTwin(ep, cameraEventPoints ?? []),
+          );
+          const blockingPoint =
+            pendingPoints.length > 0
+              ? pendingPoints.reduce((a, b) => (a.timeSec <= b.timeSec ? a : b))
+              : undefined;
+          const blockingRow = blockingPoint
+            ? flatRows?.find((r) =>
+                isActivityMode
+                  ? r.kind === "activity" && r.name === blockingPoint.label
+                  : r.kind === "event" &&
+                    r.parentCameraId === blockingPoint.cameraId &&
+                    r.name === blockingPoint.label,
+              )
+            : undefined;
+          if (blockingRow && blockingRow.id !== row.id) return;
+
           setITrackId(row.id);
           setSelectedTracks(
             activeSessionStarts[row.id] !== undefined
@@ -147,40 +225,6 @@ export const useTimelineKeyboard = ({
           );
         }
       }
-      // else if (e.key === "o") {
-      //   const currentMarker = markerSec ?? timelineStartSec;
-      //   // Compute which selected tracks can be completed
-      //   const completedIds = Object.entries(activeSessionStarts)
-      //     .filter(([idStr, sessionStart]) =>
-      //       selectedTracks.has(Number(idStr)) && currentMarker > sessionStart,
-      //     )
-      //     .map(([idStr]) => Number(idStr));
-      //
-      //   if (completedIds.length > 0) {
-      //     setCompletedSessions((prev) => {
-      //       const updates = { ...prev };
-      //       for (const id of completedIds) {
-      //         updates[id] = [
-      //           ...(prev[id] ?? []),
-      //           { start: activeSessionStarts[id], end: currentMarker },
-      //         ];
-      //       }
-      //       return updates;
-      //     });
-      //     setShowPunchOut(true);
-      //     if (punchOutTimerRef.current) clearTimeout(punchOutTimerRef.current);
-      //     punchOutTimerRef.current = setTimeout(
-      //       () => setShowPunchOut(false),
-      //       1000,
-      //     );
-      //     setSelectedTracks(new Set());
-      //     setActiveSessionStarts((prev) => {
-      //       const next = { ...prev };
-      //       for (const id of completedIds) delete next[id];
-      //       return next;
-      //     });
-      //   }
-      // }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -200,6 +244,13 @@ export const useTimelineKeyboard = ({
     setMarkerSec,
     menuItems,
     cameraEventPoints,
+    panTo,
+    setMarkerSecRaw,
+    suppressAutoSelectUntilRef,
+    selectedEventPointId,
+    setSelectedEventPointId,
+    flatRows,
+    isActivityMode,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -223,26 +274,6 @@ export const useTimelineKeyboard = ({
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
       e.preventDefault();
-
-      const visibleDuration = totalSec / zoom;
-
-      const panTo = (targetSec: number) => {
-        const visibleEnd = panOffsetSec + visibleDuration;
-        if (targetSec < panOffsetSec || targetSec > visibleEnd) {
-          const margin = visibleDuration * 0.2;
-          const targetOffset = Math.max(0, Math.min(totalSec - visibleDuration, targetSec - margin));
-          const startOffset = panOffsetSec;
-          const duration = 500;
-          const startTime = performance.now();
-          const animate = (now: number) => {
-            const t = Math.min((now - startTime) / duration, 1);
-            const eased = 1 - Math.pow(1 - t, 3);
-            setPanOffsetSec(startOffset + (targetOffset - startOffset) * eased);
-            if (t < 1) requestAnimationFrame(animate);
-          };
-          requestAnimationFrame(animate);
-        }
-      };
 
       if (e.ctrlKey || e.metaKey) {
         const currentSec = markerSec ?? timelineStartSec;
@@ -270,7 +301,7 @@ export const useTimelineKeyboard = ({
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints, panOffsetSec, zoom, totalSec, setPanOffsetSec, imagesInterval]);
+  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints, imagesInterval, panTo]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
   useEffect(() => {
