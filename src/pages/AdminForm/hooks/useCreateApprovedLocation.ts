@@ -17,6 +17,8 @@ export interface CreateApprovedLocationPayload {
   city: string;
   location_type: "Permanent" | "Temporary";
   due_date?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const useCreateApprovedLocation = (userID: number | undefined) => {
