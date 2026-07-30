@@ -154,7 +154,7 @@ export const useTimelineKeyboard = ({
             ep.id === selectedEventPointId &&
             ep.reviewed === false &&
             !ep.rejected &&
-            Math.abs(ep.timeSec - currentMarker) <= imagesInterval,
+            ep.timeSec === currentMarker,
         );
         if (pending) {
           onAcceptRef.current?.(pending.id);
@@ -269,7 +269,6 @@ export const useTimelineKeyboard = ({
     setSelectedEventPointId,
     flatRows,
     isActivityMode,
-    imagesInterval,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
