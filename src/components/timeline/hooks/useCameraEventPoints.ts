@@ -1,21 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CameraEventPoint } from "../types";
 
+interface HistorySnapshot {
+  points: CameraEventPoint[];
+  rejectedIds: Set<number>;
+}
+
 export const useCameraEventPoints = (monitoringID: string) => {
   const activityCounterRef = useRef(0);
   const [cameraActivities, setCameraActivities] = useState<
     { id: number; cameraId: number; activityLabel: string }[]
   >([]);
   const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
+  const [rejectedEventIds, setRejectedEventIds] = useState<Set<number>>(new Set());
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
-  const historyRef = useRef<CameraEventPoint[][]>([]);
-  const futureRef = useRef<CameraEventPoint[][]>([]);
+  const historyRef = useRef<HistorySnapshot[]>([]);
+  const futureRef = useRef<HistorySnapshot[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const lastUpdateTimeRef = useRef<number>(0);
   const currentPointsRef = useRef<CameraEventPoint[]>([]);
+  const currentRejectedRef = useRef<Set<number>>(new Set());
 
   const syncChannelRef = useRef<BroadcastChannel | null>(null);
   const suppressSyncRef = useRef(false);
@@ -52,11 +59,23 @@ export const useCameraEventPoints = (monitoringID: string) => {
     currentPointsRef.current = [];
   };
 
-  const pushHistory = (snapshot: CameraEventPoint[]) => {
-    historyRef.current = [...historyRef.current, snapshot];
+  const pushHistory = (
+    points: CameraEventPoint[],
+    rejectedIds: Set<number> = currentRejectedRef.current,
+  ) => {
+    historyRef.current = [...historyRef.current, { points, rejectedIds }];
     futureRef.current = [];
     setCanUndo(true);
     setCanRedo(false);
+  };
+
+  const handleRejectEventPoint = (id: number) => {
+    pushHistory(currentPointsRef.current, currentRejectedRef.current);
+    setRejectedEventIds((prev) => {
+      const next = new Set(prev).add(id);
+      currentRejectedRef.current = next;
+      return next;
+    });
   };
 
   const handleRemoveEventPoint = (id: number) => {
@@ -140,10 +159,15 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const handleUndo = useCallback(() => {
     if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
-    futureRef.current = [currentPointsRef.current, ...futureRef.current];
+    futureRef.current = [
+      { points: currentPointsRef.current, rejectedIds: currentRejectedRef.current },
+      ...futureRef.current,
+    ];
     historyRef.current = historyRef.current.slice(0, -1);
-    currentPointsRef.current = prev;
-    setCameraEventPoints(prev);
+    currentPointsRef.current = prev.points;
+    currentRejectedRef.current = prev.rejectedIds;
+    setCameraEventPoints(prev.points);
+    setRejectedEventIds(prev.rejectedIds);
     setCanUndo(historyRef.current.length > 0);
     setCanRedo(true);
   }, []);
@@ -151,10 +175,15 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const handleRedo = useCallback(() => {
     if (futureRef.current.length === 0) return;
     const next = futureRef.current[0];
-    historyRef.current = [...historyRef.current, currentPointsRef.current];
+    historyRef.current = [
+      ...historyRef.current,
+      { points: currentPointsRef.current, rejectedIds: currentRejectedRef.current },
+    ];
     futureRef.current = futureRef.current.slice(1);
-    currentPointsRef.current = next;
-    setCameraEventPoints(next);
+    currentPointsRef.current = next.points;
+    currentRejectedRef.current = next.rejectedIds;
+    setCameraEventPoints(next.points);
+    setRejectedEventIds(next.rejectedIds);
     setCanUndo(true);
     setCanRedo(futureRef.current.length > 0);
   }, []);
@@ -162,6 +191,8 @@ export const useCameraEventPoints = (monitoringID: string) => {
   return {
     cameraActivities,
     cameraEventPoints,
+    rejectedEventIds,
+    handleRejectEventPoint,
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,

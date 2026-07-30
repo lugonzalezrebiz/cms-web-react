@@ -21,7 +21,13 @@ interface PointEntry {
   timestamp: string;
   zoneId: number | null;
   reviewed: boolean;
+  reviewDisagree?: boolean;
   value: boolean;
+  subject?: number | null;
+  object?: number | null;
+  meta?: string | null;
+  processed?: boolean;
+  processDate?: string | null;
 }
 
 interface RangeEntry {
@@ -32,6 +38,12 @@ interface RangeEntry {
   end: string;
   zoneId: number | null;
   reviewed: boolean;
+  reviewDisagree?: boolean;
+  subject?: number | null;
+  object?: number | null;
+  meta?: string | null;
+  processed?: boolean;
+  processDate?: string | null;
 }
 
 type EventEntry = PointEntry | RangeEntry;
@@ -80,9 +92,16 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           endSec: timeSec,
           label,
           reviewed: entry.reviewed,
+          rejected: entry.reviewDisagree === true,
           value: entry.value,
           mode,
           entryIds: [Number(entry.id)],
+          zoneId: entry.zoneId,
+          subject: entry.subject ?? null,
+          object: entry.object ?? null,
+          meta: entry.meta ?? null,
+          processed: entry.processed ?? false,
+          processDate: entry.processDate ?? null,
         });
       } else if (entry.type === "RANGE") {
         const timeSec = toSec(entry.start);
@@ -95,9 +114,16 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           endSec,
           label,
           reviewed: entry.reviewed,
+          rejected: entry.reviewDisagree === true,
           value: true,
           mode: "RANGE",
           entryIds: [Number(entry.startId), Number(entry.endId)],
+          zoneId: entry.zoneId,
+          subject: entry.subject ?? null,
+          object: entry.object ?? null,
+          meta: entry.meta ?? null,
+          processed: entry.processed ?? false,
+          processDate: entry.processDate ?? null,
         });
       }
     }

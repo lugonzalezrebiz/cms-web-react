@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import { hasReviewedTwin } from "../utils";
+import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
 import type { CameraEventPoint, FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
@@ -35,11 +36,11 @@ interface UseTimelineKeyboardParams {
   menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
   onDeleteEventPoint?: () => void;
   onAcceptEventPoint?: (id: number) => void;
+  onRejectEventPoint?: (id: number) => void;
   onUndo?: () => void;
   onRedo?: () => void;
   onTogglePlay?: () => void;
   setMarkerSecRaw?: React.Dispatch<React.SetStateAction<number | null>>;
-  suppressAutoSelectUntilRef?: React.RefObject<number>;
   selectedEventPointId?: number | null;
   setSelectedEventPointId?: React.Dispatch<React.SetStateAction<number | null>>;
   flatRows?: FlatRow[];
@@ -71,11 +72,11 @@ export const useTimelineKeyboard = ({
   menuItems,
   onDeleteEventPoint,
   onAcceptEventPoint,
+  onRejectEventPoint,
   onUndo,
   onRedo,
   onTogglePlay,
   setMarkerSecRaw,
-  suppressAutoSelectUntilRef,
   selectedEventPointId,
   setSelectedEventPointId,
   flatRows,
@@ -83,12 +84,14 @@ export const useTimelineKeyboard = ({
 }: UseTimelineKeyboardParams) => {
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
+  const onRejectRef = useRef(onRejectEventPoint);
   const onUndoRef = useRef(onUndo);
   const onRedoRef = useRef(onRedo);
   const onTogglePlayRef = useRef(onTogglePlay);
   useEffect(() => {
     onDeleteRef.current = onDeleteEventPoint;
     onAcceptRef.current = onAcceptEventPoint;
+    onRejectRef.current = onRejectEventPoint;
     onUndoRef.current = onUndo;
     onRedoRef.current = onRedo;
     onTogglePlayRef.current = onTogglePlay;
@@ -150,37 +153,46 @@ export const useTimelineKeyboard = ({
           (ep) =>
             ep.id === selectedEventPointId &&
             ep.reviewed === false &&
-            !ep.rejected,
+            !ep.rejected &&
+            Math.abs(ep.timeSec - currentMarker) <= imagesInterval,
         );
         if (pending) {
           onAcceptRef.current?.(pending.id);
-          if (suppressAutoSelectUntilRef)
-            suppressAutoSelectUntilRef.current = Date.now() + 1500;
-          const item = menuItems?.find((m) => m.id === iTrackId);
-          item?.onClick?.(pending.cameraId);
-        }
 
-        const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
-        const nextTarget = sorted.find(
-          (ep) =>
-            ep.timeSec >= currentMarker &&
-            ep.id !== pending?.id &&
-            ep.reviewed === false &&
-            !ep.rejected &&
-            !hasReviewedTwin(ep, cameraEventPoints ?? []),
-        );
-        if (nextTarget) {
-          (setMarkerSecRaw ?? setMarkerSec)(nextTarget.timeSec);
-          panTo(nextTarget.timeSec);
-          const targetRow = flatRows?.find((r) =>
-            isActivityMode
-              ? r.kind === "activity" && r.name === nextTarget.label
-              : r.kind === "event" &&
-                r.parentCameraId === nextTarget.cameraId &&
-                r.name === nextTarget.label,
+          const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+          const nextTarget = sorted.find(
+            (ep) =>
+              ep.timeSec >= currentMarker &&
+              ep.id !== pending.id &&
+              ep.reviewed === false &&
+              !ep.rejected &&
+              !hasReviewedTwin(ep, cameraEventPoints ?? []),
           );
-          if (targetRow) setITrackId(targetRow.id);
-          setSelectedEventPointId?.(nextTarget.id);
+          if (nextTarget) {
+            (setMarkerSecRaw ?? setMarkerSec)(nextTarget.timeSec);
+            panTo(nextTarget.timeSec);
+            const targetRow = flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === nextTarget.label
+                : r.kind === "event" &&
+                  r.parentCameraId === nextTarget.cameraId &&
+                  r.name === nextTarget.label,
+            );
+            if (targetRow) setITrackId(targetRow.id);
+            setSelectedEventPointId?.(nextTarget.id);
+          }
+        } else {
+          const item = menuItems?.find((m) => m.id === iTrackId);
+          item?.onClick?.(iTrackId);
+
+          const supersededPending = cameraEventPoints?.find(
+            (ep) =>
+              ep.reviewed === false &&
+              !ep.rejected &&
+              ep.timeSec !== currentMarker &&
+              Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
+          );
+          if (supersededPending) onRejectRef.current?.(supersededPending.id);
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
@@ -246,11 +258,11 @@ export const useTimelineKeyboard = ({
     cameraEventPoints,
     panTo,
     setMarkerSecRaw,
-    suppressAutoSelectUntilRef,
     selectedEventPointId,
     setSelectedEventPointId,
     flatRows,
     isActivityMode,
+    imagesInterval,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────

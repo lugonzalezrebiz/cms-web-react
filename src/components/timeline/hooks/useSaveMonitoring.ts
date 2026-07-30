@@ -7,26 +7,35 @@ import type { CameraEventPoint } from "../types";
 import { useNavigatePlain } from "../../../hooks/useNavigate";
 
 interface PointEntry {
+  id?: number;
   type: "POINT";
   timestamp: string;
   value: boolean;
   zoneId: number | null;
   reviewed: boolean;
   reviewDate: string | null;
-  review_disagree: boolean;
+  reviewDisagree: boolean;
   processed: boolean;
   processDate: string | null;
+  subject?: number | null;
+  object?: number | null;
+  meta?: string | null;
 }
 
 interface RangeEntry {
+  startId?: number;
+  endId?: number;
   type: "RANGE";
   start: string;
   end: string;
   zoneId: number | null;
   reviewed: boolean;
-  review_disagree: boolean;
+  reviewDisagree: boolean;
   processed: boolean;
   processDate: string | null;
+  subject?: number | null;
+  object?: number | null;
+  meta?: string | null;
 }
 
 interface SaveEventGroup {
@@ -95,32 +104,42 @@ export const useSaveMonitoring = ({
     for (const ep of eventPoints) {
       const trackerId = labelToTrackerId[ep.label] ?? 0;
       const group = getGroup(trackerId, ep.cameraId);
-      const reviewed = isReviewer ? true : ep.reviewed;
-      const reviewDate = isReviewer ? now : null;
+      const reviewDisagree = ep.rejected === true;
+      const reviewed = isReviewer ? true : ep.reviewed || reviewDisagree;
+      const reviewDate = isReviewer || reviewed ? now : null;
 
       if (ep.mode === "RANGE") {
         const endSec = ep.endSec > ep.timeSec ? ep.endSec : ep.timeSec;
         group.entries.push({
+          startId: ep.entryIds?.[0],
+          endId: ep.entryIds?.[1],
           type: "RANGE",
           start: `${sessionDate} ${secToTimeString(ep.timeSec)}`,
           end: `${sessionDate} ${secToTimeString(endSec)}`,
-          zoneId: null,
+          zoneId: ep.zoneId ?? null,
           reviewed,
-          review_disagree: false,
-          processed: false,
-          processDate: null,
+          reviewDisagree,
+          processed: ep.processed ?? false,
+          processDate: ep.processDate ?? null,
+          subject: ep.subject ?? null,
+          object: ep.object ?? null,
+          meta: ep.meta ?? null,
         });
       } else {
         group.entries.push({
+          id: ep.entryIds?.[0],
           type: "POINT",
           timestamp: `${sessionDate} ${secToTimeString(ep.timeSec)}`,
           value: ep.value,
-          zoneId: null,
+          zoneId: ep.zoneId ?? null,
           reviewed,
           reviewDate,
-          review_disagree: false,
-          processed: false,
-          processDate: null,
+          reviewDisagree,
+          processed: ep.processed ?? false,
+          processDate: ep.processDate ?? null,
+          subject: ep.subject ?? null,
+          object: ep.object ?? null,
+          meta: ep.meta ?? null,
         });
       }
     }
@@ -133,7 +152,7 @@ export const useSaveMonitoring = ({
         end: `${sessionDate} ${secToTimeString(re.endSec)}`,
         zoneId: null,
         reviewed: isReviewer,
-        review_disagree: false,
+        reviewDisagree: false,
         processed: false,
         processDate: null,
       });

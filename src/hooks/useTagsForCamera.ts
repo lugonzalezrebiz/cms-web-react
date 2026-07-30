@@ -39,14 +39,15 @@ export const useTagsForCamera = (
           rejected: ep.rejected,
           accepted: ep.accepted,
           overlapsUnreviewed:
-            ep.reviewed &&
-            cameraEventPoints.some(
-              (other) =>
-                other.id !== ep.id &&
-                other.label === ep.label &&
-                !other.reviewed &&
-                Math.abs(other.timeSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
-            ),
+            ep.accepted === true ||
+            (ep.reviewed &&
+              cameraEventPoints.some(
+                (other) =>
+                  other.id !== ep.id &&
+                  other.label === ep.label &&
+                  !other.reviewed &&
+                  other.timeSec === ep.timeSec,
+              )),
           onClick: () => {},
         }));
     },

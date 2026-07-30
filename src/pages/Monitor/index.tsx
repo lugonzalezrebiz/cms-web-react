@@ -67,6 +67,8 @@ const Monitor = () => {
 
   const {
     cameraEventPoints,
+    rejectedEventIds,
+    handleRejectEventPoint,
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
@@ -91,23 +93,17 @@ const Monitor = () => {
   const [acceptedEventIds, setAcceptedEventIds] = useState<Set<number>>(
     new Set(),
   );
-  const [rejectedEventIds, setRejectedEventIds] = useState<Set<number>>(
-    new Set(),
-  );
 
   const handleAcceptEventPoint = useCallback((id: number) => {
     setAcceptedEventIds((prev) => new Set(prev).add(id));
-  }, []);
-
-  const handleRejectEventPoint = useCallback((id: number) => {
-    setRejectedEventIds((prev) => new Set(prev).add(id));
   }, []);
 
   const allEventPoints = useMemo(
     () =>
       [...cameraEventPoints, ...preloadedEventPoints].map((ep) => {
         if (rejectedEventIds.has(ep.id)) return { ...ep, rejected: true };
-        if (acceptedEventIds.has(ep.id)) return { ...ep, accepted: true };
+        if (acceptedEventIds.has(ep.id))
+          return { ...ep, accepted: true, reviewed: true };
         return ep;
       }),
     [
@@ -142,8 +138,13 @@ const Monitor = () => {
   const hasNothingToReview =
     !isReviewDataLoading && unreviewedTrackerIds.size === 0;
 
+  const visibleEventPoints = useMemo(
+    () => allEventPoints.filter((ep) => !ep.rejected),
+    [allEventPoints],
+  );
+
   const filteredEventPoints = useFilteredEventPoints({
-    allEventPoints,
+    allEventPoints: visibleEventPoints,
     trackerGroupings,
     trackers,
     isJoinCameraTracker,
@@ -411,9 +412,13 @@ const Monitor = () => {
   );
 
   const sessionDate = useSessionDate();
+  const eventPointsToSave = useMemo(
+    () => allEventPoints.filter((ep) => !ep.entryIds || ep.accepted || ep.rejected),
+    [allEventPoints],
+  );
   const { handleDone, isDoneLoading } = useSaveMonitoring({
     trackers,
-    eventPoints: cameraEventPoints,
+    eventPoints: eventPointsToSave,
     sessionDate,
     monitoringID,
     onSuccess: cleanUp,
@@ -462,6 +467,7 @@ const Monitor = () => {
       canRedo,
       onRemoveEventPoint: handleDeleteEventPoint,
       onAcceptEventPoint: handleAcceptEventPoint,
+      onRejectEventPoint: handleRejectEventPoint,
       onConvertEventPointToLocal: handleConvertEventPoint,
       viewMode: "activity" as const,
       menuItems: filteredMenuItems,
@@ -488,6 +494,7 @@ const Monitor = () => {
       canRedo,
       handleDeleteEventPoint,
       handleAcceptEventPoint,
+      handleRejectEventPoint,
       handleConvertEventPoint,
       filteredMenuItems,
       rangeSessions,
@@ -526,14 +533,15 @@ const Monitor = () => {
         rejected: ep.rejected,
         accepted: ep.accepted,
         overlapsUnreviewed:
-          ep.reviewed &&
-          filteredEventPoints.some(
-            (other) =>
-              other.id !== ep.id &&
-              other.cameraId === ep.cameraId &&
-              !other.reviewed &&
-              Math.abs(other.timeSec - ep.timeSec) <= TAG_TOLERANCE_SEC,
-          ),
+          ep.accepted === true ||
+          (ep.reviewed &&
+            filteredEventPoints.some(
+              (other) =>
+                other.id !== ep.id &&
+                other.cameraId === ep.cameraId &&
+                !other.reviewed &&
+                other.timeSec === ep.timeSec,
+            )),
         onClick: () => {},
       }));
   }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec]);

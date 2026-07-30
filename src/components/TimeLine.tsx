@@ -32,6 +32,7 @@ const TimeLine = ({
   canRedo,
   onRemoveEventPoint,
   onAcceptEventPoint,
+  onRejectEventPoint,
   onConvertEventPointToLocal,
   viewMode = "camera",
   menuItems = [],
@@ -58,6 +59,7 @@ const TimeLine = ({
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
   onAcceptEventPoint?: (id: number) => void;
+  onRejectEventPoint?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   viewMode?: "camera" | "activity";
   menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
@@ -90,7 +92,6 @@ const TimeLine = ({
   const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
 
   const playWindowRef = useRef<PlayWindow | undefined>(undefined);
-  const suppressAutoSelectUntilRef = useRef(0);
 
   const state = useTimelineBodyState({
     snapshot,
@@ -123,7 +124,6 @@ const TimeLine = ({
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
     setSelectedEventPointId: state.setSelectedEventPointId,
-    suppressUntilRef: suppressAutoSelectUntilRef,
   });
 
   useAutoSelectOnMarkerOverDiamond({
@@ -284,11 +284,11 @@ const TimeLine = ({
     menuItems,
     onDeleteEventPoint: handleDeleteEventPoint,
     onAcceptEventPoint,
+    onRejectEventPoint,
     onUndo,
     onRedo,
     onTogglePlay: handleTogglePlay,
     setMarkerSecRaw: state.setMarkerSecRaw,
-    suppressAutoSelectUntilRef,
     selectedEventPointId: state.selectedEventPointId,
     setSelectedEventPointId: state.setSelectedEventPointId,
     flatRows,

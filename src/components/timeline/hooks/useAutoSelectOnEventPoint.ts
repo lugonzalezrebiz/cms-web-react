@@ -8,7 +8,6 @@ interface UseAutoSelectOnEventPointParams {
   setITrackId: (id: number | null) => void;
   setSelectedTracks: (tracks: Set<number>) => void;
   setSelectedEventPointId: (id: number | null) => void;
-  suppressUntilRef?: React.RefObject<number>;
 }
 
 export const useAutoSelectOnEventPoint = ({
@@ -18,7 +17,6 @@ export const useAutoSelectOnEventPoint = ({
   setITrackId,
   setSelectedTracks,
   setSelectedEventPointId,
-  suppressUntilRef,
 }: UseAutoSelectOnEventPointParams) => {
   const prevUserCountRef = useRef(
     cameraEventPoints?.filter((ep) => !ep.entryIds).length ?? 0,
@@ -27,10 +25,6 @@ export const useAutoSelectOnEventPoint = ({
   useEffect(() => {
     const userPoints = cameraEventPoints?.filter((ep) => !ep.entryIds) ?? [];
     const count = userPoints.length;
-    if (suppressUntilRef?.current && Date.now() < suppressUntilRef.current) {
-      prevUserCountRef.current = count;
-      return;
-    }
     if (count > prevUserCountRef.current && count > 0) {
       const last = userPoints[userPoints.length - 1];
       // last.cameraId is the real camera/tracker id, not necessarily the row id

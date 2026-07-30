@@ -59,6 +59,12 @@ export type CameraEventPoint = {
   entryIds?: number[];
   rejected?: boolean;
   accepted?: boolean;
+  zoneId?: number | null;
+  subject?: number | null;
+  object?: number | null;
+  meta?: string | null;
+  processed?: boolean;
+  processDate?: string | null;
 };
 
 export type ResizingState = { id: number; side: "left" | "right" } | null;

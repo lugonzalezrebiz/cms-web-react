@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import type React from "react";
 import type { FlatRow, PlayWindow, TimelineSnapshot } from "../types";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
+import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
@@ -103,10 +104,13 @@ export const useTimelineBodyState = ({
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
 
-  const DIAMOND_HALF_PX = 17 / Math.SQRT2;
+  // Fixed time allowance (not pixel-based) so the wall's reach stays the same
+  // real-world 30s regardless of zoom — a pixel-based margin would freeze into
+  // markerSec at whatever zoom was active when clamped, then desync (visually
+  // over/under-shoot the diamond) the moment the user zooms afterward.
   const effectivePendingReviewWallSec =
     pendingReviewWallSec !== undefined
-      ? pendingReviewWallSec + DIAMOND_HALF_PX / pixelsPerSecond
+      ? pendingReviewWallSec + TAG_TOLERANCE_SEC
       : undefined;
 
   const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
