@@ -37,10 +37,16 @@ export const useCameraEventPoints = (monitoringID: string) => {
     syncChannelRef.current = channel;
     channel.addEventListener("message", (e: MessageEvent) => {
       if (e.data?.type === "sync" && e.data?.monitoringID === monitoringID) {
-        const incoming = e.data.points as CameraEventPoint[];
+        const incomingPoints = e.data.points as CameraEventPoint[];
+        const incomingRejected = e.data.rejectedIds as Set<number>;
+        const incomingAccepted = e.data.acceptedIds as Set<number>;
         suppressSyncRef.current = true;
-        currentPointsRef.current = incoming;
-        setCameraEventPoints(incoming);
+        currentPointsRef.current = incomingPoints;
+        currentRejectedRef.current = incomingRejected;
+        currentAcceptedRef.current = incomingAccepted;
+        setCameraEventPoints(incomingPoints);
+        setRejectedEventIds(incomingRejected);
+        setAcceptedEventIds(incomingAccepted);
       }
     });
     return () => {
@@ -55,8 +61,14 @@ export const useCameraEventPoints = (monitoringID: string) => {
       suppressSyncRef.current = false;
       return;
     }
-    syncChannelRef.current?.postMessage({ type: "sync", monitoringID, points: cameraEventPoints });
-  }, [cameraEventPoints, monitoringID]);
+    syncChannelRef.current?.postMessage({
+      type: "sync",
+      monitoringID,
+      points: cameraEventPoints,
+      rejectedIds: rejectedEventIds,
+      acceptedIds: acceptedEventIds,
+    });
+  }, [cameraEventPoints, rejectedEventIds, acceptedEventIds, monitoringID]);
 
   const cleanUp = () => {
     setCameraEventPoints([]);

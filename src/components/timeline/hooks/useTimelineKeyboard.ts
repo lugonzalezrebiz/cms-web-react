@@ -182,11 +182,28 @@ export const useTimelineKeyboard = ({
             setSelectedEventPointId?.(nextTarget.id);
           }
         } else {
+          const belongsToRow = (ep: CameraEventPoint) =>
+            flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === ep.label
+                : r.kind === "event" &&
+                  r.parentCameraId === ep.cameraId &&
+                  r.name === ep.label,
+            )?.id === iTrackId;
+
+          const hasNearbyContext = cameraEventPoints?.some(
+            (ep) =>
+              belongsToRow(ep) &&
+              Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
+          );
+          if (!hasNearbyContext) return;
+
           const item = menuItems?.find((m) => m.id === iTrackId);
           item?.onClick?.(iTrackId);
 
           const supersededPending = cameraEventPoints?.find(
             (ep) =>
+              belongsToRow(ep) &&
               ep.reviewed === false &&
               !ep.rejected &&
               ep.timeSec !== currentMarker &&
@@ -324,15 +341,24 @@ export const useTimelineKeyboard = ({
         );
         if (onPendingDiamond && e.key === "ArrowRight") return;
         const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
-        let targetSec: number | undefined;
+        let targetEp: CameraEventPoint | undefined;
         if (e.key === "ArrowLeft") {
-          targetSec = [...sorted].reverse().find((ep) => ep.timeSec < currentSec)?.timeSec;
+          targetEp = [...sorted].reverse().find((ep) => ep.timeSec < currentSec);
         } else {
-          targetSec = sorted.find((ep) => ep.timeSec > currentSec)?.timeSec;
+          targetEp = sorted.find((ep) => ep.timeSec > currentSec);
         }
-        if (targetSec !== undefined) {
-          setMarkerSec(targetSec);
-          panTo(targetSec);
+        if (targetEp) {
+          setMarkerSec(targetEp.timeSec);
+          panTo(targetEp.timeSec);
+          const targetRow = flatRows?.find((r) =>
+            isActivityMode
+              ? r.kind === "activity" && r.name === targetEp.label
+              : r.kind === "event" &&
+                r.parentCameraId === targetEp.cameraId &&
+                r.name === targetEp.label,
+          );
+          if (targetRow && targetRow.id !== iTrackId) setITrackId(targetRow.id);
+          setSelectedEventPointId?.(targetEp.id);
         }
         return;
       }
@@ -347,7 +373,21 @@ export const useTimelineKeyboard = ({
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [selectedTracks, timelineStartSec, timelineEndSec, setMarkerSec, markerSec, cameraEventPoints, imagesInterval, panTo]);
+  }, [
+    selectedTracks,
+    timelineStartSec,
+    timelineEndSec,
+    setMarkerSec,
+    markerSec,
+    cameraEventPoints,
+    imagesInterval,
+    panTo,
+    iTrackId,
+    setITrackId,
+    flatRows,
+    isActivityMode,
+    setSelectedEventPointId,
+  ]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
   useEffect(() => {

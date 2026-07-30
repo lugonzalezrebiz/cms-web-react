@@ -583,7 +583,9 @@ test('"Other" dropdown only lists overflow trackers with pending AI events', asy
 // in the DOM; the guard just blocks interaction and offers a single "Go Back" action.
 
 test('shows the "Nothing to Review" guard when there are no pending AI events, otherwise the timeline', async ({ page }) => {
-  const guardTitle = page.getByText('Nothing to Review');
+  // NoReviewGuard's actual titles are "No Trackers/Groups Configured" or "No Events Found" —
+  // there is no literal "Nothing to Review" text in the component.
+  const guardTitle = page.getByText(/^No (Trackers|Groups|Events)/);
   const isGuardShown = await guardTitle.isVisible({ timeout: 10_000 }).catch(() => false);
 
   if (isGuardShown) {
@@ -600,7 +602,7 @@ test('"Go Back" on the no-review guard navigates back to assignments', async ({ 
   await page.goto(MONITOR_URL());
   await expect(page.getByText('/ Events')).toBeVisible({ timeout: 15_000 });
 
-  const isGuardShown = await page.getByText('Nothing to Review').isVisible({ timeout: 10_000 }).catch(() => false);
+  const isGuardShown = await page.getByText(/^No (Trackers|Groups|Events)/).isVisible({ timeout: 10_000 }).catch(() => false);
   test.skip(!isGuardShown, 'this environment has pending AI events — guard is not shown');
 
   await page.getByRole('button', { name: 'Go Back' }).click();
