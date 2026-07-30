@@ -40,6 +40,7 @@ export const useTagsForCamera = (
           accepted: ep.accepted,
           overlapsUnreviewed:
             ep.accepted === true ||
+            (!!ep.meta && ep.reviewed) ||
             (ep.reviewed &&
               cameraEventPoints.some(
                 (other) =>

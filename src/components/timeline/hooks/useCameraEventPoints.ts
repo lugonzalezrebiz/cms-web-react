@@ -4,6 +4,8 @@ import type { CameraEventPoint } from "../types";
 interface HistorySnapshot {
   points: CameraEventPoint[];
   rejectedIds: Set<number>;
+  acceptedIds: Set<number>;
+  actionSec: number;
 }
 
 export const useCameraEventPoints = (monitoringID: string) => {
@@ -13,6 +15,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
   >([]);
   const [cameraEventPoints, setCameraEventPoints] = useState<CameraEventPoint[]>([]);
   const [rejectedEventIds, setRejectedEventIds] = useState<Set<number>>(new Set());
+  const [acceptedEventIds, setAcceptedEventIds] = useState<Set<number>>(new Set());
   const [markerSec, setMarkerSec] = useState<number>(0);
   const markerSecRef = useRef<number>(0);
 
@@ -23,6 +26,7 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const lastUpdateTimeRef = useRef<number>(0);
   const currentPointsRef = useRef<CameraEventPoint[]>([]);
   const currentRejectedRef = useRef<Set<number>>(new Set());
+  const currentAcceptedRef = useRef<Set<number>>(new Set());
 
   const syncChannelRef = useRef<BroadcastChannel | null>(null);
   const suppressSyncRef = useRef(false);
@@ -62,18 +66,31 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const pushHistory = (
     points: CameraEventPoint[],
     rejectedIds: Set<number> = currentRejectedRef.current,
+    acceptedIds: Set<number> = currentAcceptedRef.current,
   ) => {
-    historyRef.current = [...historyRef.current, { points, rejectedIds }];
+    historyRef.current = [
+      ...historyRef.current,
+      { points, rejectedIds, acceptedIds, actionSec: markerSecRef.current },
+    ];
     futureRef.current = [];
     setCanUndo(true);
     setCanRedo(false);
   };
 
   const handleRejectEventPoint = (id: number) => {
-    pushHistory(currentPointsRef.current, currentRejectedRef.current);
+    pushHistory(currentPointsRef.current, currentRejectedRef.current, currentAcceptedRef.current);
     setRejectedEventIds((prev) => {
       const next = new Set(prev).add(id);
       currentRejectedRef.current = next;
+      return next;
+    });
+  };
+
+  const handleAcceptEventPoint = (id: number) => {
+    pushHistory(currentPointsRef.current, currentRejectedRef.current, currentAcceptedRef.current);
+    setAcceptedEventIds((prev) => {
+      const next = new Set(prev).add(id);
+      currentAcceptedRef.current = next;
       return next;
     });
   };
@@ -160,16 +177,24 @@ export const useCameraEventPoints = (monitoringID: string) => {
     if (historyRef.current.length === 0) return;
     const prev = historyRef.current[historyRef.current.length - 1];
     futureRef.current = [
-      { points: currentPointsRef.current, rejectedIds: currentRejectedRef.current },
+      {
+        points: currentPointsRef.current,
+        rejectedIds: currentRejectedRef.current,
+        acceptedIds: currentAcceptedRef.current,
+        actionSec: prev.actionSec,
+      },
       ...futureRef.current,
     ];
     historyRef.current = historyRef.current.slice(0, -1);
     currentPointsRef.current = prev.points;
     currentRejectedRef.current = prev.rejectedIds;
+    currentAcceptedRef.current = prev.acceptedIds;
     setCameraEventPoints(prev.points);
     setRejectedEventIds(prev.rejectedIds);
+    setAcceptedEventIds(prev.acceptedIds);
     setCanUndo(historyRef.current.length > 0);
     setCanRedo(true);
+    return prev.actionSec;
   }, []);
 
   const handleRedo = useCallback(() => {
@@ -177,15 +202,23 @@ export const useCameraEventPoints = (monitoringID: string) => {
     const next = futureRef.current[0];
     historyRef.current = [
       ...historyRef.current,
-      { points: currentPointsRef.current, rejectedIds: currentRejectedRef.current },
+      {
+        points: currentPointsRef.current,
+        rejectedIds: currentRejectedRef.current,
+        acceptedIds: currentAcceptedRef.current,
+        actionSec: next.actionSec,
+      },
     ];
     futureRef.current = futureRef.current.slice(1);
     currentPointsRef.current = next.points;
     currentRejectedRef.current = next.rejectedIds;
+    currentAcceptedRef.current = next.acceptedIds;
     setCameraEventPoints(next.points);
     setRejectedEventIds(next.rejectedIds);
+    setAcceptedEventIds(next.acceptedIds);
     setCanUndo(true);
     setCanRedo(futureRef.current.length > 0);
+    return next.actionSec;
   }, []);
 
   return {
@@ -193,6 +226,8 @@ export const useCameraEventPoints = (monitoringID: string) => {
     cameraEventPoints,
     rejectedEventIds,
     handleRejectEventPoint,
+    acceptedEventIds,
+    handleAcceptEventPoint,
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,

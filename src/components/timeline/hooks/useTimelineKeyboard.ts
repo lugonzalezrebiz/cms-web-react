@@ -37,8 +37,8 @@ interface UseTimelineKeyboardParams {
   onDeleteEventPoint?: () => void;
   onAcceptEventPoint?: (id: number) => void;
   onRejectEventPoint?: (id: number) => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
+  onUndo?: () => number | void;
+  onRedo?: () => number | void;
   onTogglePlay?: () => void;
   setMarkerSecRaw?: React.Dispatch<React.SetStateAction<number | null>>;
   selectedEventPointId?: number | null;
@@ -196,10 +196,18 @@ export const useTimelineKeyboard = ({
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
-        onUndoRef.current?.();
+        const actionSec = onUndoRef.current?.();
+        if (typeof actionSec === "number") {
+          (setMarkerSecRaw ?? setMarkerSec)(actionSec);
+          panTo(actionSec);
+        }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
         e.preventDefault();
-        onRedoRef.current?.();
+        const actionSec = onRedoRef.current?.();
+        if (typeof actionSec === "number") {
+          (setMarkerSecRaw ?? setMarkerSec)(actionSec);
+          panTo(actionSec);
+        }
       } else if (e.key === "Delete") {
         const target = cameraEventPoints?.find(
           (ep) => ep.id === selectedEventPointId,
@@ -215,6 +223,15 @@ export const useTimelineKeyboard = ({
         const position = e.key === "0" ? 10 : Number(e.key);
         const row = selectableRows[position - 1];
         if (row) {
+          const findRowForPoint = (ep: CameraEventPoint) =>
+            flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === ep.label
+                : r.kind === "event" &&
+                  r.parentCameraId === ep.cameraId &&
+                  r.name === ep.label,
+            );
+
           const pendingPoints = (cameraEventPoints ?? []).filter(
             (ep) =>
               ep.reviewed === false &&
@@ -225,16 +242,20 @@ export const useTimelineKeyboard = ({
             pendingPoints.length > 0
               ? pendingPoints.reduce((a, b) => (a.timeSec <= b.timeSec ? a : b))
               : undefined;
-          const blockingRow = blockingPoint
-            ? flatRows?.find((r) =>
-                isActivityMode
-                  ? r.kind === "activity" && r.name === blockingPoint.label
-                  : r.kind === "event" &&
-                    r.parentCameraId === blockingPoint.cameraId &&
-                    r.name === blockingPoint.label,
-              )
-            : undefined;
-          if (blockingRow && blockingRow.id !== row.id) return;
+          const blockingRow = blockingPoint ? findRowForPoint(blockingPoint) : undefined;
+
+          if (blockingRow && blockingPoint && blockingRow.id !== row.id) {
+            // Only bypass the block when the target row has a pending point
+            // simultaneous (within TAG_TOLERANCE_SEC) with the blocking one —
+            // that's the "choose which of the 2" case. Otherwise stay blocked.
+            const blockingSec = blockingPoint.timeSec;
+            const hasSimultaneousPendingOnTargetRow = pendingPoints.some(
+              (ep) =>
+                Math.abs(ep.timeSec - blockingSec) <= TAG_TOLERANCE_SEC &&
+                findRowForPoint(ep)?.id === row.id,
+            );
+            if (!hasSimultaneousPendingOnTargetRow) return;
+          }
 
           setITrackId(row.id);
           setSelectedTracks(
@@ -295,6 +316,13 @@ export const useTimelineKeyboard = ({
 
       if (e.ctrlKey || e.metaKey) {
         const currentSec = markerSec ?? timelineStartSec;
+        const onPendingDiamond = cameraEventPoints?.some(
+          (ep) =>
+            ep.timeSec === currentSec &&
+            ep.reviewed === false &&
+            !ep.rejected,
+        );
+        if (onPendingDiamond && e.key === "ArrowRight") return;
         const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
         let targetSec: number | undefined;
         if (e.key === "ArrowLeft") {

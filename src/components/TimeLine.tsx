@@ -53,8 +53,8 @@ const TimeLine = ({
   onPopOut?: () => void;
   headerLabel: string;
   markerTimeSec: number | null;
-  onUndo?: () => void;
-  onRedo?: () => void;
+  onUndo?: () => number | void;
+  onRedo?: () => number | void;
   canUndo?: boolean;
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;

@@ -28,6 +28,8 @@ import { useFilteredMenuItems } from "./hooks/useFilteredMenuItems";
 import NoReviewGuard from "../../components/NoReviewGuard";
 import useNavigateWithQuery from "../../hooks/useNavigate";
 
+const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
+
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
@@ -69,6 +71,8 @@ const Monitor = () => {
     cameraEventPoints,
     rejectedEventIds,
     handleRejectEventPoint,
+    acceptedEventIds,
+    handleAcceptEventPoint,
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
@@ -90,13 +94,6 @@ const Monitor = () => {
     cameras: monitoringCameras,
     loading: isMonitoringLoading,
   } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-  const [acceptedEventIds, setAcceptedEventIds] = useState<Set<number>>(
-    new Set(),
-  );
-
-  const handleAcceptEventPoint = useCallback((id: number) => {
-    setAcceptedEventIds((prev) => new Set(prev).add(id));
-  }, []);
 
   const allEventPoints = useMemo(
     () =>
@@ -135,8 +132,22 @@ const Monitor = () => {
 
   const isReviewDataLoading =
     isMonitoringLoading || isTrackersLoading || isTrackerGroupingsLoading;
-  const hasNothingToReview =
-    !isReviewDataLoading && unreviewedTrackerIds.size === 0;
+  const hasNoTrackersConfigured = !isReviewDataLoading && trackers.length === 0;
+  const hasNoGroupsConfigured =
+    !isReviewDataLoading && trackerGroupings.length === 0;
+  const hasNoEventsLoaded =
+    !isReviewDataLoading && preloadedEventPoints.length === 0;
+
+  const noReviewReason = hasNoTrackersConfigured
+    ? "no-trackers"
+    : hasNoGroupsConfigured
+      ? "no-groups"
+      : hasNoEventsLoaded
+        ? "no-events"
+        : undefined;
+
+  const isPendingCameraGroupSwitch =
+    isTrackerTab && !trackerOption && unreviewedTrackerIds.size > 0;
 
   const visibleEventPoints = useMemo(
     () => allEventPoints.filter((ep) => !ep.rejected),
@@ -431,7 +442,7 @@ const Monitor = () => {
     unreviewedTrackerIds,
   );
 
-  const filteredMenuItems = useFilteredMenuItems({
+  const rawFilteredMenuItems = useFilteredMenuItems({
     trackers,
     trackerGroupings,
     handleActivitySelect,
@@ -448,6 +459,10 @@ const Monitor = () => {
     joinCameraTrackerMap,
     cameraToJoinTrackerMap,
   });
+  const filteredMenuItems =
+    isReviewDataLoading || isPendingCameraGroupSwitch
+      ? EMPTY_MENU_ITEMS
+      : rawFilteredMenuItems;
 
   const timelineProps = useMemo(
     () => ({
@@ -473,8 +488,13 @@ const Monitor = () => {
       menuItems: filteredMenuItems,
       rangeSessions,
       expandedIcon: !expandedCamera,
-      rowsLoadState: isTrackersLoading,
-      loadState: isMonitoringLoading || isTrackersLoading,
+      rowsLoadState:
+        isTrackersLoading || isTrackerGroupingsLoading || isPendingCameraGroupSwitch,
+      loadState:
+        isMonitoringLoading ||
+        isTrackersLoading ||
+        isTrackerGroupingsLoading ||
+        isPendingCameraGroupSwitch,
       pendingReviewWallSec,
     }),
     [
@@ -500,6 +520,8 @@ const Monitor = () => {
       rangeSessions,
       expandedCamera,
       isTrackersLoading,
+      isTrackerGroupingsLoading,
+      isPendingCameraGroupSwitch,
       isMonitoringLoading,
       pendingReviewWallSec,
     ],
@@ -534,6 +556,7 @@ const Monitor = () => {
         accepted: ep.accepted,
         overlapsUnreviewed:
           ep.accepted === true ||
+          (!!ep.meta && ep.reviewed) ||
           (ep.reviewed &&
             filteredEventPoints.some(
               (other) =>
@@ -612,7 +635,7 @@ const Monitor = () => {
         onRejectTag={handleRejectEventPoint}
         customHeight={timelinePopped ? "91%" : "70%"}
       />
-      <NoReviewGuard open={hasNothingToReview} onGoBack={() => navigate(-1)} />
+      <NoReviewGuard reason={noReviewReason} onGoBack={() => navigate(-1)} />
     </Box>
   );
 };

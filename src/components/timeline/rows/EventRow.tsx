@@ -163,6 +163,7 @@ function drawFrame(
         const isEditing = ep.id === editingId;
         const overlapsBlue =
           ep.accepted === true ||
+          (!!ep.meta && ep.reviewed) ||
           (ep.reviewed &&
             points.some(
               (other) =>

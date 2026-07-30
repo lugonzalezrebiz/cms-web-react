@@ -89,25 +89,32 @@ export const useAutoSelectOnMarkerOverDiamond = ({
         ep.reviewed === false &&
         !ep.rejected &&
         !hasReviewedTwin(ep, cameraEventPoints);
+      // Points within TAG_TOLERANCE_SEC of the earliest pending one are treated as
+      // the same "simultaneous" cluster (e.g. two cameras tagging the same real
+      // event) — the digit shortcuts let the reviewer pick between them. Anything
+      // further out still has to wait its turn.
       if (
         isPending &&
         earliestPendingSec !== undefined &&
-        ep.timeSec > earliestPendingSec
+        ep.timeSec > earliestPendingSec + TAG_TOLERANCE_SEC
       ) {
         continue;
       }
 
       // A pending point's own review context (its full window — the same one the
       // wall/playback use) always wins over merely being pixel-close to some other,
-      // unrelated diamond, and over any explicitly-pinned row: it's what's actually
-      // blocking progress, so it must stay the active selection until resolved.
+      // unrelated diamond: it's what's actually blocking progress, so it must stay
+      // the active selection until resolved — unless the reviewer has explicitly
+      // pinned a different member of the same simultaneous cluster (see "pinned"
+      // below), in which case that pick is respected.
       const windowEnd =
         ep.mode === "RANGE" && ep.endSec > ep.timeSec
           ? ep.endSec
           : ep.timeSec + TAG_TOLERANCE_SEC;
       const inReviewWindow =
         isPending &&
-        resolvedMarkerSec >= ep.timeSec &&
+        earliestPendingSec !== undefined &&
+        resolvedMarkerSec >= earliestPendingSec &&
         resolvedMarkerSec <= windowEnd;
       if (inReviewWindow) {
         const rowIndex = rowIndexFor(ep);
@@ -123,7 +130,14 @@ export const useAutoSelectOnMarkerOverDiamond = ({
 
     if (blockingCandidates.length > 0) {
       blockingCandidates.sort((a, b) => a.ep.timeSec - b.ep.timeSec);
-      const winner = blockingCandidates[0];
+      // If the reviewer explicitly pinned a row (digit shortcut) that's part of
+      // this blocking cluster, respect it instead of always snapping back to the
+      // chronologically earliest member.
+      const pinned =
+        iTrackId !== null
+          ? blockingCandidates.find((c) => flatRows[c.rowIndex]?.id === iTrackId)
+          : undefined;
+      const winner = pinned ?? blockingCandidates[0];
       const bestRowId = flatRows[winner.rowIndex].id;
       if (bestRowId !== iTrackId) setITrackId(bestRowId);
       if (winner.ep.id !== selectedEventPointId)

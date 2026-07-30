@@ -2,20 +2,43 @@ import { Dialog, Typography } from "@mui/material";
 import { Colors } from "../theme";
 import Button from "./Button";
 
+type NoReviewReason = "no-trackers" | "no-groups" | "no-events";
+
 interface NoReviewGuardProps {
-  open: boolean;
   onGoBack: () => void;
+  reason?: NoReviewReason;
 }
 
-export default function NoReviewGuard({ open, onGoBack }: NoReviewGuardProps) {
-  if (!open) return null;
+const MESSAGES: Record<NoReviewReason, { title: string; body: string }> = {
+  "no-trackers": {
+    title: "No Trackers Configured",
+    body: "This location has no trackers configured, so there is nothing to review. Please set up the trackers first.",
+  },
+  "no-groups": {
+    title: "No Groups Configured",
+    body: "This location has no tracker groups configured, so there is nothing to review. Please set up the groups first.",
+  },
+  "no-events": {
+    title: "No Events Found",
+    body: "This assignment has no recorded events to review. Please go back and select a different assignment.",
+  },
+};
+
+export default function NoReviewGuard({
+  onGoBack,
+  reason,
+}: NoReviewGuardProps) {
+  if (!reason) return null;
+
+  const { title, body } = MESSAGES[reason];
 
   return (
     <Dialog
       open
       disableEscapeKeyDown
-      onClose={(_event, reason) => {
-        if (reason === "backdropClick" || reason === "escapeKeyDown") return;
+      onClose={(_event, closeReason) => {
+        if (closeReason === "backdropClick" || closeReason === "escapeKeyDown")
+          return;
       }}
       slotProps={{
         paper: {
@@ -38,11 +61,10 @@ export default function NoReviewGuard({ open, onGoBack }: NoReviewGuardProps) {
       }}
     >
       <Typography variant="h5" fontWeight={700} mb={1}>
-        Nothing to Review
+        {title}
       </Typography>
       <Typography color="text.secondary" mb={3}>
-        There are no AI-flagged events for this assignment. Please go back
-        and select a different assignment.
+        {body}
       </Typography>
 
       <Button fullWidth outfit square onClick={onGoBack}>
