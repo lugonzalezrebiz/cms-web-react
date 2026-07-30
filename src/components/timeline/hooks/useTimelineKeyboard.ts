@@ -201,7 +201,14 @@ export const useTimelineKeyboard = ({
         e.preventDefault();
         onRedoRef.current?.();
       } else if (e.key === "Delete") {
-        onDeleteRef.current?.();
+        const target = cameraEventPoints?.find(
+          (ep) => ep.id === selectedEventPointId,
+        );
+        if (target && target.reviewed === false && !target.rejected) {
+          onRejectRef.current?.(target.id);
+        } else {
+          onDeleteRef.current?.();
+        }
       } else if (e.key === "h") {
         setMarkerSec(timelineStartSec);
       } else if (!e.ctrlKey && !e.metaKey && !e.altKey && /^[0-9]$/.test(e.key)) {
