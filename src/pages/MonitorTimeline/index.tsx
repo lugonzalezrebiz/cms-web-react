@@ -120,6 +120,7 @@ const MonitorTimeline = () => {
       const hasUnreviewed = allEventPoints.some(
         (ep) =>
           !ep.reviewed &&
+          !ep.rejected &&
           ep.label === t.name &&
           (!cameraIds || cameraIds.has(ep.cameraId)) &&
           !hasReviewedTwin(ep, allEventPoints),
