@@ -191,7 +191,8 @@ const MonitorHeader = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, isDoneLoading, unreviewedTrackerIds } = useMonitorState();
+  const { handleDone, isDoneLoading, unreviewedTrackerIds, aiTrackerIds } =
+    useMonitorState();
   const { cameraGroup, setCameraGroup, setCustomTrackerIDs } = useCameraGroup();
 
   useEffect(() => {
@@ -207,12 +208,16 @@ const MonitorHeader = ({
   }, [monitoringID, setCustomTrackerIDs]);
   const { trackerOptions } = useTrackerOptions(unreviewedTrackerIds);
 
-  const allGroups = [...trackerOptions].sort((a, b) => {
-    const aiDiff = (b.hasAI ? 1 : 0) - (a.hasAI ? 1 : 0);
-    if (aiDiff !== 0) return aiDiff;
-    return (b.options ? 1 : 0) - (a.options ? 1 : 0);
-  });
-  const aiGroups = allGroups.filter((g) => g.hasAI);
+  const allGroups = [...trackerOptions]
+    .map((g) => ({ ...g, everHadAI: aiTrackerIds.has(Number(g.value)) }))
+    .sort((a, b) => {
+      const aiDiff = (b.hasAI ? 1 : 0) - (a.hasAI ? 1 : 0);
+      if (aiDiff !== 0) return aiDiff;
+      return (b.options ? 1 : 0) - (a.options ? 1 : 0);
+    });
+  // Membership uses the persisted everHadAI (stays visible once reviewed),
+  // while each group's `hasAI` icon still reflects live unreviewedTrackerIds.
+  const aiGroups = allGroups.filter((g) => g.everHadAI);
 
   useEffect(() => {
     if (cameraGroup === "tracker" && aiGroups.length > 0) {

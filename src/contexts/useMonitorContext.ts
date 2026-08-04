@@ -15,6 +15,7 @@ export const useRegisterMonitorActions = (
   showFinalizeButton: boolean,
   isDoneLoading: boolean,
   unreviewedTrackerIds: Set<number> = new Set(),
+  aiTrackerIds: Set<number> = new Set(),
 ) => {
   const set = useMonitorSetter();
   useEffect(() => {
@@ -23,6 +24,7 @@ export const useRegisterMonitorActions = (
       showFinalizeButton,
       isDoneLoading,
       unreviewedTrackerIds,
+      aiTrackerIds,
     } satisfies MonitorState);
-  }, [handleDone, showFinalizeButton, isDoneLoading, unreviewedTrackerIds, set]);
+  }, [handleDone, showFinalizeButton, isDoneLoading, unreviewedTrackerIds, aiTrackerIds, set]);
 };

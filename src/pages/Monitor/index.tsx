@@ -121,11 +121,34 @@ const Monitor = () => {
       const hasUnreviewed = allEventPoints.some(
         (ep) =>
           !ep.reviewed &&
+          !ep.rejected &&
           ep.label === t.name &&
           (!cameraIds || cameraIds.has(ep.cameraId)) &&
           !hasReviewedTwin(ep, allEventPoints),
       );
       if (hasUnreviewed) ids.add(t.id);
+    }
+    return ids;
+  }, [trackerGroupings, allEventPoints]);
+
+  // Trackers that have AI-detected events at all (reviewed or not). Backed
+  // directly by preloadedEventPoints from the server, so — unlike a locally
+  // accumulated set — it survives a reload: the tracker's toggle keeps
+  // showing even after everything gets reviewed/rejected, while the AI icon
+  // (driven by the live unreviewedTrackerIds) disappears once nothing is
+  // pending.
+  const aiTrackerIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const t of trackerGroupings) {
+      const cameraIds =
+        t.joinCamera && t.cameras.length > 0
+          ? new Set(t.cameras.map((c) => c.id))
+          : null;
+      const hasAnyEvent = allEventPoints.some(
+        (ep) =>
+          ep.label === t.name && (!cameraIds || cameraIds.has(ep.cameraId)),
+      );
+      if (hasAnyEvent) ids.add(t.id);
     }
     return ids;
   }, [trackerGroupings, allEventPoints]);
@@ -282,9 +305,26 @@ const Monitor = () => {
           ep.reviewed,
       );
       if (hasDuplicate) return;
+
+      // A pending (unreviewed) diamond near the marker for this camera/label
+      // is what the tap is resolving — accept it instead of creating a new,
+      // separately-reviewed point.
+      const pending = allEventPoints.find(
+        (ep) =>
+          ep.cameraId === cameraId &&
+          ep.label === activityLabel &&
+          ep.reviewed === false &&
+          !ep.rejected &&
+          Math.abs(ep.timeSec - markerSec) <= TAG_TOLERANCE_SEC,
+      );
+      if (pending) {
+        handleAcceptEventPoint(pending.id);
+        return;
+      }
+
       handleActivitySelect(cameraId, activityLabel, mode);
     },
-    [allEventPoints, handleActivitySelect, markerSec],
+    [allEventPoints, handleActivitySelect, handleAcceptEventPoint, markerSec],
   );
 
   const allCameraMenuItems = useCameraMenuItems(
@@ -440,6 +480,7 @@ const Monitor = () => {
     showFinalizeButton,
     isDoneLoading,
     unreviewedTrackerIds,
+    aiTrackerIds,
   );
 
   const rawFilteredMenuItems = useFilteredMenuItems({

@@ -17,6 +17,7 @@ interface GroupItem {
   title: string;
   options?: GroupOption[];
   hasAI?: boolean;
+  everHadAI?: boolean;
 }
 
 interface Props {
@@ -140,7 +141,7 @@ const CustomTrackerDialog = ({
               return g.options.map((opt) => {
                 const enabled =
                   selected.includes(opt.value) ||
-                  (isEnabled(opt.value) && !!g.hasAI);
+                  (isEnabled(opt.value) && !!g.everHadAI);
                 return (
                   <Box
                     key={opt.value}
@@ -169,7 +170,8 @@ const CustomTrackerDialog = ({
             }
 
             const enabled =
-              selected.includes(g.value) || (isEnabled(g.value) && !!g.hasAI);
+              selected.includes(g.value) ||
+              (isEnabled(g.value) && !!g.everHadAI);
             return (
               <Box
                 key={g.value}

@@ -240,38 +240,23 @@ export const useTimelineKeyboard = ({
         const position = e.key === "0" ? 10 : Number(e.key);
         const row = selectableRows[position - 1];
         if (row) {
-          const findRowForPoint = (ep: CameraEventPoint) =>
-            flatRows?.find((r) =>
-              isActivityMode
-                ? r.kind === "activity" && r.name === ep.label
-                : r.kind === "event" &&
-                  r.parentCameraId === ep.cameraId &&
-                  r.name === ep.label,
-            );
+          const pointsForRow = (rowId: number, kind: FlatRow["kind"]) =>
+            (cameraEventPoints ?? []).filter((ep) => {
+              if (kind === "camera") return ep.cameraId === rowId;
+              const r = flatRows?.find((fr) => fr.id === rowId);
+              return r ? r.name === ep.label : false;
+            });
 
-          const pendingPoints = (cameraEventPoints ?? []).filter(
-            (ep) =>
-              ep.reviewed === false &&
-              !ep.rejected &&
-              !hasReviewedTwin(ep, cameraEventPoints ?? []),
-          );
-          const blockingPoint =
-            pendingPoints.length > 0
-              ? pendingPoints.reduce((a, b) => (a.timeSec <= b.timeSec ? a : b))
-              : undefined;
-          const blockingRow = blockingPoint ? findRowForPoint(blockingPoint) : undefined;
-
-          if (blockingRow && blockingPoint && blockingRow.id !== row.id) {
-            // Only bypass the block when the target row has a pending point
-            // simultaneous (within TAG_TOLERANCE_SEC) with the blocking one —
-            // that's the "choose which of the 2" case. Otherwise stay blocked.
-            const blockingSec = blockingPoint.timeSec;
-            const hasSimultaneousPendingOnTargetRow = pendingPoints.some(
-              (ep) =>
-                Math.abs(ep.timeSec - blockingSec) <= TAG_TOLERANCE_SEC &&
-                findRowForPoint(ep)?.id === row.id,
+          const currentRow = flatRows?.find((r) => r.id === iTrackId);
+          if (currentRow && currentRow.id !== row.id) {
+            const currentPoints = pointsForRow(currentRow.id, currentRow.kind);
+            const targetPoints = pointsForRow(row.id, row.kind);
+            const shareTolerance = targetPoints.some((tp) =>
+              currentPoints.some(
+                (cp) => Math.abs(tp.timeSec - cp.timeSec) <= TAG_TOLERANCE_SEC,
+              ),
             );
-            if (!hasSimultaneousPendingOnTargetRow) return;
+            if (!shareTolerance) return;
           }
 
           setITrackId(row.id);

@@ -5,6 +5,7 @@ export interface MonitorState {
   showFinalizeButton: boolean;
   isDoneLoading: boolean;
   unreviewedTrackerIds: Set<number>;
+  aiTrackerIds: Set<number>;
 }
 
 export const MonitorStateContext = createContext<MonitorState>({
@@ -12,6 +13,7 @@ export const MonitorStateContext = createContext<MonitorState>({
   showFinalizeButton: false,
   isDoneLoading: false,
   unreviewedTrackerIds: new Set(),
+  aiTrackerIds: new Set(),
 });
 
 export const MonitorSetterContext = createContext<(s: MonitorState) => void>(() => {});
