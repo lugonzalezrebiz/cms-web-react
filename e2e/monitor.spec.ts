@@ -111,6 +111,7 @@ test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
     'Undo',
     'Redo',
     'Create / accept event point on selected line',
+    'Mark AI as incorrect (keeps the point visible)',
     'Select tracker line',
     'Move to start',
     'Delete event point under marker',
