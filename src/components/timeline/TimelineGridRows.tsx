@@ -53,6 +53,7 @@ interface TimelineGridRowsProps {
   onUserPan?: () => void;
   loadState?: boolean;
   pendingReviewWallSec?: number;
+  hasMultipleRows: boolean;
 }
 
 export const TimelineGridRows = ({
@@ -91,6 +92,7 @@ export const TimelineGridRows = ({
   onUserPan,
   loadState = false,
   pendingReviewWallSec,
+  hasMultipleRows,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -265,6 +267,7 @@ export const TimelineGridRows = ({
                   onEnterEditMode={onEnterEditMode}
                   onEditEventPoint={onEditEventPoint}
                   pendingReviewWallSec={pendingReviewWallSec}
+                  hasMultipleRows={hasMultipleRows}
                 />
               </Box>
             ),

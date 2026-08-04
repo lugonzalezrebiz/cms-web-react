@@ -33,6 +33,7 @@ const TimeLine = ({
   onRemoveEventPoint,
   onAcceptEventPoint,
   onRejectEventPoint,
+  onMarkAiIncorrect,
   onConvertEventPointToLocal,
   viewMode = "camera",
   menuItems = [],
@@ -60,9 +61,15 @@ const TimeLine = ({
   onRemoveEventPoint?: (id: number) => void;
   onAcceptEventPoint?: (id: number) => void;
   onRejectEventPoint?: (id: number) => void;
+  onMarkAiIncorrect?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   viewMode?: "camera" | "activity";
-  menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
+  menuItems?: {
+    id: number;
+    name: string;
+    onClick?: (index: number) => void;
+    onReject?: (index: number) => void;
+  }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
   expandedIcon: boolean;
   rowsLoadState?: boolean;
@@ -89,6 +96,7 @@ const TimeLine = ({
   const selectableRows = isActivityMode
     ? activityRowsData.selectableRows
     : cameraRowsData.selectableRows;
+  const hasMultipleRows = selectableRows.length >= 2;
   const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
 
   const playWindowRef = useRef<PlayWindow | undefined>(undefined);
@@ -285,6 +293,7 @@ const TimeLine = ({
     onDeleteEventPoint: handleDeleteEventPoint,
     onAcceptEventPoint,
     onRejectEventPoint,
+    onMarkAiIncorrect,
     onUndo,
     onRedo,
     onTogglePlay: handleTogglePlay,
@@ -369,6 +378,7 @@ const TimeLine = ({
         rowsLoadState={rowsLoadState}
         loadState={loadState}
         pendingReviewWallSec={state.pendingReviewWallSec}
+        hasMultipleRows={hasMultipleRows}
       />
     </Box>
   );

@@ -73,11 +73,14 @@ const Monitor = () => {
     handleRejectEventPoint,
     acceptedEventIds,
     handleAcceptEventPoint,
+    aiIncorrectEventIds,
+    handleMarkAiIncorrect,
     markerSec,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
     handleConvertToEditableLocal,
     handleActivitySelect,
+    handleActivityReject,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
     handleUndo,
@@ -98,9 +101,34 @@ const Monitor = () => {
   const allEventPoints = useMemo(
     () =>
       [...cameraEventPoints, ...preloadedEventPoints].map((ep) => {
-        if (rejectedEventIds.has(ep.id)) return { ...ep, rejected: true };
-        if (acceptedEventIds.has(ep.id))
+        if (rejectedEventIds.has(ep.id))
+          return { ...ep, rejected: true, reviewed: true, reviewDisagree: true };
+        if (acceptedEventIds.has(ep.id)) {
+          // Accepting a POINT diamond always confirms value=true (a violation happened);
+          // if the AI's own original value said otherwise, that's a reviewer disagreement.
+          if (ep.mode === "POINT") {
+            return {
+              ...ep,
+              accepted: true,
+              reviewed: true,
+              value: true,
+              reviewDisagree: ep.value !== true,
+            };
+          }
           return { ...ep, accepted: true, reviewed: true };
+        }
+        if (aiIncorrectEventIds.has(ep.id)) {
+          if (ep.mode === "POINT") {
+            return {
+              ...ep,
+              accepted: true,
+              reviewed: true,
+              value: false,
+              reviewDisagree: ep.value !== false,
+            };
+          }
+          return { ...ep, accepted: true, reviewed: true };
+        }
         return ep;
       }),
     [
@@ -108,6 +136,7 @@ const Monitor = () => {
       preloadedEventPoints,
       acceptedEventIds,
       rejectedEventIds,
+      aiIncorrectEventIds,
     ],
   );
 
@@ -487,6 +516,7 @@ const Monitor = () => {
     trackers,
     trackerGroupings,
     handleActivitySelect,
+    handleActivityReject,
     isJoinCameraTracker,
     isJoinCameraSpecific,
     isDirectTracker,
@@ -524,6 +554,7 @@ const Monitor = () => {
       onRemoveEventPoint: handleDeleteEventPoint,
       onAcceptEventPoint: handleAcceptEventPoint,
       onRejectEventPoint: handleRejectEventPoint,
+      onMarkAiIncorrect: handleMarkAiIncorrect,
       onConvertEventPointToLocal: handleConvertEventPoint,
       viewMode: "activity" as const,
       menuItems: filteredMenuItems,
@@ -556,6 +587,7 @@ const Monitor = () => {
       handleDeleteEventPoint,
       handleAcceptEventPoint,
       handleRejectEventPoint,
+      handleMarkAiIncorrect,
       handleConvertEventPoint,
       filteredMenuItems,
       rangeSessions,

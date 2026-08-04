@@ -62,6 +62,7 @@ function drawDiamond(
   outlineWidth: number,
   shadowColor: string | null,
   shadowBlur: number,
+  strokeColor: string = "#ffffff",
 ) {
   const half = size / 2;
   ctx.save();
@@ -76,7 +77,7 @@ function drawDiamond(
   // stroke without shadow
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = "#ffffff";
+  ctx.strokeStyle = strokeColor;
   ctx.lineWidth = outlineWidth;
   ctx.stroke();
   ctx.restore();
@@ -128,6 +129,7 @@ function drawFrame(
   visibleDuration: number,
   anim: AnimState,
   editingId: number | null,
+  hasMultipleRows: boolean,
 ) {
   ctx.clearRect(0, 0, width, height);
   const cy = height / 2;
@@ -171,22 +173,61 @@ function drawFrame(
                 !other.reviewed &&
                 other.timeSec === ep.timeSec,
             ));
-        const activeColor = overlapsBlue
-          ? Colors.leafGreen
-          : isEditing
-            ? Colors.vividOrange
-            : ep.reviewed
-              ? Colors.vividOrange
-              : Colors.blue;
-        const idleColor = overlapsBlue
-          ? Colors.mintFoam
-          : isEditing
-            ? Colors.lightOrange
-            : ep.reviewed
-              ? Colors.lightOrange
-              : Colors.lightSkyBlue;
+        const isEligibleForNewScheme = ep.mode === "POINT" && hasMultipleRows;
+        const isResolvedPoint = overlapsBlue && isEligibleForNewScheme;
+        const isCorrectionAccept =
+          !overlapsBlue &&
+          isEligibleForNewScheme &&
+          ep.reviewed &&
+          ep.value === true &&
+          ep.reviewDisagree === false;
+        const isCorrectionReject =
+          !overlapsBlue &&
+          isEligibleForNewScheme &&
+          ep.reviewed &&
+          ep.value === false &&
+          ep.reviewDisagree === false;
+        const activeColor = isResolvedPoint
+          ? ep.value === true
+            ? Colors.leafGreen
+            : Colors.blushRed
+          : isCorrectionAccept
+            ? Colors.leafGreen
+            : isCorrectionReject
+              ? Colors.blushRed
+              : overlapsBlue
+                ? Colors.leafGreen
+                : isEditing
+                  ? Colors.vividOrange
+                  : ep.reviewed
+                    ? Colors.vividOrange
+                    : Colors.blue;
+        const idleColor = isResolvedPoint
+          ? ep.value === true
+            ? Colors.mintFoam
+            : Colors.palePink
+          : isCorrectionAccept
+            ? Colors.mintFoam
+            : isCorrectionReject
+              ? Colors.palePink
+              : overlapsBlue
+                ? Colors.mintFoam
+                : isEditing
+                  ? Colors.lightOrange
+                  : ep.reviewed
+                    ? Colors.lightOrange
+                    : Colors.lightSkyBlue;
         const shadowColor = t > 0 ? colorAlpha(activeColor, "99") : null;
         const shadowBlur = t * 10;
+        const diamondStrokeColor = isResolvedPoint
+          ? ep.reviewDisagree === false
+            ? Colors.green
+            : ep.reviewDisagree === true
+              ? Colors.red
+              : "#ffffff"
+          : isCorrectionAccept || isCorrectionReject
+            ? Colors.vividOrange
+            : "#ffffff";
 
         if (pass === "bars") {
           if (ep.mode !== "RANGE" || ep.endSec <= ep.timeSec) continue;
@@ -234,6 +275,7 @@ function drawFrame(
               outlineWidth,
               shadowColor,
               shadowBlur,
+              diamondStrokeColor,
             );
           }
           const endDiamondX = toSecX(ep.endSec);
@@ -252,6 +294,7 @@ function drawFrame(
               outlineWidth,
               shadowColor,
               shadowBlur,
+              diamondStrokeColor,
             );
           }
         }
@@ -284,6 +327,7 @@ export interface EventRowProps {
   onStartMove: (epId: number, e: React.MouseEvent, maxSec: number) => void;
   onEditEventPoint?: (id: number) => void;
   pendingReviewWallSec?: number;
+  hasMultipleRows: boolean;
 }
 
 export const EventRow = memo(
@@ -306,6 +350,7 @@ export const EventRow = memo(
     onStartMove,
     onEditEventPoint,
     pendingReviewWallSec,
+    hasMultipleRows,
   }: EventRowProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -318,6 +363,7 @@ export const EventRow = memo(
       selectedId: null as number | null,
       prevSelectedId: null as number | null,
       editingId: null as number | null,
+      hasMultipleRows: false,
       animating: false,
       animStartTime: 0,
       rafId: 0,
@@ -392,6 +438,7 @@ export const EventRow = memo(
             animProgress,
           },
           s.editingId,
+          s.hasMultipleRows,
         );
       });
     }, []);
@@ -422,6 +469,7 @@ export const EventRow = memo(
       s.visibleEnd = visibleEnd;
       s.visibleDuration = visibleDuration;
       s.editingId = editingEventPointId;
+      s.hasMultipleRows = hasMultipleRows;
 
       if (selectedEventPointId !== prevSelectedId) {
         s.prevSelectedId = prevSelectedId;
@@ -438,6 +486,7 @@ export const EventRow = memo(
       visibleDuration,
       selectedEventPointId,
       editingEventPointId,
+      hasMultipleRows,
       scheduleFrame,
     ]);
 

@@ -59,6 +59,7 @@ export type CameraEventPoint = {
   entryIds?: number[];
   rejected?: boolean;
   accepted?: boolean;
+  reviewDisagree?: boolean;
   zoneId?: number | null;
   subject?: number | null;
   object?: number | null;

@@ -59,6 +59,7 @@ export interface TimelineBodyViewProps {
   rowsLoadState?: boolean;
   loadState?: boolean;
   pendingReviewWallSec?: number;
+  hasMultipleRows: boolean;
 }
 
 const TimelineBody = ({
@@ -110,6 +111,7 @@ const TimelineBody = ({
   rowsLoadState,
   loadState,
   pendingReviewWallSec,
+  hasMultipleRows,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -200,6 +202,7 @@ const TimelineBody = ({
           onEnterEditMode={onEnterEditMode}
           loadState={loadState}
           pendingReviewWallSec={pendingReviewWallSec}
+          hasMultipleRows={hasMultipleRows}
         />
 
         {!loadState && (

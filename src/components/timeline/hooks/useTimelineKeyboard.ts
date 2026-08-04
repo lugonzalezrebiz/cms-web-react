@@ -33,10 +33,16 @@ interface UseTimelineKeyboardParams {
   totalSec: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
   cameraEventPoints?: CameraEventPoint[];
-  menuItems?: { id: number; name: string; onClick?: (index: number) => void }[];
+  menuItems?: {
+    id: number;
+    name: string;
+    onClick?: (index: number) => void;
+    onReject?: (index: number) => void;
+  }[];
   onDeleteEventPoint?: () => void;
   onAcceptEventPoint?: (id: number) => void;
   onRejectEventPoint?: (id: number) => void;
+  onMarkAiIncorrect?: (id: number) => void;
   onUndo?: () => number | void;
   onRedo?: () => number | void;
   onTogglePlay?: () => void;
@@ -73,6 +79,7 @@ export const useTimelineKeyboard = ({
   onDeleteEventPoint,
   onAcceptEventPoint,
   onRejectEventPoint,
+  onMarkAiIncorrect,
   onUndo,
   onRedo,
   onTogglePlay,
@@ -85,6 +92,7 @@ export const useTimelineKeyboard = ({
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
   const onRejectRef = useRef(onRejectEventPoint);
+  const onMarkAiIncorrectRef = useRef(onMarkAiIncorrect);
   const onUndoRef = useRef(onUndo);
   const onRedoRef = useRef(onRedo);
   const onTogglePlayRef = useRef(onTogglePlay);
@@ -92,6 +100,7 @@ export const useTimelineKeyboard = ({
     onDeleteRef.current = onDeleteEventPoint;
     onAcceptRef.current = onAcceptEventPoint;
     onRejectRef.current = onRejectEventPoint;
+    onMarkAiIncorrectRef.current = onMarkAiIncorrect;
     onUndoRef.current = onUndo;
     onRedoRef.current = onRedo;
     onTogglePlayRef.current = onTogglePlay;
@@ -204,6 +213,80 @@ export const useTimelineKeyboard = ({
           const supersededPending = cameraEventPoints?.find(
             (ep) =>
               belongsToRow(ep) &&
+              ep.reviewed === false &&
+              !ep.rejected &&
+              ep.timeSec !== currentMarker &&
+              Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
+          );
+          if (supersededPending) onRejectRef.current?.(supersededPending.id);
+        }
+      } else if (
+        e.key === "o" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        iTrackId !== null &&
+        selectableRows.length >= 2
+      ) {
+        const currentMarker = markerSec ?? timelineStartSec;
+        const pending = cameraEventPoints?.find(
+          (ep) =>
+            ep.id === selectedEventPointId &&
+            ep.mode === "POINT" &&
+            ep.reviewed === false &&
+            !ep.rejected &&
+            ep.timeSec === currentMarker,
+        );
+        if (pending) {
+          onMarkAiIncorrectRef.current?.(pending.id);
+
+          const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+          const nextTarget = sorted.find(
+            (ep) =>
+              ep.timeSec >= currentMarker &&
+              ep.id !== pending.id &&
+              ep.reviewed === false &&
+              !ep.rejected &&
+              !hasReviewedTwin(ep, cameraEventPoints ?? []),
+          );
+          if (nextTarget) {
+            (setMarkerSecRaw ?? setMarkerSec)(nextTarget.timeSec);
+            panTo(nextTarget.timeSec);
+            const targetRow = flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === nextTarget.label
+                : r.kind === "event" &&
+                  r.parentCameraId === nextTarget.cameraId &&
+                  r.name === nextTarget.label,
+            );
+            if (targetRow) setITrackId(targetRow.id);
+            setSelectedEventPointId?.(nextTarget.id);
+          }
+        } else {
+          const belongsToRow = (ep: CameraEventPoint) =>
+            flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === ep.label
+                : r.kind === "event" &&
+                  r.parentCameraId === ep.cameraId &&
+                  r.name === ep.label,
+            )?.id === iTrackId;
+
+          const hasNearbyContext = cameraEventPoints?.some(
+            (ep) =>
+              belongsToRow(ep) &&
+              ep.mode === "POINT" &&
+              Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
+          );
+          if (!hasNearbyContext) return;
+
+          const item = menuItems?.find((m) => m.id === iTrackId);
+          item?.onReject?.(iTrackId);
+
+          const supersededPending = cameraEventPoints?.find(
+            (ep) =>
+              belongsToRow(ep) &&
+              ep.mode === "POINT" &&
               ep.reviewed === false &&
               !ep.rejected &&
               ep.timeSec !== currentMarker &&

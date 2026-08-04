@@ -104,7 +104,7 @@ export const useSaveMonitoring = ({
     for (const ep of eventPoints) {
       const trackerId = labelToTrackerId[ep.label] ?? 0;
       const group = getGroup(trackerId, ep.cameraId);
-      const reviewDisagree = ep.rejected === true;
+      const reviewDisagree = ep.rejected === true || ep.reviewDisagree === true;
       const reviewed = isReviewer ? true : ep.reviewed || reviewDisagree;
       const reviewDate = isReviewer || reviewed ? now : null;
 

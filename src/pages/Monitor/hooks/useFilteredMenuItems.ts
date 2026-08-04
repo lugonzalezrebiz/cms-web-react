@@ -17,12 +17,14 @@ export interface MenuItem {
   name: string;
   label: string;
   onClick: (index: number) => void;
+  onReject: (index: number) => void;
 }
 
 interface Params {
   trackers: Tracker[];
   trackerGroupings: TrackerGrouping[];
   handleActivitySelect: (index: number, name: string, mode: "POINT" | "RANGE") => void;
+  handleActivityReject: (index: number, name: string, mode: "POINT" | "RANGE") => void;
   isJoinCameraTracker: boolean;
   isJoinCameraSpecific: boolean;
   isDirectTracker: boolean;
@@ -41,6 +43,7 @@ export function useFilteredMenuItems({
   trackers,
   trackerGroupings,
   handleActivitySelect,
+  handleActivityReject,
   isJoinCameraTracker,
   isJoinCameraSpecific,
   isDirectTracker,
@@ -64,8 +67,9 @@ export function useFilteredMenuItems({
         name: t.name,
         label: t.name,
         onClick: (index: number) => handleActivitySelect(index, t.name, t.mode),
+        onReject: (index: number) => handleActivityReject(index, t.name, t.mode),
       })),
-    [trackers, handleActivitySelect],
+    [trackers, handleActivitySelect, handleActivityReject],
   );
 
   return useMemo(() => {
@@ -79,6 +83,7 @@ export function useFilteredMenuItems({
           name: `${groupingTracker.name} (${cam.name})`,
           label: `${groupingTracker.name} (${cam.name})`,
           onClick: () => handleActivitySelect(cam.id, groupingTracker.name, mode),
+          onReject: () => handleActivityReject(cam.id, groupingTracker.name, mode),
         }));
       }
     }
@@ -96,6 +101,12 @@ export function useFilteredMenuItems({
             label: `${groupingTracker.name} (${camName})`,
             onClick: () =>
               handleActivitySelect(
+                cameraSpecificId,
+                groupingTracker.name,
+                getMode(trackerID),
+              ),
+            onReject: () =>
+              handleActivityReject(
                 cameraSpecificId,
                 groupingTracker.name,
                 getMode(trackerID),
@@ -126,6 +137,7 @@ export function useFilteredMenuItems({
               name: `${tracker.name} (${camName})`,
               label: `${tracker.name} (${camName})`,
               onClick: () => handleActivitySelect(camId, tracker.name, mode),
+              onReject: () => handleActivityReject(camId, tracker.name, mode),
             });
           }
         } else {
@@ -143,6 +155,7 @@ export function useFilteredMenuItems({
                   name: `${tracker.name} (${cam.name})`,
                   label: `${tracker.name} (${cam.name})`,
                   onClick: () => handleActivitySelect(cam.id, tracker.name, mode),
+                  onReject: () => handleActivityReject(cam.id, tracker.name, mode),
                 });
               }
             }

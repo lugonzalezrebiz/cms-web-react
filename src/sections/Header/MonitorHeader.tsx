@@ -87,6 +87,10 @@ const getKeyboardShortcuts = (imagesInterval: number): KeyboardMenuData => ({
       label: "Create / accept event point on selected line",
     },
     {
+      keys: [{ type: "text", label: "O", fontSize: "16px" }],
+      label: "Mark AI as incorrect (keeps the point visible)",
+    },
+    {
       keys: [{ type: "text", label: "1-9, 0", fontSize: "14px" }],
       label: "Select tracker line",
     },
