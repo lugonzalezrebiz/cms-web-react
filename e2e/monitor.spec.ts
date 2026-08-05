@@ -100,10 +100,10 @@ test('clicking Done with no local review actions sends an empty event payload', 
   // group's entries must be empty, regardless of how much history this monitoring session has.
   await waitForTimelineDataReady(page);
 
-  let capturedBody: { events: { entries: unknown[] }[] } | null = null;
+  const captured: { body: { events: { entries: unknown[] }[] } | null } = { body: null };
   await page.route('**/monitoring/*/save2', async (route) => {
     if (route.request().method() === 'POST') {
-      capturedBody = route.request().postDataJSON();
+      captured.body = route.request().postDataJSON();
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
     } else {
       await route.continue();
@@ -120,9 +120,9 @@ test('clicking Done with no local review actions sends an empty event payload', 
   await page.getByRole('button', { name: 'Done' }).click();
   await expect(page).toHaveURL(/\/assignments/, { timeout: 10_000 });
 
-  expect(capturedBody).not.toBeNull();
-  const totalEntries = (capturedBody?.events ?? []).reduce(
-    (sum, group) => sum + group.entries.length,
+  expect(captured.body).not.toBeNull();
+  const totalEntries = (captured.body?.events ?? []).reduce(
+    (sum: number, group: { entries: unknown[] }) => sum + group.entries.length,
     0,
   );
   expect(totalEntries).toBe(0);
@@ -1511,6 +1511,27 @@ test('pressing "i" on the selected line accepts the pending tag and turns its ch
 
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
   await expect(chip).toHaveCSS('background-color', 'rgb(64, 183, 49)', { timeout: 3_000 });
+});
+
+test('pressing "o" on the selected line marks the pending tag AI-incorrect and turns its chip red', async ({ page }) => {
+  // "o" (useTimelineKeyboard.ts) mirrors "i" but for the "there was no attention" case —
+  // handleMarkAiIncorrect sets value:false, reviewDisagree:true on the same point, which
+  // CameraItem's chip renders as Colors.blushRed (#F02326 → rgb(240, 35, 38)) instead of
+  // the green used for "i". Only active for POINT trackers when 2+ rows are visible
+  // (selectableRows.length >= 2), same gating as the numbered row shortcuts.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const rowList = page.getByText('Compliance Violations').locator('xpath=../..');
+  const rowCount = await rowList.locator('span[title]').count();
+  test.skip(rowCount < 2, '"o" only takes effect when 2+ tracker rows are visible');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await page.keyboard.press('o');
+
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(240, 35, 38)', { timeout: 3_000 });
 });
 
 test('pressing "i" creates a reviewed twin instead of flipping the original point reviewed', async ({ page }) => {
