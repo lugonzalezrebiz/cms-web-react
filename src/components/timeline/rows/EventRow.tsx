@@ -3,7 +3,7 @@ import { Colors } from "../../../theme";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
-import { secToTimeString, secToPixelX } from "../utils";
+import { secToTimeString, secToPixelX, isOverlapsBlue } from "../utils";
 
 const ROW_HEIGHT = 32.8;
 const DIAMOND_SIZE = 17;
@@ -163,16 +163,7 @@ function drawFrame(
               : 0;
 
         const isEditing = ep.id === editingId;
-        const overlapsBlue =
-          ep.accepted === true ||
-          (!!ep.meta && ep.reviewed) ||
-          (ep.reviewed &&
-            points.some(
-              (other) =>
-                other.id !== ep.id &&
-                !other.reviewed &&
-                other.timeSec === ep.timeSec,
-            ));
+        const overlapsBlue = isOverlapsBlue(ep, points);
         const isEligibleForNewScheme = ep.mode === "POINT" && hasMultipleRows;
         const isResolvedPoint = overlapsBlue && isEligibleForNewScheme;
         const isCorrectionAccept =

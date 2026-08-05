@@ -41,7 +41,7 @@ interface UseTimelineKeyboardParams {
   }[];
   onDeleteEventPoint?: () => void;
   onAcceptEventPoint?: (id: number) => void;
-  onRejectEventPoint?: (id: number) => void;
+  onRejectEventPoint?: (id: number, skipHistory?: boolean) => void;
   onMarkAiIncorrect?: (id: number) => void;
   onUndo?: () => number | void;
   onRedo?: () => number | void;
@@ -218,7 +218,10 @@ export const useTimelineKeyboard = ({
               ep.timeSec !== currentMarker &&
               Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
           );
-          if (supersededPending) onRejectRef.current?.(supersededPending.id);
+          // Bundle with the creation above into a single undo step — the
+          // pushHistory for that creation already captured the pre-supersede
+          // state, so this reject must not push a second, half-way snapshot.
+          if (supersededPending) onRejectRef.current?.(supersededPending.id, true);
         }
       } else if (
         e.key === "o" &&
@@ -292,7 +295,10 @@ export const useTimelineKeyboard = ({
               ep.timeSec !== currentMarker &&
               Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
           );
-          if (supersededPending) onRejectRef.current?.(supersededPending.id);
+          // Bundle with the creation above into a single undo step — the
+          // pushHistory for that creation already captured the pre-supersede
+          // state, so this reject must not push a second, half-way snapshot.
+          if (supersededPending) onRejectRef.current?.(supersededPending.id, true);
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
@@ -332,12 +338,10 @@ export const useTimelineKeyboard = ({
 
           const currentRow = flatRows?.find((r) => r.id === iTrackId);
           if (currentRow && currentRow.id !== row.id) {
-            const currentPoints = pointsForRow(currentRow.id, currentRow.kind);
+            const currentMarker = markerSec ?? timelineStartSec;
             const targetPoints = pointsForRow(row.id, row.kind);
-            const shareTolerance = targetPoints.some((tp) =>
-              currentPoints.some(
-                (cp) => Math.abs(tp.timeSec - cp.timeSec) <= TAG_TOLERANCE_SEC,
-              ),
+            const shareTolerance = targetPoints.some(
+              (tp) => Math.abs(tp.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
             );
             if (!shareTolerance) return;
           }

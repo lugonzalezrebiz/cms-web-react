@@ -92,6 +92,42 @@ test('clicking Done saves the session and navigates back to assignments', async 
   await expect(page).toHaveURL(/\/assignments/, { timeout: 10_000 });
 });
 
+test('clicking Done with no local review actions sends an empty event payload', async ({ page }) => {
+  // eventPointsToSave (Monitor/index.tsx) must only include points touched THIS session
+  // (touchedThisSession, set only by the accept/"o"/reject overlay branches) plus brand-new
+  // local points (!entryIds) — never preloaded points that merely carry historical
+  // reviewDisagree data from a past session. With zero actions taken this session, every
+  // group's entries must be empty, regardless of how much history this monitoring session has.
+  await waitForTimelineDataReady(page);
+
+  let capturedBody: { events: { entries: unknown[] }[] } | null = null;
+  await page.route('**/monitoring/*/save2', async (route) => {
+    if (route.request().method() === 'POST') {
+      capturedBody = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.route('**/monitoring/*/review/finish', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page).toHaveURL(/\/assignments/, { timeout: 10_000 });
+
+  expect(capturedBody).not.toBeNull();
+  const totalEntries = (capturedBody?.events ?? []).reduce(
+    (sum, group) => sum + group.entries.length,
+    0,
+  );
+  expect(totalEntries).toBe(0);
+});
+
 // ─── Header secondary popovers ────────────────────────────────────────────────
 
 test('keyboard shortcuts icon opens shortcuts menu', async ({ page }) => {
@@ -1082,10 +1118,12 @@ test('+ and - keys change the timeline zoom', async ({ page }) => {
   await expect(ruler).not.toHaveCSS('cursor', 'default', { timeout: 3_000 });
 });
 
-test('the "1-9,0" row shortcut only crosses to a different row when the two rows share an event within TAG_TOLERANCE_SEC', async ({ page }) => {
+test('the "1-9,0" row shortcut only crosses to a different row when the destination has an event within TAG_TOLERANCE_SEC of the marker', async ({ page }) => {
   // useTimelineKeyboard's number-key handler (position 1-9,0 → selectableRows[pos-1]) skips
-  // the jump when the destination row shares no event point within TAG_TOLERANCE_SEC (30s,
-  // src/hooks/useTagsForCamera.ts) of any point on the currently focused row (iTrackId).
+  // the jump when the destination row has no event point within TAG_TOLERANCE_SEC (30s,
+  // src/hooks/useTagsForCamera.ts) of the CURRENT MARKER — not of the focused row's own
+  // points (an earlier version compared row-to-row across the whole session, which was too
+  // permissive since some pair almost always lines up somewhere in a real dataset).
   // TimelineRowList's numbered badge is each row's 1-based digit position, and the row's
   // background turns Colors.vividOrange (#fa5f02 → rgb(250, 95, 2)) while it's focused
   // (isFocused = iTrackId === row.id) — both directly observable in the DOM.
@@ -1101,7 +1139,7 @@ test('the "1-9,0" row shortcut only crosses to a different row when the two rows
   );
   const rowBoxes = rowNameSpans.locator('xpath=..');
 
-  // Select a point to focus its row (sets iTrackId) — any reviewed/unreviewed point works.
+  // Select a point to focus its row (sets iTrackId) and the marker — any point works.
   const anyPointButton = page.getByRole('button', { name: /, (reviewed|unreviewed)$/ }).first();
   await anyPointButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
   const pointCount = await anyPointButton.count();
@@ -1118,6 +1156,11 @@ test('the "1-9,0" row shortcut only crosses to a different row when the two rows
   }
   test.skip(focusedIndex === -1, 'could not determine the focused row after selecting a point');
   test.skip(focusedIndex >= 10, 'focused row has no digit shortcut (position > 10)');
+
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const markerText = await timeDisplay.textContent();
+  const [mh, mm, ms] = (markerText ?? '00:00:00').split(':').map(Number);
+  const currentMarkerSec = mh * 3600 + mm * 60 + ms;
 
   // Per-row event times, read from each EventRow canvas's own sibling a11y list
   // (canvas's data-row attribute identifies which row it belongs to).
@@ -1148,15 +1191,14 @@ test('the "1-9,0" row shortcut only crosses to a different row when the two rows
   }
 
   const TAG_TOLERANCE_SEC = 30;
-  const focusedTimes = timesByRow.get(rowNames[focusedIndex]) ?? [];
 
   let blockedIndex = -1;
   let allowedIndex = -1;
   for (let j = 0; j < Math.min(rowCount, 10); j++) {
     if (j === focusedIndex) continue;
     const targetTimes = timesByRow.get(rowNames[j]) ?? [];
-    const shares = targetTimes.some((t) =>
-      focusedTimes.some((f) => Math.abs(t - f) <= TAG_TOLERANCE_SEC),
+    const shares = targetTimes.some(
+      (t) => Math.abs(t - currentMarkerSec) <= TAG_TOLERANCE_SEC,
     );
     if (shares && allowedIndex === -1) allowedIndex = j;
     if (!shares && blockedIndex === -1) blockedIndex = j;

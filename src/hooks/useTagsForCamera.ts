@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { CameraEventPoint } from "../components/timeline/types";
 import type { CameraContextMenuItem } from "../components/CameraLayout/CameraOverlayMenu";
 import type { CameraInfo } from "./useExitingCameras";
+import { isOverlapsBlue } from "../components/timeline/utils";
 
 export const TAG_TOLERANCE_SEC = 30;
 
@@ -38,17 +39,13 @@ export const useTagsForCamera = (
           reviewed: ep.reviewed,
           rejected: ep.rejected,
           accepted: ep.accepted,
-          overlapsUnreviewed:
-            ep.accepted === true ||
-            (!!ep.meta && ep.reviewed) ||
-            (ep.reviewed &&
-              cameraEventPoints.some(
-                (other) =>
-                  other.id !== ep.id &&
-                  other.label === ep.label &&
-                  !other.reviewed &&
-                  other.timeSec === ep.timeSec,
-              )),
+          value: ep.value,
+          mode: ep.mode,
+          reviewDisagree: ep.reviewDisagree,
+          overlapsUnreviewed: isOverlapsBlue(
+            ep,
+            cameraEventPoints.filter((other) => other.label === ep.label),
+          ),
           onClick: () => {},
         }));
     },

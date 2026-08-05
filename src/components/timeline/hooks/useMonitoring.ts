@@ -22,6 +22,7 @@ interface PointEntry {
   zoneId: number | null;
   reviewed: boolean;
   reviewDisagree?: boolean;
+  status?: string | null;
   value: boolean;
   subject?: number | null;
   object?: number | null;
@@ -39,6 +40,7 @@ interface RangeEntry {
   zoneId: number | null;
   reviewed: boolean;
   reviewDisagree?: boolean;
+  status?: string | null;
   subject?: number | null;
   object?: number | null;
   meta?: string | null;
@@ -92,7 +94,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           endSec: timeSec,
           label,
           reviewed: entry.reviewed,
-          rejected: entry.reviewDisagree === true,
+          rejected: entry.status === "ARCHIVED",
           reviewDisagree: entry.reviewDisagree === true,
           value: entry.value,
           mode,
@@ -115,7 +117,7 @@ function buildEventPoints(events: ApiEvent[], trackerMap: Map<number, string>, m
           endSec,
           label,
           reviewed: entry.reviewed,
-          rejected: entry.reviewDisagree === true,
+          rejected: entry.status === "ARCHIVED",
           reviewDisagree: entry.reviewDisagree === true,
           value: true,
           mode: "RANGE",

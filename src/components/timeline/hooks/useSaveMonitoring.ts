@@ -15,6 +15,7 @@ interface PointEntry {
   reviewed: boolean;
   reviewDate: string | null;
   reviewDisagree: boolean;
+  status: string | null;
   processed: boolean;
   processDate: string | null;
   subject?: number | null;
@@ -31,6 +32,7 @@ interface RangeEntry {
   zoneId: number | null;
   reviewed: boolean;
   reviewDisagree: boolean;
+  status: string | null;
   processed: boolean;
   processDate: string | null;
   subject?: number | null;
@@ -107,6 +109,9 @@ export const useSaveMonitoring = ({
       const reviewDisagree = ep.rejected === true || ep.reviewDisagree === true;
       const reviewed = isReviewer ? true : ep.reviewed || reviewDisagree;
       const reviewDate = isReviewer || reviewed ? now : null;
+      // Archiving (hiding on reload) is tracked separately from reviewDisagree — the latter
+      // now only drives the diamond's border color and must not also hide it.
+      const status = ep.rejected === true ? "ARCHIVED" : null;
 
       if (ep.mode === "RANGE") {
         const endSec = ep.endSec > ep.timeSec ? ep.endSec : ep.timeSec;
@@ -119,6 +124,7 @@ export const useSaveMonitoring = ({
           zoneId: ep.zoneId ?? null,
           reviewed,
           reviewDisagree,
+          status,
           processed: ep.processed ?? false,
           processDate: ep.processDate ?? null,
           subject: ep.subject ?? null,
@@ -135,6 +141,7 @@ export const useSaveMonitoring = ({
           reviewed,
           reviewDate,
           reviewDisagree,
+          status,
           processed: ep.processed ?? false,
           processDate: ep.processDate ?? null,
           subject: ep.subject ?? null,
@@ -153,6 +160,7 @@ export const useSaveMonitoring = ({
         zoneId: null,
         reviewed: isReviewer,
         reviewDisagree: false,
+        status: null,
         processed: false,
         processDate: null,
       });

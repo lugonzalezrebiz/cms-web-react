@@ -13,6 +13,24 @@ export const hasReviewedTwin = (
       other.timeSec === ep.timeSec,
   );
 
+// `points` must already be scoped to ep's own row (same label/camera) — matches
+// EventRow.tsx's per-row `points` list, which this mirrors exactly. Green/red diamonds
+// (any border) are overlapsBlue===true; orange ones (correction or plain reviewed) are
+// overlapsBlue===false — only the latter are eligible for bulk deletion.
+export const isOverlapsBlue = (
+  ep: CameraEventPoint,
+  points: CameraEventPoint[],
+): boolean =>
+  ep.accepted === true ||
+  (!!ep.meta && ep.reviewed) ||
+  (ep.reviewed &&
+    points.some(
+      (other) =>
+        other.id !== ep.id &&
+        !other.reviewed &&
+        other.timeSec === ep.timeSec,
+    ));
+
 export const secToTimeString = (sec: number): string => {
   const h = Math.floor(sec / 3600).toString().padStart(2, "0");
   const m = Math.floor((sec % 3600) / 60).toString().padStart(2, "0");

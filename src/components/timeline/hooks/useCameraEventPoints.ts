@@ -80,6 +80,16 @@ export const useCameraEventPoints = (monitoringID: string) => {
   const cleanUp = () => {
     setCameraEventPoints([]);
     currentPointsRef.current = [];
+    setRejectedEventIds(new Set());
+    currentRejectedRef.current = new Set();
+    setAcceptedEventIds(new Set());
+    currentAcceptedRef.current = new Set();
+    setAiIncorrectEventIds(new Set());
+    currentAiIncorrectRef.current = new Set();
+    historyRef.current = [];
+    futureRef.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
   };
 
   const pushHistory = (
@@ -97,8 +107,10 @@ export const useCameraEventPoints = (monitoringID: string) => {
     setCanRedo(false);
   };
 
-  const handleRejectEventPoint = (id: number) => {
-    pushHistory(currentPointsRef.current, currentRejectedRef.current, currentAcceptedRef.current);
+  const handleRejectEventPoint = (id: number, skipHistory = false) => {
+    if (!skipHistory) {
+      pushHistory(currentPointsRef.current, currentRejectedRef.current, currentAcceptedRef.current);
+    }
     setRejectedEventIds((prev) => {
       const next = new Set(prev).add(id);
       currentRejectedRef.current = next;

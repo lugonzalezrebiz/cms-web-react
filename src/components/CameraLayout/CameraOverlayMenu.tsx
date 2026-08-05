@@ -13,6 +13,9 @@ export interface CameraContextMenuItem {
   rejected?: boolean;
   accepted?: boolean;
   overlapsUnreviewed?: boolean;
+  value?: boolean;
+  mode?: "POINT" | "RANGE";
+  reviewDisagree?: boolean;
   onClick: (cameraId: number) => void;
 }
 

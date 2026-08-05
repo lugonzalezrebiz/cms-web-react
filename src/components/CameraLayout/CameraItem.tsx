@@ -238,7 +238,9 @@ export const CameraItem = ({
                 alignItems: "center",
                 gap: "4px",
                 bgcolor: tag.overlapsUnreviewed
-                  ? Colors.leafGreen
+                  ? tag.mode === "POINT" && tag.value === false
+                    ? Colors.blushRed
+                    : Colors.leafGreen
                   : tag.reviewed === false
                     ? Colors.blue
                     : Colors.main,

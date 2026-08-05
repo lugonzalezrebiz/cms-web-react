@@ -60,6 +60,7 @@ export type CameraEventPoint = {
   rejected?: boolean;
   accepted?: boolean;
   reviewDisagree?: boolean;
+  touchedThisSession?: boolean;
   zoneId?: number | null;
   subject?: number | null;
   object?: number | null;

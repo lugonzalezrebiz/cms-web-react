@@ -16,6 +16,7 @@ import { useAutoSelectOnMarkerOverDiamond } from "./timeline/hooks/useAutoSelect
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
+import { isOverlapsBlue } from "./timeline/utils";
 
 const TimeLine = ({
   cameraEventPoints,
@@ -60,7 +61,7 @@ const TimeLine = ({
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
   onAcceptEventPoint?: (id: number) => void;
-  onRejectEventPoint?: (id: number) => void;
+  onRejectEventPoint?: (id: number, skipHistory?: boolean) => void;
   onMarkAiIncorrect?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   viewMode?: "camera" | "activity";
@@ -248,8 +249,27 @@ const TimeLine = ({
     state.setIsPlaying(next);
   };
 
+  // Green/red diamonds (any border) are still AI-linked (overlapsBlue) and must not be
+  // bulk-deleted — only orange ones (correction or plain reviewed) are eligible.
+  const targetOverlapsBlue = useMemo(() => {
+    if (!targetEventPoint) return false;
+    const rowPoints = mergedEventPoints.filter((ep) =>
+      isActivityMode
+        ? ep.label === targetEventPoint.label
+        : ep.cameraId === targetEventPoint.cameraId && ep.label === targetEventPoint.label,
+    );
+    return isOverlapsBlue(targetEventPoint, rowPoints);
+  }, [targetEventPoint, mergedEventPoints, isActivityMode]);
+
   const handleDeleteEventPoint = () => {
     if (!targetEventPoint?.reviewed) return;
+    if (targetOverlapsBlue) {
+      // Can't bulk-delete an AI-linked diamond — archive it instead (hides locally,
+      // sends status:"ARCHIVED" on save) rather than a no-op.
+      onRejectEventPoint?.(targetEventPoint.id);
+      state.setSelectedEventPointId(null);
+      return;
+    }
     onRemoveEventPoint?.(targetEventPoint.id);
     state.setSelectedEventPointId(null);
   };

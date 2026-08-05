@@ -13,6 +13,7 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import {
   timeStringToSec,
   hasReviewedTwin,
+  isOverlapsBlue,
 } from "../../components/timeline/utils";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
@@ -102,7 +103,13 @@ const Monitor = () => {
     () =>
       [...cameraEventPoints, ...preloadedEventPoints].map((ep) => {
         if (rejectedEventIds.has(ep.id))
-          return { ...ep, rejected: true, reviewed: true, reviewDisagree: true };
+          return {
+            ...ep,
+            rejected: true,
+            reviewed: true,
+            reviewDisagree: true,
+            touchedThisSession: true,
+          };
         if (acceptedEventIds.has(ep.id)) {
           // Accepting a POINT diamond always confirms value=true (a violation happened);
           // if the AI's own original value said otherwise, that's a reviewer disagreement.
@@ -113,9 +120,10 @@ const Monitor = () => {
               reviewed: true,
               value: true,
               reviewDisagree: ep.value !== true,
+              touchedThisSession: true,
             };
           }
-          return { ...ep, accepted: true, reviewed: true };
+          return { ...ep, accepted: true, reviewed: true, touchedThisSession: true };
         }
         if (aiIncorrectEventIds.has(ep.id)) {
           if (ep.mode === "POINT") {
@@ -125,9 +133,10 @@ const Monitor = () => {
               reviewed: true,
               value: false,
               reviewDisagree: ep.value !== false,
+              touchedThisSession: true,
             };
           }
-          return { ...ep, accepted: true, reviewed: true };
+          return { ...ep, accepted: true, reviewed: true, touchedThisSession: true };
         }
         return ep;
       }),
@@ -427,6 +436,7 @@ const Monitor = () => {
       handleRemoveEventPoint,
       handleRegisterPreloadedDelete,
       handleConvertToEditableLocal,
+      handleRejectEventPoint,
       broadcastMutation,
     );
 
@@ -493,7 +503,7 @@ const Monitor = () => {
 
   const sessionDate = useSessionDate();
   const eventPointsToSave = useMemo(
-    () => allEventPoints.filter((ep) => !ep.entryIds || ep.accepted || ep.rejected),
+    () => allEventPoints.filter((ep) => !ep.entryIds || ep.touchedThisSession),
     [allEventPoints],
   );
   const { handleDone, isDoneLoading } = useSaveMonitoring({
@@ -627,17 +637,15 @@ const Monitor = () => {
         reviewed: ep.reviewed,
         rejected: ep.rejected,
         accepted: ep.accepted,
-        overlapsUnreviewed:
-          ep.accepted === true ||
-          (!!ep.meta && ep.reviewed) ||
-          (ep.reviewed &&
-            filteredEventPoints.some(
-              (other) =>
-                other.id !== ep.id &&
-                other.cameraId === ep.cameraId &&
-                !other.reviewed &&
-                other.timeSec === ep.timeSec,
-            )),
+        value: ep.value,
+        mode: ep.mode,
+        reviewDisagree: ep.reviewDisagree,
+        overlapsUnreviewed: isOverlapsBlue(
+          ep,
+          filteredEventPoints.filter(
+            (other) => other.cameraId === ep.cameraId && other.label === ep.label,
+          ),
+        ),
         onClick: () => {},
       }));
   }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec]);

@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useDeleteCallback } from "../../../hooks/useApi";
 import type { CameraEventPoint } from "../../../components/timeline/types";
+import { isOverlapsBlue } from "../../../components/timeline/utils";
 
 interface EventEntry {
   type: "POINT" | "RANGE";
@@ -26,6 +27,7 @@ export const useDeleteEventPoint = (
   handleRemoveEventPoint: (id: number) => void,
   handleRegisterPreloadedDelete: (point: CameraEventPoint) => void,
   handleConvertToLocal: (point: CameraEventPoint) => number,
+  handleRejectEventPoint: (id: number) => void,
   onMutated?: () => void,
 ) => {
   const deleteCallback = useDeleteCallback();
@@ -57,6 +59,14 @@ export const useDeleteEventPoint = (
 
   const handleDeleteEventPoint = async (id: number) => {
     const target = allEventPoints.find((ep) => ep.id === id);
+    if (!target) return;
+    // Green/red diamonds (any border) are still AI-linked (overlapsBlue) and must not be
+    // bulk-deleted — archive them instead (hides locally, sends status:"ARCHIVED" on save).
+    const rowPoints = allEventPoints.filter((ep) => ep.label === target.label);
+    if (isOverlapsBlue(target, rowPoints)) {
+      handleRejectEventPoint(id);
+      return;
+    }
     if (target?.entryIds?.length) {
       // Register in undo history BEFORE the async DELETE so the snapshot is captured
       // with the point as a local copy. Undo restores it; handleDone re-saves it via save2.

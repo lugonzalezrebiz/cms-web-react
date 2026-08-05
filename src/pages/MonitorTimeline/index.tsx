@@ -72,7 +72,13 @@ const MonitorTimeline = () => {
     () =>
       [...cameraEventPoints, ...preloadedEventPoints].map((ep) => {
         if (rejectedEventIds.has(ep.id))
-          return { ...ep, rejected: true, reviewed: true, reviewDisagree: true };
+          return {
+            ...ep,
+            rejected: true,
+            reviewed: true,
+            reviewDisagree: true,
+            touchedThisSession: true,
+          };
         if (acceptedEventIds.has(ep.id)) {
           // Accepting a POINT diamond always confirms value=true (a violation happened);
           // if the AI's own original value said otherwise, that's a reviewer disagreement.
@@ -83,9 +89,10 @@ const MonitorTimeline = () => {
               reviewed: true,
               value: true,
               reviewDisagree: ep.value !== true,
+              touchedThisSession: true,
             };
           }
-          return { ...ep, accepted: true, reviewed: true };
+          return { ...ep, accepted: true, reviewed: true, touchedThisSession: true };
         }
         if (aiIncorrectEventIds.has(ep.id)) {
           if (ep.mode === "POINT") {
@@ -95,9 +102,10 @@ const MonitorTimeline = () => {
               reviewed: true,
               value: false,
               reviewDisagree: ep.value !== false,
+              touchedThisSession: true,
             };
           }
-          return { ...ep, accepted: true, reviewed: true };
+          return { ...ep, accepted: true, reviewed: true, touchedThisSession: true };
         }
         return ep;
       }),
@@ -165,6 +173,7 @@ const MonitorTimeline = () => {
       handleRemoveEventPoint,
       handleRegisterPreloadedDelete,
       handleConvertToEditableLocal,
+      handleRejectEventPoint,
       broadcastMutation,
     );
 
@@ -332,7 +341,7 @@ const MonitorTimeline = () => {
   }, [filteredEventPoints]);
 
   const eventPointsToSave = useMemo(
-    () => allEventPoints.filter((ep) => !ep.entryIds || ep.accepted || ep.rejected),
+    () => allEventPoints.filter((ep) => !ep.entryIds || ep.touchedThisSession),
     [allEventPoints],
   );
 
