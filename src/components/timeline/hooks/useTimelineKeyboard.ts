@@ -228,6 +228,29 @@ export const useTimelineKeyboard = ({
           item?.onClick?.(target.cameraId);
 
           onRejectRef.current?.(target.id, true);
+
+          const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+          const nextTarget = sorted.find(
+            (ep) =>
+              ep.timeSec >= target.timeSec &&
+              ep.id !== target.id &&
+              ep.reviewed === false &&
+              !ep.rejected &&
+              !hasReviewedTwin(ep, cameraEventPoints ?? []),
+          );
+          if (nextTarget) {
+            (setMarkerSecRaw ?? setMarkerSec)(nextTarget.timeSec);
+            panTo(nextTarget.timeSec);
+            const targetRow = flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === nextTarget.label
+                : r.kind === "event" &&
+                  r.parentCameraId === nextTarget.cameraId &&
+                  r.name === nextTarget.label,
+            );
+            if (targetRow) setITrackId(targetRow.id);
+            setSelectedEventPointId?.(nextTarget.id);
+          }
         }
       } else if (
         e.key === "o" &&
@@ -305,6 +328,29 @@ export const useTimelineKeyboard = ({
           item?.onReject?.(target.cameraId);
 
           onRejectRef.current?.(target.id, true);
+
+          const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
+          const nextTarget = sorted.find(
+            (ep) =>
+              ep.timeSec >= target.timeSec &&
+              ep.id !== target.id &&
+              ep.reviewed === false &&
+              !ep.rejected &&
+              !hasReviewedTwin(ep, cameraEventPoints ?? []),
+          );
+          if (nextTarget) {
+            (setMarkerSecRaw ?? setMarkerSec)(nextTarget.timeSec);
+            panTo(nextTarget.timeSec);
+            const targetRow = flatRows?.find((r) =>
+              isActivityMode
+                ? r.kind === "activity" && r.name === nextTarget.label
+                : r.kind === "event" &&
+                  r.parentCameraId === nextTarget.cameraId &&
+                  r.name === nextTarget.label,
+            );
+            if (targetRow) setITrackId(targetRow.id);
+            setSelectedEventPointId?.(nextTarget.id);
+          }
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();

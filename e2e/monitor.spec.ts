@@ -1660,10 +1660,18 @@ test('tapping a camera menu item on a pending diamond accepts it instead of crea
   await cameraCell.click({ position: { x: 20, y: 20 } });
   await expect(page.getByText('Select a Compliance Violation')).toBeVisible({ timeout: 5_000 });
 
+  // useCameraMenuItems shows the tracker's own name as the menu item label only for
+  // RANGE (or non-dual-value POINT) trackers. A POINT tracker with exactly 2 values
+  // (e.g. "Attended"/"Unattended") splits into two menu items labeled with those
+  // values instead of the tracker name — getByText(tagName) won't find either one in
+  // that case, so this test only covers the non-split path.
   const overlay = page.getByText('Select a Compliance Violation').locator('xpath=../..');
   const menuItem = overlay.getByText(tagName, { exact: true });
   const hasMenuItem = (await menuItem.count()) > 0;
-  test.skip(!hasMenuItem, `no "${tagName}" option in this camera's context menu in this environment`);
+  test.skip(
+    !hasMenuItem,
+    `no "${tagName}" option in this camera's context menu — likely a dual-value POINT tracker whose menu items are labeled with its values instead`,
+  );
 
   await menuItem.first().click();
 

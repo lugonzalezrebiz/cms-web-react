@@ -297,12 +297,16 @@ const MonitorTimeline = () => {
   >(undefined);
   const cameraGroupInitializedRef = useRef<string | null>(null);
 
+  const pickFirstTarget = (points: typeof filteredEventPoints) =>
+    [...points]
+      .filter((ep) => !ep.reviewed)
+      .sort((a, b) => a.timeSec - b.timeSec)[0] ??
+    [...points].sort((a, b) => a.timeSec - b.timeSec)[0];
+
   useEffect(() => {
     if (isTrackerTab) return;
     cameraGroupInitializedRef.current = null;
-    const first = [...filteredEventPoints].sort(
-      (a, b) => a.timeSec - b.timeSec,
-    )[0];
+    const first = pickFirstTarget(filteredEventPoints);
     if (first !== undefined) {
       setCameraGroupTargetSec(first.timeSec);
       cameraGroupInitializedRef.current = cameraGroup;
@@ -315,9 +319,7 @@ const MonitorTimeline = () => {
   useEffect(() => {
     if (isTrackerTab || cameraGroupInitializedRef.current !== null) return;
     if (filteredEventPoints.length === 0) return;
-    const first = [...filteredEventPoints].sort(
-      (a, b) => a.timeSec - b.timeSec,
-    )[0];
+    const first = pickFirstTarget(filteredEventPoints);
     if (first !== undefined) {
       setCameraGroupTargetSec(first.timeSec);
       cameraGroupInitializedRef.current = cameraGroup;

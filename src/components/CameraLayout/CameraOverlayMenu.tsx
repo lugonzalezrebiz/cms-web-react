@@ -4,6 +4,7 @@ import { Colors, Fonts } from "../../theme";
 
 export interface CameraContextMenuItem {
   id: number;
+  trackerId?: number;
   name: string;
   label: string;
   icon?: string;

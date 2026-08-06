@@ -366,6 +366,39 @@ const Monitor = () => {
     [allEventPoints, handleActivitySelect, handleAcceptEventPoint, markerSec],
   );
 
+  const handleActivityRejectGuarded = useCallback(
+    (
+      cameraId: number,
+      activityLabel: string,
+      mode: "POINT" | "RANGE" = "POINT",
+    ) => {
+      const hasDuplicate = allEventPoints.some(
+        (ep) =>
+          ep.cameraId === cameraId &&
+          ep.label === activityLabel &&
+          ep.timeSec === markerSec &&
+          ep.reviewed,
+      );
+      if (hasDuplicate) return;
+
+      const pending = allEventPoints.find(
+        (ep) =>
+          ep.cameraId === cameraId &&
+          ep.label === activityLabel &&
+          ep.reviewed === false &&
+          !ep.rejected &&
+          Math.abs(ep.timeSec - markerSec) <= TAG_TOLERANCE_SEC,
+      );
+      if (pending) {
+        handleMarkAiIncorrect(pending.id);
+        return;
+      }
+
+      handleActivityReject(cameraId, activityLabel, mode);
+    },
+    [allEventPoints, handleActivityReject, handleMarkAiIncorrect, markerSec],
+  );
+
   const allCameraMenuItems = useCameraMenuItems(
     company,
     location,
@@ -373,6 +406,8 @@ const Monitor = () => {
       ? (sortedCameras[openMenuCamera]?.id ?? null)
       : null,
     handleActivitySelectGuarded,
+    handleActivityRejectGuarded,
+    trackers,
   );
   const allExpandedCameraMenuItems = useCameraMenuItems(
     company,
@@ -381,6 +416,8 @@ const Monitor = () => {
       ? (sortedCameras[expandedCamera]?.id ?? null)
       : null,
     handleActivitySelectGuarded,
+    handleActivityRejectGuarded,
+    trackers,
   );
 
   const trackerMenuFilter = useMemo(
@@ -389,7 +426,7 @@ const Monitor = () => {
         singleTrackerID &&
         (isDirectTracker || isJoinCameraTracker || isJoinCameraSpecific)
       )
-        return items.filter((item) => item.id === singleTrackerID);
+        return items.filter((item) => (item.trackerId ?? item.id) === singleTrackerID);
       if (isCustomMode && customTrackerIDs.length > 0) {
         const trackerIds = new Set<number>();
         for (const id of customTrackerIDs) {
@@ -400,10 +437,10 @@ const Monitor = () => {
             trackerIds.add(Number(id));
           }
         }
-        return items.filter((item) => trackerIds.has(item.id));
+        return items.filter((item) => trackerIds.has(item.trackerId ?? item.id));
       }
       if (isTrackerTab && trackerOption)
-        return items.filter((item) => item.id === Number(trackerOption));
+        return items.filter((item) => (item.trackerId ?? item.id) === Number(trackerOption));
       return items;
     },
     [
@@ -459,12 +496,19 @@ const Monitor = () => {
   >(undefined);
   const cameraGroupInitializedRef = useRef<string | null>(null);
 
+  // Prefer the first still-pending (AI) point — that's what the reviewer actually
+  // needs to land on — falling back to the first point overall once nothing is
+  // pending anymore.
+  const pickFirstTarget = (points: typeof filteredEventPoints) =>
+    [...points]
+      .filter((ep) => !ep.reviewed)
+      .sort((a, b) => a.timeSec - b.timeSec)[0] ??
+    [...points].sort((a, b) => a.timeSec - b.timeSec)[0];
+
   useEffect(() => {
     if (isTrackerTab) return;
     cameraGroupInitializedRef.current = null;
-    const first = [...filteredEventPoints].sort(
-      (a, b) => a.timeSec - b.timeSec,
-    )[0];
+    const first = pickFirstTarget(filteredEventPoints);
     if (first !== undefined) {
       setCameraGroupTargetSec(first.timeSec);
       cameraGroupInitializedRef.current = cameraGroup;
@@ -477,9 +521,7 @@ const Monitor = () => {
   useEffect(() => {
     if (isTrackerTab || cameraGroupInitializedRef.current !== null) return;
     if (filteredEventPoints.length === 0) return;
-    const first = [...filteredEventPoints].sort(
-      (a, b) => a.timeSec - b.timeSec,
-    )[0];
+    const first = pickFirstTarget(filteredEventPoints);
     if (first !== undefined) {
       setCameraGroupTargetSec(first.timeSec);
       cameraGroupInitializedRef.current = cameraGroup;
