@@ -139,8 +139,6 @@ const TimeLine = ({
     flatRows,
     cameraEventPoints: mergedEventPoints,
     resolvedMarkerSec: state.resolvedMarkerSec,
-    visibleDuration: state.visibleDuration,
-    gridRef: state.gridRef,
     isActivityMode,
     iTrackId: state.iTrackId,
     setITrackId: state.setITrackId,

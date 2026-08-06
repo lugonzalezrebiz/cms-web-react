@@ -14,6 +14,7 @@ import {
   timeStringToSec,
   hasReviewedTwin,
   isOverlapsBlue,
+  getEventPointColors,
 } from "../../components/timeline/utils";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
@@ -544,6 +545,9 @@ const Monitor = () => {
     isReviewDataLoading || isPendingCameraGroupSwitch
       ? EMPTY_MENU_ITEMS
       : rawFilteredMenuItems;
+  // Mirrors TimeLine.tsx's own hasMultipleRows (selectableRows.length >= 2) — filteredMenuItems
+  // is the same source useActivityRows builds its selectableRows from, one-to-one.
+  const hasMultipleRows = filteredMenuItems.length >= 2;
 
   const timelineProps = useMemo(
     () => ({
@@ -570,8 +574,7 @@ const Monitor = () => {
       menuItems: filteredMenuItems,
       rangeSessions,
       expandedIcon: !expandedCamera,
-      rowsLoadState:
-        isTrackersLoading || isTrackerGroupingsLoading || isPendingCameraGroupSwitch,
+      rowsLoadState: isReviewDataLoading || isPendingCameraGroupSwitch,
       loadState:
         isMonitoringLoading ||
         isTrackersLoading ||
@@ -606,6 +609,7 @@ const Monitor = () => {
       isTrackerGroupingsLoading,
       isPendingCameraGroupSwitch,
       isMonitoringLoading,
+      isReviewDataLoading,
       pendingReviewWallSec,
     ],
   );
@@ -630,25 +634,35 @@ const Monitor = () => {
         seen.add(ep.label);
         return true;
       })
-      .map((ep) => ({
-        id: ep.id,
-        name: ep.label,
-        label: ep.label,
-        reviewed: ep.reviewed,
-        rejected: ep.rejected,
-        accepted: ep.accepted,
-        value: ep.value,
-        mode: ep.mode,
-        reviewDisagree: ep.reviewDisagree,
-        overlapsUnreviewed: isOverlapsBlue(
+      .map((ep) => {
+        const overlapsUnreviewed = isOverlapsBlue(
           ep,
           filteredEventPoints.filter(
             (other) => other.cameraId === ep.cameraId && other.label === ep.label,
           ),
-        ),
-        onClick: () => {},
-      }));
-  }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec]);
+        );
+        const { fill, border } = getEventPointColors(
+          ep,
+          overlapsUnreviewed,
+          hasMultipleRows,
+        );
+        return {
+          id: ep.id,
+          name: ep.label,
+          label: ep.label,
+          reviewed: ep.reviewed,
+          rejected: ep.rejected,
+          accepted: ep.accepted,
+          value: ep.value,
+          mode: ep.mode,
+          reviewDisagree: ep.reviewDisagree,
+          overlapsUnreviewed,
+          fillColor: fill,
+          borderColor: border,
+          onClick: () => {},
+        };
+      });
+  }, [filteredEventPoints, expandedCamera, sortedCameras, markerSec, hasMultipleRows]);
 
   return (
     <Box
@@ -683,6 +697,7 @@ const Monitor = () => {
           expandedCamera={expandedCamera}
           onExpandCamera={handleExpandCamera}
           loadState={isMonitoringLoading || isCameraReloading}
+          hasMultipleRows={hasMultipleRows}
         />
       </Box>
 

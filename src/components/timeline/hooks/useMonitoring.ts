@@ -167,7 +167,7 @@ export function useMonitoring(
   const { data, error: queryError } = useGet<MonitoringResponse>(
     `monitoring/${monitoringID}/load2`,
     undefined,
-    { refetchOnWindowFocus: false },
+    { refetchOnWindowFocus: false, gcTime: 0 },
   );
   const loading = !data?.success;
 

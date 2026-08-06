@@ -41,6 +41,7 @@ export interface CameraLayoutProps {
   expandedCamera: number | null;
   onExpandCamera: (index: number) => void;
   loadState?: boolean;
+  hasMultipleRows?: boolean;
 }
 
 export const getRowDistribution = (count: number): number[] => {

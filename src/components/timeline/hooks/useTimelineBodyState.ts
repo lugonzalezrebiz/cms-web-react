@@ -3,6 +3,12 @@ import type React from "react";
 import type { FlatRow, PlayWindow, TimelineSnapshot } from "../types";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
+import {
+  TIMELINE_TOTAL_SEC,
+  MIN_PIXELS_PER_TICK,
+  DEFAULT_ZOOM_TICK_STEP_SEC,
+  getZoomForTickStep,
+} from "../constants";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
@@ -32,7 +38,7 @@ export const useTimelineBodyState = ({
   playWindowRef,
 }: UseTimelineBodyStateParams) => {
   const { imagesInterval } = useCompanyConfig();
-  const totalSec = 24 * 3600;
+  const totalSec = TIMELINE_TOTAL_SEC;
   const startSec = 0;
 
   const [zoom, setZoom] = useState(4);
@@ -114,7 +120,6 @@ export const useTimelineBodyState = ({
       : undefined;
 
   const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
-  const MIN_PIXELS_PER_TICK = 60;
   const tickStepSec = TICK_STEPS.find((s) => s * pixelsPerSecond >= MIN_PIXELS_PER_TICK) ?? 21600;
 
   const resolvedMarkerSec = markerSec ?? timelineStartSec;
@@ -234,7 +239,13 @@ export const useTimelineBodyState = ({
   }, [markerSec, isPlaying, totalSec, visibleDuration]);
 
   useEffect(() => {
-    const vd = totalSec / zoom;
+    const gridWidth = gridRef.current?.clientWidth;
+    const initialZoom = gridWidth
+      ? Math.max(1, getZoomForTickStep(gridWidth, DEFAULT_ZOOM_TICK_STEP_SEC))
+      : zoom;
+    if (initialZoom !== zoom) setZoom(initialZoom);
+
+    const vd = totalSec / initialZoom;
     const maxOffset = totalSec - vd;
 
     if (firstActivitySec > 0) {

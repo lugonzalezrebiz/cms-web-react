@@ -384,9 +384,7 @@ const MonitorTimeline = () => {
           isTrackerGroupingsLoading ||
           isPendingCameraGroupSwitch
         }
-        rowsLoadState={
-          isTrackersLoading || isTrackerGroupingsLoading || isPendingCameraGroupSwitch
-        }
+        rowsLoadState={isReviewDataLoading || isPendingCameraGroupSwitch}
         pendingReviewWallSec={pendingReviewWallSec}
       />
       <NoReviewGuard reason={noReviewReason} onGoBack={() => window.close()} />

@@ -3,6 +3,7 @@ import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import { hasReviewedTwin } from "../utils";
 import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
+import { getMaxZoom } from "../constants";
 import type { CameraEventPoint, FlatRow } from "../types";
 
 interface UseTimelineKeyboardParams {
@@ -200,28 +201,40 @@ export const useTimelineKeyboard = ({
                   r.name === ep.label,
             )?.id === iTrackId;
 
-          const hasNearbyContext = cameraEventPoints?.some(
+          const nearbyPoints = (cameraEventPoints ?? []).filter(
             (ep) =>
               belongsToRow(ep) &&
               Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
           );
-          if (!hasNearbyContext) return;
+          if (nearbyPoints.length === 0) return;
 
+          // Whichever diamond is nearest the marker is what "i" is correcting. If
+          // it's already reviewed and already reflects "i" (value: true), there's
+          // nothing to fix — UNLESS it's a POINT diamond sitting at a different
+          // marker position, which "i" can still reposition. RANGE diamonds have no
+          // reposition semantics here (only "accept"), so once reviewed they're
+          // done regardless of where the marker lands within tolerance.
+          const closest = [...nearbyPoints].sort(
+            (a, b) =>
+              Math.abs(a.timeSec - currentMarker) - Math.abs(b.timeSec - currentMarker),
+          )[0];
+          if (
+            closest.reviewed &&
+            closest.value === true &&
+            (closest.mode === "RANGE" || closest.timeSec === currentMarker)
+          )
+            return;
+
+          // A row can span diamonds from more than one physical camera (e.g. a
+          // tracker fed by two cameras) — the correction must land on the same
+          // camera as the diamond it's resolving, not on whatever camera the
+          // row's own id happens to numerically collide with.
           const item = menuItems?.find((m) => m.id === iTrackId);
-          item?.onClick?.(iTrackId);
+          item?.onClick?.(closest.cameraId);
 
-          const supersededPending = cameraEventPoints?.find(
-            (ep) =>
-              belongsToRow(ep) &&
-              ep.reviewed === false &&
-              !ep.rejected &&
-              ep.timeSec !== currentMarker &&
-              Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
-          );
-          // Bundle with the creation above into a single undo step — the
           // pushHistory for that creation already captured the pre-supersede
           // state, so this reject must not push a second, half-way snapshot.
-          if (supersededPending) onRejectRef.current?.(supersededPending.id, true);
+          onRejectRef.current?.(closest.id, true);
         }
       } else if (
         e.key === "o" &&
@@ -275,30 +288,38 @@ export const useTimelineKeyboard = ({
                   r.name === ep.label,
             )?.id === iTrackId;
 
-          const hasNearbyContext = cameraEventPoints?.some(
+          const nearbyPoints = (cameraEventPoints ?? []).filter(
             (ep) =>
               belongsToRow(ep) &&
               ep.mode === "POINT" &&
               Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
           );
-          if (!hasNearbyContext) return;
+          if (nearbyPoints.length === 0) return;
 
+          // Whichever diamond is nearest the marker is what "o" is correcting. If
+          // it's already reviewed, already reflects "o" (value: false), AND the
+          // marker sits on its exact timestamp, there's nothing to fix — creating a
+          // point there would be a pixel-identical duplicate. Otherwise — still
+          // pending, reviewed with the wrong value, or just at a different marker
+          // position — archive it and create a fresh point (correct value, correct
+          // timestamp) at the marker, bundled into a single undo step.
+          const closest = [...nearbyPoints].sort(
+            (a, b) =>
+              Math.abs(a.timeSec - currentMarker) - Math.abs(b.timeSec - currentMarker),
+          )[0];
+          if (closest.reviewed && closest.value === false && closest.timeSec === currentMarker)
+            return;
+
+          // A row can span diamonds from more than one physical camera (e.g. a
+          // tracker fed by two cameras) — the correction must land on the same
+          // camera as the diamond it's resolving, not on whatever camera the
+          // row's own id happens to numerically collide with.
           const item = menuItems?.find((m) => m.id === iTrackId);
-          item?.onReject?.(iTrackId);
+          item?.onReject?.(closest.cameraId);
 
-          const supersededPending = cameraEventPoints?.find(
-            (ep) =>
-              belongsToRow(ep) &&
-              ep.mode === "POINT" &&
-              ep.reviewed === false &&
-              !ep.rejected &&
-              ep.timeSec !== currentMarker &&
-              Math.abs(ep.timeSec - currentMarker) <= TAG_TOLERANCE_SEC,
-          );
-          // Bundle with the creation above into a single undo step — the
           // pushHistory for that creation already captured the pre-supersede
           // state, so this reject must not push a second, half-way snapshot.
-          if (supersededPending) onRejectRef.current?.(supersededPending.id, true);
+          onRejectRef.current?.(closest.id, true);
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
@@ -438,7 +459,43 @@ export const useTimelineKeyboard = ({
       if (selectedTracks.size > 0 && e.key !== "ArrowRight") return;
       const delta = e.key === "ArrowRight" ? imagesInterval : -imagesInterval;
       const base = markerSec ?? timelineStartSec;
-      const next = Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
+      let next = Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
+
+      // Skip the dead zone between diamonds' review windows — nothing is
+      // selectable there (useAutoSelectOnMarkerOverDiamond only hit-tests within
+      // TAG_TOLERANCE_SEC of a diamond), so stepping past a window's edge jumps
+      // straight to the start of the next diamond's window instead of
+      // frame-stepping through empty space.
+      const windows: { start: number; end: number }[] = [];
+      for (const ep of cameraEventPoints ?? []) {
+        if (ep.rejected) continue;
+        const windowEnd =
+          (ep.mode === "RANGE" && ep.endSec > ep.timeSec ? ep.endSec : ep.timeSec) +
+          TAG_TOLERANCE_SEC;
+        windows.push({ start: ep.timeSec - TAG_TOLERANCE_SEC, end: windowEnd });
+      }
+      windows.sort((a, b) => a.start - b.start);
+      const merged: { start: number; end: number }[] = [];
+      for (const w of windows) {
+        const last = merged[merged.length - 1];
+        if (last && w.start <= last.end) {
+          last.end = Math.max(last.end, w.end);
+        } else {
+          merged.push({ ...w });
+        }
+      }
+
+      const currentWindow = merged.find((w) => base >= w.start && base <= w.end);
+      if (currentWindow) {
+        if (e.key === "ArrowRight" && next > currentWindow.end) {
+          const nextWindow = merged.find((w) => w.start > currentWindow.end);
+          if (nextWindow) next = Math.min(timelineEndSec, nextWindow.start);
+        } else if (e.key === "ArrowLeft" && next < currentWindow.start) {
+          const prevWindow = [...merged].reverse().find((w) => w.end < currentWindow.start);
+          if (prevWindow) next = Math.max(timelineStartSec, prevWindow.end);
+        }
+      }
+
       setMarkerSec(next);
       panTo(next);
     };
@@ -489,7 +546,8 @@ export const useTimelineKeyboard = ({
       const mouseX = Math.max(0, Math.min(mouseXRef.current, width));
 
       const oldZoom = zoom;
-      const newZoom = Math.min(72, Math.max(1, oldZoom + (e.key === "+" ? 2 : -2)));
+      const maxZoom = getMaxZoom(width, imagesInterval);
+      const newZoom = Math.min(maxZoom, Math.max(1, oldZoom + (e.key === "+" ? 2 : -2)));
       if (newZoom === oldZoom) return;
 
       const oldVisibleDuration = totalSec / oldZoom;
@@ -506,5 +564,5 @@ export const useTimelineKeyboard = ({
 
     window.addEventListener("keydown", handleZoom);
     return () => window.removeEventListener("keydown", handleZoom);
-  }, [zoom, panOffsetSec, totalSec, gridRef, setZoom, setPanOffsetSec]);
+  }, [zoom, panOffsetSec, totalSec, gridRef, setZoom, setPanOffsetSec, imagesInterval]);
 };

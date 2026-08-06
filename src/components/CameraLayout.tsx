@@ -33,6 +33,7 @@ const CameraLayout = ({
   onRejectEventPoint,
   onExpandCamera: handleExpandCamera,
   loadState = false,
+  hasMultipleRows = false,
 }: CameraLayoutProps) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
@@ -45,6 +46,7 @@ const CameraLayout = ({
     cameraEventPoints,
     markerSec,
     renderedCameras,
+    hasMultipleRows,
   );
 
   const scrollable = renderedCameras.length > 16;

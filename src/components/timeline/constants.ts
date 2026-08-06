@@ -24,6 +24,19 @@ export const TUNNEL_CAMERAS: TimelineSnapshot["timeline"]["tracks"] = [
   { id: 6, name: "Camera 6", category: "activities", sessions: [] },
 ];
 
+export const TIMELINE_TOTAL_SEC = 24 * 3600;
+export const MIN_PIXELS_PER_TICK = 60;
+const DEFAULT_MAX_ZOOM = 72;
+export const DEFAULT_ZOOM_TICK_STEP_SEC = 600;
+
+export const getZoomForTickStep = (gridWidthPx: number, stepSec: number): number =>
+  Math.ceil((MIN_PIXELS_PER_TICK * TIMELINE_TOTAL_SEC) / (stepSec * gridWidthPx));
+
+export const getMaxZoom = (gridWidthPx: number, imagesIntervalSec: number): number => {
+  if (!gridWidthPx || !imagesIntervalSec) return DEFAULT_MAX_ZOOM;
+  return Math.max(DEFAULT_MAX_ZOOM, getZoomForTickStep(gridWidthPx, imagesIntervalSec));
+};
+
 export const MOCK_SNAPSHOT: TimelineSnapshot = {
   timeline: {
     times: {

@@ -1,3 +1,4 @@
+import { Colors } from "../../theme";
 import type { CameraEventPoint } from "./types";
 
 export const hasReviewedTwin = (
@@ -30,6 +31,58 @@ export const isOverlapsBlue = (
         !other.reviewed &&
         other.timeSec === ep.timeSec,
     ));
+
+// Mirrors EventRow.tsx's diamond fill/border selection exactly, so any UI element
+// showing an event point's status (canvas diamond or DOM chip) reads as one system.
+export const getEventPointColors = (
+  ep: Pick<CameraEventPoint, "mode" | "reviewed" | "value" | "reviewDisagree">,
+  overlapsBlue: boolean,
+  hasMultipleRows: boolean,
+  isEditing = false,
+): { fill: string; border: string } => {
+  const isEligibleForNewScheme = ep.mode === "POINT" && hasMultipleRows;
+  const isResolvedPoint = overlapsBlue && isEligibleForNewScheme;
+  const isCorrectionAccept =
+    !overlapsBlue &&
+    isEligibleForNewScheme &&
+    ep.reviewed &&
+    ep.value === true &&
+    ep.reviewDisagree === false;
+  const isCorrectionReject =
+    !overlapsBlue &&
+    isEligibleForNewScheme &&
+    ep.reviewed &&
+    ep.value === false &&
+    ep.reviewDisagree === false;
+
+  const fill = isResolvedPoint
+    ? ep.value === true
+      ? Colors.leafGreen
+      : Colors.blushRed
+    : isCorrectionAccept
+      ? Colors.leafGreen
+      : isCorrectionReject
+        ? Colors.blushRed
+        : overlapsBlue
+          ? Colors.leafGreen
+          : isEditing
+            ? Colors.vividOrange
+            : ep.reviewed
+              ? Colors.vividOrange
+              : Colors.blue;
+
+  const border = isResolvedPoint
+    ? ep.reviewDisagree === false
+      ? Colors.green
+      : ep.reviewDisagree === true
+        ? Colors.red
+        : "#ffffff"
+    : isCorrectionAccept || isCorrectionReject
+      ? Colors.vividOrange
+      : "#ffffff";
+
+  return { fill, border };
+};
 
 export const secToTimeString = (sec: number): string => {
   const h = Math.floor(sec / 3600).toString().padStart(2, "0");

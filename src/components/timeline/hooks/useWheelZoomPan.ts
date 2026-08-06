@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import useCompanyConfig from "../../../hooks/useCompanyConfig";
+import { getMaxZoom } from "../constants";
 
 interface UseWheelZoomPanArgs {
   gridRef: React.RefObject<HTMLDivElement | null>;
@@ -23,6 +25,8 @@ export const useWheelZoomPan = ({
   setPanOffsetSec,
   onUserPan,
 }: UseWheelZoomPanArgs) => {
+  const { imagesInterval } = useCompanyConfig();
+
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
@@ -35,7 +39,8 @@ export const useWheelZoomPan = ({
         const width = rect.width;
 
         const oldZoom = zoom;
-        const newZoom = Math.min(72, Math.max(1, oldZoom + (e.deltaY > 0 ? -2 : 2)));
+        const maxZoom = getMaxZoom(width, imagesInterval);
+        const newZoom = Math.min(maxZoom, Math.max(1, oldZoom + (e.deltaY > 0 ? -2 : 2)));
         if (newZoom === oldZoom) return;
 
         const oldVisibleDuration = totalSec / oldZoom;
@@ -65,5 +70,5 @@ export const useWheelZoomPan = ({
 
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
-  }, [zoom, panOffsetSec, totalSec, setZoom, setPanOffsetSec, onUserPan, gridRef, listBodyRef, rowsScrollRef]);
+  }, [zoom, panOffsetSec, totalSec, setZoom, setPanOffsetSec, onUserPan, gridRef, listBodyRef, rowsScrollRef, imagesInterval]);
 };

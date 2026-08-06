@@ -3,16 +3,10 @@ import type { CameraEventPoint, FlatRow } from "../types";
 import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
 import { hasReviewedTwin } from "../utils";
 
-// Mirrors EventRow's hitDiamond radius (DIAMOND_SIZE / Math.SQRT2 + 3) so the
-// marker "hits" a diamond at the same pixel distance a mouse click would.
-const DIAMOND_HIT_RADIUS_PX = 17 / Math.SQRT2 + 3;
-
 interface UseAutoSelectOnMarkerOverDiamondParams {
   flatRows: FlatRow[];
   cameraEventPoints?: CameraEventPoint[];
   resolvedMarkerSec: number;
-  visibleDuration: number;
-  gridRef: React.RefObject<HTMLDivElement | null>;
   isActivityMode: boolean;
   iTrackId: number | null;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -25,8 +19,6 @@ export const useAutoSelectOnMarkerOverDiamond = ({
   flatRows,
   cameraEventPoints,
   resolvedMarkerSec,
-  visibleDuration,
-  gridRef,
   isActivityMode,
   iTrackId,
   setITrackId,
@@ -40,10 +32,11 @@ export const useAutoSelectOnMarkerOverDiamond = ({
     // read as "left the diamond" and deselect mid-playback (see TimeLine's playWindow).
     if (isPlaying) return;
 
-    const width = gridRef.current?.clientWidth;
-    if (!width || !cameraEventPoints?.length) return;
+    if (!cameraEventPoints?.length) return;
 
-    const toleranceSec = DIAMOND_HIT_RADIUS_PX / (width / visibleDuration);
+    // Fixed regardless of zoom — a pixel-based radius would make "is the marker on this
+    // diamond" inconsistent depending on how zoomed in the timeline is.
+    const toleranceSec = TAG_TOLERANCE_SEC;
     const TIE_EPSILON_SEC = 1e-9;
 
     const rowIndexFor = (ep: CameraEventPoint) =>
@@ -156,12 +149,15 @@ export const useAutoSelectOnMarkerOverDiamond = ({
     // search across every row when no line is currently selected at all. If a line
     // is selected but has nothing within hit range, stay on it with no diamond
     // selected rather than jumping to whatever row happens to be closest.
-    const sameRowCandidates =
-      iTrackId !== null
-        ? candidates.filter((c) => flatRows[c.rowIndex]?.id === iTrackId)
-        : [];
+    // A pinned row that no longer exists in this row set (e.g. the camera-group
+    // toggle just switched to an unrelated set of rows) can't be "stayed on" —
+    // treat it like nothing is pinned so the search below can pick a winner.
+    const iTrackRowExists = iTrackId !== null && flatRows.some((r) => r.id === iTrackId);
+    const sameRowCandidates = iTrackRowExists
+      ? candidates.filter((c) => flatRows[c.rowIndex]?.id === iTrackId)
+      : [];
 
-    if (iTrackId !== null && sameRowCandidates.length === 0) {
+    if (iTrackRowExists && sameRowCandidates.length === 0) {
       if (selectedEventPointId !== null) setSelectedEventPointId(null);
       return;
     }
@@ -187,8 +183,6 @@ export const useAutoSelectOnMarkerOverDiamond = ({
     flatRows,
     cameraEventPoints,
     resolvedMarkerSec,
-    visibleDuration,
-    gridRef,
     isActivityMode,
     iTrackId,
     setITrackId,

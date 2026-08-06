@@ -237,13 +237,8 @@ export const CameraItem = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                bgcolor: tag.overlapsUnreviewed
-                  ? tag.mode === "POINT" && tag.value === false
-                    ? Colors.blushRed
-                    : Colors.leafGreen
-                  : tag.reviewed === false
-                    ? Colors.blue
-                    : Colors.main,
+                bgcolor: tag.fillColor ?? Colors.main,
+                border: `1.5px solid ${tag.borderColor ?? "transparent"}`,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",

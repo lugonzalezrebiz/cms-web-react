@@ -139,15 +139,15 @@ test('keyboard shortcuts icon opens shortcuts menu', async ({ page }) => {
 test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
   // Mirrors getKeyboardShortcuts in src/sections/Header/MonitorHeader.tsx — the marker
   // step labels are built from useCompanyConfig's imagesInterval (company/{id}/config's
-  // "images.interval"), so match any number rather than a hardcoded "5 sec".
+  // "images.interval"), so match any number rather than a hardcoded "5 sec". The "I"/"O"
+  // rows are covered separately below since their labels now depend on the currently
+  // active tracker's mode/values, not a fixed string.
   const staticLabels = [
     'Previous event point',
     'Next event point',
     'Go back',
     'Undo',
     'Redo',
-    'Create / accept event point on selected line',
-    'Mark AI as incorrect (keeps the point visible)',
     'Select tracker line',
     'Move to start',
     'Delete event point under marker',
@@ -164,6 +164,31 @@ test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
   for (const label of staticLabels) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
+  await page.keyboard.press('Escape');
+});
+
+test('keyboard shortcuts menu\'s "I"/"O" rows match the active tracker\'s mode', async ({ page }) => {
+  // getKeyboardShortcuts resolves the currently selected tracker (via
+  // useTrackerGroupResolution's singleTrackerID + useTrackers) and shapes the "I"/"O" rows
+  // from its own mode/values: a POINT tracker with exactly 2 values shows both values as
+  // separate "I"/"O" rows (e.g. "Attended"/"Unattended" for Pay Station Attendance); a
+  // RANGE tracker shows only an "I" row ("Accept event point on the selected line"), never
+  // an "O" row; no tracker resolved (e.g. a mixed "Custom" group) shows neither.
+  await page.locator('img[src*="keyboard-02"]').click();
+  await expect(page.getByText('Keyboard shortcuts')).toBeVisible({ timeout: 5_000 });
+
+  const rangeRow = page.getByText('Accept event point on the selected line', { exact: true });
+  const isRangeTracker = await rangeRow.isVisible().catch(() => false);
+
+  if (isRangeTracker) {
+    await expect(rangeRow).toHaveCount(1);
+  } else {
+    // Can't assert exact wording for the POINT dual-value case — the tracker's own
+    // `values` array supplies it — so just confirm shortcuts still opened cleanly and
+    // move on; the deterministic RANGE case above is the one worth pinning down.
+    test.skip(true, 'active tracker is not RANGE-mode in this environment');
+  }
+
   await page.keyboard.press('Escape');
 });
 
@@ -626,6 +651,37 @@ test('"Other" dropdown lists overflow trackers (icon reflects live status, not m
   await expect(menuItems.first()).toBeVisible();
 
   await page.keyboard.press('Escape');
+});
+
+test('"Other" toggle only shows the ai.svg icon while at least one overflow tracker still has one', async ({ page }) => {
+  // MonitorHeader.tsx builds the "__other__" entry with
+  // `hasAI: overflowGroups.some((g) => g.hasAI)` — it used to be hardcoded `true`, always
+  // showing the icon even after every overflow tracker had been fully reviewed.
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const otherButton = group.getByRole('button', { name: /^Other/ });
+  const hasOther = (await otherButton.count()) > 0;
+  test.skip(!hasOther, 'no overflow "Other" group in this environment');
+
+  await otherButton.click();
+  const menu = page.getByRole('menu');
+  const menuVisible = await menu.isVisible({ timeout: 3_000 }).catch(() => false);
+  test.skip(!menuVisible, '"Other" did not open a dropdown menu in this environment');
+
+  const menuItems = menu.getByRole('menuitem');
+  const itemCount = await menuItems.count();
+  test.skip(itemCount === 0, 'no overflow tracker options in this environment');
+
+  let anyOverflowHasAI = false;
+  for (let i = 0; i < itemCount; i++) {
+    if ((await menuItems.nth(i).locator('img[src*="ai.svg"]').count()) > 0) {
+      anyOverflowHasAI = true;
+      break;
+    }
+  }
+  await page.keyboard.press('Escape');
+
+  const otherHasIcon = (await otherButton.locator('img[src*="ai.svg"]').count()) > 0;
+  expect(otherHasIcon).toBe(anyOverflowHasAI);
 });
 
 // ─── No-review guard (NoReviewGuard) ───────────────────────────────────────────
@@ -1499,6 +1555,20 @@ test('unreviewed camera tag shows only a reject (✕) button', async ({ page }) 
   const chip = await selectUnreviewedTagChip(page);
   await expect(chip.getByText('✕')).toBeVisible();
   await expect(chip.getByText('✓')).toHaveCount(0);
+});
+
+test('camera tag chips render a border matching the diamond color scheme', async ({ page }) => {
+  // CameraItem's chip now shares src/components/timeline/utils.ts's getEventPointColors
+  // with EventRow's canvas diamonds — every chip gets a border, not just a fill. A pending
+  // (unreviewed, blue) tag always gets a white border, since it never satisfies
+  // isResolvedPoint/isCorrectionAccept/isCorrectionReject regardless of tracker eligibility.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await expect(chip).toHaveCSS('border-color', 'rgb(255, 255, 255)', { timeout: 3_000 });
+  await expect(chip).toHaveCSS('border-width', '1.5px', { timeout: 3_000 });
 });
 
 test('pressing "i" on the selected line accepts the pending tag and turns its chip green', async ({ page }) => {

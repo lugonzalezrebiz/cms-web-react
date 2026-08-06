@@ -16,6 +16,8 @@ export interface CameraContextMenuItem {
   value?: boolean;
   mode?: "POINT" | "RANGE";
   reviewDisagree?: boolean;
+  fillColor?: string;
+  borderColor?: string;
   onClick: (cameraId: number) => void;
 }
 

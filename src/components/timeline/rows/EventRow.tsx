@@ -3,7 +3,7 @@ import { Colors } from "../../../theme";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
-import { secToTimeString, secToPixelX, isOverlapsBlue } from "../utils";
+import { secToTimeString, secToPixelX, isOverlapsBlue, getEventPointColors } from "../utils";
 
 const ROW_HEIGHT = 32.8;
 const DIAMOND_SIZE = 17;
@@ -178,21 +178,12 @@ function drawFrame(
           ep.reviewed &&
           ep.value === false &&
           ep.reviewDisagree === false;
-        const activeColor = isResolvedPoint
-          ? ep.value === true
-            ? Colors.leafGreen
-            : Colors.blushRed
-          : isCorrectionAccept
-            ? Colors.leafGreen
-            : isCorrectionReject
-              ? Colors.blushRed
-              : overlapsBlue
-                ? Colors.leafGreen
-                : isEditing
-                  ? Colors.vividOrange
-                  : ep.reviewed
-                    ? Colors.vividOrange
-                    : Colors.blue;
+        const { fill: activeColor, border: diamondStrokeColor } = getEventPointColors(
+          ep,
+          overlapsBlue,
+          hasMultipleRows,
+          isEditing,
+        );
         const idleColor = isResolvedPoint
           ? ep.value === true
             ? Colors.mintFoam
@@ -210,15 +201,6 @@ function drawFrame(
                     : Colors.lightSkyBlue;
         const shadowColor = t > 0 ? colorAlpha(activeColor, "99") : null;
         const shadowBlur = t * 10;
-        const diamondStrokeColor = isResolvedPoint
-          ? ep.reviewDisagree === false
-            ? Colors.green
-            : ep.reviewDisagree === true
-              ? Colors.red
-              : "#ffffff"
-          : isCorrectionAccept || isCorrectionReject
-            ? Colors.vividOrange
-            : "#ffffff";
 
         if (pass === "bars") {
           if (ep.mode !== "RANGE" || ep.endSec <= ep.timeSec) continue;
