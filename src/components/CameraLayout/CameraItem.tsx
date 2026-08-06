@@ -238,7 +238,7 @@ export const CameraItem = ({
                 alignItems: "center",
                 gap: "4px",
                 bgcolor: tag.fillColor ?? Colors.main,
-                border: `1.5px solid ${tag.borderColor ?? "transparent"}`,
+                border: `4px solid ${tag.borderColor ?? "transparent"}`,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",

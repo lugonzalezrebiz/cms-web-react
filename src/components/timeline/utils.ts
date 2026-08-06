@@ -55,30 +55,32 @@ export const getEventPointColors = (
     ep.value === false &&
     ep.reviewDisagree === false;
 
+  // Simplified palette: no more separate border colors — a border is one of the same
+  // four core colors as the fill (blue/grassGreen/marigoldYellow/orangeHover).
   const fill = isResolvedPoint
     ? ep.value === true
-      ? Colors.leafGreen
-      : Colors.blushRed
+      ? Colors.grassGreen
+      : Colors.marigoldYellow
     : isCorrectionAccept
-      ? Colors.leafGreen
+      ? Colors.grassGreen
       : isCorrectionReject
-        ? Colors.blushRed
+        ? Colors.marigoldYellow
         : overlapsBlue
-          ? Colors.leafGreen
+          ? Colors.grassGreen
           : isEditing
-            ? Colors.vividOrange
+            ? Colors.orangeHover
             : ep.reviewed
-              ? Colors.vividOrange
+              ? Colors.orangeHover
               : Colors.blue;
 
   const border = isResolvedPoint
     ? ep.reviewDisagree === false
-      ? Colors.green
+      ? Colors.grassGreen
       : ep.reviewDisagree === true
-        ? Colors.red
+        ? Colors.marigoldYellow
         : "#ffffff"
     : isCorrectionAccept || isCorrectionReject
-      ? Colors.vividOrange
+      ? Colors.orangeHover
       : "#ffffff";
 
   return { fill, border };

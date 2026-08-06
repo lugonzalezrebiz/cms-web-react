@@ -1,5 +1,4 @@
 import { Box } from "@mui/system";
-import { Colors } from "../../../theme";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
@@ -29,6 +28,24 @@ function lerpHexAlpha(
 ): string {
   const a = Math.round(fromA + (toA - fromA) * t);
   return colorAlpha(hex, a.toString(16).padStart(2, "0"));
+}
+
+// Mixes hex toward white by `amount` (0–1) — an opaque, lighter shade of the same
+// color, not a transparent one (idle diamonds must stay a few tones lighter, never
+// see-through).
+function lightenHex(hex: string, amount: number): string {
+  const h = hex.startsWith("#") ? hex.slice(1) : hex;
+  const full = h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  return (
+    "#" +
+    [mix(r), mix(g), mix(b)]
+      .map((v) => v.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -165,40 +182,15 @@ function drawFrame(
         const isEditing = ep.id === editingId;
         const overlapsBlue = isOverlapsBlue(ep, points);
         const isEligibleForNewScheme = ep.mode === "POINT" && hasMultipleRows;
-        const isResolvedPoint = overlapsBlue && isEligibleForNewScheme;
-        const isCorrectionAccept =
-          !overlapsBlue &&
-          isEligibleForNewScheme &&
-          ep.reviewed &&
-          ep.value === true &&
-          ep.reviewDisagree === false;
-        const isCorrectionReject =
-          !overlapsBlue &&
-          isEligibleForNewScheme &&
-          ep.reviewed &&
-          ep.value === false &&
-          ep.reviewDisagree === false;
         const { fill: activeColor, border: diamondStrokeColor } = getEventPointColors(
           ep,
           overlapsBlue,
           hasMultipleRows,
           isEditing,
         );
-        const idleColor = isResolvedPoint
-          ? ep.value === true
-            ? Colors.mintFoam
-            : Colors.palePink
-          : isCorrectionAccept
-            ? Colors.mintFoam
-            : isCorrectionReject
-              ? Colors.palePink
-              : overlapsBlue
-                ? Colors.mintFoam
-                : isEditing
-                  ? Colors.lightOrange
-                  : ep.reviewed
-                    ? Colors.lightOrange
-                    : Colors.lightSkyBlue;
+        // Idle (unselected) rendering lightens the same active color a few tones instead
+        // of a separate pale palette — an opaque tint, not a transparent one.
+        const idleColor = lightenHex(activeColor, 0.4);
         const shadowColor = t > 0 ? colorAlpha(activeColor, "99") : null;
         const shadowBlur = t * 10;
 
@@ -236,19 +228,28 @@ function drawFrame(
           ctx.restore();
         } else {
           const fillColor = isSelected ? activeColor : idleColor;
-          const outlineWidth = isSelected ? 1.5 : 1;
+          // Idle borders lighten the same few tones as the fill — white stays white.
+          const strokeColor = isSelected
+            ? diamondStrokeColor
+            : lightenHex(diamondStrokeColor, 0.4);
+          // An eligible (POINT + multiple rows) diamond always gets a thicker 4px
+          // border — selected or not, it doesn't change — instead of the usual
+          // 1.5px/1px split. The extra 3px is taken out of the diamond's own body
+          // size so its total on-screen footprint doesn't change.
+          const outlineWidth = isEligibleForNewScheme ? 4 : isSelected ? 1.5 : 1;
+          const diamondSize = isEligibleForNewScheme ? DIAMOND_SIZE - 3 : DIAMOND_SIZE;
 
           if (ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd) {
             drawDiamond(
               ctx,
               toSecX(ep.timeSec),
               cy,
-              DIAMOND_SIZE,
+              diamondSize,
               fillColor,
               outlineWidth,
               shadowColor,
               shadowBlur,
-              diamondStrokeColor,
+              strokeColor,
             );
           }
           const endDiamondX = toSecX(ep.endSec);
@@ -262,12 +263,12 @@ function drawFrame(
               ctx,
               endDiamondX,
               cy,
-              DIAMOND_SIZE,
+              diamondSize,
               fillColor,
               outlineWidth,
               shadowColor,
               shadowBlur,
-              diamondStrokeColor,
+              strokeColor,
             );
           }
         }

@@ -1427,7 +1427,7 @@ test('removing a tag from the camera chip also removes it from the timeline', as
 // the original point to pending. Only a reject "✕" button remains on the chip for tags
 // whose point is unreviewed (reviewed===false) and not yet decided — onRejectTag flows
 // up to handleRejectEventPoint, which just hides the button; the chip stays blue.
-// Accepting resolves to Colors.leafGreen (#40B731 → rgb(64, 183, 49)) because the
+// Accepting resolves to Colors.grassGreen (#57B619 → rgb(87, 182, 25)) because the
 // surviving (reviewed) duplicate still overlaps the original, still-unreviewed point
 // (useTagsForCamera's overlapsUnreviewed).
 
@@ -1568,7 +1568,7 @@ test('camera tag chips render a border matching the diamond color scheme', async
 
   const chip = await selectUnreviewedTagChip(page);
   await expect(chip).toHaveCSS('border-color', 'rgb(255, 255, 255)', { timeout: 3_000 });
-  await expect(chip).toHaveCSS('border-width', '1.5px', { timeout: 3_000 });
+  await expect(chip).toHaveCSS('border-width', '4px', { timeout: 3_000 });
 });
 
 test('pressing "i" on the selected line accepts the pending tag and turns its chip green', async ({ page }) => {
@@ -1580,14 +1580,15 @@ test('pressing "i" on the selected line accepts the pending tag and turns its ch
   await page.keyboard.press('i');
 
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
-  await expect(chip).toHaveCSS('background-color', 'rgb(64, 183, 49)', { timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(87, 182, 25)', { timeout: 3_000 });
 });
 
-test('pressing "o" on the selected line marks the pending tag AI-incorrect and turns its chip red', async ({ page }) => {
+test('pressing "o" on the selected line marks the pending tag AI-incorrect and turns its chip yellow', async ({ page }) => {
   // "o" (useTimelineKeyboard.ts) mirrors "i" but for the "there was no attention" case —
   // handleMarkAiIncorrect sets value:false, reviewDisagree:true on the same point, which
-  // CameraItem's chip renders as Colors.blushRed (#F02326 → rgb(240, 35, 38)) instead of
-  // the green used for "i". Only active for POINT trackers when 2+ rows are visible
+  // CameraItem's chip renders as Colors.marigoldYellow (#F2A93B → rgb(242, 169, 59))
+  // instead of the green used for "i" — the simplified palette's "yellow" replaces the
+  // old blushRed. Only active for POINT trackers when 2+ rows are visible
   // (selectableRows.length >= 2), same gating as the numbered row shortcuts.
   await waitForTimelineDataReady(page);
   const cameraCount = await getCameraCount(page);
@@ -1601,7 +1602,7 @@ test('pressing "o" on the selected line marks the pending tag AI-incorrect and t
   await page.keyboard.press('o');
 
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
-  await expect(chip).toHaveCSS('background-color', 'rgb(240, 35, 38)', { timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(242, 169, 59)', { timeout: 3_000 });
 });
 
 test('pressing "i" creates a reviewed twin instead of flipping the original point reviewed', async ({ page }) => {
@@ -1654,7 +1655,7 @@ test('tapping a camera menu item on a pending diamond accepts it instead of crea
 
   // Same point flips reviewed — chip turns green and its reject "✕" goes away.
   await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
-  await expect(chip).toHaveCSS('background-color', 'rgb(64, 183, 49)', { timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(87, 182, 25)', { timeout: 3_000 });
 
   // Unlike "i" (which always adds a reviewed twin), the total point count stays the same.
   await expect(allPointButtons).toHaveCount(totalBefore, { timeout: 3_000 });
