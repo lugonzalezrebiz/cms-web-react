@@ -96,21 +96,24 @@ const TickLabels = ({
             fontWeight: 400,
           }}
         >
-          {formatSec(tickSec)}
+          {formatSec(tickSec, tickStepSec)}
         </Box>
       ))}
     </Box>
   );
 };
 
-const formatSec = (sec: number): string => {
+// Seconds only make sense to show once ticks themselves land on second-level
+// increments (tickStepSec < 60) — at any coarser step every tick would show the
+// same ":00"/":30" text, which is just noise, not information.
+const formatSec = (sec: number, tickStepSec: number): string => {
   const h = Math.floor(sec / 3600) % 24;
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
-  if (s === 0 && m === 0) return `${h.toString().padStart(2, "0")}:00`;
-  if (s === 0)
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  if (tickStepSec < 60) {
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 };
 
 export const TimelineTimeRuler = ({

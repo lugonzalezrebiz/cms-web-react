@@ -81,7 +81,9 @@ export const getEventPointColors = (
         : "#ffffff"
     : isCorrectionAccept || isCorrectionReject
       ? Colors.orangeHover
-      : "#ffffff";
+      : isEligibleForNewScheme
+        ? Colors.blue
+        : "#ffffff";
 
   return { fill, border };
 };

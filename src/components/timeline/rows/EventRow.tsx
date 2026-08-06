@@ -100,6 +100,29 @@ function drawDiamond(
   ctx.restore();
 }
 
+// Stroke-only diamond (no fill) — used to draw the thin white separator ring just
+// outside a POINT diamond's colored border, so it reads as its own layer instead of
+// blending into the background or an adjacent diamond.
+function drawDiamondOutline(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  strokeColor: string,
+  lineWidth: number,
+) {
+  const half = size / 2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.PI / 4);
+  ctx.beginPath();
+  ctx.rect(-half, -half, size, size);
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
 // Hit testing
 // ---------------------------------------------------------------------------
@@ -232,12 +255,18 @@ function drawFrame(
           const strokeColor = isSelected
             ? diamondStrokeColor
             : lightenHex(diamondStrokeColor, 0.4);
-          // An eligible (POINT + multiple rows) diamond always gets a thicker 4px
-          // border — selected or not, it doesn't change — instead of the usual
-          // 1.5px/1px split. The extra 3px is taken out of the diamond's own body
-          // size so its total on-screen footprint doesn't change.
-          const outlineWidth = isEligibleForNewScheme ? 4 : isSelected ? 1.5 : 1;
-          const diamondSize = isEligibleForNewScheme ? DIAMOND_SIZE - 3 : DIAMOND_SIZE;
+          // An eligible (POINT + multiple rows) diamond always gets a 3px colored
+          // border plus a thin 0.5px white separator ring just outside it — both for
+          // selected AND idle diamonds, neither changes on selection — instead of
+          // the usual 1.5px/1px split. The combined 3.5px is taken out of the
+          // diamond's own body size (rather than the old 4px) so its total
+          // on-screen footprint doesn't change.
+          const outlineWidth = isEligibleForNewScheme ? 3 : isSelected ? 1.5 : 1;
+          const whiteRingWidth = 0.5;
+          const diamondSize = isEligibleForNewScheme
+            ? DIAMOND_SIZE - outlineWidth - whiteRingWidth
+            : DIAMOND_SIZE;
+          const outlineRingSize = diamondSize + outlineWidth + whiteRingWidth;
 
           if (ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd) {
             drawDiamond(
@@ -251,6 +280,9 @@ function drawFrame(
               shadowBlur,
               strokeColor,
             );
+            if (isEligibleForNewScheme) {
+              drawDiamondOutline(ctx, toSecX(ep.timeSec), cy, outlineRingSize, "#ffffff", whiteRingWidth);
+            }
           }
           const endDiamondX = toSecX(ep.endSec);
           if (
@@ -270,6 +302,9 @@ function drawFrame(
               shadowBlur,
               strokeColor,
             );
+            if (isEligibleForNewScheme) {
+              drawDiamondOutline(ctx, endDiamondX, cy, outlineRingSize, "#ffffff", whiteRingWidth);
+            }
           }
         }
       }

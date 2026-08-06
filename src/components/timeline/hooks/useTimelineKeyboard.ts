@@ -208,33 +208,26 @@ export const useTimelineKeyboard = ({
           );
           if (nearbyPoints.length === 0) return;
 
-          // Whichever diamond is nearest the marker is what "i" is correcting. If
-          // it's already reviewed and already reflects "i" (value: true), there's
-          // nothing to fix — UNLESS it's a POINT diamond sitting at a different
-          // marker position, which "i" can still reposition. RANGE diamonds have no
-          // reposition semantics here (only "accept"), so once reviewed they're
-          // done regardless of where the marker lands within tolerance.
-          const closest = [...nearbyPoints].sort(
-            (a, b) =>
-              Math.abs(a.timeSec - currentMarker) - Math.abs(b.timeSec - currentMarker),
-          )[0];
+          const selectedNearby = nearbyPoints.find(
+            (ep) => ep.id === selectedEventPointId,
+          );
+          const target =
+            selectedNearby ??
+            [...nearbyPoints].sort(
+              (a, b) =>
+                Math.abs(a.timeSec - currentMarker) - Math.abs(b.timeSec - currentMarker),
+            )[0];
           if (
-            closest.reviewed &&
-            closest.value === true &&
-            (closest.mode === "RANGE" || closest.timeSec === currentMarker)
+            target.reviewed &&
+            target.value === true &&
+            (target.mode === "RANGE" || target.timeSec === currentMarker)
           )
             return;
 
-          // A row can span diamonds from more than one physical camera (e.g. a
-          // tracker fed by two cameras) — the correction must land on the same
-          // camera as the diamond it's resolving, not on whatever camera the
-          // row's own id happens to numerically collide with.
           const item = menuItems?.find((m) => m.id === iTrackId);
-          item?.onClick?.(closest.cameraId);
+          item?.onClick?.(target.cameraId);
 
-          // pushHistory for that creation already captured the pre-supersede
-          // state, so this reject must not push a second, half-way snapshot.
-          onRejectRef.current?.(closest.id, true);
+          onRejectRef.current?.(target.id, true);
         }
       } else if (
         e.key === "o" &&
@@ -296,30 +289,22 @@ export const useTimelineKeyboard = ({
           );
           if (nearbyPoints.length === 0) return;
 
-          // Whichever diamond is nearest the marker is what "o" is correcting. If
-          // it's already reviewed, already reflects "o" (value: false), AND the
-          // marker sits on its exact timestamp, there's nothing to fix — creating a
-          // point there would be a pixel-identical duplicate. Otherwise — still
-          // pending, reviewed with the wrong value, or just at a different marker
-          // position — archive it and create a fresh point (correct value, correct
-          // timestamp) at the marker, bundled into a single undo step.
-          const closest = [...nearbyPoints].sort(
-            (a, b) =>
-              Math.abs(a.timeSec - currentMarker) - Math.abs(b.timeSec - currentMarker),
-          )[0];
-          if (closest.reviewed && closest.value === false && closest.timeSec === currentMarker)
+          const selectedNearby = nearbyPoints.find(
+            (ep) => ep.id === selectedEventPointId,
+          );
+          const target =
+            selectedNearby ??
+            [...nearbyPoints].sort(
+              (a, b) =>
+                Math.abs(a.timeSec - currentMarker) - Math.abs(b.timeSec - currentMarker),
+            )[0];
+          if (target.reviewed && target.value === false && target.timeSec === currentMarker)
             return;
 
-          // A row can span diamonds from more than one physical camera (e.g. a
-          // tracker fed by two cameras) — the correction must land on the same
-          // camera as the diamond it's resolving, not on whatever camera the
-          // row's own id happens to numerically collide with.
           const item = menuItems?.find((m) => m.id === iTrackId);
-          item?.onReject?.(closest.cameraId);
+          item?.onReject?.(target.cameraId);
 
-          // pushHistory for that creation already captured the pre-supersede
-          // state, so this reject must not push a second, half-way snapshot.
-          onRejectRef.current?.(closest.id, true);
+          onRejectRef.current?.(target.id, true);
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
@@ -547,7 +532,10 @@ export const useTimelineKeyboard = ({
 
       const oldZoom = zoom;
       const maxZoom = getMaxZoom(width, imagesInterval);
-      const newZoom = Math.min(maxZoom, Math.max(1, oldZoom + (e.key === "+" ? 2 : -2)));
+      const newZoom = Math.min(
+        maxZoom,
+        Math.max(1, oldZoom * (e.key === "+" ? 1.25 : 1 / 1.25)),
+      );
       if (newZoom === oldZoom) return;
 
       const oldVisibleDuration = totalSec / oldZoom;

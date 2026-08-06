@@ -40,7 +40,10 @@ export const useWheelZoomPan = ({
 
         const oldZoom = zoom;
         const maxZoom = getMaxZoom(width, imagesInterval);
-        const newZoom = Math.min(maxZoom, Math.max(1, oldZoom + (e.deltaY > 0 ? -2 : 2)));
+        const newZoom = Math.min(
+          maxZoom,
+          Math.max(1, oldZoom * (e.deltaY > 0 ? 1 / 1.25 : 1.25)),
+        );
         if (newZoom === oldZoom) return;
 
         const oldVisibleDuration = totalSec / oldZoom;

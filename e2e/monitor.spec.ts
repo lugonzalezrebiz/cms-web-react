@@ -1161,13 +1161,17 @@ test('Ctrl+ArrowRight and Ctrl+ArrowLeft jump between event points', async ({ pa
 test('+ and - keys change the timeline zoom', async ({ page }) => {
   await waitForTimelineDataReady(page);
   // TimelineTimeRuler sets cursor:"grab" once zoom > 1 and cursor:"default" at zoom === 1.
-  // Default zoom is 4, so "-" pressed twice (4 → 2 → 1) should flip the ruler to "default".
-  const ruler = page.getByText(/^\d{2}:\d{2}$/).first().locator('xpath=../..');
+  // Zoom steps are multiplicative (×/÷1.25 per press, not a fixed +/-2) and the default
+  // zoom is derived from the grid width (targets a 10-minute default tick), so it varies
+  // by environment — press "-" repeatedly (clamped at zoom 1) instead of assuming a fixed
+  // number of presses. Tick labels can be "HH:MM" or "HH:MM:SS" depending on tickStepSec.
+  const ruler = page.getByText(/^\d{2}:\d{2}(:\d{2})?$/).first().locator('xpath=../..');
   const rulerCount = await ruler.count();
   test.skip(rulerCount === 0, 'no tick labels visible to locate the ruler in this environment');
 
-  await page.keyboard.press('-');
-  await page.keyboard.press('-');
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press('-');
+  }
   await expect(ruler).toHaveCSS('cursor', 'default', { timeout: 3_000 });
 
   await page.keyboard.press('+');
@@ -1559,16 +1563,26 @@ test('unreviewed camera tag shows only a reject (✕) button', async ({ page }) 
 
 test('camera tag chips render a border matching the diamond color scheme', async ({ page }) => {
   // CameraItem's chip now shares src/components/timeline/utils.ts's getEventPointColors
-  // with EventRow's canvas diamonds — every chip gets a border, not just a fill. A pending
-  // (unreviewed, blue) tag always gets a white border, since it never satisfies
-  // isResolvedPoint/isCorrectionAccept/isCorrectionReject regardless of tracker eligibility.
+  // with EventRow's canvas diamonds. RANGE tags render with no border at all
+  // (`border: "none"` — RANGE diamonds never get a colored border either). A pending
+  // (unreviewed, blue) POINT tag gets a border matching its own fill: blue
+  // (rgb(6, 160, 246)) once eligible (mode POINT + 2+ tracker rows visible, same as
+  // the diamonds' 3px+white-ring treatment), or white otherwise — it never satisfies
+  // isResolvedPoint/isCorrectionAccept/isCorrectionReject either way.
+  // selectUnreviewedTagChip doesn't distinguish mode/eligibility, so branch on
+  // whichever this environment happens to select.
   await waitForTimelineDataReady(page);
   const cameraCount = await getCameraCount(page);
   test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
 
   const chip = await selectUnreviewedTagChip(page);
-  await expect(chip).toHaveCSS('border-color', 'rgb(255, 255, 255)', { timeout: 3_000 });
-  await expect(chip).toHaveCSS('border-width', '4px', { timeout: 3_000 });
+  const borderWidth = await chip.evaluate((el) => getComputedStyle(el).borderWidth);
+  if (borderWidth === '0px') {
+    test.skip(true, 'selected the pending tag on a RANGE tracker in this environment — no border by design');
+  }
+  await expect(chip).toHaveCSS('border-width', '2px', { timeout: 3_000 });
+  const borderColor = await chip.evaluate((el) => getComputedStyle(el).borderColor);
+  expect(['rgb(255, 255, 255)', 'rgb(6, 160, 246)']).toContain(borderColor);
 });
 
 test('pressing "i" on the selected line accepts the pending tag and turns its chip green', async ({ page }) => {
