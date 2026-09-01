@@ -4,13 +4,21 @@ import { Colors, Fonts } from "../../theme";
 
 export interface CameraContextMenuItem {
   id: number;
+  trackerId?: number;
   name: string;
   label: string;
   icon?: string;
   shortcut?: string;
   dividerAfter?: boolean;
   reviewed?: boolean;
+  rejected?: boolean;
+  accepted?: boolean;
   overlapsUnreviewed?: boolean;
+  value?: boolean;
+  mode?: "POINT" | "RANGE";
+  reviewDisagree?: boolean;
+  fillColor?: string;
+  borderColor?: string;
   onClick: (cameraId: number) => void;
 }
 

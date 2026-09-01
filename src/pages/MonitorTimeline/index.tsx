@@ -9,29 +9,55 @@ import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
 import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
 import useTrackers from "../../hooks/useTrackers";
 import useTrackerGrouping from "../../hooks/useTrackerGrouping";
+import useAssignments from "../../hooks/useAssignments";
 import { useFilteredEventPoints } from "../Monitor/hooks/useFilteredEventPoints";
 import { useFilteredMenuItems } from "../Monitor/hooks/useFilteredMenuItems";
 import { useDeleteEventPoint } from "../Monitor/hooks/useDeleteEventPoint";
 import { useEventPointsBroadcast } from "../Monitor/hooks/useEventPointsBroadcast";
 import { useBroadcastSync } from "./hooks/useBroadcastSync";
+import { timeStringToSec, hasReviewedTwin } from "../../components/timeline/utils";
+import NoReviewGuard from "../../components/NoReviewGuard";
+
+const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
 
 const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
   const monitoringID = searchParams.get("monitoringID") ?? "";
+  const company = Number(searchParams.get("company") ?? 0);
+  const location = Number(searchParams.get("location") ?? 0);
+
+  const { assignments } = useAssignments({
+    companyID: company,
+    locationID: location,
+  });
+  const currentAssignment = assignments.find(
+    (a) => a.monitoringID === monitoringID,
+  );
+  const timeStart = currentAssignment?.open ?? null;
+  const timeEnd = currentAssignment?.close ?? null;
+
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
-  const { trackers: trackerGroupings } = useTrackerGrouping();
+  const { trackers: trackerGroupings, isLoading: isTrackerGroupingsLoading } =
+    useTrackerGrouping();
   const {
     snapshot,
     eventPoints: preloadedEventPoints,
     rangeSessions,
     loading: isMonitoringLoading,
-  } = useMonitoring(trackers, monitoringID);
+  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
 
   const {
     cameraEventPoints,
+    rejectedEventIds,
+    handleRejectEventPoint,
+    acceptedEventIds,
+    handleAcceptEventPoint,
+    aiIncorrectEventIds,
+    handleMarkAiIncorrect,
     handleMarkerChange: handleCameraMarkerChange,
     handleUpdateEventPoint,
     handleActivitySelect,
+    handleActivityReject,
     handleRemoveEventPoint,
     handleRegisterPreloadedDelete,
     handleConvertToEditableLocal,
@@ -43,8 +69,94 @@ const MonitorTimeline = () => {
   } = useCameraEventPoints(monitoringID);
 
   const allEventPoints = useMemo(
-    () => [...cameraEventPoints, ...preloadedEventPoints],
-    [cameraEventPoints, preloadedEventPoints],
+    () =>
+      [...cameraEventPoints, ...preloadedEventPoints].map((ep) => {
+        if (rejectedEventIds.has(ep.id))
+          return {
+            ...ep,
+            rejected: true,
+            reviewed: true,
+            reviewDisagree: true,
+            touchedThisSession: true,
+          };
+        if (acceptedEventIds.has(ep.id)) {
+          // Accepting a POINT diamond always confirms value=true (a violation happened);
+          // if the AI's own original value said otherwise, that's a reviewer disagreement.
+          if (ep.mode === "POINT") {
+            return {
+              ...ep,
+              accepted: true,
+              reviewed: true,
+              value: true,
+              reviewDisagree: ep.value !== true,
+              touchedThisSession: true,
+            };
+          }
+          return { ...ep, accepted: true, reviewed: true, touchedThisSession: true };
+        }
+        if (aiIncorrectEventIds.has(ep.id)) {
+          if (ep.mode === "POINT") {
+            return {
+              ...ep,
+              accepted: true,
+              reviewed: true,
+              value: false,
+              reviewDisagree: ep.value !== false,
+              touchedThisSession: true,
+            };
+          }
+          return { ...ep, accepted: true, reviewed: true, touchedThisSession: true };
+        }
+        return ep;
+      }),
+    [
+      cameraEventPoints,
+      preloadedEventPoints,
+      acceptedEventIds,
+      rejectedEventIds,
+      aiIncorrectEventIds,
+    ],
+  );
+
+  const unreviewedTrackerIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const t of trackerGroupings) {
+      const cameraIds =
+        t.joinCamera && t.cameras.length > 0
+          ? new Set(t.cameras.map((c) => c.id))
+          : null;
+      const hasUnreviewed = allEventPoints.some(
+        (ep) =>
+          !ep.reviewed &&
+          !ep.rejected &&
+          ep.label === t.name &&
+          (!cameraIds || cameraIds.has(ep.cameraId)) &&
+          !hasReviewedTwin(ep, allEventPoints),
+      );
+      if (hasUnreviewed) ids.add(t.id);
+    }
+    return ids;
+  }, [trackerGroupings, allEventPoints]);
+
+  const isReviewDataLoading =
+    isMonitoringLoading || isTrackersLoading || isTrackerGroupingsLoading;
+  const hasNoTrackersConfigured = !isReviewDataLoading && trackers.length === 0;
+  const hasNoGroupsConfigured =
+    !isReviewDataLoading && trackerGroupings.length === 0;
+  const hasNoEventsLoaded =
+    !isReviewDataLoading && preloadedEventPoints.length === 0;
+
+  const noReviewReason = hasNoTrackersConfigured
+    ? "no-trackers"
+    : hasNoGroupsConfigured
+      ? "no-groups"
+      : hasNoEventsLoaded
+        ? "no-events"
+        : undefined;
+
+  const visibleEventPoints = useMemo(
+    () => allEventPoints.filter((ep) => !ep.rejected),
+    [allEventPoints],
   );
 
   const { markerTimeSec, handleMarkerChange } = useTimelineMarker({
@@ -61,6 +173,7 @@ const MonitorTimeline = () => {
       handleRemoveEventPoint,
       handleRegisterPreloadedDelete,
       handleConvertToEditableLocal,
+      handleRejectEventPoint,
       broadcastMutation,
     );
 
@@ -123,8 +236,11 @@ const MonitorTimeline = () => {
           ? Number(trackerOption)
           : 0;
 
+  const isPendingCameraGroupSwitch =
+    isTrackerTab && !trackerOption && unreviewedTrackerIds.size > 0;
+
   const filteredEventPoints = useFilteredEventPoints({
-    allEventPoints,
+    allEventPoints: visibleEventPoints,
     trackerGroupings,
     trackers,
     isJoinCameraTracker,
@@ -141,10 +257,11 @@ const MonitorTimeline = () => {
     cameraToJoinTrackerMap,
   });
 
-  const filteredMenuItems = useFilteredMenuItems({
+  const rawFilteredMenuItems = useFilteredMenuItems({
     trackers,
     trackerGroupings,
     handleActivitySelect,
+    handleActivityReject,
     isJoinCameraTracker,
     isJoinCameraSpecific,
     isDirectTracker,
@@ -158,26 +275,38 @@ const MonitorTimeline = () => {
     joinCameraTrackerMap,
     cameraToJoinTrackerMap,
   });
+  const filteredMenuItems =
+    isReviewDataLoading || isPendingCameraGroupSwitch
+      ? EMPTY_MENU_ITEMS
+      : rawFilteredMenuItems;
 
   // Auto-pan targets — same logic as Monitor/index.tsx
+  const timelineStartSec = timeStringToSec(
+    snapshot?.timeline?.times?.start ?? "00:00:00",
+  );
+
   const trackerTargetSec = useMemo(() => {
-    if (!isTrackerTab || !trackerOption) return undefined;
+    if (!isTrackerTab || !trackerOption) return timelineStartSec;
     return filteredEventPoints
       .filter((ep) => !ep.reviewed)
       .sort((a, b) => a.timeSec - b.timeSec)[0]?.timeSec;
-  }, [isTrackerTab, trackerOption, filteredEventPoints]);
+  }, [isTrackerTab, trackerOption, filteredEventPoints, timelineStartSec]);
 
   const [cameraGroupTargetSec, setCameraGroupTargetSec] = useState<
     number | undefined
   >(undefined);
   const cameraGroupInitializedRef = useRef<string | null>(null);
 
+  const pickFirstTarget = (points: typeof filteredEventPoints) =>
+    [...points]
+      .filter((ep) => !ep.reviewed)
+      .sort((a, b) => a.timeSec - b.timeSec)[0] ??
+    [...points].sort((a, b) => a.timeSec - b.timeSec)[0];
+
   useEffect(() => {
     if (isTrackerTab) return;
     cameraGroupInitializedRef.current = null;
-    const first = [...filteredEventPoints].sort(
-      (a, b) => a.timeSec - b.timeSec,
-    )[0];
+    const first = pickFirstTarget(filteredEventPoints);
     if (first !== undefined) {
       setCameraGroupTargetSec(first.timeSec);
       cameraGroupInitializedRef.current = cameraGroup;
@@ -190,9 +319,7 @@ const MonitorTimeline = () => {
   useEffect(() => {
     if (isTrackerTab || cameraGroupInitializedRef.current !== null) return;
     if (filteredEventPoints.length === 0) return;
-    const first = [...filteredEventPoints].sort(
-      (a, b) => a.timeSec - b.timeSec,
-    )[0];
+    const first = pickFirstTarget(filteredEventPoints);
     if (first !== undefined) {
       setCameraGroupTargetSec(first.timeSec);
       cameraGroupInitializedRef.current = cameraGroup;
@@ -202,10 +329,28 @@ const MonitorTimeline = () => {
 
   const autoTargetSec = isTrackerTab ? trackerTargetSec : cameraGroupTargetSec;
 
+  const pendingReviewWallSec = useMemo(() => {
+    let earliest: (typeof filteredEventPoints)[number] | undefined;
+    for (const ep of filteredEventPoints) {
+      if (ep.reviewed !== false || ep.rejected) continue;
+      if (hasReviewedTwin(ep, filteredEventPoints)) continue;
+      if (earliest === undefined || ep.timeSec < earliest.timeSec) earliest = ep;
+    }
+    if (!earliest) return undefined;
+    return earliest.mode === "RANGE" && earliest.endSec > earliest.timeSec
+      ? earliest.endSec
+      : earliest.timeSec;
+  }, [filteredEventPoints]);
+
+  const eventPointsToSave = useMemo(
+    () => allEventPoints.filter((ep) => !ep.entryIds || ep.touchedThisSession),
+    [allEventPoints],
+  );
+
   const sessionDate = useSessionDate();
   useSaveMonitoring({
     trackers,
-    eventPoints: cameraEventPoints,
+    eventPoints: eventPointsToSave,
     sessionDate,
     monitoringID,
     onSuccess: cleanUp,
@@ -221,6 +366,9 @@ const MonitorTimeline = () => {
         targetMarkerSec={targetSec ?? autoTargetSec}
         onUpdateEventPoint={handleUpdateEventPoint}
         onRemoveEventPoint={handleDeleteEventPoint}
+        onAcceptEventPoint={handleAcceptEventPoint}
+        onMarkAiIncorrect={handleMarkAiIncorrect}
+        onRejectEventPoint={handleRejectEventPoint}
         onConvertEventPointToLocal={handleConvertEventPoint}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -232,9 +380,16 @@ const MonitorTimeline = () => {
         rangeSessions={rangeSessions}
         onPopOut={() => window.close()}
         expandedIcon={false}
-        loadState={isMonitoringLoading || isTrackersLoading}
-        rowsLoadState={isTrackersLoading}
+        loadState={
+          isMonitoringLoading ||
+          isTrackersLoading ||
+          isTrackerGroupingsLoading ||
+          isPendingCameraGroupSwitch
+        }
+        rowsLoadState={isReviewDataLoading || isPendingCameraGroupSwitch}
+        pendingReviewWallSec={pendingReviewWallSec}
       />
+      <NoReviewGuard reason={noReviewReason} onGoBack={() => window.close()} />
     </Box>
   );
 };

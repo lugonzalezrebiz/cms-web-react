@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { FlatRow, TimelineSnapshot } from "../types";
+import type React from "react";
+import type { FlatRow, PlayWindow, TimelineSnapshot } from "../types";
+import useCompanyConfig from "../../../hooks/useCompanyConfig";
+import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
+import {
+  TIMELINE_TOTAL_SEC,
+  MIN_PIXELS_PER_TICK,
+  DEFAULT_ZOOM_TICK_STEP_SEC,
+  getZoomForTickStep,
+} from "../constants";
 
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
@@ -8,6 +17,16 @@ interface UseTimelineBodyStateParams {
   timelineStartSec: number;
   timelineEndSec: number;
   firstActivitySec: number;
+  // Earliest timeSec of an unresolved (unreviewed, undecided) event point in the current
+  // view — the marker can never be moved past it until it's accepted or rejected.
+  // undefined means nothing is pending — no restriction.
+  pendingReviewWallSec?: number;
+  // When a diamond is selected, playback is scoped to reviewing just that clip (start,
+  // end, and the position the marker snaps back to once playback finishes) instead of
+  // the whole timeline. A ref (not a reactive value) because the window is derived from
+  // this hook's own selectedEventPointId/resolvedMarkerSec — a plain prop would be
+  // circular. undefined/.current undefined means play across the whole timeline.
+  playWindowRef?: React.RefObject<PlayWindow | undefined>;
 }
 
 export const useTimelineBodyState = ({
@@ -15,8 +34,11 @@ export const useTimelineBodyState = ({
   timelineStartSec,
   timelineEndSec,
   firstActivitySec,
+  pendingReviewWallSec,
+  playWindowRef,
 }: UseTimelineBodyStateParams) => {
-  const totalSec = 24 * 3600;
+  const { imagesInterval } = useCompanyConfig();
+  const totalSec = TIMELINE_TOTAL_SEC;
   const startSec = 0;
 
   const [zoom, setZoom] = useState(4);
@@ -88,8 +110,16 @@ export const useTimelineBodyState = ({
   const gridWidth = gridRef.current?.clientWidth || 1;
   const pixelsPerSecond = gridWidth / visibleDuration;
 
+  // Fixed time allowance (not pixel-based) so the wall's reach stays the same
+  // real-world 30s regardless of zoom — a pixel-based margin would freeze into
+  // markerSec at whatever zoom was active when clamped, then desync (visually
+  // over/under-shoot the diamond) the moment the user zooms afterward.
+  const effectivePendingReviewWallSec =
+    pendingReviewWallSec !== undefined
+      ? pendingReviewWallSec + TAG_TOLERANCE_SEC
+      : undefined;
+
   const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
-  const MIN_PIXELS_PER_TICK = 60;
   const tickStepSec = TICK_STEPS.find((s) => s * pixelsPerSecond >= MIN_PIXELS_PER_TICK) ?? 21600;
 
   const resolvedMarkerSec = markerSec ?? timelineStartSec;
@@ -128,13 +158,58 @@ export const useTimelineBodyState = ({
     setOpenDialog(true);
   };
 
-  const STEP_SEC = 5;
+  const STEP_SEC = imagesInterval;
+
+  const guardedSetMarkerSec = useCallback<
+    React.Dispatch<React.SetStateAction<number | null>>
+  >(
+    (update) => {
+      setMarkerSec((prev) => {
+        const candidate =
+          typeof update === "function"
+            ? (update as (p: number | null) => number | null)(prev)
+            : update;
+        if (candidate === null) return candidate;
+        if (
+          effectivePendingReviewWallSec !== undefined &&
+          candidate > effectivePendingReviewWallSec
+        ) {
+          return effectivePendingReviewWallSec;
+        }
+        return candidate;
+      });
+    },
+    [effectivePendingReviewWallSec],
+  );
 
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
       setMarkerSec((prev) => {
-        const next = (prev ?? timelineStartSec) + STEP_SEC;
+        const base = prev ?? timelineStartSec;
+        const next = base + STEP_SEC;
+
+        // Reviewing a selected clip: play only within its window, then snap back to
+        // its center once done — not gated by pendingReviewWallSec, since watching the
+        // flagged clip itself (including just past it) is exactly what review requires.
+        const playWindow = playWindowRef?.current;
+        if (playWindow) {
+          if (next >= playWindow.end) {
+            setIsPlaying(false);
+            return playWindow.center;
+          }
+          return next;
+        }
+
+        if (
+          effectivePendingReviewWallSec !== undefined &&
+          next > effectivePendingReviewWallSec
+        ) {
+          setIsPlaying(false);
+          return effectivePendingReviewWallSec > base
+            ? effectivePendingReviewWallSec
+            : base;
+        }
         if (next >= timelineEndSec) {
           setIsPlaying(false);
           return timelineEndSec;
@@ -143,7 +218,13 @@ export const useTimelineBodyState = ({
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [isPlaying, timelineStartSec, timelineEndSec]);
+  }, [
+    isPlaying,
+    timelineStartSec,
+    timelineEndSec,
+    effectivePendingReviewWallSec,
+    imagesInterval,
+  ]);
 
   // Enable auto-follow whenever playback starts
   useEffect(() => {
@@ -158,7 +239,13 @@ export const useTimelineBodyState = ({
   }, [markerSec, isPlaying, totalSec, visibleDuration]);
 
   useEffect(() => {
-    const vd = totalSec / zoom;
+    const gridWidth = gridRef.current?.clientWidth;
+    const initialZoom = gridWidth
+      ? Math.max(1, getZoomForTickStep(gridWidth, DEFAULT_ZOOM_TICK_STEP_SEC))
+      : zoom;
+    if (initialZoom !== zoom) setZoom(initialZoom);
+
+    const vd = totalSec / initialZoom;
     const maxOffset = totalSec - vd;
 
     if (firstActivitySec > 0) {
@@ -207,7 +294,8 @@ export const useTimelineBodyState = ({
     dragStartOffset,
     setDragStartOffset,
     markerSec,
-    setMarkerSec,
+    setMarkerSec: guardedSetMarkerSec,
+    setMarkerSecRaw: setMarkerSec,
     selectedEventPointId,
     setSelectedEventPointId,
     editingEventPointId,
@@ -240,5 +328,6 @@ export const useTimelineBodyState = ({
     handleOnOpenDialog,
     openDialog,
     disableAutoFollow,
+    pendingReviewWallSec: effectivePendingReviewWallSec,
   };
 };

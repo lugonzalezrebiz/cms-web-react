@@ -7,6 +7,8 @@ export const useCameraMenuItems = (
   location: number,
   cameraId: number | null,
   handleActivitySelect: (cameraId: number, activityLabel: string, mode: "POINT" | "RANGE") => void,
+  handleActivityReject: (cameraId: number, activityLabel: string, mode: "POINT" | "RANGE") => void,
+  allTrackers: { id: number; values: string[] }[],
 ): CameraContextMenuItem[] => {
   const fetchedTrackers = useTrackersByCamera(
     company,
@@ -15,14 +17,36 @@ export const useCameraMenuItems = (
     cameraId !== null,
   );
 
-  return useMemo<CameraContextMenuItem[]>(
-    () =>
-      fetchedTrackers.map((t) => ({
-        id: t.id,
-        name: t.name,
-        label: t.name,
-        onClick: (idx: number) => handleActivitySelect(idx, t.name, t.mode),
-      })),
-    [fetchedTrackers, handleActivitySelect],
-  );
+  return useMemo<CameraContextMenuItem[]>(() => {
+    const valuesById = new Map(allTrackers.map((t) => [t.id, t.values]));
+    const items: CameraContextMenuItem[] = [];
+    for (const t of fetchedTrackers) {
+      const values = valuesById.get(t.id);
+      if (t.mode === "POINT" && values?.length === 2) {
+        items.push({
+          id: t.id * 10 + 1,
+          trackerId: t.id,
+          name: values[0],
+          label: t.name,
+          onClick: (idx: number) => handleActivitySelect(idx, t.name, t.mode),
+        });
+        items.push({
+          id: t.id * 10 + 2,
+          trackerId: t.id,
+          name: values[1],
+          label: t.name,
+          onClick: (idx: number) => handleActivityReject(idx, t.name, t.mode),
+        });
+      } else {
+        items.push({
+          id: t.id,
+          trackerId: t.id,
+          name: t.name,
+          label: t.name,
+          onClick: (idx: number) => handleActivitySelect(idx, t.name, t.mode),
+        });
+      }
+    }
+    return items;
+  }, [fetchedTrackers, allTrackers, handleActivitySelect, handleActivityReject]);
 };

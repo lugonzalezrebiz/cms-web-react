@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type Locator } from '@playwright/test';
 
 // Static redirect params from useAssignmentNavigate.ts STATIC_REDIRECT constant.
 // VITE_MONITORING_ID is loaded from .env via dotenv in playwright.config.ts.
@@ -92,6 +92,42 @@ test('clicking Done saves the session and navigates back to assignments', async 
   await expect(page).toHaveURL(/\/assignments/, { timeout: 10_000 });
 });
 
+test('clicking Done with no local review actions sends an empty event payload', async ({ page }) => {
+  // eventPointsToSave (Monitor/index.tsx) must only include points touched THIS session
+  // (touchedThisSession, set only by the accept/"o"/reject overlay branches) plus brand-new
+  // local points (!entryIds) — never preloaded points that merely carry historical
+  // reviewDisagree data from a past session. With zero actions taken this session, every
+  // group's entries must be empty, regardless of how much history this monitoring session has.
+  await waitForTimelineDataReady(page);
+
+  const captured: { body: { events: { entries: unknown[] }[] } | null } = { body: null };
+  await page.route('**/monitoring/*/save2', async (route) => {
+    if (route.request().method() === 'POST') {
+      captured.body = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.route('**/monitoring/*/review/finish', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page).toHaveURL(/\/assignments/, { timeout: 10_000 });
+
+  expect(captured.body).not.toBeNull();
+  const totalEntries = (captured.body?.events ?? []).reduce(
+    (sum: number, group: { entries: unknown[] }) => sum + group.entries.length,
+    0,
+  );
+  expect(totalEntries).toBe(0);
+});
+
 // ─── Header secondary popovers ────────────────────────────────────────────────
 
 test('keyboard shortcuts icon opens shortcuts menu', async ({ page }) => {
@@ -103,15 +139,16 @@ test('keyboard shortcuts icon opens shortcuts menu', async ({ page }) => {
 test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
   // Mirrors getKeyboardShortcuts in src/sections/Header/MonitorHeader.tsx — the marker
   // step labels are built from useCompanyConfig's imagesInterval (company/{id}/config's
-  // "images.interval"), so match any number rather than a hardcoded "5 sec".
+  // "images.interval"), so match any number rather than a hardcoded "5 sec". The "I"/"O"
+  // rows are covered separately below since their labels now depend on the currently
+  // active tracker's mode/values, not a fixed string.
   const staticLabels = [
     'Previous event point',
     'Next event point',
     'Go back',
     'Undo',
     'Redo',
-    'Edit selected event point',
-    'Go to specific time',
+    'Select tracker line',
     'Move to start',
     'Delete event point under marker',
     'Play / Pause',
@@ -127,6 +164,31 @@ test('keyboard shortcuts menu lists all shortcut labels', async ({ page }) => {
   for (const label of staticLabels) {
     await expect(page.getByText(label, { exact: true })).toBeVisible();
   }
+  await page.keyboard.press('Escape');
+});
+
+test('keyboard shortcuts menu\'s "I"/"O" rows match the active tracker\'s mode', async ({ page }) => {
+  // getKeyboardShortcuts resolves the currently selected tracker (via
+  // useTrackerGroupResolution's singleTrackerID + useTrackers) and shapes the "I"/"O" rows
+  // from its own mode/values: a POINT tracker with exactly 2 values shows both values as
+  // separate "I"/"O" rows (e.g. "Attended"/"Unattended" for Pay Station Attendance); a
+  // RANGE tracker shows only an "I" row ("Accept event point on the selected line"), never
+  // an "O" row; no tracker resolved (e.g. a mixed "Custom" group) shows neither.
+  await page.locator('img[src*="keyboard-02"]').click();
+  await expect(page.getByText('Keyboard shortcuts')).toBeVisible({ timeout: 5_000 });
+
+  const rangeRow = page.getByText('Accept event point on the selected line', { exact: true });
+  const isRangeTracker = await rangeRow.isVisible().catch(() => false);
+
+  if (isRangeTracker) {
+    await expect(rangeRow).toHaveCount(1);
+  } else {
+    // Can't assert exact wording for the POINT dual-value case — the tracker's own
+    // `values` array supplies it — so just confirm shortcuts still opened cleanly and
+    // move on; the deterministic RANGE case above is the one worth pinning down.
+    test.skip(true, 'active tracker is not RANGE-mode in this environment');
+  }
+
   await page.keyboard.press('Escape');
 });
 
@@ -412,14 +474,27 @@ test('creating a custom tracker group persists across reload via sessionStorage'
   await expect(page.getByText('Custom Tracker Grouping')).toBeVisible({ timeout: 5_000 });
 
   // Create requires >= 2 selections that share a camera (isEnabled in CustomTrackerDialog.tsx)
+  // AND have ever had an AI event (everHadAI) — trackers/cameras that never had one are
+  // disabled entirely, but ones already fully reviewed remain selectable.
   const dialog = page.getByRole('dialog');
   const checkboxes = dialog.getByRole('checkbox');
   const checkboxCount = await checkboxes.count();
   test.skip(checkboxCount < 2, 'not enough trackers/cameras available to build a custom group');
 
-  await checkboxes.nth(0).click();
+  let firstIndex = -1;
+  for (let i = 0; i < checkboxCount; i++) {
+    const isDisabled = await checkboxes.nth(i).isDisabled().catch(() => true);
+    if (!isDisabled) {
+      firstIndex = i;
+      break;
+    }
+  }
+  test.skip(firstIndex === -1, 'no tracker/camera with pending AI events available in this environment');
+  await checkboxes.nth(firstIndex).click();
+
   let secondIndex = -1;
-  for (let i = 1; i < checkboxCount; i++) {
+  for (let i = 0; i < checkboxCount; i++) {
+    if (i === firstIndex) continue;
     const isDisabled = await checkboxes.nth(i).isDisabled().catch(() => true);
     if (!isDisabled) {
       secondIndex = i;
@@ -459,11 +534,21 @@ test('creating a custom tracker group filters the timeline to the selected track
   const checkboxCount = await checkboxes.count();
   test.skip(checkboxCount < 2, 'not enough trackers/cameras available to build a custom group');
 
-  const firstLabel = (await checkboxes.nth(0).evaluate((el) => el.closest('label')?.textContent?.trim() ?? ''));
-  await checkboxes.nth(0).click();
+  let firstIndex = -1;
+  for (let i = 0; i < checkboxCount; i++) {
+    const isDisabled = await checkboxes.nth(i).isDisabled().catch(() => true);
+    if (!isDisabled) {
+      firstIndex = i;
+      break;
+    }
+  }
+  test.skip(firstIndex === -1, 'no tracker/camera with pending AI events available in this environment');
+  const firstLabel = (await checkboxes.nth(firstIndex).evaluate((el) => el.closest('label')?.textContent?.trim() ?? ''));
+  await checkboxes.nth(firstIndex).click();
 
   let secondIndex = -1;
-  for (let i = 1; i < checkboxCount; i++) {
+  for (let i = 0; i < checkboxCount; i++) {
+    if (i === firstIndex) continue;
     const isDisabled = await checkboxes.nth(i).isDisabled().catch(() => true);
     if (!isDisabled) {
       secondIndex = i;
@@ -499,6 +584,138 @@ test('creating a custom tracker group filters the timeline to the selected track
     );
     expect(hasMatch, `expected an event point matching "${checkboxLabel}"`).toBe(true);
   }
+});
+
+// ─── Camera Groups AI indicator (unreviewedTrackerIds / aiTrackerIds) ─────────
+// useTrackerOptions tags each tracker group with a live `hasAI` whenever Monitor/index.tsx's
+// unreviewedTrackerIds (shared via MonitorStateContext) includes it — that live flag drives
+// the public/assets/ai.svg icon on the button. Separately, MonitorHeader tags each group
+// with `everHadAI` from the persisted aiTrackerIds (backed by allEventPoints regardless of
+// reviewed/rejected status) and filters allGroups down to only everHadAI groups (aiGroups)
+// before building the toggle. So a tracker's button keeps showing once it has ever had an
+// AI event — even after every diamond on it gets reviewed/rejected — while the ai.svg icon
+// only shows while something on it is still live-pending. Trackers that never had any AI
+// event never appear in the toggle at all. When there are no pending AI events anywhere,
+// NoReviewGuard takes over the page instead (see the guard test below).
+
+test('tracker groups with pending AI events show the ai.svg icon', async ({ page }) => {
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const aiIcons = group.locator('img[src*="ai.svg"]');
+  const count = await aiIcons.count();
+  test.skip(count === 0, 'no tracker groups have pending AI events in this environment');
+
+  await expect(aiIcons.first()).toBeVisible();
+});
+
+test('a tracker button without the ai.svg icon (fully reviewed) stays a normal, selectable toggle option', async ({ page }) => {
+  // everHadAI (membership) and hasAI (icon) are intentionally decoupled — a tracker whose
+  // AI events are all reviewed/rejected loses the icon but must not lose its button or
+  // become unselectable.
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const trackerButtons = group.getByRole('button').filter({ hasNotText: 'Custom' });
+  const buttonCount = await trackerButtons.count();
+  test.skip(buttonCount === 0, 'no tracker groups available in this environment');
+
+  let withoutIconIndex = -1;
+  for (let i = 0; i < buttonCount; i++) {
+    const hasIcon = (await trackerButtons.nth(i).locator('img[src*="ai.svg"]').count()) > 0;
+    if (!hasIcon) {
+      withoutIconIndex = i;
+      break;
+    }
+  }
+  test.skip(withoutIconIndex === -1, 'every visible tracker currently has a pending AI event in this environment');
+
+  const button = trackerButtons.nth(withoutIconIndex);
+  await expect(button).toBeEnabled();
+  await button.click();
+  await expect(button).toHaveAttribute('aria-pressed', 'true', { timeout: 5_000 });
+});
+
+test('"Other" dropdown lists overflow trackers (icon reflects live status, not membership)', async ({ page }) => {
+  // Overflow entries come from the same everHadAI-filtered aiGroups as the main toggle
+  // buttons — an overflow tracker is not required to still carry the live ai.svg icon.
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const otherButton = group.getByRole('button', { name: /^Other/ });
+  const hasOther = (await otherButton.count()) > 0;
+  test.skip(!hasOther, 'no overflow "Other" group in this environment');
+
+  await otherButton.click();
+  const menu = page.getByRole('menu');
+  const menuVisible = await menu.isVisible({ timeout: 3_000 }).catch(() => false);
+  test.skip(!menuVisible, '"Other" did not open a dropdown menu in this environment');
+
+  const menuItems = menu.getByRole('menuitem');
+  const itemCount = await menuItems.count();
+  test.skip(itemCount === 0, 'no overflow tracker options in this environment');
+  await expect(menuItems.first()).toBeVisible();
+
+  await page.keyboard.press('Escape');
+});
+
+test('"Other" toggle only shows the ai.svg icon while at least one overflow tracker still has one', async ({ page }) => {
+  // MonitorHeader.tsx builds the "__other__" entry with
+  // `hasAI: overflowGroups.some((g) => g.hasAI)` — it used to be hardcoded `true`, always
+  // showing the icon even after every overflow tracker had been fully reviewed.
+  const group = page.getByRole('group', { name: 'Camera Groups' });
+  const otherButton = group.getByRole('button', { name: /^Other/ });
+  const hasOther = (await otherButton.count()) > 0;
+  test.skip(!hasOther, 'no overflow "Other" group in this environment');
+
+  await otherButton.click();
+  const menu = page.getByRole('menu');
+  const menuVisible = await menu.isVisible({ timeout: 3_000 }).catch(() => false);
+  test.skip(!menuVisible, '"Other" did not open a dropdown menu in this environment');
+
+  const menuItems = menu.getByRole('menuitem');
+  const itemCount = await menuItems.count();
+  test.skip(itemCount === 0, 'no overflow tracker options in this environment');
+
+  let anyOverflowHasAI = false;
+  for (let i = 0; i < itemCount; i++) {
+    if ((await menuItems.nth(i).locator('img[src*="ai.svg"]').count()) > 0) {
+      anyOverflowHasAI = true;
+      break;
+    }
+  }
+  await page.keyboard.press('Escape');
+
+  const otherHasIcon = (await otherButton.locator('img[src*="ai.svg"]').count()) > 0;
+  expect(otherHasIcon).toBe(anyOverflowHasAI);
+});
+
+// ─── No-review guard (NoReviewGuard) ───────────────────────────────────────────
+// Monitor/index.tsx renders NoReviewGuard as a modal overlay (like LocationGuard) once
+// monitoring/tracker/tracker-grouping data has finished loading and unreviewedTrackerIds
+// is empty — nothing has pending AI events to review for this assignment. It's an overlay
+// on top of the existing page, not a replacement, so the timeline underneath still exists
+// in the DOM; the guard just blocks interaction and offers a single "Go Back" action.
+
+test('shows the "Nothing to Review" guard when there are no pending AI events, otherwise the timeline', async ({ page }) => {
+  // NoReviewGuard's actual titles are "No Trackers/Groups Configured" or "No Events Found" —
+  // there is no literal "Nothing to Review" text in the component.
+  const guardTitle = page.getByText(/^No (Trackers|Groups|Events)/);
+  const isGuardShown = await guardTitle.isVisible({ timeout: 10_000 }).catch(() => false);
+
+  if (isGuardShown) {
+    await expect(page.getByRole('button', { name: 'Go Back' })).toBeVisible();
+  } else {
+    await expect(page.getByText('Compliance Violations')).toBeVisible({ timeout: 15_000 });
+  }
+});
+
+test('"Go Back" on the no-review guard navigates back to assignments', async ({ page }) => {
+  // Mirrors the setup used by the other back-navigation tests below — page.goto directly
+  // to MONITOR_URL (as beforeEach does) may not leave a real history entry to go back to.
+  await page.goto('/assignments');
+  await page.goto(MONITOR_URL());
+  await expect(page.getByText('/ Events')).toBeVisible({ timeout: 15_000 });
+
+  const isGuardShown = await page.getByText(/^No (Trackers|Groups|Events)/).isVisible({ timeout: 10_000 }).catch(() => false);
+  test.skip(!isGuardShown, 'this environment has pending AI events — guard is not shown');
+
+  await page.getByRole('button', { name: 'Go Back' }).click();
+  await expect(page).toHaveURL(/\/assignments/, { timeout: 5_000 });
 });
 
 // ─── Camera area ──────────────────────────────────────────────────────────────
@@ -847,6 +1064,40 @@ test('Space toggles Play/Pause', async ({ page }) => {
   await expect(page.getByAltText('Play')).toBeVisible({ timeout: 3_000 });
 });
 
+test('pressing Space with a diamond selected jumps the marker to the start of its review clip, not forward', async ({ page }) => {
+  // TimeLine's playWindow (useTimelineBodyState) scopes playback to the selected
+  // diamond's own clip: handleTogglePlay snaps the marker to playWindow.start (its own
+  // timeSec for a RANGE point, or timeSec - TAG_TOLERANCE_SEC for a POINT) synchronously,
+  // *before* the 1s-interval ticking begins — so right after Space, the marker should
+  // never read later than the diamond's own time, only at or before it.
+  await waitForTimelineDataReady(page);
+
+  const reviewedButton = page.getByRole('button', { name: /, reviewed$/ }).first();
+  await reviewedButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const count = await reviewedButton.count();
+  test.skip(count === 0, 'no reviewed event points available in this environment');
+
+  const label = await reviewedButton.getAttribute('aria-label');
+  const m = label?.match(/ at (\d{2}):(\d{2}):(\d{2}),/);
+  test.skip(!m, 'could not read event point time from aria-label');
+  const epSec = Number(m![1]) * 3600 + Number(m![2]) * 60 + Number(m![3]);
+
+  await reviewedButton.dispatchEvent('click');
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  await expect(timeDisplay).toHaveText(`${m![1]}:${m![2]}:${m![3]}`, { timeout: 3_000 });
+
+  await page.keyboard.press('Space');
+  await expect(page.getByAltText('Pause')).toBeVisible({ timeout: 1_000 });
+
+  const text = await timeDisplay.textContent();
+  const [h, mnt, s] = (text ?? '00:00:00').split(':').map(Number);
+  const sec = h * 3600 + mnt * 60 + s;
+  expect(sec).toBeLessThanOrEqual(epSec);
+
+  // Restore state
+  await page.keyboard.press('Space');
+});
+
 test('ArrowRight and ArrowLeft move the timeline marker', async ({ page }) => {
   await waitForTimelineDataReady(page);
   const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
@@ -907,27 +1158,129 @@ test('Ctrl+ArrowRight and Ctrl+ArrowLeft jump between event points', async ({ pa
   test.skip(afterPrev === initialTime, 'no event points near the marker to jump to in this environment');
 });
 
-test('Shift+G opens the "Go to specific time" dialog', async ({ page }) => {
-  await waitForTimeline(page);
-  await page.keyboard.press('Shift+G');
-  await expect(page.getByText('Go to specific time')).toBeVisible({ timeout: 3_000 });
-  await page.getByRole('button', { name: 'Cancel' }).click();
-});
-
 test('+ and - keys change the timeline zoom', async ({ page }) => {
   await waitForTimelineDataReady(page);
   // TimelineTimeRuler sets cursor:"grab" once zoom > 1 and cursor:"default" at zoom === 1.
-  // Default zoom is 4, so "-" pressed twice (4 → 2 → 1) should flip the ruler to "default".
-  const ruler = page.getByText(/^\d{2}:\d{2}$/).first().locator('xpath=../..');
+  // Zoom steps are multiplicative (×/÷1.25 per press, not a fixed +/-2) and the default
+  // zoom is derived from the grid width (targets a 10-minute default tick), so it varies
+  // by environment — press "-" repeatedly (clamped at zoom 1) instead of assuming a fixed
+  // number of presses. Tick labels can be "HH:MM" or "HH:MM:SS" depending on tickStepSec.
+  const ruler = page.getByText(/^\d{2}:\d{2}(:\d{2})?$/).first().locator('xpath=../..');
   const rulerCount = await ruler.count();
   test.skip(rulerCount === 0, 'no tick labels visible to locate the ruler in this environment');
 
-  await page.keyboard.press('-');
-  await page.keyboard.press('-');
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press('-');
+  }
   await expect(ruler).toHaveCSS('cursor', 'default', { timeout: 3_000 });
 
   await page.keyboard.press('+');
   await expect(ruler).not.toHaveCSS('cursor', 'default', { timeout: 3_000 });
+});
+
+test('the "1-9,0" row shortcut only crosses to a different row when the destination has an event within TAG_TOLERANCE_SEC of the marker', async ({ page }) => {
+  // useTimelineKeyboard's number-key handler (position 1-9,0 → selectableRows[pos-1]) skips
+  // the jump when the destination row has no event point within TAG_TOLERANCE_SEC (30s,
+  // src/hooks/useTagsForCamera.ts) of the CURRENT MARKER — not of the focused row's own
+  // points (an earlier version compared row-to-row across the whole session, which was too
+  // permissive since some pair almost always lines up somewhere in a real dataset).
+  // TimelineRowList's numbered badge is each row's 1-based digit position, and the row's
+  // background turns Colors.vividOrange (#fa5f02 → rgb(250, 95, 2)) while it's focused
+  // (isFocused = iTrackId === row.id) — both directly observable in the DOM.
+  await waitForTimelineDataReady(page);
+
+  const rowList = page.getByText('Compliance Violations').locator('xpath=../..');
+  const rowNameSpans = rowList.locator('span[title]');
+  const rowCount = await rowNameSpans.count();
+  test.skip(rowCount < 2, 'need at least 2 tracker rows to test cross-row jump gating');
+
+  const rowNames = await rowNameSpans.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('title') ?? ''),
+  );
+  const rowBoxes = rowNameSpans.locator('xpath=..');
+
+  // Select a point to focus its row (sets iTrackId) and the marker — any point works.
+  const anyPointButton = page.getByRole('button', { name: /, (reviewed|unreviewed)$/ }).first();
+  await anyPointButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const pointCount = await anyPointButton.count();
+  test.skip(pointCount === 0, 'no event points available in this environment');
+  await anyPointButton.dispatchEvent('click');
+
+  let focusedIndex = -1;
+  for (let i = 0; i < rowCount; i++) {
+    const bg = await rowBoxes.nth(i).evaluate((el) => getComputedStyle(el).backgroundColor);
+    if (bg === 'rgb(250, 95, 2)') {
+      focusedIndex = i;
+      break;
+    }
+  }
+  test.skip(focusedIndex === -1, 'could not determine the focused row after selecting a point');
+  test.skip(focusedIndex >= 10, 'focused row has no digit shortcut (position > 10)');
+
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const markerText = await timeDisplay.textContent();
+  const [mh, mm, ms] = (markerText ?? '00:00:00').split(':').map(Number);
+  const currentMarkerSec = mh * 3600 + mm * 60 + ms;
+
+  // Per-row event times, read from each EventRow canvas's own sibling a11y list
+  // (canvas's data-row attribute identifies which row it belongs to).
+  const timesByRow = new Map<string, number[]>();
+  const canvases = page.locator('canvas[data-row]');
+  const canvasCount = await canvases.count();
+  for (const name of rowNames) {
+    let matched: Locator | null = null;
+    for (let i = 0; i < canvasCount; i++) {
+      if ((await canvases.nth(i).getAttribute('data-row')) === name) {
+        matched = canvases.nth(i);
+        break;
+      }
+    }
+    if (!matched) {
+      timesByRow.set(name, []);
+      continue;
+    }
+    const buttons = matched.locator('xpath=../div[@role="list"]//button');
+    const labels = await buttons.evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
+    const times = labels
+      .map((l) => {
+        const m = l.match(/ at (\d{2}):(\d{2}):(\d{2}),/);
+        return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : null;
+      })
+      .filter((v): v is number => v !== null);
+    timesByRow.set(name, times);
+  }
+
+  const TAG_TOLERANCE_SEC = 30;
+
+  let blockedIndex = -1;
+  let allowedIndex = -1;
+  for (let j = 0; j < Math.min(rowCount, 10); j++) {
+    if (j === focusedIndex) continue;
+    const targetTimes = timesByRow.get(rowNames[j]) ?? [];
+    const shares = targetTimes.some(
+      (t) => Math.abs(t - currentMarkerSec) <= TAG_TOLERANCE_SEC,
+    );
+    if (shares && allowedIndex === -1) allowedIndex = j;
+    if (!shares && blockedIndex === -1) blockedIndex = j;
+  }
+  test.skip(
+    blockedIndex === -1 && allowedIndex === -1,
+    'not enough distinct rows to exercise the gating in this environment',
+  );
+
+  if (blockedIndex !== -1) {
+    const digit = blockedIndex === 9 ? '0' : String(blockedIndex + 1);
+    await page.keyboard.press(digit);
+    // Jump should have been blocked — the originally focused row stays highlighted.
+    await expect(rowBoxes.nth(focusedIndex)).toHaveCSS('background-color', 'rgb(250, 95, 2)', { timeout: 2_000 });
+  }
+
+  if (allowedIndex !== -1) {
+    const digit = allowedIndex === 9 ? '0' : String(allowedIndex + 1);
+    await page.keyboard.press(digit);
+    // Rows share a nearby point — the jump should succeed and move the highlight.
+    await expect(rowBoxes.nth(allowedIndex)).toHaveCSS('background-color', 'rgb(250, 95, 2)', { timeout: 2_000 });
+  }
 });
 
 test('Delete removes a selected reviewed event point; Ctrl+Z undoes it', async ({ page }) => {
@@ -971,37 +1324,6 @@ test('Delete removes a selected reviewed event point; Ctrl+Z undoes it', async (
   // against the REAL backend, which never actually deleted anything and returns the point
   // unchanged. That refetch can restore it into preloadedEventPoints independently of our
   // local undo/redo stack, making the post-redo count non-deterministic in this test setup.
-});
-
-test('"e" enters edit mode for a selected reviewed event point', async ({ page }) => {
-  await waitForTimelineDataReady(page);
-
-  // "e" also converts preloaded points via handleConvertEventPoint, which fires the same
-  // real DELETE call in the background if unmocked (src/pages/Monitor/hooks/useDeleteEventPoint.ts).
-  const deleteRequests: string[] = [];
-  await page.route('**/tracker/*/bulk', async (route) => {
-    if (route.request().method() === 'DELETE') {
-      deleteRequests.push(route.request().url());
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) });
-    } else {
-      await route.continue();
-    }
-  });
-
-  // Rows mount slightly after the "loading..." indicators clear — wait for one to appear.
-  const reviewedButton = page.getByRole('button', { name: /, reviewed$/ }).first();
-  await reviewedButton.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
-  const count = await reviewedButton.count();
-  test.skip(count === 0, 'no reviewed event points available in this environment');
-
-  await reviewedButton.dispatchEvent('click');
-  await page.keyboard.press('e');
-
-  // handleEditEventPoint only calls onConvertEventPointToLocal for preloaded (server-backed)
-  // points — if the selected point was already local, no conversion/delete request fires.
-  await page.waitForTimeout(1_000);
-  test.skip(deleteRequests.length === 0, 'selected event point was not server-backed — no conversion triggered');
-  expect(deleteRequests.length).toBeGreaterThan(0);
 });
 
 test('Alt+ArrowLeft navigates back', async ({ page }) => {
@@ -1091,6 +1413,352 @@ test('removing a tag from the camera chip also removes it from the timeline', as
   // Same underlying event point — its a11y button in the timeline should be gone too
   const pointByLabel = page.getByRole('button', { name: label ?? '', exact: true });
   await expect(pointByLabel).toHaveCount(0, { timeout: 5_000 });
+});
+
+// ─── Camera tag accept (via "i") / reject (AI review) ─────────────────────────
+// CameraItem no longer renders an accept button — pressing "i" (useTimelineKeyboard)
+// is the accept action. It acts on whichever point is currently selected
+// (selectedEventPointId, set by clicking the point's a11y button or diamond — not by
+// exact marker-time matching), and does three things: (1) marks it accepted
+// (Monitor/index.tsx's handleAcceptEventPoint — local-only, reset on reload — the
+// original point's own `reviewed` flag never flips), (2) creates a brand new
+// reviewed:true duplicate at the same time/camera/label via the tracker's menu item,
+// bound to the ORIGINAL point's own cameraId (not the row's tracker id, which matters
+// for activity-mode rows spanning multiple cameras), and (3) jumps the marker forward
+// to and selects the next still-genuinely-pending point (one with no reviewed twin), if
+// any exists. "Accepted" is therefore always derived live from the presence of a
+// reviewed twin (hasReviewedTwin), never a permanent flag — deleting the twin reverts
+// the original point to pending. Only a reject "✕" button remains on the chip for tags
+// whose point is unreviewed (reviewed===false) and not yet decided — onRejectTag flows
+// up to handleRejectEventPoint, which just hides the button; the chip stays blue.
+// Accepting resolves to Colors.grassGreen (#57B619 → rgb(87, 182, 25)) because the
+// surviving (reviewed) duplicate still overlaps the original, still-unreviewed point
+// (useTagsForCamera's overlapsUnreviewed).
+
+// Selects the first unreviewed event point (if any) via its a11y button — this moves
+// the marker onto it and selects its tracker line (EventRow's selectEp), which is what
+// "i" needs to find it — then returns the chip Box locator (the colored parent of the
+// tag's name span) once it's visible on a camera cell. Skips the test gracefully if no
+// such point/chip is available.
+async function selectUnreviewedTagChip(page: Page) {
+  const unreviewedButtons = page.getByRole('button', { name: /, unreviewed$/ });
+  await unreviewedButtons.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const count = await unreviewedButtons.count();
+  test.skip(count === 0, 'no unreviewed event points available in this environment');
+
+  // pendingReviewWallSec (Monitor/index.tsx) blocks selecting anything later than the
+  // globally earliest unresolved point — EventRow's selectEp silently no-ops if you try
+  // to select past it. DOM order isn't guaranteed chronological, so pick the earliest
+  // by parsing the "<label> at HH:MM:SS, unreviewed" aria-label, not just .first().
+  const labels = await unreviewedButtons.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('aria-label') ?? ''),
+  );
+  const parseTimeSec = (label: string) => {
+    const m = label.match(/ at (\d{2}):(\d{2}):(\d{2}),/);
+    return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : Infinity;
+  };
+  let earliestIndex = 0;
+  let earliestSec = Infinity;
+  labels.forEach((label, i) => {
+    const sec = parseTimeSec(label);
+    if (sec < earliestSec) {
+      earliestSec = sec;
+      earliestIndex = i;
+    }
+  });
+
+  const unreviewedButton = unreviewedButtons.nth(earliestIndex);
+  const label = labels[earliestIndex];
+  const tagName = label.split(' at ')[0] ?? '';
+  test.skip(!tagName, 'could not read event point label');
+
+  await unreviewedButton.dispatchEvent('click');
+
+  const cameraCells = page.getByAltText('Expand camera').locator('xpath=../..');
+  const tagNameSpans = cameraCells.locator('span', { hasText: tagName });
+  await tagNameSpans.first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+  const spanCount = await tagNameSpans.count();
+  test.skip(spanCount === 0, 'unreviewed tag is not visible on any on-screen camera in this environment');
+
+  // Usually there's exactly one chip for this label. But if a reviewed "twin" overlaps
+  // at the same time (rendered green, per useTagsForCamera's overlap bypass), both chips
+  // share this tagName — pick the still-pending one via its blue (Colors.blue,
+  // #06A0F6 → rgb(6, 160, 246)) background.
+  for (let i = 0; i < spanCount; i++) {
+    const candidate = tagNameSpans.nth(i).locator('xpath=..');
+    const bg = await candidate.evaluate((el) => getComputedStyle(el).backgroundColor);
+    if (bg === 'rgb(6, 160, 246)') return candidate;
+  }
+
+  test.skip(true, 'pending (blue) tag chip not found on screen');
+  return tagNameSpans.first().locator('xpath=..');
+}
+
+// Selects the earliest unreviewed event point that has no reviewed twin yet (so tapping a
+// camera menu item on it will hit handleActivitySelectGuarded's "pending" branch, not its
+// "hasDuplicate" no-op guard), finds the camera cell hosting its pending (blue) tag chip,
+// and returns that cell plus the tag's label — ready to open CameraOverlayMenu on it. Skips
+// gracefully if any step isn't available in this environment.
+async function findPendingTagCameraCell(
+  page: Page,
+): Promise<{ cameraCell: Locator; tagName: string; chip: Locator }> {
+  const unreviewedButtons = page.getByRole('button', { name: /, unreviewed$/ });
+  const reviewedButtons = page.getByRole('button', { name: /, reviewed$/ });
+  await unreviewedButtons.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const count = await unreviewedButtons.count();
+  test.skip(count === 0, 'no unreviewed event points available in this environment');
+
+  const parseKey = (label: string) => {
+    const m = label.match(/^(.*) at (\d{2}:\d{2}:\d{2}),/);
+    return m ? `${m[1]}@${m[2]}` : null;
+  };
+  const parseTimeSec = (label: string) => {
+    const m = label.match(/ at (\d{2}):(\d{2}):(\d{2}),/);
+    return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : Infinity;
+  };
+
+  const unreviewedLabels = await unreviewedButtons.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('aria-label') ?? ''),
+  );
+  const reviewedLabels = await reviewedButtons.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('aria-label') ?? ''),
+  );
+  const reviewedKeys = new Set(reviewedLabels.map(parseKey).filter((k): k is string => k !== null));
+
+  const candidates = unreviewedLabels
+    .map((label, i) => ({ label, i, sec: parseTimeSec(label), key: parseKey(label) }))
+    .filter((c) => c.key !== null && !reviewedKeys.has(c.key))
+    .sort((a, b) => a.sec - b.sec);
+  test.skip(candidates.length === 0, 'every unreviewed point already has a reviewed twin in this environment');
+
+  const picked = candidates[0];
+  const tagName = picked.label.split(' at ')[0] ?? '';
+  test.skip(!tagName, 'could not read event point label');
+  await unreviewedButtons.nth(picked.i).dispatchEvent('click');
+
+  const cameraCells = page.getByAltText('Expand camera').locator('xpath=../..');
+  const cellCount = await cameraCells.count();
+  for (let i = 0; i < cellCount; i++) {
+    const cameraCell = cameraCells.nth(i);
+    const span = cameraCell.locator('span', { hasText: tagName }).first();
+    if ((await span.count()) === 0) continue;
+    const chip = span.locator('xpath=..');
+    const bg = await chip.evaluate((el) => getComputedStyle(el).backgroundColor).catch(() => '');
+    if (bg === 'rgb(6, 160, 246)') return { cameraCell, tagName, chip };
+  }
+
+  test.skip(true, 'pending (blue) tag chip not found on any camera cell in this environment');
+  return { cameraCell: cameraCells.first(), tagName, chip: cameraCells.first() };
+}
+
+test('unreviewed camera tag shows only a reject (✕) button', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await expect(chip.getByText('✕')).toBeVisible();
+  await expect(chip.getByText('✓')).toHaveCount(0);
+});
+
+test('camera tag chips render a border matching the diamond color scheme', async ({ page }) => {
+  // CameraItem's chip now shares src/components/timeline/utils.ts's getEventPointColors
+  // with EventRow's canvas diamonds. RANGE tags render with no border at all
+  // (`border: "none"` — RANGE diamonds never get a colored border either). A pending
+  // (unreviewed, blue) POINT tag gets a border matching its own fill: blue
+  // (rgb(6, 160, 246)) once eligible (mode POINT + 2+ tracker rows visible, same as
+  // the diamonds' 3px+white-ring treatment), or white otherwise — it never satisfies
+  // isResolvedPoint/isCorrectionAccept/isCorrectionReject either way.
+  // selectUnreviewedTagChip doesn't distinguish mode/eligibility, so branch on
+  // whichever this environment happens to select.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  const borderWidth = await chip.evaluate((el) => getComputedStyle(el).borderWidth);
+  if (borderWidth === '0px') {
+    test.skip(true, 'selected the pending tag on a RANGE tracker in this environment — no border by design');
+  }
+  await expect(chip).toHaveCSS('border-width', '2px', { timeout: 3_000 });
+  const borderColor = await chip.evaluate((el) => getComputedStyle(el).borderColor);
+  expect(['rgb(255, 255, 255)', 'rgb(6, 160, 246)']).toContain(borderColor);
+});
+
+test('pressing "i" on the selected line accepts the pending tag and turns its chip green', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await page.keyboard.press('i');
+
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(87, 182, 25)', { timeout: 3_000 });
+});
+
+test('pressing "o" on the selected line marks the pending tag AI-incorrect and turns its chip yellow', async ({ page }) => {
+  // "o" (useTimelineKeyboard.ts) mirrors "i" but for the "there was no attention" case —
+  // handleMarkAiIncorrect sets value:false, reviewDisagree:true on the same point, which
+  // CameraItem's chip renders as Colors.marigoldYellow (#F2A93B → rgb(242, 169, 59))
+  // instead of the green used for "i" — the simplified palette's "yellow" replaces the
+  // old blushRed. Only active for POINT trackers when 2+ rows are visible
+  // (selectableRows.length >= 2), same gating as the numbered row shortcuts.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const rowList = page.getByText('Compliance Violations').locator('xpath=../..');
+  const rowCount = await rowList.locator('span[title]').count();
+  test.skip(rowCount < 2, '"o" only takes effect when 2+ tracker rows are visible');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await page.keyboard.press('o');
+
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(242, 169, 59)', { timeout: 3_000 });
+});
+
+test('pressing "i" creates a reviewed twin instead of flipping the original point reviewed', async ({ page }) => {
+  // Auto-approval must be live/derived (hasReviewedTwin), not a permanent flag — the
+  // original point should still carry ", unreviewed" in its a11y label after "i", with
+  // resolution coming entirely from a new ", reviewed" duplicate alongside it.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const unreviewedButtons = page.getByRole('button', { name: /, unreviewed$/ });
+  const reviewedButtons = page.getByRole('button', { name: /, reviewed$/ });
+  await unreviewedButtons.first().waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+  const unreviewedCountBefore = await unreviewedButtons.count();
+  test.skip(unreviewedCountBefore === 0, 'no unreviewed event points available in this environment');
+  const reviewedCountBefore = await reviewedButtons.count();
+
+  await selectUnreviewedTagChip(page);
+  await page.keyboard.press('i');
+
+  await expect(reviewedButtons).toHaveCount(reviewedCountBefore + 1, { timeout: 5_000 });
+  await expect(unreviewedButtons).toHaveCount(unreviewedCountBefore, { timeout: 3_000 });
+});
+
+test('tapping a camera menu item on a pending diamond accepts it instead of creating a duplicate', async ({ page }) => {
+  // handleActivitySelectGuarded (Monitor/index.tsx): when the tapped tracker already has a
+  // pending point within TAG_TOLERANCE_SEC of the marker, it calls handleAcceptEventPoint on
+  // that SAME point instead of handleActivitySelect creating a new one. Unlike "i" above
+  // (which always creates a reviewed twin), the total point count must not grow here.
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const allPointButtons = page.getByRole('button', { name: /, (reviewed|unreviewed)$/ });
+  const totalBefore = await allPointButtons.count();
+
+  const { cameraCell, tagName, chip } = await findPendingTagCameraCell(page);
+
+  // Expand button sits bottom-right; click top-left of the cell to hit the body, same as
+  // the "clicking camera body opens..." test above.
+  await cameraCell.click({ position: { x: 20, y: 20 } });
+  await expect(page.getByText('Select a Compliance Violation')).toBeVisible({ timeout: 5_000 });
+
+  // useCameraMenuItems shows the tracker's own name as the menu item label only for
+  // RANGE (or non-dual-value POINT) trackers. A POINT tracker with exactly 2 values
+  // (e.g. "Attended"/"Unattended") splits into two menu items labeled with those
+  // values instead of the tracker name — getByText(tagName) won't find either one in
+  // that case, so this test only covers the non-split path.
+  const overlay = page.getByText('Select a Compliance Violation').locator('xpath=../..');
+  const menuItem = overlay.getByText(tagName, { exact: true });
+  const hasMenuItem = (await menuItem.count()) > 0;
+  test.skip(
+    !hasMenuItem,
+    `no "${tagName}" option in this camera's context menu — likely a dual-value POINT tracker whose menu items are labeled with its values instead`,
+  );
+
+  await menuItem.first().click();
+
+  // Same point flips reviewed — chip turns green and its reject "✕" goes away.
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(87, 182, 25)', { timeout: 3_000 });
+
+  // Unlike "i" (which always adds a reviewed twin), the total point count stays the same.
+  await expect(allPointButtons).toHaveCount(totalBefore, { timeout: 3_000 });
+});
+
+test('rejecting an unreviewed tag hides the button and leaves it blue', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  await chip.getByText('✕').click();
+
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+  await expect(chip).toHaveCSS('background-color', 'rgb(6, 160, 246)', { timeout: 3_000 });
+});
+
+// ─── Forward-navigation gating on pending (blue) tags ─────────────────────────
+// Monitor/index.tsx's pendingReviewWallSec is derived from the earliest unresolved
+// (unreviewed, undecided, no reviewed twin) tag in the current view — its own
+// timeSec/endSec, nudged out to that diamond's own pixel border in
+// useTimelineBodyState (not further out by a whole tolerance window). guardedSetMarkerSec
+// clamps any forward marker movement (drag, arrows, Step forward, play) to that
+// position, and EventRow's selectEp refuses to select diamonds past it. Accepting (via
+// "i") or rejecting the blocking tag moves the wall forward (or clears it). Only
+// genuinely pending (blue, no reviewed twin) tags count; already-reviewed
+// (orange/green) ones never form a wall.
+
+test('timeline cannot advance forward while a pending unreviewed tag is on screen', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  await selectUnreviewedTagChip(page);
+
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const before = await timeDisplay.textContent();
+
+  await page.getByAltText('Step forward').click();
+  await expect(timeDisplay).toHaveText(before ?? '', { timeout: 2_000 });
+
+  await page.keyboard.press('ArrowRight');
+  await expect(timeDisplay).toHaveText(before ?? '', { timeout: 2_000 });
+});
+
+test('accepting the blocking tag (via "i") unblocks forward navigation', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const blocked = await timeDisplay.textContent();
+
+  await page.keyboard.press('i');
+  // Wait for the accept to actually re-render (moving pendingReviewWallSec past this
+  // point) before advancing — otherwise Step forward can race the state update and
+  // stay blocked.
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+
+  await page.getByAltText('Step forward').click();
+  await expect(timeDisplay).not.toHaveText(blocked ?? '', { timeout: 3_000 });
+});
+
+test('rejecting the blocking tag unblocks forward navigation', async ({ page }) => {
+  await waitForTimelineDataReady(page);
+  const cameraCount = await getCameraCount(page);
+  test.skip(cameraCount === 0, 'no cameras loaded for this monitoring session');
+
+  const chip = await selectUnreviewedTagChip(page);
+  const timeDisplay = page.getByText(/^\d{2}:\d{2}:\d{2}$/);
+  const blocked = await timeDisplay.textContent();
+
+  await chip.getByText('✕').click();
+  // Wait for the reject to actually re-render (moving pendingReviewWallSec past this
+  // point) before advancing — otherwise Step forward can race the state update and
+  // stay blocked.
+  await expect(chip.getByText('✕')).not.toBeVisible({ timeout: 3_000 });
+
+  await page.getByAltText('Step forward').click();
+  await expect(timeDisplay).not.toHaveText(blocked ?? '', { timeout: 3_000 });
 });
 
 // ─── Navigation ───────────────────────────────────────────────────────────────

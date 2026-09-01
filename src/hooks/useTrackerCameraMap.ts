@@ -17,7 +17,7 @@ const useTrackerCameraMap = (monitoringID: string) => {
   const { data } = useGet<MonitoringResponse>(
     `monitoring/${monitoringID}/load2`,
     undefined,
-    { refetchOnWindowFocus: false },
+    { refetchOnWindowFocus: false, gcTime: 0 },
   );
 
   return useMemo(() => {

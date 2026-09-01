@@ -30,8 +30,10 @@ const CameraLayout = ({
   cameraEventPoints = [],
   markerSec = 0,
   onRemoveEventPoint,
+  onRejectEventPoint,
   onExpandCamera: handleExpandCamera,
   loadState = false,
+  hasMultipleRows = false,
 }: CameraLayoutProps) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
 
@@ -44,6 +46,7 @@ const CameraLayout = ({
     cameraEventPoints,
     markerSec,
     renderedCameras,
+    hasMultipleRows,
   );
 
   const scrollable = renderedCameras.length > 16;
@@ -54,6 +57,7 @@ const CameraLayout = ({
   const sharedProps: SharedCameraItemProps = {
     expandCamera: handleExpandCamera,
     onRemoveTag: (tagId) => onRemoveEventPoint?.(tagId),
+    onRejectTag: (tagId) => onRejectEventPoint?.(tagId),
     getTagsForCamera,
     contextMenuItems,
     onMenuOpen: (index) => {

@@ -9,6 +9,7 @@ export const EXIT_TRANSITION_MS = 100;
 export interface SharedCameraItemProps {
   expandCamera: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
+  onRejectTag?: (tagId: number) => void;
   getTagsForCamera: (index: number) => CameraContextMenuItem[];
   contextMenuItems: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
@@ -36,9 +37,11 @@ export interface CameraLayoutProps {
   cameraEventPoints?: CameraEventPoint[];
   markerSec?: number;
   onRemoveEventPoint?: (id: number) => void;
+  onRejectEventPoint?: (id: number) => void;
   expandedCamera: number | null;
   onExpandCamera: (index: number) => void;
   loadState?: boolean;
+  hasMultipleRows?: boolean;
 }
 
 export const getRowDistribution = (count: number): number[] => {

@@ -52,6 +52,8 @@ interface TimelineGridRowsProps {
   onEnterEditMode?: (id: number) => void;
   onUserPan?: () => void;
   loadState?: boolean;
+  pendingReviewWallSec?: number;
+  hasMultipleRows: boolean;
 }
 
 export const TimelineGridRows = ({
@@ -89,6 +91,8 @@ export const TimelineGridRows = ({
   onEnterEditMode,
   onUserPan,
   loadState = false,
+  pendingReviewWallSec,
+  hasMultipleRows,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -201,23 +205,20 @@ export const TimelineGridRows = ({
         <Box
           sx={{ position: "relative", height: flatRows.length * ROW_HEIGHT }}
         >
-          {flatRows.map((row, rowIndex) =>
-            iTrackId === row.id ? (
-              <Box
-                key={`highlight-${row.id}`}
-                sx={{
-                  position: "absolute",
-                  top: rowIndex * ROW_HEIGHT,
-                  left: 0,
-                  right: 0,
-                  height: ROW_HEIGHT,
-                  bgcolor: `${Colors.transparentVividOrange}`,
-                  pointerEvents: "none",
-                  zIndex: 0,
-                }}
-              />
-            ) : null,
-          )}
+          <Box
+            sx={{
+              position: "absolute",
+              top: Math.max(0, flatRows.findIndex((r) => r.id === iTrackId)) * ROW_HEIGHT,
+              left: 0,
+              right: 0,
+              height: ROW_HEIGHT,
+              bgcolor: `${Colors.transparentVividOrange}`,
+              pointerEvents: "none",
+              zIndex: 0,
+              opacity: iTrackId !== null && flatRows.some((r) => r.id === iTrackId) ? 1 : 0,
+              transition: "top 150ms ease, opacity 150ms ease",
+            }}
+          />
           {flatRows.map((row, rowIndex) =>
             row.kind === "camera" ? (
               <SessionRow
@@ -265,6 +266,8 @@ export const TimelineGridRows = ({
                   onConvertEventPointToLocal={onConvertEventPointToLocal}
                   onEnterEditMode={onEnterEditMode}
                   onEditEventPoint={onEditEventPoint}
+                  pendingReviewWallSec={pendingReviewWallSec}
+                  hasMultipleRows={hasMultipleRows}
                 />
               </Box>
             ),

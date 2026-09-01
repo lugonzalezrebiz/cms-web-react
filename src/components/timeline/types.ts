@@ -57,10 +57,24 @@ export type CameraEventPoint = {
   value: boolean;
   mode: "POINT" | "RANGE";
   entryIds?: number[];
+  rejected?: boolean;
+  accepted?: boolean;
+  reviewDisagree?: boolean;
+  touchedThisSession?: boolean;
+  zoneId?: number | null;
+  subject?: number | null;
+  object?: number | null;
+  meta?: string | null;
+  processed?: boolean;
+  processDate?: string | null;
 };
 
 export type ResizingState = { id: number; side: "left" | "right" } | null;
 export type SetResizing = React.Dispatch<React.SetStateAction<ResizingState>>;
+
+// The clip playback is scoped to when a diamond is selected: start/end bound the review
+// window, center is where the marker snaps back to once playback finishes.
+export type PlayWindow = { start: number; end: number; center: number };
 
 export type EventPointUpdate = Partial<Pick<CameraEventPoint, "timeSec" | "startSec" | "endSec">>;
 

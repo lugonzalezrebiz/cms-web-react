@@ -1,8 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// MonitorTimeline only reads monitoringID from URL params — company/location/date are not needed.
+// MonitorTimeline now also reads company/location from URL params — it feeds them into
+// useAssignments to resolve the assignment's real open/close times (passed to useMonitoring)
+// and to compute its own NoReviewGuard reason, mirroring Monitor/index.tsx. Without them the
+// page still renders (falls back to the MOCK_SNAPSHOT default time range), but parity with
+// Monitor requires the same static redirect params used by MONITOR_URL below.
 const TIMELINE_URL = () =>
-  `/monitor/timeline?monitoringID=${process.env.VITE_MONITORING_ID ?? ''}`;
+  `/monitor/timeline?company=9001&location=222&date=20251224&monitoringID=${process.env.VITE_MONITORING_ID ?? ''}`;
 
 // Monitor URL needed for the popup-origin test.
 const MONITOR_URL = () =>
@@ -30,6 +34,48 @@ test.describe('MonitorTimeline — direct navigation', () => {
     // MonitorTimeline has no MonitorHeader — just the full-height TimeLine component
     await expect(page.getByText(/^Store:/)).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Done' })).not.toBeVisible();
+  });
+
+  // ── No-review guard (NoReviewGuard) ───────────────────────────────────────────
+  // MonitorTimeline computes its own noReviewReason (trackers/groups/events) the same way
+  // Monitor/index.tsx does, and renders NoReviewGuard as a blocking overlay. Since this page
+  // has no back-navigation of its own (it's a standalone/popped-out window), onGoBack closes
+  // the window instead of navigating to /assignments.
+
+  test('shows the "Nothing to Review" guard when there are no pending events, otherwise the timeline', async ({ page }) => {
+    const guardTitle = page.getByText(/^No (Trackers|Groups|Events)/);
+    const isGuardShown = await guardTitle.isVisible({ timeout: 10_000 }).catch(() => false);
+
+    if (isGuardShown) {
+      await expect(page.getByRole('button', { name: 'Go Back' })).toBeVisible();
+    } else {
+      await expect(page.getByText('Activities')).toBeVisible({ timeout: 15_000 });
+    }
+  });
+
+  test('"Go Back" on the no-review guard closes the window', async ({ page }) => {
+    const isGuardShown = await page
+      .getByText(/^No (Trackers|Groups|Events)/)
+      .isVisible({ timeout: 10_000 })
+      .catch(() => false);
+    test.skip(!isGuardShown, 'this environment has pending events — guard is not shown');
+
+    // Spy on window.close so we can distinguish "close was never called" from
+    // "close was called but headless Chromium didn't honor it" (same technique used
+    // by the Minimize-button popup test below).
+    await page.evaluate(() => {
+      type WindowWithCloseFlag = Window & { __closeCalled?: boolean };
+      (window as WindowWithCloseFlag).__closeCalled = false;
+      const orig = window.close.bind(window);
+      window.close = () => { (window as WindowWithCloseFlag).__closeCalled = true; orig(); };
+    });
+
+    await page.getByRole('button', { name: 'Go Back' }).click();
+
+    const closed = await page
+      .evaluate(() => (window as Window & { __closeCalled?: boolean }).__closeCalled)
+      .catch(() => true);
+    expect(closed).toBe(true);
   });
 
   // ── Toolbar — Minimize instead of Expand ───────────────────────────────────

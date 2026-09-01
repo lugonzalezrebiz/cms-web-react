@@ -20,6 +20,7 @@ interface CameraItemProps {
   contextMenuItems: CameraContextMenuItem[];
   onMenuOpen?: (index: number) => void;
   onRemoveTag: (tagId: number) => void;
+  onRejectTag?: (tagId: number) => void;
   cameraLabel?: boolean;
   disableOverlay?: boolean;
   skipAnimation?: boolean;
@@ -52,6 +53,7 @@ export const CameraItem = ({
   date,
   timestamp,
   onRemoveTag,
+  onRejectTag,
   cameraLabel = true,
   controlledOpen,
   onControlledClose,
@@ -235,11 +237,11 @@ export const CameraItem = ({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                bgcolor: tag.overlapsUnreviewed
-                  ? Colors.leafGreen
-                  : tag.reviewed === false
-                    ? Colors.blue
-                    : Colors.main,
+                bgcolor: tag.fillColor ?? Colors.main,
+                border:
+                  tag.mode === "RANGE"
+                    ? "none"
+                    : `2px solid ${tag.borderColor ?? "transparent"}`,
                 color: Colors.white,
                 pl: "6px",
                 pr: "4px",
@@ -261,12 +263,12 @@ export const CameraItem = ({
               >
                 {tag.name}
               </span>
-              {tag.reviewed !== false && (
+              {tag.reviewed === false && !tag.rejected ? (
                 <Box
                   component="span"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onRemoveTag(tag.id);
+                    onRejectTag?.(tag.id);
                   }}
                   sx={{
                     cursor: "pointer",
@@ -278,6 +280,26 @@ export const CameraItem = ({
                 >
                   ✕
                 </Box>
+              ) : (
+                tag.reviewed !== false &&
+                !tag.rejected && (
+                  <Box
+                    component="span"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveTag(tag.id);
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      lineHeight: 1,
+                      opacity: 0.8,
+                      fontSize: 10,
+                      "&:hover": { opacity: 1 },
+                    }}
+                  >
+                    ✕
+                  </Box>
+                )
               )}
             </Box>
           ))}

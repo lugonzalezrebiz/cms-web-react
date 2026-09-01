@@ -95,6 +95,7 @@ const RowItem = ({
         overflow: "hidden",
         textOverflow: "ellipsis",
         borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
+        transition: "background-color 150ms ease, color 150ms ease",
       }}
     >
       {!isEventSubRow && !isActivityRow && (

@@ -16,6 +16,8 @@ interface GroupItem {
   value: string;
   title: string;
   options?: GroupOption[];
+  hasAI?: boolean;
+  everHadAI?: boolean;
 }
 
 interface Props {
@@ -138,7 +140,8 @@ const CustomTrackerDialog = ({
             if (g.options?.length) {
               return g.options.map((opt) => {
                 const enabled =
-                  isEnabled(opt.value) || selected.includes(opt.value);
+                  selected.includes(opt.value) ||
+                  (isEnabled(opt.value) && !!g.everHadAI);
                 return (
                   <Box
                     key={opt.value}
@@ -154,12 +157,21 @@ const CustomTrackerDialog = ({
                       disabled={!enabled}
                       onChange={() => handleToggleFlat(opt.value)}
                     />
+                    {g.hasAI && (
+                      <img
+                        src="./assets/ai.svg"
+                        alt=""
+                        style={{ width: 14, height: 14, marginLeft: 4, flexShrink: 0 }}
+                      />
+                    )}
                   </Box>
                 );
               });
             }
 
-            const enabled = isEnabled(g.value);
+            const enabled =
+              selected.includes(g.value) ||
+              (isEnabled(g.value) && !!g.everHadAI);
             return (
               <Box
                 key={g.value}
@@ -172,6 +184,13 @@ const CustomTrackerDialog = ({
                   disabled={!enabled}
                   onChange={() => handleToggleFlat(g.value)}
                 />
+                {g.hasAI && (
+                  <img
+                    src="./assets/ai.svg"
+                    alt=""
+                    style={{ width: 14, height: 14, marginLeft: 4, flexShrink: 0 }}
+                  />
+                )}
               </Box>
             );
           })}

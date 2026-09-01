@@ -7,6 +7,7 @@ const CameraCell = ({
   maxCols,
   expandCamera,
   onRemoveTag,
+  onRejectTag,
   getTagsForCamera,
   contextMenuItems,
   onMenuOpen,
@@ -40,6 +41,7 @@ const CameraCell = ({
         contextMenuItems={contextMenuItems}
         onMenuOpen={onMenuOpen}
         onRemoveTag={onRemoveTag}
+        onRejectTag={onRejectTag}
         cameraId={cameraId}
         cameraName={cameras?.[camIndex]?.name}
         company={company}

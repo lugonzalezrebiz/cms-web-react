@@ -5,6 +5,7 @@ interface Tracker {
   id: number;
   name: string;
   mode: "POINT" | "RANGE";
+  values: string[];
 }
 
 interface TrackersResponse {

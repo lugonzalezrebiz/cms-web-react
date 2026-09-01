@@ -1,9 +1,8 @@
 import { Box } from "@mui/system";
-import { Colors } from "../../../theme";
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type React from "react";
 import type { FlatRow, CameraEventPoint, SetResizing } from "../types";
-import { secToTimeString, secToPixelX } from "../utils";
+import { secToTimeString, secToPixelX, isOverlapsBlue, getEventPointColors } from "../utils";
 
 const ROW_HEIGHT = 32.8;
 const DIAMOND_SIZE = 17;
@@ -29,6 +28,24 @@ function lerpHexAlpha(
 ): string {
   const a = Math.round(fromA + (toA - fromA) * t);
   return colorAlpha(hex, a.toString(16).padStart(2, "0"));
+}
+
+// Mixes hex toward white by `amount` (0–1) — an opaque, lighter shade of the same
+// color, not a transparent one (idle diamonds must stay a few tones lighter, never
+// see-through).
+function lightenHex(hex: string, amount: number): string {
+  const h = hex.startsWith("#") ? hex.slice(1) : hex;
+  const full = h.length === 3 ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2] : h;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  return (
+    "#" +
+    [mix(r), mix(g), mix(b)]
+      .map((v) => v.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -62,6 +79,7 @@ function drawDiamond(
   outlineWidth: number,
   shadowColor: string | null,
   shadowBlur: number,
+  strokeColor: string = "#ffffff",
 ) {
   const half = size / 2;
   ctx.save();
@@ -76,8 +94,31 @@ function drawDiamond(
   // stroke without shadow
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = "#ffffff";
+  ctx.strokeStyle = strokeColor;
   ctx.lineWidth = outlineWidth;
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Stroke-only diamond (no fill) — used to draw the thin white separator ring just
+// outside a POINT diamond's colored border, so it reads as its own layer instead of
+// blending into the background or an adjacent diamond.
+function drawDiamondOutline(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  strokeColor: string,
+  lineWidth: number,
+) {
+  const half = size / 2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.PI / 4);
+  ctx.beginPath();
+  ctx.rect(-half, -half, size, size);
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = lineWidth;
   ctx.stroke();
   ctx.restore();
 }
@@ -128,6 +169,7 @@ function drawFrame(
   visibleDuration: number,
   anim: AnimState,
   editingId: number | null,
+  hasMultipleRows: boolean,
 ) {
   ctx.clearRect(0, 0, width, height);
   const cy = height / 2;
@@ -161,28 +203,17 @@ function drawFrame(
               : 0;
 
         const isEditing = ep.id === editingId;
-        const overlapsBlue =
-          ep.reviewed &&
-          points.some(
-            (other) =>
-              other.id !== ep.id &&
-              !other.reviewed &&
-              other.timeSec === ep.timeSec,
-          );
-        const activeColor = overlapsBlue
-          ? Colors.leafGreen
-          : isEditing
-            ? Colors.vividOrange
-            : ep.reviewed
-              ? Colors.vividOrange
-              : Colors.blue;
-        const idleColor = overlapsBlue
-          ? Colors.mintFoam
-          : isEditing
-            ? Colors.lightOrange
-            : ep.reviewed
-              ? Colors.lightOrange
-              : Colors.lightSkyBlue;
+        const overlapsBlue = isOverlapsBlue(ep, points);
+        const isEligibleForNewScheme = ep.mode === "POINT" && hasMultipleRows;
+        const { fill: activeColor, border: diamondStrokeColor } = getEventPointColors(
+          ep,
+          overlapsBlue,
+          hasMultipleRows,
+          isEditing,
+        );
+        // Idle (unselected) rendering lightens the same active color a few tones instead
+        // of a separate pale palette — an opaque tint, not a transparent one.
+        const idleColor = lightenHex(activeColor, 0.4);
         const shadowColor = t > 0 ? colorAlpha(activeColor, "99") : null;
         const shadowBlur = t * 10;
 
@@ -220,19 +251,38 @@ function drawFrame(
           ctx.restore();
         } else {
           const fillColor = isSelected ? activeColor : idleColor;
-          const outlineWidth = isSelected ? 1.5 : 1;
+          // Idle borders lighten the same few tones as the fill — white stays white.
+          const strokeColor = isSelected
+            ? diamondStrokeColor
+            : lightenHex(diamondStrokeColor, 0.4);
+          // An eligible (POINT + multiple rows) diamond always gets a 3px colored
+          // border plus a thin 0.5px white separator ring just outside it — both for
+          // selected AND idle diamonds, neither changes on selection — instead of
+          // the usual 1.5px/1px split. The combined 3.5px is taken out of the
+          // diamond's own body size (rather than the old 4px) so its total
+          // on-screen footprint doesn't change.
+          const outlineWidth = isEligibleForNewScheme ? 3 : isSelected ? 1.5 : 1;
+          const whiteRingWidth = 0.5;
+          const diamondSize = isEligibleForNewScheme
+            ? DIAMOND_SIZE - outlineWidth - whiteRingWidth
+            : DIAMOND_SIZE;
+          const outlineRingSize = diamondSize + outlineWidth + whiteRingWidth;
 
           if (ep.timeSec >= visibleStart && ep.timeSec <= visibleEnd) {
             drawDiamond(
               ctx,
               toSecX(ep.timeSec),
               cy,
-              DIAMOND_SIZE,
+              diamondSize,
               fillColor,
               outlineWidth,
               shadowColor,
               shadowBlur,
+              strokeColor,
             );
+            if (isEligibleForNewScheme) {
+              drawDiamondOutline(ctx, toSecX(ep.timeSec), cy, outlineRingSize, "#ffffff", whiteRingWidth);
+            }
           }
           const endDiamondX = toSecX(ep.endSec);
           if (
@@ -245,12 +295,16 @@ function drawFrame(
               ctx,
               endDiamondX,
               cy,
-              DIAMOND_SIZE,
+              diamondSize,
               fillColor,
               outlineWidth,
               shadowColor,
               shadowBlur,
+              strokeColor,
             );
+            if (isEligibleForNewScheme) {
+              drawDiamondOutline(ctx, endDiamondX, cy, outlineRingSize, "#ffffff", whiteRingWidth);
+            }
           }
         }
       }
@@ -281,6 +335,8 @@ export interface EventRowProps {
   onExitEditMode: () => void;
   onStartMove: (epId: number, e: React.MouseEvent, maxSec: number) => void;
   onEditEventPoint?: (id: number) => void;
+  pendingReviewWallSec?: number;
+  hasMultipleRows: boolean;
 }
 
 export const EventRow = memo(
@@ -302,6 +358,8 @@ export const EventRow = memo(
     onExitEditMode,
     onStartMove,
     onEditEventPoint,
+    pendingReviewWallSec,
+    hasMultipleRows,
   }: EventRowProps) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -314,6 +372,7 @@ export const EventRow = memo(
       selectedId: null as number | null,
       prevSelectedId: null as number | null,
       editingId: null as number | null,
+      hasMultipleRows: false,
       animating: false,
       animStartTime: 0,
       rafId: 0,
@@ -388,6 +447,7 @@ export const EventRow = memo(
             animProgress,
           },
           s.editingId,
+          s.hasMultipleRows,
         );
       });
     }, []);
@@ -418,6 +478,7 @@ export const EventRow = memo(
       s.visibleEnd = visibleEnd;
       s.visibleDuration = visibleDuration;
       s.editingId = editingEventPointId;
+      s.hasMultipleRows = hasMultipleRows;
 
       if (selectedEventPointId !== prevSelectedId) {
         s.prevSelectedId = prevSelectedId;
@@ -434,6 +495,7 @@ export const EventRow = memo(
       visibleDuration,
       selectedEventPointId,
       editingEventPointId,
+      hasMultipleRows,
       scheduleFrame,
     ]);
 
@@ -533,11 +595,16 @@ export const EventRow = memo(
 
     const selectEp = useCallback(
       (ep: CameraEventPoint) => {
+        if (
+          pendingReviewWallSec !== undefined &&
+          ep.timeSec > pendingReviewWallSec
+        )
+          return;
         setMarkerSec(ep.timeSec);
         setSelectedEventPointId(ep.id);
         setITrackId(row.id);
       },
-      [setMarkerSec, setSelectedEventPointId, setITrackId, row.id],
+      [setMarkerSec, setSelectedEventPointId, setITrackId, row.id, pendingReviewWallSec],
     );
 
     // -------------------------------------------------------------------------
@@ -583,11 +650,15 @@ export const EventRow = memo(
         const px = e.clientX - rect.left;
         const py = e.clientY - rect.top;
         const ep = getHitEp(px, py, rect.width, rect.height);
-        if (ep?.mode === "RANGE" && ep.reviewed) {
+        if (
+          ep?.mode === "RANGE" &&
+          ep.reviewed &&
+          !(pendingReviewWallSec !== undefined && ep.timeSec > pendingReviewWallSec)
+        ) {
           onEditEventPoint?.(ep.id);
         }
       },
-      [getHitEp, onEditEventPoint],
+      [getHitEp, onEditEventPoint, pendingReviewWallSec],
     );
 
     const handleMouseDown = useCallback(

@@ -1,15 +1,22 @@
 import { Box } from "@mui/material";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import TimelineBody from "./timeline/TimelineBody";
-import type { CameraEventPoint, TimelineSnapshot } from "./timeline/types";
+import type {
+  CameraEventPoint,
+  PlayWindow,
+  TimelineSnapshot,
+} from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
 import { MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
 import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
 import { useAutoSelectOnEventPoint } from "./timeline/hooks/useAutoSelectOnEventPoint";
+import { useAutoSelectOnMarkerOverDiamond } from "./timeline/hooks/useAutoSelectOnMarkerOverDiamond";
 import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
+import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
+import { isOverlapsBlue } from "./timeline/utils";
 
 const TimeLine = ({
   cameraEventPoints,
@@ -25,6 +32,9 @@ const TimeLine = ({
   canUndo,
   canRedo,
   onRemoveEventPoint,
+  onAcceptEventPoint,
+  onRejectEventPoint,
+  onMarkAiIncorrect,
   onConvertEventPointToLocal,
   viewMode = "camera",
   menuItems = [],
@@ -32,6 +42,7 @@ const TimeLine = ({
   expandedIcon = false,
   rowsLoadState,
   loadState,
+  pendingReviewWallSec,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -44,18 +55,27 @@ const TimeLine = ({
   onPopOut?: () => void;
   headerLabel: string;
   markerTimeSec: number | null;
-  onUndo?: () => void;
-  onRedo?: () => void;
+  onUndo?: () => number | void;
+  onRedo?: () => number | void;
   canUndo?: boolean;
   canRedo?: boolean;
   onRemoveEventPoint?: (id: number) => void;
+  onAcceptEventPoint?: (id: number) => void;
+  onRejectEventPoint?: (id: number, skipHistory?: boolean) => void;
+  onMarkAiIncorrect?: (id: number) => void;
   onConvertEventPointToLocal?: (id: number) => number;
   viewMode?: "camera" | "activity";
-  menuItems?: { id: number; name: string }[];
+  menuItems?: {
+    id: number;
+    name: string;
+    onClick?: (index: number) => void;
+    onReject?: (index: number) => void;
+  }[];
   rangeSessions?: Record<number, { type: "in" | "out"; timestamp: string }[]>;
   expandedIcon: boolean;
   rowsLoadState?: boolean;
   loadState?: boolean;
+  pendingReviewWallSec?: number;
 }) => {
   const mergedEventPoints = cameraEventPoints ?? [];
   const data = snapshot || MOCK_SNAPSHOT;
@@ -77,7 +97,10 @@ const TimeLine = ({
   const selectableRows = isActivityMode
     ? activityRowsData.selectableRows
     : cameraRowsData.selectableRows;
+  const hasMultipleRows = selectableRows.length >= 2;
   const { timelineStartSec, timelineEndSec, firstActivitySec } = cameraRowsData;
+
+  const playWindowRef = useRef<PlayWindow | undefined>(undefined);
 
   const state = useTimelineBodyState({
     snapshot,
@@ -86,6 +109,8 @@ const TimeLine = ({
     timelineStartSec,
     timelineEndSec,
     firstActivitySec,
+    pendingReviewWallSec,
+    playWindowRef,
   });
 
   useMarkerSync({
@@ -103,12 +128,24 @@ const TimeLine = ({
 
   useAutoSelectOnEventPoint({
     cameraEventPoints: mergedEventPoints,
+    flatRows,
+    isActivityMode,
     setITrackId: state.setITrackId,
     setSelectedTracks: state.setSelectedTracks,
     setSelectedEventPointId: state.setSelectedEventPointId,
   });
 
-  const handleTogglePlay = () => state.setIsPlaying((prev) => !prev);
+  useAutoSelectOnMarkerOverDiamond({
+    flatRows,
+    cameraEventPoints: mergedEventPoints,
+    resolvedMarkerSec: state.resolvedMarkerSec,
+    isActivityMode,
+    iTrackId: state.iTrackId,
+    setITrackId: state.setITrackId,
+    selectedEventPointId: state.selectedEventPointId,
+    setSelectedEventPointId: state.setSelectedEventPointId,
+    isPlaying: state.isPlaying,
+  });
 
   const handleStepMarker = (delta: number) => {
     const next = Math.max(
@@ -173,18 +210,66 @@ const TimeLine = ({
     [state.selectedEventPointId, mergedEventPoints, eventPointUnderMarker],
   );
 
-  const handleDeleteEventPoint = () => {
-    if (!targetEventPoint?.reviewed) return;
-    onRemoveEventPoint?.(targetEventPoint.id);
-    state.setSelectedEventPointId(null);
+  // Reviewing a selected diamond: play its clip (RANGE bounds, or ±TAG_TOLERANCE_SEC
+  // around a POINT) instead of the whole timeline, then snap back to its center.
+  const playWindow = useMemo<PlayWindow | undefined>(() => {
+    if (!targetEventPoint) return undefined;
+    if (
+      targetEventPoint.mode === "RANGE" &&
+      targetEventPoint.endSec > targetEventPoint.timeSec
+    ) {
+      return {
+        start: targetEventPoint.timeSec,
+        end: targetEventPoint.endSec,
+        center: (targetEventPoint.timeSec + targetEventPoint.endSec) / 2,
+      };
+    }
+    return {
+      start: Math.max(
+        timelineStartSec,
+        targetEventPoint.timeSec - TAG_TOLERANCE_SEC,
+      ),
+      end: Math.min(
+        timelineEndSec,
+        targetEventPoint.timeSec + TAG_TOLERANCE_SEC,
+      ),
+      center: targetEventPoint.timeSec,
+    };
+  }, [targetEventPoint, timelineStartSec, timelineEndSec]);
+
+  useEffect(() => {
+    playWindowRef.current = playWindow;
+  }, [playWindow]);
+
+  const handleTogglePlay = () => {
+    const next = !state.isPlaying;
+    if (next && playWindow) state.setMarkerSec(playWindow.start);
+    state.setIsPlaying(next);
   };
 
-  const handleEditEventPoint = () => {
+  // Green/red diamonds (any border) are still AI-linked (overlapsBlue) and must not be
+  // bulk-deleted — only orange ones (correction or plain reviewed) are eligible.
+  const targetOverlapsBlue = useMemo(() => {
+    if (!targetEventPoint) return false;
+    const rowPoints = mergedEventPoints.filter((ep) =>
+      isActivityMode
+        ? ep.label === targetEventPoint.label
+        : ep.cameraId === targetEventPoint.cameraId && ep.label === targetEventPoint.label,
+    );
+    return isOverlapsBlue(targetEventPoint, rowPoints);
+  }, [targetEventPoint, mergedEventPoints, isActivityMode]);
+
+  const handleDeleteEventPoint = () => {
     if (!targetEventPoint?.reviewed) return;
-    const newId =
-      onConvertEventPointToLocal?.(targetEventPoint.id) ?? targetEventPoint.id;
-    state.setEditingEventPointId(newId);
-    state.setSelectedEventPointId(newId);
+    if (targetOverlapsBlue) {
+      // Can't bulk-delete an AI-linked diamond — archive it instead (hides locally,
+      // sends status:"ARCHIVED" on save) rather than a no-op.
+      onRejectEventPoint?.(targetEventPoint.id);
+      state.setSelectedEventPointId(null);
+      return;
+    }
+    onRemoveEventPoint?.(targetEventPoint.id);
+    state.setSelectedEventPointId(null);
   };
 
   const handleEditEventPointById = (id: number) => {
@@ -200,7 +285,7 @@ const TimeLine = ({
     state.setSelectedEventPointId(id);
   };
 
-  const { goToTimeOpen, setGoToTimeOpen } = useTimelineKeyboard({
+  useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
     setITrackId: state.setITrackId,
@@ -215,8 +300,6 @@ const TimeLine = ({
     setMarkerSec: state.setMarkerSec,
     setShowPunchOut: state.setShowPunchOut,
     punchOutTimerRef: state.punchOutTimerRef,
-    isPlaying: state.isPlaying,
-    setIsPlaying: state.setIsPlaying,
     zoom: state.zoom,
     setZoom: state.setZoom,
     panOffsetSec: state.panOffsetSec,
@@ -224,10 +307,19 @@ const TimeLine = ({
     totalSec: state.totalSec,
     gridRef: state.gridRef,
     cameraEventPoints: mergedEventPoints,
+    menuItems,
     onDeleteEventPoint: handleDeleteEventPoint,
-    onEditEventPoint: handleEditEventPoint,
+    onAcceptEventPoint,
+    onRejectEventPoint,
+    onMarkAiIncorrect,
     onUndo,
     onRedo,
+    onTogglePlay: handleTogglePlay,
+    setMarkerSecRaw: state.setMarkerSecRaw,
+    selectedEventPointId: state.selectedEventPointId,
+    setSelectedEventPointId: state.setSelectedEventPointId,
+    flatRows,
+    isActivityMode,
   });
 
   return (
@@ -301,10 +393,10 @@ const TimeLine = ({
         onEditEventPoint={handleEditEventPointById}
         onConvertEventPointToLocal={onConvertEventPointToLocal}
         onEnterEditMode={handleEnterEditMode}
-        goToTimeOpen={goToTimeOpen}
-        setGoToTimeOpen={setGoToTimeOpen}
         rowsLoadState={rowsLoadState}
         loadState={loadState}
+        pendingReviewWallSec={state.pendingReviewWallSec}
+        hasMultipleRows={hasMultipleRows}
       />
     </Box>
   );

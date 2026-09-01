@@ -30,91 +30,116 @@ import useTrackerOptions from "./hooks/useTrackerOptions";
 import { AGENT_ROLE } from "../../config";
 import useAuth from "../../hooks/useAuth";
 import useCompanyConfig from "../../hooks/useCompanyConfig";
+import useTrackers from "../../hooks/useTrackers";
+import { useTrackerGroupResolution } from "../../pages/Monitor/hooks/useTrackerGroupResolution";
 
 const isMac =
   typeof navigator !== "undefined" && /Mac/i.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
 const alt = isMac ? "⌥" : "Alt";
 
-const getKeyboardShortcuts = (imagesInterval: number): KeyboardMenuData => ({
-  title: "Keyboard shortcuts",
-  items: [
-    {
-      keys: [{ type: "img", src: "./assets/arrow-narrow-left.svg" }],
-      label: `Move marker back ${imagesInterval} sec`,
-    },
-    {
-      keys: [{ type: "img", src: "./assets/arrow-narrow-right.svg" }],
-      label: `Move marker forward ${imagesInterval} sec`,
-    },
-    {
-      keys: [
-        { type: "text", label: mod, fontSize: "14px" },
-        { type: "img", src: "./assets/arrow-narrow-left.svg" },
-      ],
-      label: "Previous event point",
-    },
-    {
-      keys: [
-        { type: "text", label: mod, fontSize: "14px" },
-        { type: "img", src: "./assets/arrow-narrow-right.svg" },
-      ],
-      label: "Next event point",
-    },
-    {
-      keys: [
-        { type: "text", label: alt, fontSize: "12px" },
-        { type: "img", src: "./assets/arrow-narrow-left.svg" },
-      ],
-      label: "Go back",
-    },
-    {
-      keys: [
-        { type: "text", label: mod, fontSize: "14px" },
-        { type: "text", label: "Z", fontSize: "16px" },
-      ],
-      label: "Undo",
-    },
-    {
-      keys: [
-        { type: "text", label: mod, fontSize: "14px" },
-        { type: "text", label: "Y", fontSize: "16px" },
-      ],
-      label: "Redo",
-    },
-    {
-      keys: [{ type: "text", label: "E", fontSize: "16px" }],
-      label: "Edit selected event point",
-    },
-    {
-      keys: [
-        { type: "text", label: "Shift", fontSize: "12px" },
-        { type: "text", label: "G", fontSize: "16px" },
-      ],
-      label: "Go to specific time",
-    },
-    {
-      keys: [{ type: "text", label: "H", fontSize: "16px" }],
-      label: "Move to start",
-    },
-    {
-      keys: [{ type: "text", label: "DEL", fontSize: "12px" }],
-      label: "Delete event point under marker",
-    },
-    {
-      keys: [{ type: "text", label: "Space", fontSize: "12px" }],
-      label: "Play / Pause",
-    },
-    {
-      keys: [{ type: "text", label: "+", fontSize: "16px" }],
-      label: "Zoom in",
-    },
-    {
-      keys: [{ type: "text", label: "-", fontSize: "16px" }],
-      label: "Zoom out",
-    },
-  ],
-});
+const getKeyboardShortcuts = (
+  imagesInterval: number,
+  activeTracker?: { mode: "POINT" | "RANGE"; values: string[] },
+): KeyboardMenuData => {
+  const isPointDual =
+    activeTracker?.mode === "POINT" && activeTracker.values.length === 2;
+  const isRange = activeTracker?.mode === "RANGE";
+
+  const ioItems: KeyboardMenuData["items"] = isPointDual
+    ? [
+        {
+          keys: [{ type: "text", label: "I", fontSize: "16px" }],
+          label: activeTracker.values[0],
+        },
+        {
+          keys: [{ type: "text", label: "O", fontSize: "16px" }],
+          label: activeTracker.values[1],
+        },
+      ]
+    : isRange
+      ? [
+          {
+            keys: [{ type: "text", label: "I", fontSize: "16px" }],
+            label: "Accept event point on the selected line",
+          },
+        ]
+      : [];
+
+  return {
+    title: "Keyboard shortcuts",
+    items: [
+      {
+        keys: [{ type: "img", src: "./assets/arrow-narrow-left.svg" }],
+        label: `Move marker back ${imagesInterval} sec`,
+      },
+      {
+        keys: [{ type: "img", src: "./assets/arrow-narrow-right.svg" }],
+        label: `Move marker forward ${imagesInterval} sec`,
+      },
+      {
+        keys: [
+          { type: "text", label: mod, fontSize: "14px" },
+          { type: "img", src: "./assets/arrow-narrow-left.svg" },
+        ],
+        label: "Previous event point",
+      },
+      {
+        keys: [
+          { type: "text", label: mod, fontSize: "14px" },
+          { type: "img", src: "./assets/arrow-narrow-right.svg" },
+        ],
+        label: "Next event point",
+      },
+      {
+        keys: [
+          { type: "text", label: alt, fontSize: "12px" },
+          { type: "img", src: "./assets/arrow-narrow-left.svg" },
+        ],
+        label: "Go back",
+      },
+      {
+        keys: [
+          { type: "text", label: mod, fontSize: "14px" },
+          { type: "text", label: "Z", fontSize: "16px" },
+        ],
+        label: "Undo",
+      },
+      {
+        keys: [
+          { type: "text", label: mod, fontSize: "14px" },
+          { type: "text", label: "Y", fontSize: "16px" },
+        ],
+        label: "Redo",
+      },
+      ...ioItems,
+      {
+        keys: [{ type: "text", label: "1-9, 0", fontSize: "14px" }],
+        label: "Select tracker line",
+      },
+      {
+        keys: [{ type: "text", label: "H", fontSize: "16px" }],
+        label: "Move to start",
+      },
+      {
+        keys: [{ type: "text", label: "DEL", fontSize: "12px" }],
+        label: "Delete event point under marker",
+      },
+      {
+        keys: [{ type: "text", label: "Space", fontSize: "12px" }],
+        label: "Play / Pause",
+      },
+      {
+        keys: [{ type: "text", label: "+", fontSize: "16px" }],
+        label: "Zoom in",
+      },
+      {
+        keys: [{ type: "text", label: "-", fontSize: "16px" }],
+        label: "Zoom out",
+      },
+    ],
+  };
+};
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -178,7 +203,10 @@ const MonitorHeader = ({
   const navState = useLocationState<{ assignment: NavigationAssignment }>();
   const { assignments } = useAssignments({ companyID, locationID });
   const { imagesInterval } = useCompanyConfig();
-  const keyboardShortcuts = getKeyboardShortcuts(imagesInterval);
+  const { singleTrackerID } = useTrackerGroupResolution();
+  const { trackers } = useTrackers();
+  const activeTracker = trackers.find((t) => t.id === singleTrackerID);
+  const keyboardShortcuts = getKeyboardShortcuts(imagesInterval, activeTracker);
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??
@@ -194,7 +222,8 @@ const MonitorHeader = ({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { handleDone, isDoneLoading } = useMonitorState();
+  const { handleDone, isDoneLoading, unreviewedTrackerIds, aiTrackerIds } =
+    useMonitorState();
   const { cameraGroup, setCameraGroup, setCustomTrackerIDs } = useCameraGroup();
 
   useEffect(() => {
@@ -208,26 +237,34 @@ const MonitorHeader = ({
       /* ignore invalid JSON */
     }
   }, [monitoringID, setCustomTrackerIDs]);
-  const { trackerOptions } = useTrackerOptions();
+  const { trackerOptions } = useTrackerOptions(unreviewedTrackerIds);
 
-  const allGroups = [...trackerOptions].sort(
-    (a, b) => (b.options ? 1 : 0) - (a.options ? 1 : 0),
-  );
+  const allGroups = [...trackerOptions]
+    .map((g) => ({ ...g, everHadAI: aiTrackerIds.has(Number(g.value)) }))
+    .sort((a, b) => {
+      const aiDiff = (b.hasAI ? 1 : 0) - (a.hasAI ? 1 : 0);
+      if (aiDiff !== 0) return aiDiff;
+      return (b.options ? 1 : 0) - (a.options ? 1 : 0);
+    });
+  // Membership uses the persisted everHadAI (stays visible once reviewed),
+  // while each group's `hasAI` icon still reflects live unreviewedTrackerIds.
+  const aiGroups = allGroups.filter((g) => g.everHadAI);
 
   useEffect(() => {
-    if (cameraGroup === "tracker" && allGroups.length > 0) {
-      setCameraGroup(allGroups[0].value);
+    if (cameraGroup === "tracker" && aiGroups.length > 0) {
+      setCameraGroup(aiGroups[0].value);
     }
-  }, [cameraGroup, allGroups, setCameraGroup]);
-  const overflowGroups = allGroups.slice(MAX_VISIBLE);
+  }, [cameraGroup, aiGroups, setCameraGroup]);
+  const overflowGroups = aiGroups.slice(MAX_VISIBLE);
   const cameraGroups = [
-    ...allGroups.slice(0, MAX_VISIBLE),
+    ...aiGroups.slice(0, MAX_VISIBLE),
     ...(overflowGroups.length > 0
       ? [
           {
             value: "__other__",
             title: "Other",
             options: overflowGroups,
+            hasAI: overflowGroups.some((g) => g.hasAI),
           },
         ]
       : []),
