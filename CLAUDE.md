@@ -138,6 +138,16 @@ The `/monitor` route is the core feature. Key concepts:
 
 `useTrackerGroupResolution` + `useFilteredEventPoints` + `useFilteredMenuItems` all read from this model to decide what cameras and event types to show.
 
+### Timeline tabs
+
+The timeline nav popover switches between three tabs (`NavTab`), shared through `TimelineTabContext` so the header can show each tab's shortcuts:
+
+- **Compliance violations** — the tracker-filtered diamond review flow described above.
+- **Employee punches** — all cameras; employee rows with session bars (`i` punch in, `o` punch out, `+` add employee). State in `useEmployeePunches` / `useEmployeePunchFlow`.
+- **Customer punches** — all cameras; "Unattended" + every employee, with customer groups as sub-rows attended by an employee who is punched in at that time. State in `useCustomerPunches` / `useCustomerPunchFlow`.
+
+Each punches flow returns the `TimeLine` props for its tab, spread over the Compliance violations defaults in `Monitor/index.tsx`. Punches state is local only (not persisted yet).
+
 ### Styling
 
 - MUI v6 (`@mui/material`, `@mui/system`) for layout primitives.
