@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { NavTab } from "../../../components/timeline/types";
 
 export const useBroadcastSync = (
   markerTimeSec: number | null,
@@ -12,6 +13,7 @@ export const useBroadcastSync = (
   const [cameraGroup, setCameraGroup] = useState("0");
   const [trackerOption, setTrackerOption] = useState("");
   const [customTrackerIDs, setCustomTrackerIDs] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
 
   useEffect(() => {
     lastReceivedSecRef.current = null;
@@ -29,6 +31,9 @@ export const useBroadcastSync = (
           setCustomTrackerIDs(e.data.customTrackerIDs as string[]);
         }
       }
+      if (e.data?.type === "navTab" && e.data?.source === "monitor") {
+        setActiveTab(e.data.tab as NavTab);
+      }
     });
     channel.postMessage({ type: "request-sync" });
     return () => {
@@ -43,5 +48,10 @@ export const useBroadcastSync = (
     channelRef.current.postMessage({ type: "marker", sec: markerTimeSec, source: "popout" });
   }, [markerTimeSec]);
 
-  return { cameraGroup, trackerOption, customTrackerIDs };
+  const changeTab = useCallback((tab: NavTab) => {
+    setActiveTab(tab);
+    channelRef.current?.postMessage({ type: "navTab", tab, source: "popout" });
+  }, []);
+
+  return { cameraGroup, trackerOption, customTrackerIDs, activeTab, changeTab };
 };
