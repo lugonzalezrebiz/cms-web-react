@@ -52,6 +52,12 @@ interface UseTimelineKeyboardParams {
   setSelectedEventPointId?: React.Dispatch<React.SetStateAction<number | null>>;
   flatRows?: FlatRow[];
   isActivityMode?: boolean;
+  /** Employee punches: rows are session bars, not diamonds — see the early branches below. */
+  isSessionMode?: boolean;
+  onPunchIn?: (rowId: number, startSec: number) => boolean;
+  onPunchOut?: (rowId: number, endSec: number) => void;
+  /** "+" adds a row (session mode only), e.g. the add-employee dialog. */
+  onAddRow?: () => void;
 }
 
 export const useTimelineKeyboard = ({
@@ -89,7 +95,19 @@ export const useTimelineKeyboard = ({
   setSelectedEventPointId,
   flatRows,
   isActivityMode,
+  isSessionMode = false,
+  onPunchIn,
+  onPunchOut,
+  onAddRow,
 }: UseTimelineKeyboardParams) => {
+  const onPunchInRef = useRef(onPunchIn);
+  const onPunchOutRef = useRef(onPunchOut);
+  const onAddRowRef = useRef(onAddRow);
+  useEffect(() => {
+    onPunchInRef.current = onPunchIn;
+    onPunchOutRef.current = onPunchOut;
+    onAddRowRef.current = onAddRow;
+  });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
   const onRejectRef = useRef(onRejectEventPoint);
@@ -131,6 +149,15 @@ export const useTimelineKeyboard = ({
     [totalSec, zoom, panOffsetSec, setPanOffsetSec],
   );
 
+  // Sub-rows hanging under a row (e.g. Customer punches groups).
+  const childRowIds = useCallback(
+    (rowId: number) =>
+      (flatRows ?? [])
+        .filter((r) => r.kind === "event" && r.parentCameraId === rowId)
+        .map((r) => r.id),
+    [flatRows],
+  );
+
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
 
@@ -151,6 +178,53 @@ export const useTimelineKeyboard = ({
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
+
+      // Employee punches: "i" opens a new bar on the selected row at the marker,
+      // "o" closes that row's open session at the marker, and digits jump to
+      // any row (no diamond-proximity rule).
+      if (isSessionMode && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // "+" adds a row (Employee punches' add-employee dialog), when offered.
+        if (e.key === "+" && onAddRowRef.current) {
+          e.preventDefault();
+          onAddRowRef.current();
+          return;
+        }
+        if (e.key === "i") {
+          if (iTrackId === null) return;
+          const start = markerSec ?? timelineStartSec;
+          if (onPunchInRef.current?.(iTrackId, start)) {
+            setSelectedTracks(new Set([iTrackId]));
+          }
+          return;
+        }
+        if (e.key === "o") {
+          if (iTrackId === null) return;
+          const end = markerSec ?? timelineStartSec;
+          // The selected row's own session, else an open one on its sub-rows
+          // (Customer punches groups hang under their employee row).
+          const rowId = [iTrackId, ...childRowIds(iTrackId)].find((id) => {
+            const start = activeSessionStarts[id];
+            return start !== undefined && end > start;
+          });
+          if (rowId === undefined) return;
+          onPunchOutRef.current?.(rowId, end);
+          setSelectedTracks(new Set());
+          return;
+        }
+        if (/^[0-9]$/.test(e.key)) {
+          const position = e.key === "0" ? 10 : Number(e.key);
+          const row = selectableRows[position - 1];
+          if (!row) return;
+          setITrackId(row.id);
+          setSelectedTracks(
+            activeSessionStarts[row.id] !== undefined
+              ? new Set([row.id])
+              : new Set(),
+          );
+          return;
+        }
+      }
+
       if (
         e.key === "i" &&
         !e.ctrlKey &&
@@ -431,6 +505,8 @@ export const useTimelineKeyboard = ({
     setSelectedEventPointId,
     flatRows,
     isActivityMode,
+    isSessionMode,
+    childRowIds,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -454,6 +530,26 @@ export const useTimelineKeyboard = ({
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
       e.preventDefault();
+
+      // Employee punches: plain steps both ways so an overshot bar can be pulled
+      // back, but never before the selected row's punch-in.
+      if (isSessionMode) {
+        if (e.ctrlKey || e.metaKey) return;
+        const delta = e.key === "ArrowRight" ? imagesInterval : -imagesInterval;
+        const base = markerSec ?? timelineStartSec;
+        const openStarts =
+          iTrackId !== null
+            ? [iTrackId, ...childRowIds(iTrackId)]
+                .map((id) => activeSessionStarts[id])
+                .filter((s): s is number => s !== undefined)
+            : [];
+        const minSec =
+          openStarts.length > 0 ? Math.max(...openStarts) : timelineStartSec;
+        const next = Math.max(minSec, Math.min(timelineEndSec, base + delta));
+        setMarkerSec(next);
+        panTo(next);
+        return;
+      }
 
       if (e.ctrlKey || e.metaKey) {
         const currentSec = markerSec ?? timelineStartSec;
@@ -547,6 +643,9 @@ export const useTimelineKeyboard = ({
     flatRows,
     isActivityMode,
     setSelectedEventPointId,
+    isSessionMode,
+    activeSessionStarts,
+    childRowIds,
   ]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
@@ -563,13 +662,17 @@ export const useTimelineKeyboard = ({
     return () => window.removeEventListener("keydown", handleSpace);
   }, []);
 
-  // ── + / - keys: zoom centered on mouse position ───────────────────────────
+  // ── Ctrl/Cmd + "+" / "-": zoom centered on mouse position ────────────────
   useEffect(() => {
     const handleZoom = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
-      if (e.key !== "+" && e.key !== "-") return;
+      if (!e.ctrlKey && !e.metaKey) return;
+      // "=" is the unshifted "+" key; preventDefault also stops the browser's
+      // own page zoom on these shortcuts.
+      const isZoomIn = e.key === "+" || e.key === "=";
+      if (!isZoomIn && e.key !== "-") return;
       e.preventDefault();
 
       const el = gridRef.current;
@@ -580,7 +683,7 @@ export const useTimelineKeyboard = ({
       const maxZoom = getMaxZoom(width, imagesInterval);
       const newZoom = Math.min(
         maxZoom,
-        Math.max(1, oldZoom * (e.key === "+" ? 1.25 : 1 / 1.25)),
+        Math.max(1, oldZoom * (isZoomIn ? 1.25 : 1 / 1.25)),
       );
       if (newZoom === oldZoom) return;
 

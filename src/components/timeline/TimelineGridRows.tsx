@@ -54,6 +54,10 @@ interface TimelineGridRowsProps {
   loadState?: boolean;
   pendingReviewWallSec?: number;
   hasMultipleRows: boolean;
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  onReassignRow?: (rowId: number, parentId: number) => void;
+  /** Hint centered over the grid while there's nothing recorded yet. */
+  emptyGridMessage?: React.ReactNode;
 }
 
 export const TimelineGridRows = ({
@@ -93,6 +97,9 @@ export const TimelineGridRows = ({
   loadState = false,
   pendingReviewWallSec,
   hasMultipleRows,
+  reassignOptions,
+  onReassignRow,
+  emptyGridMessage,
 }: TimelineGridRowsProps) => {
   const visibleEnd = visibleStart + visibleDuration;
 
@@ -125,6 +132,16 @@ export const TimelineGridRows = ({
     timelineEndSec,
     onUpdateEventPoint,
   });
+
+  // Sub-rows under each parent row (e.g. Customer punches groups), so the
+  // parent can mirror their bars.
+  const childRowIdsByParent = new Map<number, number[]>();
+  for (const r of flatRows) {
+    if (r.kind !== "event" || r.parentCameraId === undefined) continue;
+    const ids = childRowIdsByParent.get(r.parentCameraId) ?? [];
+    ids.push(r.id);
+    childRowIdsByParent.set(r.parentCameraId, ids);
+  }
 
   return (
     <Box
@@ -189,6 +206,35 @@ export const TimelineGridRows = ({
         </Box>
       )}
 
+      {emptyGridMessage && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          <Box
+            sx={{
+              maxWidth: "270px",
+              fontFamily: Fonts.main,
+              fontWeight: 400,
+              fontSize: 12,
+              lineHeight: "18px",
+              letterSpacing: 0,
+              color: Colors.dimGray,
+              textAlign: "center",
+            }}
+          >
+            {emptyGridMessage}
+          </Box>
+        </Box>
+      )}
+
       {/* Rows — scroll-synced with left list */}
       <Box
         ref={rowsScrollRef}
@@ -225,6 +271,7 @@ export const TimelineGridRows = ({
                 key={row.id}
                 row={row}
                 rowIndex={rowIndex}
+                childRowIds={childRowIdsByParent.get(row.id)}
                 isSelected={selectedTracks.has(row.id)}
                 completedSessions={completedSessions}
                 activeSessionStarts={activeSessionStarts}
@@ -246,6 +293,8 @@ export const TimelineGridRows = ({
                   resolvedMarkerSec={resolvedMarkerSec}
                   visibleStart={visibleStart}
                   visibleDuration={visibleDuration}
+                  reassignOptions={reassignOptions}
+                  onReassign={onReassignRow}
                 />
                 <EventRow
                   row={row}

@@ -19,12 +19,26 @@ export const useFlatRows = ({
     const rows: FlatRow[] = [];
     for (let i = 0; i < tracks.length; i++) {
       const cam = tracks[i];
+      if (cam.parentId !== undefined) {
+        rows.push({
+          id: cam.id,
+          name: cam.name,
+          kind: "event" as const,
+          parentCameraId: cam.parentId,
+          cameraNumber: 0,
+          sessions: cam.sessions,
+          category: cam.category,
+        });
+        continue;
+      }
       rows.push({
         id: cam.id,
         name: cam.name,
         kind: "camera" as const,
         cameraNumber: i + 1,
         sessions: cam.sessions,
+        category: cam.category,
+        inactive: cam.inactive,
       });
       const labels = [
         ...new Set(

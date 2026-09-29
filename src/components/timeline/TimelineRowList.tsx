@@ -3,6 +3,7 @@ import { Colors, Fonts } from "../../theme";
 import type { FlatRow } from "./types";
 import Spinner from "../Spinner";
 import { Skeleton } from "@mui/material";
+import { assetUrl } from "../../utils";
 
 interface RowItemProps {
   row: FlatRow;
@@ -58,6 +59,7 @@ const RowItem = ({
     if (isEventSubRow)
       return isActive || isEventWithActiveParent ? Colors.white : Colors.white;
     if (isActive) return Colors.white;
+    if (row.inactive) return Colors.silverGrey;
     return Colors.vividOrange;
   };
 
@@ -98,7 +100,10 @@ const RowItem = ({
         transition: "background-color 150ms ease, color 150ms ease",
       }}
     >
-      {!isEventSubRow && !isActivityRow && (
+      {!isEventSubRow &&
+        !isActivityRow &&
+        row.category !== "employees" &&
+        row.category !== "customers" && (
         <Box
           sx={{
             width: "20px",
@@ -167,6 +172,8 @@ interface TimelineRowListProps {
   onOpenDialog?: () => void;
   openDialog?: boolean;
   loadState?: boolean;
+  emptyMessage?: React.ReactNode;
+  showAddButton?: boolean;
 }
 
 export const TimelineRowList = ({
@@ -181,7 +188,17 @@ export const TimelineRowList = ({
   setSelectedTracks,
   onOpenDialog,
   loadState,
+  emptyMessage = "Empty",
+  showAddButton = false,
 }: TimelineRowListProps) => {
+  // Sub-rows (kind "event") don't take a number, so the numbers shown match
+  // the digit shortcuts, which only cycle through the selectable rows.
+  const rowNumbers = new Map<number, number>();
+  let position = 0;
+  for (const row of flatRows) {
+    if (row.kind !== "event") rowNumbers.set(row.id, position++);
+  }
+
   return (
     <Box
       sx={{
@@ -206,7 +223,8 @@ export const TimelineRowList = ({
           width: "100%",
           maxWidth: "245px",
           minWidth: "180px",
-          padding: "0 4px 0 8px",
+          padding: "0 8px",
+          boxSizing: "border-box",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
         }}
       >
@@ -230,9 +248,14 @@ export const TimelineRowList = ({
             </>
           )}
         </p>
-        <Box sx={{ cursor: "pointer", ml: "3px" }} onClick={onOpenDialog}>
-          {/* <img src="../assets/plus-1.svg" alt="Add row" /> */}
-        </Box>
+        {showAddButton && (
+          <Box
+            sx={{ cursor: "pointer", display: "flex", flexShrink: 0 }}
+            onClick={onOpenDialog}
+          >
+            <img src={assetUrl("plus-1.svg")} alt="Add row" />
+          </Box>
+        )}
       </Box>
 
       {/* List */}
@@ -250,11 +273,11 @@ export const TimelineRowList = ({
           "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {flatRows.map((row, i) => (
+        {flatRows.map((row) => (
           <RowItem
             key={row.id}
             row={row}
-            index={i + 1}
+            index={(rowNumbers.get(row.id) ?? 0) + 1}
             isSelected={selectedTracks.has(row.id)}
             iTrackId={iTrackId}
             activeSessionStarts={activeSessionStarts}
@@ -280,7 +303,7 @@ export const TimelineRowList = ({
             }}
           >
             {!loadState ? (
-              "Empty"
+              emptyMessage
             ) : (
               <>
                 <Spinner m="20px" />

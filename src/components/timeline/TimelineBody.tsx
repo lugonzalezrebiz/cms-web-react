@@ -60,6 +60,11 @@ export interface TimelineBodyViewProps {
   loadState?: boolean;
   pendingReviewWallSec?: number;
   hasMultipleRows: boolean;
+  emptyRowsMessage?: React.ReactNode;
+  showAddButton?: boolean;
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  onReassignRow?: (rowId: number, parentId: number) => void;
+  emptyGridMessage?: React.ReactNode;
 }
 
 const TimelineBody = ({
@@ -112,6 +117,11 @@ const TimelineBody = ({
   loadState,
   pendingReviewWallSec,
   hasMultipleRows,
+  emptyRowsMessage,
+  showAddButton,
+  reassignOptions,
+  onReassignRow,
+  emptyGridMessage,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -137,6 +147,8 @@ const TimelineBody = ({
         setITrackId={setITrackId}
         setSelectedTracks={setSelectedTracks}
         loadState={rowsLoadState}
+        emptyMessage={emptyRowsMessage}
+        showAddButton={showAddButton}
       />
 
       <Box
@@ -203,6 +215,9 @@ const TimelineBody = ({
           loadState={loadState}
           pendingReviewWallSec={pendingReviewWallSec}
           hasMultipleRows={hasMultipleRows}
+          reassignOptions={reassignOptions}
+          onReassignRow={onReassignRow}
+          emptyGridMessage={emptyGridMessage}
         />
 
         {!loadState && (
