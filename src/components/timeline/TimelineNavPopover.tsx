@@ -33,7 +33,7 @@ const TimelineNavPopover = ({
           p: "8px",
           boxShadow: "none",
           marginTop: "-10px",
-          marginLeft: "-8px",  
+          marginLeft: "-8px",
         },
       },
     }}

@@ -3,11 +3,12 @@ import { memo, useEffect, useMemo, useRef } from "react";
 import TimelineBody from "./timeline/TimelineBody";
 import type {
   CameraEventPoint,
+  NavTab,
   PlayWindow,
   TimelineSnapshot,
 } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
-import { MOCK_SNAPSHOT } from "./timeline/constants";
+import { EMPLOYEE_TRACKS, MOCK_SNAPSHOT } from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
 import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
@@ -17,6 +18,8 @@ import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
 import { isOverlapsBlue } from "./timeline/utils";
+
+const NO_EVENT_POINTS: CameraEventPoint[] = [];
 
 const TimeLine = ({
   cameraEventPoints,
@@ -43,6 +46,21 @@ const TimeLine = ({
   rowsLoadState,
   loadState,
   pendingReviewWallSec,
+  activeTab,
+  onTabChange,
+  emptyRowsMessage,
+  showAddButton,
+  onAddRow,
+  rowTracks,
+  activeSessionStarts: activeSessionStartsProp,
+  focusRowId,
+  completedSessions: completedSessionsProp,
+  onPunchIn,
+  onPunchOut,
+  reassignOptions,
+  onReassignRow,
+  sessionWallSec,
+  emptyGridMessage,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -76,12 +94,55 @@ const TimeLine = ({
   rowsLoadState?: boolean;
   loadState?: boolean;
   pendingReviewWallSec?: number;
+  activeTab?: NavTab;
+  onTabChange?: (tab: NavTab) => void;
+  emptyRowsMessage?: React.ReactNode;
+  showAddButton?: boolean;
+  onAddRow?: () => void;
+  /** Replaces the snapshot's tracks as the timeline rows (camera view mode). */
+  rowTracks?: TimelineSnapshot["timeline"]["tracks"];
+  /** Open sessions by row id → start second; overrides the internal state. */
+  activeSessionStarts?: Record<number, number>;
+  /** Row to select whenever this value changes. */
+  focusRowId?: number | null;
+  /** Closed sessions by row id; overrides the internal state. */
+  completedSessions?: Record<number, { start: number; end: number }[]>;
+  /** Employee punches: "i" opens a session on the selected row; returns whether it did. */
+  onPunchIn?: (rowId: number, startSec: number) => boolean;
+  /** Employee punches: "o" closes the selected row's open session at `endSec`. */
+  onPunchOut?: (rowId: number, endSec: number) => void;
+  /** Rows a sub-row's group can be moved to (Customer punches). */
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  /** Moves the sub-row `rowId` under `parentId`. */
+  onReassignRow?: (rowId: number, parentId: number) => void;
+  /** Exact second the marker can't pass (e.g. an employee's punch-out while
+   * one of their customers is still open). */
+  sessionWallSec?: number;
+  /** Hint centered over the grid while there's nothing recorded yet. */
+  emptyGridMessage?: React.ReactNode;
 }) => {
-  const mergedEventPoints = cameraEventPoints ?? [];
+  // Employee and Customer punches both list employee rows instead of cameras.
+  const isPunchesTab = activeTab === "employees" || activeTab === "customers";
+  // Punches tabs don't draw diamonds, so they're left out: without them the
+  // arrows/play step freely instead of snapping to or stopping at review
+  // windows. Compliance violations gets the event points untouched.
+  const mergedEventPoints = isPunchesTab
+    ? NO_EVENT_POINTS
+    : (cameraEventPoints ?? []);
   const data = snapshot || MOCK_SNAPSHOT;
 
+  const tracksOverride =
+    rowTracks ?? (isPunchesTab ? EMPLOYEE_TRACKS : undefined);
+  const rowsData = useMemo(
+    () =>
+      tracksOverride
+        ? { ...data, timeline: { ...data.timeline, tracks: tracksOverride } }
+        : data,
+    [data, tracksOverride],
+  );
+
   const cameraRowsData = useFlatRows({
-    data,
+    data: rowsData,
     cameraEventPoints: mergedEventPoints,
   });
   const activityRowsData = useActivityRows({
@@ -109,9 +170,23 @@ const TimeLine = ({
     timelineStartSec,
     timelineEndSec,
     firstActivitySec,
-    pendingReviewWallSec,
+    // The review wall only applies to Compliance violations' diamonds.
+    pendingReviewWallSec: isPunchesTab ? undefined : pendingReviewWallSec,
+    sessionWallSec,
     playWindowRef,
   });
+
+  // Sessions opened by the parent (e.g. employee punch-ins) take precedence.
+  const activeSessionStarts =
+    activeSessionStartsProp ?? state.activeSessionStarts;
+
+  // Let the parent move the selection to a row it just created.
+  useEffect(() => {
+    if (focusRowId === undefined || focusRowId === null) return;
+    state.setITrackId(focusRowId);
+    state.setSelectedTracks(new Set([focusRowId]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusRowId]);
 
   useMarkerSync({
     targetMarkerSec,
@@ -254,7 +329,8 @@ const TimeLine = ({
     const rowPoints = mergedEventPoints.filter((ep) =>
       isActivityMode
         ? ep.label === targetEventPoint.label
-        : ep.cameraId === targetEventPoint.cameraId && ep.label === targetEventPoint.label,
+        : ep.cameraId === targetEventPoint.cameraId &&
+          ep.label === targetEventPoint.label,
     );
     return isOverlapsBlue(targetEventPoint, rowPoints);
   }, [targetEventPoint, mergedEventPoints, isActivityMode]);
@@ -289,7 +365,7 @@ const TimeLine = ({
     selectableRows,
     iTrackId: state.iTrackId,
     setITrackId: state.setITrackId,
-    activeSessionStarts: state.activeSessionStarts,
+    activeSessionStarts,
     setActiveSessionStarts: state.setActiveSessionStarts,
     markerSec: state.markerSec,
     timelineStartSec,
@@ -320,6 +396,12 @@ const TimeLine = ({
     setSelectedEventPointId: state.setSelectedEventPointId,
     flatRows,
     isActivityMode,
+    // Free arrows/digits on both punches tabs; "i"/"o" only act when the
+    // parent passes onPunchIn/onPunchOut (Employee punches).
+    isSessionMode: isPunchesTab,
+    onPunchIn,
+    onPunchOut,
+    onAddRow,
   });
 
   return (
@@ -342,19 +424,18 @@ const TimeLine = ({
         hasPrevEventPoint={prevEventPoint !== undefined}
         hasNextEventPoint={nextEventPoint !== undefined}
         expanded={expandedIcon}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
       />
 
       <TimelineBody
         flatRows={flatRows}
         headerLabel={headerLabel}
-        openDialog={
-          //  state.openDialog
-          false
-        }
+        openDialog={state.openDialog}
         dialogOnClose={state.handleOnCloseDialog}
-        onOpenDialog={state.handleOnOpenDialog}
+        onOpenDialog={onAddRow ?? state.handleOnOpenDialog}
         selectedTracks={state.selectedTracks}
-        activeSessionStarts={state.activeSessionStarts}
+        activeSessionStarts={activeSessionStarts}
         listBodyRef={state.listBodyRef}
         rowsScrollRef={state.rowsScrollRef}
         iTrackId={state.iTrackId}
@@ -376,7 +457,7 @@ const TimeLine = ({
         isInActivityRange={state.isInActivityRange}
         gridRef={state.gridRef}
         totalSec={state.totalSec}
-        completedSessions={state.completedSessions}
+        completedSessions={completedSessionsProp ?? state.completedSessions}
         resolvedMarkerSec={state.resolvedMarkerSec}
         hasAnyBars={state.hasAnyBars}
         setZoom={state.setZoom}
@@ -394,9 +475,14 @@ const TimeLine = ({
         onConvertEventPointToLocal={onConvertEventPointToLocal}
         onEnterEditMode={handleEnterEditMode}
         rowsLoadState={rowsLoadState}
+        emptyRowsMessage={emptyRowsMessage}
+        showAddButton={showAddButton}
         loadState={loadState}
         pendingReviewWallSec={state.pendingReviewWallSec}
         hasMultipleRows={hasMultipleRows}
+        reassignOptions={reassignOptions}
+        onReassignRow={onReassignRow}
+        emptyGridMessage={emptyGridMessage}
       />
     </Box>
   );
