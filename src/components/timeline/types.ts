@@ -1,4 +1,4 @@
-export type NavTab = "employees" | "compliances" | "activities";
+export type NavTab = "employees" | "compliances" | "activities" | "customers";
 
 export interface TimelineBodyHandle {
   stepMarker: (deltaSec: number) => void;
@@ -27,6 +27,9 @@ export interface TimelineSnapshot {
         type: "in" | "out";
         timestamp: string;
       }[];
+      inactive?: boolean;
+      /** Renders this track as a sub-row of the track with this id (e.g. a customer group). */
+      parentId?: number;
     }[];
   };
   ui: {
@@ -44,6 +47,9 @@ export type FlatRow = {
   parentCameraId?: number;
   cameraNumber: number;
   sessions: { type: "in" | "out"; timestamp: string }[];
+  category?: NavTab;
+  /** Rendered greyed out in the row list (e.g. an employee who hasn't punched in). */
+  inactive?: boolean;
 };
 
 export type CameraEventPoint = {
