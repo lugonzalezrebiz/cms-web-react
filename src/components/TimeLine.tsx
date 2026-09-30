@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import TimelineBody from "./timeline/TimelineBody";
 import type {
   CameraEventPoint,
@@ -189,6 +189,31 @@ const TimeLine = ({
   const activeSessionStarts =
     activeSessionStartsProp ?? state.activeSessionStarts;
   const completedSessions = completedSessionsProp ?? state.completedSessions;
+
+  // A selected bar belongs to its tab: switching tabs clears it.
+  const [prevTab, setPrevTab] = useState(activeTab);
+  if (prevTab !== activeTab) {
+    setPrevTab(activeTab);
+    state.setSelectedBar(null);
+  }
+
+  // Punches tabs: clicking a bar selects it (clicking it again deselects it)
+  // along with its line — a customer group's bar selects the row attending it.
+  const handleSelectBar = (rowId: number, start: number) => {
+    const isSame =
+      state.selectedBar?.rowId === rowId && state.selectedBar.start === start;
+    state.setSelectedBar(isSame ? null : { rowId, start });
+    if (isSame) return;
+    const row = flatRows.find((r) => r.id === rowId);
+    const lineId =
+      row?.kind === "event" && row.parentCameraId !== undefined
+        ? row.parentCameraId
+        : rowId;
+    state.setITrackId(lineId);
+    state.setSelectedTracks(
+      activeSessionStarts[lineId] !== undefined ? new Set([lineId]) : new Set(),
+    );
+  };
 
   // Let the parent move the selection to a row it just created.
   useEffect(() => {
@@ -416,6 +441,8 @@ const TimeLine = ({
     // Ctrl+arrows step through the bars and Delete removes one (punches tabs).
     completedSessions,
     onDeleteSession,
+    selectedBar: state.selectedBar,
+    setSelectedBar: state.setSelectedBar,
   });
 
   return (
@@ -498,6 +525,8 @@ const TimeLine = ({
         reassignOptions={reassignOptions}
         onReassignRow={onReassignRow}
         emptyGridMessage={emptyGridMessage}
+        selectedBar={isPunchesTab ? state.selectedBar : null}
+        onSelectBar={isPunchesTab ? handleSelectBar : undefined}
       />
     </Box>
   );
