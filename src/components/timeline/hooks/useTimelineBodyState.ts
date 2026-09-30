@@ -10,6 +10,9 @@ import {
   getZoomForTickStep,
 } from "../constants";
 
+/** A session bar, by its row and start second. */
+export type SelectedBar = { rowId: number; start: number };
+
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
   flatRows: FlatRow[];
@@ -55,6 +58,9 @@ export const useTimelineBodyState = ({
   const [dragStartOffset, setDragStartOffset] = useState(0);
   const [markerSec, setMarkerSec] = useState<number | null>(null);
   const [selectedEventPointId, setSelectedEventPointId] = useState<number | null>(null);
+  // Punches tabs: the selected session bar (what Delete removes), like
+  // selectedEventPointId for diamonds.
+  const [selectedBar, setSelectedBar] = useState<SelectedBar | null>(null);
   const [editingEventPointId, setEditingEventPointId] = useState<number | null>(null);
   // Smooth pan to marker when a different event point is selected and marker is off-screen
   const panOffsetSecRef = useRef(0);
@@ -304,6 +310,8 @@ export const useTimelineBodyState = ({
     setMarkerSecRaw: setMarkerSec,
     selectedEventPointId,
     setSelectedEventPointId,
+    selectedBar,
+    setSelectedBar,
     editingEventPointId,
     setEditingEventPointId,
     completedSessions,
