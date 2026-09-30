@@ -147,6 +147,9 @@ const RowItem = ({
       )}
       <Box
         sx={{
+          // Customer groups carry no number: the badge keeps its space only.
+          visibility:
+            isEventSubRow && row.category === "customers" ? "hidden" : "visible",
           bgcolor: bgColorNumber,
           color: textColorNumber,
           height: "20px",
