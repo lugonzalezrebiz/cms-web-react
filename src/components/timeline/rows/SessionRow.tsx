@@ -77,7 +77,7 @@ const SessionBar = ({
         // Selected like a diamond: a glow in the bar's own color (alpha 0x99,
         // blur 10), eased in and out.
         boxShadow: isSelected ? `0 0 10px ${color}99` : "none",
-        transition: "box-shadow 200ms ease",
+        transition: "box-shadow 200ms ease, background 200ms ease",
         // Drawn above its neighbors, as selected diamonds are.
         zIndex: isSelected ? 1 : "auto",
       }}
@@ -241,7 +241,12 @@ export const SessionRow = ({
           range={range}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
-          color={Colors.lightSteelGray}
+          // A selected punched-out bar turns a darker grey so it stands out.
+          color={
+            selectedBarStart === range.start
+              ? Colors.blueGray
+              : Colors.lightSteelGray
+          }
           isSelected={selectedBarStart === range.start}
           onSelect={
             onSelectBar ? () => onSelectBar(row.id, range.start) : undefined
