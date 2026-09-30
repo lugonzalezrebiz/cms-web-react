@@ -55,11 +55,18 @@ export const useCustomerPunchFlow = ({
     canRedo,
   } = useCustomerPunches();
 
-  // Rows: "Unattended" first, then every employee (greyed out until they
-  // punch in), then each Unknown employee created by a punch-in — each
-  // followed by the customer groups punched in under it.
+  // Rows: "Unattended" first, then only the employees punched in on Employee
+  // punches (known and Unknown, in that list's order) — each followed by the
+  // customer groups punched in under it.
   const { tracks, reassignOptions, punchRowIds } = useMemo(() => {
     const employeeRowIds = new Set(Object.values(employeeRows));
+    // Employee punches row → known employee id.
+    const employeeIdByRow = new Map(
+      Object.entries(employeeRows).map(([employeeId, rowId]) => [
+        rowId,
+        Number(employeeId),
+      ]),
+    );
     const parents = [
       {
         id: UNATTENDED_ROW_ID,
@@ -67,16 +74,18 @@ export const useCustomerPunchFlow = ({
         category: "customers" as const,
         sessions: [],
       },
-      ...MOCK_DIALOG_EMPLOYEES.map((employee) => ({
-        id: CUSTOMER_EMPLOYEE_ROW_ID_BASE - employee.id,
-        name: employee.name,
-        category: "customers" as const,
-        sessions: [],
-        inactive: employeeRows[employee.id] === undefined,
-      })),
-      ...employeeTracks
-        .filter((t) => !employeeRowIds.has(t.id))
-        .map((t) => ({ ...t, category: "customers" as const })),
+      ...employeeTracks.map((t) => {
+        const employeeId = employeeIdByRow.get(t.id);
+        return {
+          ...t,
+          // Known employees keep a stable Customer punches id of their own.
+          id:
+            employeeId !== undefined
+              ? CUSTOMER_EMPLOYEE_ROW_ID_BASE - employeeId
+              : t.id,
+          category: "customers" as const,
+        };
+      }),
     ];
     const tracks = parents.flatMap((parent) => [
       parent,
