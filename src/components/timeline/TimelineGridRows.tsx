@@ -309,28 +309,32 @@ export const TimelineGridRows = ({
                   selectedBarStart={selectedBarStartOf(row.id)}
                   onSelectBar={onSelectBar}
                 />
-                <EventRow
-                  row={row}
-                  rowIndex={rowIndex}
-                  cameraEventPoints={cameraEventPoints}
-                  visibleStart={visibleStart}
-                  visibleEnd={visibleEnd}
-                  visibleDuration={visibleDuration}
-                  setResizing={setResizing}
-                  setMarkerSec={setMarkerSec}
-                  setITrackId={setITrackId}
-                  selectedEventPointId={selectedEventPointId}
-                  setSelectedEventPointId={setSelectedEventPointId}
-                  editingEventPointId={editingEventPointId}
-                  onExitEditMode={onExitEditMode}
-                  onStartMove={startMove}
-                  onExtendStart={startExtend}
-                  onConvertEventPointToLocal={onConvertEventPointToLocal}
-                  onEnterEditMode={onEnterEditMode}
-                  onEditEventPoint={onEditEventPoint}
-                  pendingReviewWallSec={pendingReviewWallSec}
-                  hasMultipleRows={hasMultipleRows}
-                />
+                {/* Punches tabs (selectable bars) have no diamonds, and the
+                    diamond canvas would swallow the clicks on sub-row bars. */}
+                {!onSelectBar && (
+                  <EventRow
+                    row={row}
+                    rowIndex={rowIndex}
+                    cameraEventPoints={cameraEventPoints}
+                    visibleStart={visibleStart}
+                    visibleEnd={visibleEnd}
+                    visibleDuration={visibleDuration}
+                    setResizing={setResizing}
+                    setMarkerSec={setMarkerSec}
+                    setITrackId={setITrackId}
+                    selectedEventPointId={selectedEventPointId}
+                    setSelectedEventPointId={setSelectedEventPointId}
+                    editingEventPointId={editingEventPointId}
+                    onExitEditMode={onExitEditMode}
+                    onStartMove={startMove}
+                    onExtendStart={startExtend}
+                    onConvertEventPointToLocal={onConvertEventPointToLocal}
+                    onEnterEditMode={onEnterEditMode}
+                    onEditEventPoint={onEditEventPoint}
+                    pendingReviewWallSec={pendingReviewWallSec}
+                    hasMultipleRows={hasMultipleRows}
+                  />
+                )}
               </Box>
             ),
           )}
