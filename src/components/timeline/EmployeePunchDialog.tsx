@@ -73,7 +73,7 @@ const EmployeePunchDialog = ({
       footer={
         <Box sx={{ display: "flex", gap: "16px", pb: "16px" }}>
           <Button
-            style={{ padding: "0 15px", height: "36px" }}
+            style={{ padding: "0 15px", height: "30px" }}
             outfit
             color="secondary"
             onClick={onClose}
@@ -81,14 +81,14 @@ const EmployeePunchDialog = ({
             Cancel
           </Button>
           <Button
-            style={{ padding: "0 15px", height: "36px" }}
+            style={{ padding: "0 15px", height: "30px" }}
             outfit
             onClick={onPunchInUnknown}
           >
             Punch in as Unknown
           </Button>
           <Button
-            style={{ padding: "0 15px", height: "36px" }}
+            style={{ padding: "0 15px", height: "30px" }}
             outfit
             disabled={selectedEmployeeId === null}
             onClick={onPunchInSelected}
