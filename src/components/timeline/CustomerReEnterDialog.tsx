@@ -38,7 +38,7 @@ const Title = styled("p")({
   lineHeight: 1.5,
 });
 
-const footerButtonStyle = { padding: "0 15px", height: "36px" };
+const footerButtonStyle = { padding: "0 15px", height: "30px" };
 
 const CustomerReEnterDialog = ({
   open,
