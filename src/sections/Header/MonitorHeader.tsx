@@ -150,7 +150,11 @@ const getCustomerPunchesShortcuts = (imagesInterval: number): ShortcutItem[] => 
   goBackItem,
   ...undoRedoItems,
   { keys: [textKey("I")], label: "Customer punch in on the selected line" },
-  { keys: [textKey("O")], label: "Punch out a customer on the selected line" },
+  {
+    keys: [textKey("↑"), textKey("↓")],
+    label: "Select a customer on the selected line",
+  },
+  { keys: [textKey("O")], label: "Punch out the selected customer" },
   { keys: [textKey("1-9, 0", "14px")], label: "Select line" },
   deleteBarItem,
   ...playbackAndZoomItems,
