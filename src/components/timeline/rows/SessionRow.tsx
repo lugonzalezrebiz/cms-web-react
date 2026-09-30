@@ -52,7 +52,8 @@ interface SessionBarProps {
 
 type BarSide = "start" | "end";
 
-const BAR_HANDLE_PX = 10;
+// Width of the invisible grab zone on each end of a selected bar.
+const BAR_HANDLE_PX = 8;
 
 const SessionBar = ({
   range,
@@ -72,16 +73,14 @@ const SessionBar = ({
       onMouseDown={(e: MouseEvent) => onResizeStart?.(side, e)}
       // Don't let the drag's click toggle the bar's selection.
       onClick={(e: MouseEvent) => e.stopPropagation()}
+      // Nothing drawn: hovering an end just shows the resize cursor.
       sx={{
         position: "absolute",
-        top: "50%",
+        top: 0,
         left: side === "start" ? 0 : "100%",
         width: BAR_HANDLE_PX,
-        height: BAR_HANDLE_PX,
-        transform: "translate(-50%, -50%) rotate(45deg)",
-        bgcolor: color,
-        border: `1.5px solid ${Colors.white}`,
-        boxSizing: "border-box",
+        height: "100%",
+        transform: "translateX(-50%)",
         cursor: "ew-resize",
         pointerEvents: "auto",
         zIndex: 2,
@@ -442,10 +441,10 @@ export const SessionRow = ({
           range={shownRange(range)}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
-          // A selected punched-out bar turns a darker grey so it stands out.
+          // A selected (editable) punched-out bar turns orange.
           color={
             selectedBarStart === range.start
-              ? Colors.blueGray
+              ? Colors.vividOrange
               : Colors.lightSteelGray
           }
           isSelected={selectedBarStart === range.start}
