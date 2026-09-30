@@ -79,13 +79,14 @@ const TimelineNavPopover = ({
                 padding: "8px",
                 backgroundColor: isSelected ? Colors.vividOrange : Colors.white,
                 color: isSelected ? Colors.white : "inherit",
-                "&:hover": {
-                  backgroundColor: isSelected
-                    ? Colors.vividOrange
-                    : isDisabled
-                      ? Colors.white
-                      : Colors.lightGrayishBlue,
-                },
+                // Hover looks like the selected tab (disabled tabs don't react).
+                "&:hover": isDisabled
+                  ? {}
+                  : {
+                      backgroundColor: Colors.vividOrange,
+                      color: Colors.white,
+                      "& img": { filter: "brightness(0) invert(1)" },
+                    },
                 "& img": {
                   mb: "7px",
                   filter: isSelected ? "brightness(0) invert(1)" : "none",
