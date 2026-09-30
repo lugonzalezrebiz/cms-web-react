@@ -225,6 +225,18 @@ const TimeLine = ({
     }
   };
 
+  // A group handed over to another row follows it: that row becomes the
+  // selected line, so "o" can punch the group out from there.
+  const handleReassignRow = (rowId: number, parentId: number) => {
+    onReassignRow?.(rowId, parentId);
+    state.setITrackId(parentId);
+    state.setSelectedTracks(
+      activeSessionStarts[parentId] !== undefined
+        ? new Set([parentId])
+        : new Set(),
+    );
+  };
+
   // Punches tabs: clicking a bar selects it (clicking it again deselects it)
   // along with its line — a customer group's bar selects the row attending it.
   const handleSelectBar = (rowId: number, start: number) => {
@@ -552,7 +564,7 @@ const TimeLine = ({
         pendingReviewWallSec={state.pendingReviewWallSec}
         hasMultipleRows={hasMultipleRows}
         reassignOptions={reassignOptions}
-        onReassignRow={onReassignRow}
+        onReassignRow={onReassignRow ? handleReassignRow : undefined}
         emptyGridMessage={emptyGridMessage}
         selectedBar={isPunchesTab ? state.selectedBar : null}
         onSelectBar={isPunchesTab ? handleSelectBar : undefined}
