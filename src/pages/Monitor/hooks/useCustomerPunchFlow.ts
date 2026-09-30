@@ -17,8 +17,12 @@ import {
   type TimelineTabProps,
 } from "../constants";
 import { useCustomerPunches } from "./useCustomerPunches";
+import type { RowNotice } from "../../../components/timeline/rows/SessionRow";
 
 type Range = { start: number; end: number };
+
+const OUTSIDE_PUNCH_TIME_NOTICE =
+  "Not possible: outside the employee's punch-in time";
 
 interface Params {
   /** Current marker: where attendance changes happen. */
@@ -186,14 +190,43 @@ export const useCustomerPunchFlow = ({
   } | null>(null);
   const [punchCount, setPunchCount] = useState(CUSTOMER_COUNT_OPTIONS[0]);
 
+  // Message at the marker when "i" is pressed on an employee who isn't
+  // punched in at that time.
+  const [notice, setNotice] = useState<RowNotice | undefined>(undefined);
+
   // Returns false: the timeline shouldn't enter a punched-in state for this row.
   // Only opens for "Unattended" or an employee punched in at that time.
   const handleOpenPunch = useCallback(
     (rowId: number, sec: number) => {
-      if (canAttendAt(rowId, sec)) setPunchTarget({ rowId, sec });
+      if (canAttendAt(rowId, sec)) {
+        setPunchTarget({ rowId, sec });
+      } else {
+        setNotice({ rowId, text: OUTSIDE_PUNCH_TIME_NOTICE, key: Date.now() });
+      }
       return false;
     },
     [canAttendAt],
+  );
+
+  // Picking an employee moves the marker to their punch-in: the start of the
+  // shift the marker is in, else of the latest one before it, else the first.
+  const rowSelectMarkerSec = useCallback(
+    (rowId: number) => {
+      const punchRowId = punchRowIds.get(rowId);
+      if (punchRowId === undefined) return undefined;
+      const shifts = [...(employeeClosedSessions[punchRowId] ?? [])];
+      const openStart = employeeOpenSessions[punchRowId];
+      if (openStart !== undefined)
+        shifts.push({ start: openStart, end: Infinity });
+      if (shifts.length === 0) return undefined;
+      shifts.sort((a, b) => a.start - b.start);
+      const shift =
+        shifts.find((s) => markerSec >= s.start && markerSec <= s.end) ??
+        [...shifts].reverse().find((s) => s.start <= markerSec) ??
+        shifts[0];
+      return shift.start;
+    },
+    [punchRowIds, employeeClosedSessions, employeeOpenSessions, markerSec],
   );
 
   // Customers that can re-enter: groups with no open session, each with the
@@ -297,8 +330,12 @@ export const useCustomerPunchFlow = ({
       sessionWallSec,
       emptyGridMessage:
         groups.length === 0 ? CUSTOMERS_EMPTY_GRID_MESSAGE : undefined,
+      rowSelectMarkerSec,
+      rowNotice: notice,
     }),
     [
+      rowSelectMarkerSec,
+      notice,
       tracks,
       openSessions,
       closedSessions,
