@@ -190,7 +190,18 @@ export const useTimelineKeyboard = ({
           return;
         }
         if (e.key === "i") {
-          if (iTrackId === null) return;
+          // No rows yet or none selected: "i" works like "+" (add a row),
+          // when the tab offers it.
+          if (
+            iTrackId === null ||
+            !selectableRows.some((r) => r.id === iTrackId)
+          ) {
+            if (onAddRowRef.current) {
+              e.preventDefault();
+              onAddRowRef.current();
+            }
+            return;
+          }
           const start = markerSec ?? timelineStartSec;
           if (onPunchInRef.current?.(iTrackId, start)) {
             setSelectedTracks(new Set([iTrackId]));
