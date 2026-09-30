@@ -14,6 +14,8 @@ interface RowItemProps {
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
   onSelectRow?: (rowId: number) => void;
+  isSubSelected: boolean;
+  onSelectSubRow?: (rowId: number) => void;
 }
 
 const RowItem = ({
@@ -25,6 +27,8 @@ const RowItem = ({
   setITrackId,
   setSelectedTracks,
   onSelectRow,
+  isSubSelected,
+  onSelectSubRow,
 }: RowItemProps) => {
   const isEventSubRow = row.kind === "event";
   const isActivityRow = row.kind === "activity";
@@ -38,8 +42,16 @@ const RowItem = ({
 
   const isActive = isSelected || isFocused;
 
+  // Punches tabs: an open sub-row (customer group) can be sub-selected.
+  const isSubSelectable =
+    isEventSubRow &&
+    onSelectSubRow !== undefined &&
+    activeSessionStarts[row.id] !== undefined;
+
   const handleClick = isEventSubRow
-    ? undefined
+    ? isSubSelectable
+      ? () => onSelectSubRow(row.id)
+      : undefined
     : () => {
         // Employee rows toggle: clicking the selected one deselects it.
         if (row.category === "employees" && iTrackId === row.id) {
@@ -57,6 +69,7 @@ const RowItem = ({
       };
 
   const bgColor = () => {
+    if (isEventSubRow && isSubSelected) return Colors.transparentVividOrange;
     if (isEventSubRow)
       return isActive || isEventWithActiveParent
         ? Colors.blushWhite
@@ -185,6 +198,10 @@ interface TimelineRowListProps {
   showAddButton?: boolean;
   /** Called when a click selects a row (not when it deselects one). */
   onSelectRow?: (rowId: number) => void;
+  /** Punches tabs: the sub-selected open sub-row, highlighted. */
+  activeSubRowId?: number | null;
+  /** Punches tabs: clicking an open sub-row sub-selects it. */
+  onSelectSubRow?: (rowId: number) => void;
 }
 
 export const TimelineRowList = ({
@@ -202,6 +219,8 @@ export const TimelineRowList = ({
   emptyMessage = "Empty",
   showAddButton = false,
   onSelectRow,
+  activeSubRowId,
+  onSelectSubRow,
 }: TimelineRowListProps) => {
   // Sub-rows (kind "event") don't take a number, so the numbers shown match
   // the digit shortcuts, which only cycle through the selectable rows.
@@ -296,6 +315,8 @@ export const TimelineRowList = ({
             setITrackId={setITrackId}
             setSelectedTracks={setSelectedTracks}
             onSelectRow={onSelectRow}
+            isSubSelected={row.id === activeSubRowId}
+            onSelectSubRow={onSelectSubRow}
           />
         ))}
         {flatRows.filter((r) => r.kind !== "event").length === 0 && (
