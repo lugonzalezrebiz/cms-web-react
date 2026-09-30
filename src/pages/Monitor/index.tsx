@@ -41,10 +41,14 @@ import useNavigateWithQuery from "../../hooks/useNavigate";
 import { useEmployeePunchFlow } from "./hooks/useEmployeePunchFlow";
 import { useCustomerPunchFlow } from "./hooks/useCustomerPunchFlow";
 import type { TimelineTabProps } from "./constants";
+import type { NavTab } from "../../components/timeline/types";
 
 const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
 // Compliance violations adds nothing on top of the default TimeLine props.
 const NO_TAB_TIMELINE_PROPS: TimelineTabProps = {};
+const NO_DISABLED_TABS: NavTab[] = [];
+// Customer punches needs employees to attend customers.
+const CUSTOMERS_TAB_DISABLED: NavTab[] = ["customers"];
 
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
@@ -336,6 +340,10 @@ const Monitor = () => {
       ? customerFlow.timelineProps
       : NO_TAB_TIMELINE_PROPS;
 
+  // No employees in Employee punches yet → nobody can attend customers.
+  const disabledTabs =
+    employeeFlow.tracks.length === 0 ? CUSTOMERS_TAB_DISABLED : NO_DISABLED_TABS;
+
   const timelineProps = useMemo(
     () => ({
       snapshot,
@@ -366,6 +374,7 @@ const Monitor = () => {
       viewMode: "activity" as const,
       activeTab,
       onTabChange: setActiveTab,
+      disabledTabs,
       menuItems: filteredMenuItems,
       rangeSessions,
       expandedIcon: !expandedCamera,
@@ -412,6 +421,7 @@ const Monitor = () => {
       isReviewDataLoading,
       pendingReviewWallSec,
       tabTimelineProps,
+      disabledTabs,
     ],
   );
 
