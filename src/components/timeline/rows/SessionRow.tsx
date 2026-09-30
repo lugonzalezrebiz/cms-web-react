@@ -336,7 +336,7 @@ export const SessionRow = ({
           handleClose={() => setReassignAnchor(null)}
           anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
           transformOrigin={{ vertical: "top", horizontal: "left" }}
-          maxWidth="280px"
+          maxWidth="150px"
           options={reassignOptions?.map((option) => ({
             label: option.label,
             selected: option.id === row.parentCameraId,
