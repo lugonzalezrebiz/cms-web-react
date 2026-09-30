@@ -11,6 +11,8 @@ const PUNCHED_OUT_MESSAGE_MS = 5000;
 const REASSIGN_BUTTON_PX = 20;
 // Gap between the marker and the attendance button (its dot sits 5px further in).
 const REASSIGN_BUTTON_OFFSET_PX = 0;
+// Extra gap while hovered, so the arrow circle doesn't touch the marker.
+const REASSIGN_HOVER_SHIFT_PX = 4;
 
 const hintTextSx = {
   position: "absolute",
@@ -203,8 +205,10 @@ export const SessionRow = ({
   );
   const isReassignActive =
     showReassign && (isReassignHovered || reassignAnchor !== null);
+  const reassignLeftPx =
+    REASSIGN_BUTTON_OFFSET_PX + (isReassignActive ? REASSIGN_HOVER_SHIFT_PX : 0);
   const hintLeft = showReassign
-    ? `calc(${markerPct}% + ${REASSIGN_BUTTON_OFFSET_PX + REASSIGN_BUTTON_PX + 6}px)`
+    ? `calc(${markerPct}% + ${reassignLeftPx + REASSIGN_BUTTON_PX + 6}px)`
     : `calc(${markerPct}% + 6px)`;
 
   return (
@@ -283,7 +287,7 @@ export const SessionRow = ({
           }}
           sx={{
             position: "absolute",
-            left: `calc(${markerPct}% + ${REASSIGN_BUTTON_OFFSET_PX}px)`,
+            left: `calc(${markerPct}% + ${reassignLeftPx}px)`,
             top: "50%",
             transform: "translateY(-50%)",
             width: REASSIGN_BUTTON_PX,
@@ -319,7 +323,7 @@ export const SessionRow = ({
                 width: 10,
                 height: 10,
                 borderRadius: "50%",
-                bgcolor: Colors.lightOrange,
+                bgcolor: Colors.coralPeach,
               }}
             />
           )}
