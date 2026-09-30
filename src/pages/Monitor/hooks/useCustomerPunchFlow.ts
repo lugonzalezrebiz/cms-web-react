@@ -210,8 +210,18 @@ export const useCustomerPunchFlow = ({
 
   // Picking an employee moves the marker to their punch-in: the start of the
   // shift the marker is in, else of the latest one before it, else the first.
+  // With a customer of theirs still open, the marker never goes back before
+  // that customer's punch-in, so it can still be punched out.
   const rowSelectMarkerSec = useCallback(
     (rowId: number) => {
+      const openGroupStarts = groups
+        .filter((g) => g.parentRowId === rowId)
+        .map((g) => openSessions[g.id])
+        .filter((s): s is number => s !== undefined);
+      if (openGroupStarts.length > 0) {
+        const latestOpen = Math.max(...openGroupStarts);
+        return markerSec > latestOpen ? undefined : latestOpen;
+      }
       const punchRowId = punchRowIds.get(rowId);
       if (punchRowId === undefined) return undefined;
       const shifts = [...(employeeClosedSessions[punchRowId] ?? [])];
@@ -226,7 +236,14 @@ export const useCustomerPunchFlow = ({
         shifts[0];
       return shift.start;
     },
-    [punchRowIds, employeeClosedSessions, employeeOpenSessions, markerSec],
+    [
+      groups,
+      openSessions,
+      punchRowIds,
+      employeeClosedSessions,
+      employeeOpenSessions,
+      markerSec,
+    ],
   );
 
   // Customers that can re-enter: groups with no open session, each with the
