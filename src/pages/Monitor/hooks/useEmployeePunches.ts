@@ -143,6 +143,31 @@ export const useEmployeePunches = () => {
     [present, commit],
   );
 
+  // Removes the bar starting at startSec on the row (open or closed). The row
+  // stays, so its employee keeps the same line.
+  const deleteSession = useCallback(
+    (rowId: number, startSec: number) => {
+      if (present.open[rowId] === startSec) {
+        const { [rowId]: _deleted, ...open } = present.open;
+        commit({ ...present, open }, startSec);
+        return;
+      }
+      const ranges = present.closed[rowId] ?? [];
+      if (!ranges.some((r) => r.start === startSec)) return;
+      commit(
+        {
+          ...present,
+          closed: {
+            ...present.closed,
+            [rowId]: ranges.filter((r) => r.start !== startSec),
+          },
+        },
+        startSec,
+      );
+    },
+    [present, commit],
+  );
+
   const undo = useCallback((): number | void => {
     const last = past[past.length - 1];
     if (!last) return;
@@ -171,6 +196,7 @@ export const useEmployeePunches = () => {
     addEmployee,
     punchIn,
     punchOut,
+    deleteSession,
     undo,
     redo,
     canUndo: past.length > 0,
