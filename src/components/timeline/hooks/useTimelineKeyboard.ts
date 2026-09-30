@@ -220,6 +220,9 @@ export const useTimelineKeyboard = ({
           if (rowId === undefined) return;
           onPunchOutRef.current?.(rowId, end);
           setSelectedTracks(new Set());
+          // Punching out the row itself (Employee punches) also deselects it;
+          // closing a sub-row's session (a customer group) keeps its parent.
+          if (rowId === iTrackId) setITrackId(null);
           return;
         }
         if (/^[0-9]$/.test(e.key)) {
