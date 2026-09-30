@@ -29,6 +29,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     punchIn,
     punchOut,
     deleteSession,
+    updateSession,
     undo,
     redo,
     canUndo,
@@ -99,6 +100,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       onPunchIn: punchIn,
       onPunchOut: punchOut,
       onDeleteSession: deleteSession,
+      onUpdateSession: updateSession,
       // Its own history, separate from Compliance violations' event points.
       onUndo: undo,
       onRedo: redo,
@@ -114,6 +116,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       punchIn,
       punchOut,
       deleteSession,
+      updateSession,
       undo,
       redo,
       canUndo,

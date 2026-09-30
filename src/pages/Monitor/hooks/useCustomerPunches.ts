@@ -226,6 +226,40 @@ export const useCustomerPunches = () => {
     [present, commit],
   );
 
+  // Moves the ends of the bar that starts at oldStart on a group row (an open
+  // bar only has its start).
+  const updateSession = useCallback(
+    (
+      groupRowId: number,
+      oldStart: number,
+      next: { start: number; end?: number },
+    ) => {
+      if (present.open[groupRowId] === oldStart) {
+        commit(
+          { ...present, open: { ...present.open, [groupRowId]: next.start } },
+          next.start,
+        );
+        return;
+      }
+      const { end } = next;
+      const ranges = present.closed[groupRowId] ?? [];
+      if (end === undefined || !ranges.some((r) => r.start === oldStart)) return;
+      commit(
+        {
+          ...present,
+          closed: {
+            ...present.closed,
+            [groupRowId]: ranges.map((r) =>
+              r.start === oldStart ? { start: next.start, end } : r,
+            ),
+          },
+        },
+        next.start,
+      );
+    },
+    [present, commit],
+  );
+
   const undo = useCallback((): number | void => {
     const last = past[past.length - 1];
     if (!last) return;
@@ -253,6 +287,7 @@ export const useCustomerPunches = () => {
     changeParent,
     reEnter,
     deleteSession,
+    updateSession,
     undo,
     redo,
     canUndo: past.length > 0,
