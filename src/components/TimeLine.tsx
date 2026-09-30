@@ -205,6 +205,52 @@ const TimeLine = ({
     state.setSelectedBar(null);
   }
 
+  // Punches tabs: the selected line's open sub-rows (list order) and the
+  // sub-selected one — the one picked while it's still open, else the one
+  // punched in last. "o" punches out only that one.
+  const openSubRowIds = useMemo(
+    () =>
+      isPunchesTab && state.iTrackId !== null
+        ? flatRows
+            .filter(
+              (r) =>
+                r.kind === "event" &&
+                r.parentCameraId === state.iTrackId &&
+                activeSessionStarts[r.id] !== undefined,
+            )
+            .map((r) => r.id)
+        : [],
+    [isPunchesTab, state.iTrackId, flatRows, activeSessionStarts],
+  );
+  let activeSubRowId: number | null = null;
+  if (
+    state.selectedSubRowId !== null &&
+    openSubRowIds.includes(state.selectedSubRowId)
+  ) {
+    activeSubRowId = state.selectedSubRowId;
+  } else {
+    for (const id of openSubRowIds) {
+      if (
+        activeSubRowId === null ||
+        activeSessionStarts[id] >= activeSessionStarts[activeSubRowId]
+      )
+        activeSubRowId = id;
+    }
+  }
+
+  // Clicking an open sub-row in the list sub-selects it (and its line).
+  const handleSelectSubRow = (rowId: number) => {
+    const parentId = flatRows.find((r) => r.id === rowId)?.parentCameraId;
+    if (parentId === undefined) return;
+    state.setITrackId(parentId);
+    state.setSelectedTracks(
+      activeSessionStarts[parentId] !== undefined
+        ? new Set([parentId])
+        : new Set(),
+    );
+    state.setSelectedSubRowId(rowId);
+  };
+
   // Punches tabs: picking a row can move the marker (e.g. to the employee's
   // punch-in), panning to it if it's off-screen.
   const handleSelectRow = (rowId: number) => {
@@ -253,6 +299,10 @@ const TimeLine = ({
     state.setSelectedTracks(
       activeSessionStarts[lineId] !== undefined ? new Set([lineId]) : new Set(),
     );
+    // An open sub-row's bar also sub-selects that sub-row.
+    if (lineId !== rowId && activeSessionStarts[rowId] !== undefined) {
+      state.setSelectedSubRowId(rowId);
+    }
   };
 
   // Let the parent move the selection to a row it just created.
@@ -484,6 +534,9 @@ const TimeLine = ({
     selectedBar: state.selectedBar,
     setSelectedBar: state.setSelectedBar,
     onSelectRow: isPunchesTab ? handleSelectRow : undefined,
+    openSubRowIds,
+    activeSubRowId,
+    setSelectedSubRowId: state.setSelectedSubRowId,
   });
 
   return (
@@ -570,6 +623,8 @@ const TimeLine = ({
         onSelectBar={isPunchesTab ? handleSelectBar : undefined}
         rowNotice={isPunchesTab ? rowNotice : undefined}
         onSelectRow={isPunchesTab ? handleSelectRow : undefined}
+        activeSubRowId={activeSubRowId}
+        onSelectSubRow={isPunchesTab ? handleSelectSubRow : undefined}
       />
     </Box>
   );
