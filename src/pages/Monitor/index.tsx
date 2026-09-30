@@ -413,7 +413,6 @@ const Monitor = () => {
       restoreMarkerSec,
       trackerTargetSec,
       cameraGroupTargetSec,
-      timelineStartSec,
       punchesTargetSec,
       isTrackerTab,
       isPunchesTab,
