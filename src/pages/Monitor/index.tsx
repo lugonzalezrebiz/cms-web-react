@@ -275,6 +275,21 @@ const Monitor = () => {
     employeeRows: employeeFlow.employeeRows,
   });
 
+  // Employee punches remembers where its marker was when leaving the tab;
+  // Customer punches always starts from the beginning of the timeline.
+  const [prevTimelineTab, setPrevTimelineTab] = useState(activeTab);
+  const [employeeMarkerSec, setEmployeeMarkerSec] = useState<
+    number | undefined
+  >(undefined);
+  if (prevTimelineTab !== activeTab) {
+    if (prevTimelineTab === "employees" && markerTimeSec !== null)
+      setEmployeeMarkerSec(markerTimeSec);
+    setPrevTimelineTab(activeTab);
+  }
+  const punchesTargetSec = isEmployeesTab
+    ? (employeeMarkerSec ?? timelineStartSec)
+    : timelineStartSec;
+
   const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
@@ -355,10 +370,13 @@ const Monitor = () => {
       targetMarkerSec:
         restoreMarkerSec ??
         (isPunchesTab
-          ? timelineStartSec
+          ? punchesTargetSec
           : isTrackerTab
             ? trackerTargetSec
             : cameraGroupTargetSec),
+      // Re-applies the target on every tab switch, even when two tabs target
+      // the same second (e.g. both at the timeline start).
+      targetMarkerKey: activeTab,
       onUpdateEventPoint: handleUpdateEventPoint,
       onPopOut: handlePopOut,
       headerLabel: "Compliance Violations",
@@ -396,6 +414,7 @@ const Monitor = () => {
       trackerTargetSec,
       cameraGroupTargetSec,
       timelineStartSec,
+      punchesTargetSec,
       isTrackerTab,
       isPunchesTab,
       handleUpdateEventPoint,
