@@ -18,6 +18,7 @@ import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
 import { isOverlapsBlue } from "./timeline/utils";
+import type { RowNotice } from "./timeline/rows/SessionRow";
 
 const NO_EVENT_POINTS: CameraEventPoint[] = [];
 
@@ -60,6 +61,8 @@ const TimeLine = ({
   onPunchIn,
   onPunchOut,
   onDeleteSession,
+  rowSelectMarkerSec,
+  rowNotice,
   reassignOptions,
   onReassignRow,
   sessionWallSec,
@@ -120,6 +123,11 @@ const TimeLine = ({
   onPunchOut?: (rowId: number, endSec: number) => void;
   /** Punches tabs: Delete removes the bar starting at `startSec` on `rowId`. */
   onDeleteSession?: (rowId: number, startSec: number) => void;
+  /** Punches tabs: where the marker goes when a row is picked (list click or
+   * digit), or undefined to leave it. */
+  rowSelectMarkerSec?: (rowId: number) => number | undefined;
+  /** Punches tabs: a message shown at the marker on one row. */
+  rowNotice?: RowNotice;
   /** Rows a sub-row's group can be moved to (Customer punches). */
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   /** Moves the sub-row `rowId` under `parentId`. */
@@ -196,6 +204,26 @@ const TimeLine = ({
     setPrevTab(activeTab);
     state.setSelectedBar(null);
   }
+
+  // Punches tabs: picking a row can move the marker (e.g. to the employee's
+  // punch-in), panning to it if it's off-screen.
+  const handleSelectRow = (rowId: number) => {
+    const sec = rowSelectMarkerSec?.(rowId);
+    if (sec === undefined) return;
+    state.setMarkerSec(sec);
+    const visibleEnd = state.panOffsetSec + state.visibleDuration;
+    if (sec < state.panOffsetSec || sec > visibleEnd) {
+      state.setPanOffsetSec(
+        Math.max(
+          0,
+          Math.min(
+            state.totalSec - state.visibleDuration,
+            sec - state.visibleDuration * 0.2,
+          ),
+        ),
+      );
+    }
+  };
 
   // Punches tabs: clicking a bar selects it (clicking it again deselects it)
   // along with its line — a customer group's bar selects the row attending it.
@@ -443,6 +471,7 @@ const TimeLine = ({
     onDeleteSession,
     selectedBar: state.selectedBar,
     setSelectedBar: state.setSelectedBar,
+    onSelectRow: isPunchesTab ? handleSelectRow : undefined,
   });
 
   return (
@@ -527,6 +556,8 @@ const TimeLine = ({
         emptyGridMessage={emptyGridMessage}
         selectedBar={isPunchesTab ? state.selectedBar : null}
         onSelectBar={isPunchesTab ? handleSelectBar : undefined}
+        rowNotice={isPunchesTab ? rowNotice : undefined}
+        onSelectRow={isPunchesTab ? handleSelectRow : undefined}
       />
     </Box>
   );
