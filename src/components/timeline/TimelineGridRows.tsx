@@ -243,6 +243,11 @@ export const TimelineGridRows = ({
               letterSpacing: 0,
               color: Colors.dimGray,
               textAlign: "center",
+              // A see-through card so it reads over the bars and grid lines.
+              bgcolor: Colors.softWhite,
+              boxShadow: "0 2px 10px 0 rgba(0, 0, 0, 0.16)",
+              borderRadius: "8px",
+              p: "8px 12px",
             }}
           >
             {emptyGridMessage}
