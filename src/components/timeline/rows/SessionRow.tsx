@@ -111,6 +111,10 @@ export interface SessionRowProps {
   onSelectBar?: (rowId: number, start: number) => void;
   /** Message shown at the marker for a few seconds, each time `key` changes. */
   notice?: RowNotice;
+  /** Punches tabs: this sub-row is the sub-selected one (highlighted). */
+  isSubSelected?: boolean;
+  /** Show "Press o to punch-out" while open (only the sub-selected sub-row). */
+  showPunchOutHint?: boolean;
 }
 
 /** A short message for one row, shown again whenever `key` changes. */
@@ -131,6 +135,8 @@ export const SessionRow = ({
   selectedBarStart,
   onSelectBar,
   notice,
+  isSubSelected = false,
+  showPunchOutHint = true,
 }: SessionRowProps) => {
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
@@ -240,7 +246,10 @@ export const SessionRow = ({
         left: 0,
         right: 0,
         height: ROW_HEIGHT,
-        bgcolor: isSelected ? Colors.transparentVividOrange : "transparent",
+        bgcolor:
+          isSelected || isSubSelected
+            ? Colors.transparentVividOrange
+            : "transparent",
       }}
     >
       {childClosed.map((range, i) => (
@@ -379,7 +388,7 @@ export const SessionRow = ({
           Click to change customer attendance
         </Box>
       )}
-      {sessionStart !== undefined && !isReassignActive && (
+      {showPunchOutHint && sessionStart !== undefined && !isReassignActive && (
         <Box
           component="span"
           sx={{ ...hintTextSx, left: hintLeft }}

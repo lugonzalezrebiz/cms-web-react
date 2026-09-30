@@ -72,6 +72,8 @@ export interface TimelineBodyViewProps {
   rowNotice?: RowNotice;
   /** Called when a click in the list selects a row. */
   onSelectRow?: (rowId: number) => void;
+  activeSubRowId?: number | null;
+  onSelectSubRow?: (rowId: number) => void;
 }
 
 const TimelineBody = ({
@@ -133,6 +135,8 @@ const TimelineBody = ({
   onSelectBar,
   rowNotice,
   onSelectRow,
+  activeSubRowId,
+  onSelectSubRow,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -161,6 +165,8 @@ const TimelineBody = ({
         emptyMessage={emptyRowsMessage}
         showAddButton={showAddButton}
         onSelectRow={onSelectRow}
+        activeSubRowId={activeSubRowId}
+        onSelectSubRow={onSelectSubRow}
       />
 
       <Box
@@ -233,6 +239,7 @@ const TimelineBody = ({
           selectedBar={selectedBar}
           onSelectBar={onSelectBar}
           rowNotice={rowNotice}
+          activeSubRowId={activeSubRowId}
         />
 
         {!loadState && (
