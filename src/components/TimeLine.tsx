@@ -26,6 +26,7 @@ const TimeLine = ({
   onMarkerChange,
   snapshot,
   targetMarkerSec,
+  targetMarkerKey,
   onUpdateEventPoint,
   onPopOut,
   headerLabel,
@@ -67,6 +68,8 @@ const TimeLine = ({
   onMarkerChange?: (sec: number) => void;
   snapshot: TimelineSnapshot;
   targetMarkerSec?: number;
+  /** Changing it re-applies targetMarkerSec even if the number is unchanged. */
+  targetMarkerKey?: string | number;
   onUpdateEventPoint?: (
     id: number,
     update: Partial<Pick<CameraEventPoint, "timeSec" | "startSec" | "endSec">>,
@@ -193,6 +196,7 @@ const TimeLine = ({
 
   useMarkerSync({
     targetMarkerSec,
+    targetMarkerKey,
     resolvedMarkerSec: state.resolvedMarkerSec,
     timelineStartSec,
     timelineEndSec,
