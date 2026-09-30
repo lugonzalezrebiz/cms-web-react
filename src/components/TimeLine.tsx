@@ -48,6 +48,7 @@ const TimeLine = ({
   pendingReviewWallSec,
   activeTab,
   onTabChange,
+  disabledTabs,
   emptyRowsMessage,
   showAddButton,
   onAddRow,
@@ -96,6 +97,8 @@ const TimeLine = ({
   pendingReviewWallSec?: number;
   activeTab?: NavTab;
   onTabChange?: (tab: NavTab) => void;
+  /** Nav tabs shown but not selectable. */
+  disabledTabs?: NavTab[];
   emptyRowsMessage?: React.ReactNode;
   showAddButton?: boolean;
   onAddRow?: () => void;
@@ -426,6 +429,7 @@ const TimeLine = ({
         expanded={expandedIcon}
         activeTab={activeTab}
         onTabChange={onTabChange}
+        disabledTabs={disabledTabs}
       />
 
       <TimelineBody
