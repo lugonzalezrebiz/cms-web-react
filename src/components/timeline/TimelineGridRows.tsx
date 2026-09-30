@@ -8,7 +8,7 @@ import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
 import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
-import { SessionRow } from "./rows/SessionRow";
+import { SessionRow, type RowNotice } from "./rows/SessionRow";
 import type { SelectedBar } from "./hooks/useTimelineBodyState";
 import { GridLines } from "./rows/GridLines";
 import Card from "../Card";
@@ -63,6 +63,8 @@ interface TimelineGridRowsProps {
   selectedBar?: SelectedBar | null;
   /** Punches tabs: clicking a bar selects it. */
   onSelectBar?: (rowId: number, start: number) => void;
+  /** Punches tabs: a message shown at the marker on one row. */
+  rowNotice?: RowNotice;
 }
 
 export const TimelineGridRows = ({
@@ -107,6 +109,7 @@ export const TimelineGridRows = ({
   emptyGridMessage,
   selectedBar,
   onSelectBar,
+  rowNotice,
 }: TimelineGridRowsProps) => {
   const selectedBarStartOf = (rowId: number) =>
     selectedBar?.rowId === rowId ? selectedBar.start : undefined;
@@ -289,6 +292,7 @@ export const TimelineGridRows = ({
                 visibleDuration={visibleDuration}
                 selectedBarStart={selectedBarStartOf(row.id)}
                 onSelectBar={onSelectBar}
+                notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
               />
             ) : (
               <Box
@@ -308,6 +312,7 @@ export const TimelineGridRows = ({
                   onReassign={onReassignRow}
                   selectedBarStart={selectedBarStartOf(row.id)}
                   onSelectBar={onSelectBar}
+                  notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
                 />
                 {/* Punches tabs (selectable bars) have no diamonds, and the
                     diamond canvas would swallow the clicks on sub-row bars. */}

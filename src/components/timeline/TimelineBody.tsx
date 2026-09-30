@@ -7,6 +7,7 @@ import { TimelineTimeRuler } from "./TimelineTimeRuler";
 import { TimelineGridRows } from "./TimelineGridRows";
 import { TimelineMarker } from "./TimelineMarker";
 import type { SelectedBar } from "./hooks/useTimelineBodyState";
+import type { RowNotice } from "./rows/SessionRow";
 
 export interface TimelineBodyViewProps {
   flatRows: FlatRow[];
@@ -68,6 +69,9 @@ export interface TimelineBodyViewProps {
   emptyGridMessage?: React.ReactNode;
   selectedBar?: SelectedBar | null;
   onSelectBar?: (rowId: number, start: number) => void;
+  rowNotice?: RowNotice;
+  /** Called when a click in the list selects a row. */
+  onSelectRow?: (rowId: number) => void;
 }
 
 const TimelineBody = ({
@@ -127,6 +131,8 @@ const TimelineBody = ({
   emptyGridMessage,
   selectedBar,
   onSelectBar,
+  rowNotice,
+  onSelectRow,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -154,6 +160,7 @@ const TimelineBody = ({
         loadState={rowsLoadState}
         emptyMessage={emptyRowsMessage}
         showAddButton={showAddButton}
+        onSelectRow={onSelectRow}
       />
 
       <Box
@@ -225,6 +232,7 @@ const TimelineBody = ({
           emptyGridMessage={emptyGridMessage}
           selectedBar={selectedBar}
           onSelectBar={onSelectBar}
+          rowNotice={rowNotice}
         />
 
         {!loadState && (
