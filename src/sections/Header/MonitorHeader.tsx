@@ -66,7 +66,7 @@ const sessionBarItems: ShortcutItem[] = [
 ];
 const deleteBarItem: ShortcutItem = {
   keys: [textKey("DEL", "12px")],
-  label: "Delete bar under marker on the selected line",
+  label: "Delete selected bar",
 };
 
 const goBackItem: ShortcutItem = {
