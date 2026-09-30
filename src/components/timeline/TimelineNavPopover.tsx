@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void;
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
+  /** Tabs shown but not selectable (e.g. Customer punches with no employees). */
+  disabledTabs?: NavTab[];
 }
 
 const TimelineNavPopover = ({
@@ -18,6 +20,7 @@ const TimelineNavPopover = ({
   onClose,
   activeTab,
   onTabChange,
+  disabledTabs = [],
 }: Props) => (
   <Popover
     open={open}
@@ -50,12 +53,15 @@ const TimelineNavPopover = ({
     >
       {NAV_TABS.map(({ id, label, iconClass }) => {
         const isSelected = id === activeTab;
+        const isDisabled = !isSelected && disabledTabs.includes(id);
         return (
           <Box
             component="li"
             key={id}
             sx={{ flex: 1 }}
+            aria-disabled={isDisabled || undefined}
             onClick={() => {
+              if (isDisabled) return;
               onTabChange(id);
               onClose();
             }}
@@ -68,14 +74,17 @@ const TimelineNavPopover = ({
                 flexDirection: "column",
                 alignItems: "center",
                 borderRadius: "4px",
-                cursor: "pointer",
+                cursor: isDisabled ? "not-allowed" : "pointer",
+                opacity: isDisabled ? 0.4 : 1,
                 padding: "8px",
                 backgroundColor: isSelected ? Colors.vividOrange : Colors.white,
                 color: isSelected ? Colors.white : "inherit",
                 "&:hover": {
                   backgroundColor: isSelected
                     ? Colors.vividOrange
-                    : Colors.lightGrayishBlue,
+                    : isDisabled
+                      ? Colors.white
+                      : Colors.lightGrayishBlue,
                 },
                 "& img": {
                   mb: "7px",
