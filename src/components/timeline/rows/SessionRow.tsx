@@ -9,6 +9,8 @@ import type { FlatRow } from "../types";
 const ROW_HEIGHT = 32.8;
 const PUNCHED_OUT_MESSAGE_MS = 5000;
 const REASSIGN_BUTTON_PX = 20;
+// Gap between the marker and the attendance button (its dot sits 5px further in).
+const REASSIGN_BUTTON_OFFSET_PX = 0;
 
 const hintTextSx = {
   position: "absolute",
@@ -202,7 +204,7 @@ export const SessionRow = ({
   const isReassignActive =
     showReassign && (isReassignHovered || reassignAnchor !== null);
   const hintLeft = showReassign
-    ? `calc(${markerPct}% + ${12 + REASSIGN_BUTTON_PX}px)`
+    ? `calc(${markerPct}% + ${REASSIGN_BUTTON_OFFSET_PX + REASSIGN_BUTTON_PX + 6}px)`
     : `calc(${markerPct}% + 6px)`;
 
   return (
@@ -281,7 +283,7 @@ export const SessionRow = ({
           }}
           sx={{
             position: "absolute",
-            left: `calc(${markerPct}% + 6px)`,
+            left: `calc(${markerPct}% + ${REASSIGN_BUTTON_OFFSET_PX}px)`,
             top: "50%",
             transform: "translateY(-50%)",
             width: REASSIGN_BUTTON_PX,
