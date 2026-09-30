@@ -59,6 +59,7 @@ const TimeLine = ({
   completedSessions: completedSessionsProp,
   onPunchIn,
   onPunchOut,
+  onDeleteSession,
   reassignOptions,
   onReassignRow,
   sessionWallSec,
@@ -117,6 +118,8 @@ const TimeLine = ({
   onPunchIn?: (rowId: number, startSec: number) => boolean;
   /** Employee punches: "o" closes the selected row's open session at `endSec`. */
   onPunchOut?: (rowId: number, endSec: number) => void;
+  /** Punches tabs: Delete removes the bar starting at `startSec` on `rowId`. */
+  onDeleteSession?: (rowId: number, startSec: number) => void;
   /** Rows a sub-row's group can be moved to (Customer punches). */
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   /** Moves the sub-row `rowId` under `parentId`. */
@@ -185,6 +188,7 @@ const TimeLine = ({
   // Sessions opened by the parent (e.g. employee punch-ins) take precedence.
   const activeSessionStarts =
     activeSessionStartsProp ?? state.activeSessionStarts;
+  const completedSessions = completedSessionsProp ?? state.completedSessions;
 
   // Let the parent move the selection to a row it just created.
   useEffect(() => {
@@ -409,6 +413,9 @@ const TimeLine = ({
     onPunchIn,
     onPunchOut,
     onAddRow,
+    // Ctrl+arrows step through the bars and Delete removes one (punches tabs).
+    completedSessions,
+    onDeleteSession,
   });
 
   return (
@@ -465,7 +472,7 @@ const TimeLine = ({
         isInActivityRange={state.isInActivityRange}
         gridRef={state.gridRef}
         totalSec={state.totalSec}
-        completedSessions={completedSessionsProp ?? state.completedSessions}
+        completedSessions={completedSessions}
         resolvedMarkerSec={state.resolvedMarkerSec}
         hasAnyBars={state.hasAnyBars}
         setZoom={state.setZoom}
