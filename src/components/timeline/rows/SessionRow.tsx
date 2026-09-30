@@ -74,8 +74,12 @@ const SessionBar = ({
         // The rows layer ignores the mouse; selectable bars opt back in.
         pointerEvents: onSelect ? "auto" : "none",
         cursor: onSelect ? "pointer" : "default",
-        outline: isSelected ? `2px solid ${Colors.charcoalNavy}` : "none",
-        outlineOffset: "1px",
+        // Selected like a diamond: a glow in the bar's own color (alpha 0x99,
+        // blur 10), eased in and out.
+        boxShadow: isSelected ? `0 0 10px ${color}99` : "none",
+        transition: "box-shadow 200ms ease",
+        // Drawn above its neighbors, as selected diamonds are.
+        zIndex: isSelected ? 1 : "auto",
       }}
     />
   );
