@@ -68,6 +68,11 @@ interface UseTimelineKeyboardParams {
   setSelectedBar?: React.Dispatch<React.SetStateAction<SelectedBar | null>>;
   /** Session mode: called when a digit selects a row. */
   onSelectRow?: (rowId: number) => void;
+  /** Session mode: open sub-rows of the selected line, in list order. */
+  openSubRowIds?: number[];
+  /** Session mode: the sub-selected open sub-row ("o" punches it out). */
+  activeSubRowId?: number | null;
+  setSelectedSubRowId?: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 // A session bar and the line that selects it; `end` is undefined while open.
@@ -117,6 +122,9 @@ export const useTimelineKeyboard = ({
   selectedBar,
   setSelectedBar,
   onSelectRow,
+  openSubRowIds,
+  activeSubRowId,
+  setSelectedSubRowId,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
@@ -264,18 +272,38 @@ export const useTimelineKeyboard = ({
         if (e.key === "o") {
           if (iTrackId === null) return;
           const end = markerSec ?? timelineStartSec;
-          // The selected row's own session, else an open one on its sub-rows
+          // The selected row's own session, else its sub-selected open sub-row
           // (Customer punches groups hang under their employee row).
-          const rowId = [iTrackId, ...childRowIds(iTrackId)].find((id) => {
-            const start = activeSessionStarts[id];
-            return start !== undefined && end > start;
-          });
+          const rowId =
+            activeSessionStarts[iTrackId] !== undefined
+              ? iTrackId
+              : (activeSubRowId ?? undefined);
           if (rowId === undefined) return;
+          const start = activeSessionStarts[rowId];
+          if (start === undefined || end <= start) return;
           onPunchOutRef.current?.(rowId, end);
           setSelectedTracks(new Set());
+          // The next open sub-row (if any) takes over the sub-selection.
+          if (rowId !== iTrackId) setSelectedSubRowId?.(null);
           // Punching out the row itself (Employee punches) also deselects it;
           // closing a sub-row's session (a customer group) keeps its parent.
           if (rowId === iTrackId) setITrackId(null);
+          return;
+        }
+        // ↑/↓ move the sub-selection among the selected line's open sub-rows
+        // (wrapping around); without any they keep scrolling the list.
+        if (
+          (e.key === "ArrowUp" || e.key === "ArrowDown") &&
+          openSubRowIds &&
+          openSubRowIds.length > 0
+        ) {
+          e.preventDefault();
+          const current =
+            activeSubRowId != null ? openSubRowIds.indexOf(activeSubRowId) : -1;
+          const step = e.key === "ArrowDown" ? 1 : -1;
+          const next =
+            (current + step + openSubRowIds.length) % openSubRowIds.length;
+          setSelectedSubRowId?.(openSubRowIds[next]);
           return;
         }
         if (e.key === "Delete") {
@@ -591,6 +619,9 @@ export const useTimelineKeyboard = ({
     sessionBars,
     selectedBarIndex,
     setSelectedBar,
+    openSubRowIds,
+    activeSubRowId,
+    setSelectedSubRowId,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────

@@ -61,6 +61,9 @@ export const useTimelineBodyState = ({
   // Punches tabs: the selected session bar (what Delete removes), like
   // selectedEventPointId for diamonds.
   const [selectedBar, setSelectedBar] = useState<SelectedBar | null>(null);
+  // Punches tabs: the open sub-row picked with ↑/↓ (or a click) under the
+  // selected line — the one "o" punches out.
+  const [selectedSubRowId, setSelectedSubRowId] = useState<number | null>(null);
   const [editingEventPointId, setEditingEventPointId] = useState<number | null>(null);
   // Smooth pan to marker when a different event point is selected and marker is off-screen
   const panOffsetSecRef = useRef(0);
@@ -312,6 +315,8 @@ export const useTimelineBodyState = ({
     setSelectedEventPointId,
     selectedBar,
     setSelectedBar,
+    selectedSubRowId,
+    setSelectedSubRowId,
     editingEventPointId,
     setEditingEventPointId,
     completedSessions,
