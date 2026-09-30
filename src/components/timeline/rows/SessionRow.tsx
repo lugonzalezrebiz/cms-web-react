@@ -222,7 +222,8 @@ export const SessionRow = ({
           range={range}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
-          color={Colors.lightSteelGray}
+          // A shade darker than the sub-row's own grey bar.
+          color={Colors.softSlate}
         />
       ))}
       {childLive.map((range, i) => (
