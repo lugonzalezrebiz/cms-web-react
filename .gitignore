@@ -9,12 +9,14 @@ out
 .cache
 server/dist
 public/dist
+docs
 
 *storybook.log
 .vercel
 **/node_modules
 docker-compose.yml
-.claude
+.claude/*
+!.claude/skills/
 .env
 
 release
