@@ -65,6 +65,8 @@ interface TimelineGridRowsProps {
   onSelectBar?: (rowId: number, start: number) => void;
   /** Punches tabs: a message shown at the marker on one row. */
   rowNotice?: RowNotice;
+  /** Punches tabs: the sub-selected open sub-row. */
+  activeSubRowId?: number | null;
 }
 
 export const TimelineGridRows = ({
@@ -110,6 +112,7 @@ export const TimelineGridRows = ({
   selectedBar,
   onSelectBar,
   rowNotice,
+  activeSubRowId,
 }: TimelineGridRowsProps) => {
   const selectedBarStartOf = (rowId: number) =>
     selectedBar?.rowId === rowId ? selectedBar.start : undefined;
@@ -310,6 +313,10 @@ export const TimelineGridRows = ({
                   visibleDuration={visibleDuration}
                   reassignOptions={reassignOptions}
                   onReassign={onReassignRow}
+                  // Only the sub-selected sub-row is highlighted and shows
+                  // the punch-out hint ("o" acts on it alone).
+                  isSubSelected={row.id === activeSubRowId}
+                  showPunchOutHint={row.id === activeSubRowId}
                   selectedBarStart={selectedBarStartOf(row.id)}
                   onSelectBar={onSelectBar}
                   notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
