@@ -9,6 +9,7 @@ import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
 import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
 import { SessionRow } from "./rows/SessionRow";
+import type { SelectedBar } from "./hooks/useTimelineBodyState";
 import { GridLines } from "./rows/GridLines";
 import Card from "../Card";
 
@@ -58,6 +59,10 @@ interface TimelineGridRowsProps {
   onReassignRow?: (rowId: number, parentId: number) => void;
   /** Hint centered over the grid while there's nothing recorded yet. */
   emptyGridMessage?: React.ReactNode;
+  /** Punches tabs: the selected session bar. */
+  selectedBar?: SelectedBar | null;
+  /** Punches tabs: clicking a bar selects it. */
+  onSelectBar?: (rowId: number, start: number) => void;
 }
 
 export const TimelineGridRows = ({
@@ -100,7 +105,11 @@ export const TimelineGridRows = ({
   reassignOptions,
   onReassignRow,
   emptyGridMessage,
+  selectedBar,
+  onSelectBar,
 }: TimelineGridRowsProps) => {
+  const selectedBarStartOf = (rowId: number) =>
+    selectedBar?.rowId === rowId ? selectedBar.start : undefined;
   const visibleEnd = visibleStart + visibleDuration;
 
   const setResizing = useEventPointResize({
@@ -278,6 +287,8 @@ export const TimelineGridRows = ({
                 resolvedMarkerSec={resolvedMarkerSec}
                 visibleStart={visibleStart}
                 visibleDuration={visibleDuration}
+                selectedBarStart={selectedBarStartOf(row.id)}
+                onSelectBar={onSelectBar}
               />
             ) : (
               <Box
@@ -295,6 +306,8 @@ export const TimelineGridRows = ({
                   visibleDuration={visibleDuration}
                   reassignOptions={reassignOptions}
                   onReassign={onReassignRow}
+                  selectedBarStart={selectedBarStartOf(row.id)}
+                  onSelectBar={onSelectBar}
                 />
                 <EventRow
                   row={row}
