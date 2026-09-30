@@ -66,6 +66,8 @@ interface UseTimelineKeyboardParams {
   /** Session mode: the selected bar (clicked or reached with Ctrl+arrows). */
   selectedBar?: SelectedBar | null;
   setSelectedBar?: React.Dispatch<React.SetStateAction<SelectedBar | null>>;
+  /** Session mode: called when a digit selects a row. */
+  onSelectRow?: (rowId: number) => void;
 }
 
 // A session bar and the line that selects it; `end` is undefined while open.
@@ -114,16 +116,19 @@ export const useTimelineKeyboard = ({
   onDeleteSession,
   selectedBar,
   setSelectedBar,
+  onSelectRow,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
   const onAddRowRef = useRef(onAddRow);
   const onDeleteSessionRef = useRef(onDeleteSession);
+  const onSelectRowRef = useRef(onSelectRow);
   useEffect(() => {
     onPunchInRef.current = onPunchIn;
     onPunchOutRef.current = onPunchOut;
     onAddRowRef.current = onAddRow;
     onDeleteSessionRef.current = onDeleteSession;
+    onSelectRowRef.current = onSelectRow;
   });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
@@ -296,6 +301,7 @@ export const useTimelineKeyboard = ({
               ? new Set([row.id])
               : new Set(),
           );
+          onSelectRowRef.current?.(row.id);
           return;
         }
       }

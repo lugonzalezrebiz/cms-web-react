@@ -13,6 +13,7 @@ interface RowItemProps {
   activeSessionStarts: Record<number, number>;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
+  onSelectRow?: (rowId: number) => void;
 }
 
 const RowItem = ({
@@ -23,6 +24,7 @@ const RowItem = ({
   activeSessionStarts,
   setITrackId,
   setSelectedTracks,
+  onSelectRow,
 }: RowItemProps) => {
   const isEventSubRow = row.kind === "event";
   const isActivityRow = row.kind === "activity";
@@ -51,6 +53,7 @@ const RowItem = ({
         } else {
           setSelectedTracks(new Set());
         }
+        onSelectRow?.(row.id);
       };
 
   const bgColor = () => {
@@ -180,6 +183,8 @@ interface TimelineRowListProps {
   loadState?: boolean;
   emptyMessage?: React.ReactNode;
   showAddButton?: boolean;
+  /** Called when a click selects a row (not when it deselects one). */
+  onSelectRow?: (rowId: number) => void;
 }
 
 export const TimelineRowList = ({
@@ -196,6 +201,7 @@ export const TimelineRowList = ({
   loadState,
   emptyMessage = "Empty",
   showAddButton = false,
+  onSelectRow,
 }: TimelineRowListProps) => {
   // Sub-rows (kind "event") don't take a number, so the numbers shown match
   // the digit shortcuts, which only cycle through the selectable rows.
@@ -289,6 +295,7 @@ export const TimelineRowList = ({
             activeSessionStarts={activeSessionStarts}
             setITrackId={setITrackId}
             setSelectedTracks={setSelectedTracks}
+            onSelectRow={onSelectRow}
           />
         ))}
         {flatRows.filter((r) => r.kind !== "event").length === 0 && (
