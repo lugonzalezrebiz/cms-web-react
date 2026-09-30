@@ -39,6 +39,12 @@ const RowItem = ({
   const handleClick = isEventSubRow
     ? undefined
     : () => {
+        // Employee rows toggle: clicking the selected one deselects it.
+        if (row.category === "employees" && iTrackId === row.id) {
+          setITrackId(null);
+          setSelectedTracks(new Set());
+          return;
+        }
         setITrackId(row.id);
         if (activeSessionStarts[row.id] !== undefined) {
           setSelectedTracks(new Set([row.id]));
