@@ -238,6 +238,37 @@ const TimeLine = ({
     }
   }
 
+  // Punches tabs: a newly selected line (digits, Ctrl+arrows…) or sub-selected
+  // sub-row (↑/↓) scrolls smoothly into view in the list; the grid follows
+  // through the list's scroll sync.
+  const scrollRowIntoView = (rowId: number | null) => {
+    const list = state.listBodyRef.current;
+    const index = flatRows.findIndex((r) => r.id === rowId);
+    const item = list?.children[index] as HTMLElement | undefined;
+    if (!list || index < 0 || !item) return;
+    const listRect = list.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    if (itemRect.top < listRect.top) {
+      list.scrollBy({ top: itemRect.top - listRect.top, behavior: "smooth" });
+    } else if (itemRect.bottom > listRect.bottom) {
+      list.scrollBy({
+        top: itemRect.bottom - listRect.bottom,
+        behavior: "smooth",
+      });
+    }
+  };
+  const scrollRowIntoViewRef = useRef(scrollRowIntoView);
+  useEffect(() => {
+    scrollRowIntoViewRef.current = scrollRowIntoView;
+  });
+  // Declared first so a line change (next effect) wins when both change.
+  useEffect(() => {
+    if (isPunchesTab) scrollRowIntoViewRef.current(activeSubRowId);
+  }, [isPunchesTab, activeSubRowId]);
+  useEffect(() => {
+    if (isPunchesTab) scrollRowIntoViewRef.current(state.iTrackId);
+  }, [isPunchesTab, state.iTrackId]);
+
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
     const parentId = flatRows.find((r) => r.id === rowId)?.parentCameraId;
