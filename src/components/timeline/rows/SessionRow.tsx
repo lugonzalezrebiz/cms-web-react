@@ -118,7 +118,13 @@ export interface SessionRowProps {
 }
 
 /** A short message for one row, shown again whenever `key` changes. */
-export type RowNotice = { rowId: number; text: string; key: number };
+export type RowNotice = {
+  rowId: number;
+  text: string;
+  key: number;
+  /** Stays up for as long as it is passed, instead of a few seconds. */
+  sticky?: boolean;
+};
 
 export const SessionRow = ({
   row,
@@ -418,7 +424,7 @@ export const SessionRow = ({
           Punched Out
         </Box>
       )}
-      {notice && shownNoticeKey === notice.key && (
+      {notice && (notice.sticky || shownNoticeKey === notice.key) && (
         <Box
           component="span"
           sx={{
