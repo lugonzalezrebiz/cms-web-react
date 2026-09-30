@@ -168,6 +168,37 @@ export const useEmployeePunches = () => {
     [present, commit],
   );
 
+  // Moves the ends of the bar that starts at oldStart on the row (an open bar
+  // only has its start). The timeline already keeps it clear of the row's
+  // other bars.
+  const updateSession = useCallback(
+    (rowId: number, oldStart: number, next: { start: number; end?: number }) => {
+      if (present.open[rowId] === oldStart) {
+        commit(
+          { ...present, open: { ...present.open, [rowId]: next.start } },
+          next.start,
+        );
+        return;
+      }
+      const { end } = next;
+      const ranges = present.closed[rowId] ?? [];
+      if (end === undefined || !ranges.some((r) => r.start === oldStart)) return;
+      commit(
+        {
+          ...present,
+          closed: {
+            ...present.closed,
+            [rowId]: ranges.map((r) =>
+              r.start === oldStart ? { start: next.start, end } : r,
+            ),
+          },
+        },
+        next.start,
+      );
+    },
+    [present, commit],
+  );
+
   const undo = useCallback((): number | void => {
     const last = past[past.length - 1];
     if (!last) return;
@@ -197,6 +228,7 @@ export const useEmployeePunches = () => {
     punchIn,
     punchOut,
     deleteSession,
+    updateSession,
     undo,
     redo,
     canUndo: past.length > 0,

@@ -54,6 +54,7 @@ export const useCustomerPunchFlow = ({
     changeParent,
     reEnter,
     deleteSession,
+    updateSession,
     undo,
     redo,
     canUndo,
@@ -167,6 +168,26 @@ export const useCustomerPunchFlow = ({
     employeeOpenSessions,
     employeeClosedSessions,
   ]);
+
+  // Editing a customer's bar: when an employee attends it, its ends stay
+  // inside that employee's shift (the one the bar starts in). "Unattended"
+  // sets no limit.
+  const getSessionBounds = useCallback(
+    (rowId: number, start: number) => {
+      const group = groups.find((g) => g.id === rowId);
+      if (!group || group.parentRowId === UNATTENDED_ROW_ID) return undefined;
+      const punchRowId = punchRowIds.get(group.parentRowId);
+      if (punchRowId === undefined) return undefined;
+      const openStart = employeeOpenSessions[punchRowId];
+      if (openStart !== undefined && start >= openStart)
+        return { min: openStart, max: Infinity };
+      const shift = (employeeClosedSessions[punchRowId] ?? []).find(
+        (r) => start >= r.start && start <= r.end,
+      );
+      return shift ? { min: shift.start, max: shift.end } : undefined;
+    },
+    [groups, punchRowIds, employeeOpenSessions, employeeClosedSessions],
+  );
 
   // Attendance menu options at the marker: rows that can't attend are disabled.
   const reassignOptionsAtMarker = useMemo(
@@ -348,6 +369,8 @@ export const useCustomerPunchFlow = ({
       onPunchIn: handleOpenPunch,
       onPunchOut: punchOut,
       onDeleteSession: deleteSession,
+      onUpdateSession: updateSession,
+      getSessionBounds,
       onUndo: undo,
       onRedo: redo,
       canUndo,
@@ -370,6 +393,8 @@ export const useCustomerPunchFlow = ({
       handleOpenPunch,
       punchOut,
       deleteSession,
+      updateSession,
+      getSessionBounds,
       undo,
       redo,
       canUndo,
