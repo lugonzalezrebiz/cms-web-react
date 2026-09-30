@@ -9,6 +9,7 @@ out
 .cache
 server/dist
 public/dist
+docs
 
 *storybook.log
 .vercel
