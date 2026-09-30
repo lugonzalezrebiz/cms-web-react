@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import { hasReviewedTwin } from "../utils";
@@ -58,7 +58,14 @@ interface UseTimelineKeyboardParams {
   onPunchOut?: (rowId: number, endSec: number) => void;
   /** "+" adds a row (session mode only), e.g. the add-employee dialog. */
   onAddRow?: () => void;
+  /** Closed session bars by row id (session mode: Ctrl+arrows and Delete). */
+  completedSessions?: Record<number, { start: number; end: number }[]>;
+  /** Session mode: Delete removes the bar that starts at `startSec` on `rowId`. */
+  onDeleteSession?: (rowId: number, startSec: number) => void;
 }
+
+// A session bar and the line that selects it; `end` is undefined while open.
+type SessionBar = { rowId: number; lineId: number; start: number; end?: number };
 
 export const useTimelineKeyboard = ({
   selectableRows,
@@ -99,14 +106,18 @@ export const useTimelineKeyboard = ({
   onPunchIn,
   onPunchOut,
   onAddRow,
+  completedSessions,
+  onDeleteSession,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
   const onAddRowRef = useRef(onAddRow);
+  const onDeleteSessionRef = useRef(onDeleteSession);
   useEffect(() => {
     onPunchInRef.current = onPunchIn;
     onPunchOutRef.current = onPunchOut;
     onAddRowRef.current = onAddRow;
+    onDeleteSessionRef.current = onDeleteSession;
   });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
@@ -157,6 +168,34 @@ export const useTimelineKeyboard = ({
         .map((r) => r.id),
     [flatRows],
   );
+
+  // Session mode: every bar, ordered by start and then by row, each with the
+  // line that selects it (a sub-row's bar selects its parent row).
+  const sessionBars = useMemo((): SessionBar[] => {
+    if (!isSessionMode) return [];
+    const rows = flatRows ?? [];
+    const bars: (SessionBar & { order: number })[] = [];
+    rows.forEach((row, order) => {
+      const lineId =
+        row.kind === "event" && row.parentCameraId !== undefined
+          ? row.parentCameraId
+          : row.id;
+      for (const { start, end } of completedSessions?.[row.id] ?? []) {
+        bars.push({ rowId: row.id, lineId, start, end, order });
+      }
+      const openStart = activeSessionStarts[row.id];
+      if (openStart !== undefined) {
+        bars.push({ rowId: row.id, lineId, start: openStart, order });
+      }
+    });
+    return bars
+      .sort((a, b) => a.start - b.start || a.order - b.order)
+      .map(({ order: _order, ...bar }) => bar);
+  }, [isSessionMode, flatRows, completedSessions, activeSessionStarts]);
+
+  // Bar the last Ctrl+arrow jumped to, so bars sharing a start second are
+  // stepped through one by one and Delete removes that exact bar.
+  const lastBarRef = useRef<{ rowId: number; start: number } | null>(null);
 
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
@@ -223,6 +262,34 @@ export const useTimelineKeyboard = ({
           // Punching out the row itself (Employee punches) also deselects it;
           // closing a sub-row's session (a customer group) keeps its parent.
           if (rowId === iTrackId) setITrackId(null);
+          return;
+        }
+        if (e.key === "Delete") {
+          if (iTrackId === null || !onDeleteSessionRef.current) return;
+          const sec = markerSec ?? timelineStartSec;
+          // The selected line's bars under the marker: the one Ctrl+arrow
+          // landed on, else the one starting there, else the latest one.
+          const underMarker = sessionBars.filter(
+            (b) =>
+              b.lineId === iTrackId &&
+              sec >= b.start &&
+              (b.end === undefined || sec <= b.end),
+          );
+          const last = lastBarRef.current;
+          const bar =
+            underMarker.find(
+              (b) => last && b.rowId === last.rowId && b.start === last.start,
+            ) ??
+            underMarker.find((b) => b.start === sec) ??
+            underMarker[underMarker.length - 1];
+          if (!bar) return;
+          e.preventDefault();
+          onDeleteSessionRef.current(bar.rowId, bar.start);
+          lastBarRef.current = null;
+          // Deleting the line's own open bar leaves it punched out.
+          if (bar.end === undefined && bar.rowId === iTrackId) {
+            setSelectedTracks(new Set());
+          }
           return;
         }
         if (/^[0-9]$/.test(e.key)) {
@@ -521,6 +588,7 @@ export const useTimelineKeyboard = ({
     isActivityMode,
     isSessionMode,
     childRowIds,
+    sessionBars,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -548,7 +616,36 @@ export const useTimelineKeyboard = ({
       // Employee punches: plain steps both ways so an overshot bar can be pulled
       // back, but never before the selected row's punch-in.
       if (isSessionMode) {
-        if (e.ctrlKey || e.metaKey) return;
+        // Ctrl+arrows jump to the previous / next bar's start and select its line.
+        if (e.ctrlKey || e.metaKey) {
+          const base = markerSec ?? timelineStartSec;
+          const last = lastBarRef.current;
+          const current = sessionBars.findIndex(
+            (b) =>
+              b.start === base &&
+              b.lineId === iTrackId &&
+              (!last || (b.rowId === last.rowId && b.start === last.start)),
+          );
+          const target =
+            e.key === "ArrowRight"
+              ? current >= 0
+                ? sessionBars[current + 1]
+                : sessionBars.find((b) => b.start > base)
+              : current >= 0
+                ? sessionBars[current - 1]
+                : [...sessionBars].reverse().find((b) => b.start < base);
+          if (!target) return;
+          lastBarRef.current = { rowId: target.rowId, start: target.start };
+          setMarkerSec(target.start);
+          panTo(target.start);
+          setITrackId(target.lineId);
+          setSelectedTracks(
+            activeSessionStarts[target.lineId] !== undefined
+              ? new Set([target.lineId])
+              : new Set(),
+          );
+          return;
+        }
         const delta = e.key === "ArrowRight" ? imagesInterval : -imagesInterval;
         const base = markerSec ?? timelineStartSec;
         const openStarts =
@@ -660,6 +757,8 @@ export const useTimelineKeyboard = ({
     isSessionMode,
     activeSessionStarts,
     childRowIds,
+    sessionBars,
+    setSelectedTracks,
   ]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────

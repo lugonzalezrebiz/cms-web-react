@@ -28,6 +28,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     addEmployee,
     punchIn,
     punchOut,
+    deleteSession,
     undo,
     redo,
     canUndo,
@@ -97,6 +98,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       focusRowId: focusedRowId,
       onPunchIn: punchIn,
       onPunchOut: punchOut,
+      onDeleteSession: deleteSession,
       // Its own history, separate from Compliance violations' event points.
       onUndo: undo,
       onRedo: redo,
@@ -111,6 +113,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       focusedRowId,
       punchIn,
       punchOut,
+      deleteSession,
       undo,
       redo,
       canUndo,

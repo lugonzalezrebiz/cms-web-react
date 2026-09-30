@@ -199,6 +199,33 @@ export const useCustomerPunches = () => {
     [present, commit],
   );
 
+  // Removes the bar starting at startSec on a group row (open or closed); a
+  // row left with no bars at all is dropped.
+  const deleteSession = useCallback(
+    (groupRowId: number, startSec: number) => {
+      const isOpen = present.open[groupRowId] === startSec;
+      const ranges = present.closed[groupRowId] ?? [];
+      if (!isOpen && !ranges.some((r) => r.start === startSec)) return;
+      const { [groupRowId]: _deleted, ...otherOpen } = present.open;
+      const open = isOpen ? otherOpen : present.open;
+      const remaining = isOpen
+        ? ranges
+        : ranges.filter((r) => r.start !== startSec);
+      const isEmpty = open[groupRowId] === undefined && remaining.length === 0;
+      commit(
+        {
+          groups: isEmpty
+            ? present.groups.filter((g) => g.id !== groupRowId)
+            : present.groups,
+          open,
+          closed: { ...present.closed, [groupRowId]: remaining },
+        },
+        startSec,
+      );
+    },
+    [present, commit],
+  );
+
   const undo = useCallback((): number | void => {
     const last = past[past.length - 1];
     if (!last) return;
@@ -225,6 +252,7 @@ export const useCustomerPunches = () => {
     punchOut,
     changeParent,
     reEnter,
+    deleteSession,
     undo,
     redo,
     canUndo: past.length > 0,
