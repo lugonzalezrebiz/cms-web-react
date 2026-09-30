@@ -7,7 +7,7 @@ import { TimelineTimeRuler } from "./TimelineTimeRuler";
 import { TimelineGridRows } from "./TimelineGridRows";
 import { TimelineMarker } from "./TimelineMarker";
 import type { SelectedBar } from "./hooks/useTimelineBodyState";
-import type { RowNotice } from "./rows/SessionRow";
+import type { BarEdit, RowNotice } from "./rows/SessionRow";
 
 export interface TimelineBodyViewProps {
   flatRows: FlatRow[];
@@ -74,6 +74,11 @@ export interface TimelineBodyViewProps {
   onSelectRow?: (rowId: number) => void;
   activeSubRowId?: number | null;
   onSelectSubRow?: (rowId: number) => void;
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
 
 const TimelineBody = ({
@@ -137,6 +142,8 @@ const TimelineBody = ({
   onSelectRow,
   activeSubRowId,
   onSelectSubRow,
+  onEditBar,
+  getEditBounds,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -240,6 +247,8 @@ const TimelineBody = ({
           onSelectBar={onSelectBar}
           rowNotice={rowNotice}
           activeSubRowId={activeSubRowId}
+          onEditBar={onEditBar}
+          getEditBounds={getEditBounds}
         />
 
         {!loadState && (
