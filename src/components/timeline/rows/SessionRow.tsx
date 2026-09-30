@@ -8,6 +8,7 @@ import type { FlatRow } from "../types";
 
 const ROW_HEIGHT = 32.8;
 const PUNCHED_OUT_MESSAGE_MS = 5000;
+const NOTICE_MS = 3000;
 const REASSIGN_BUTTON_PX = 20;
 // Gap between the marker and the attendance button (its dot sits 5px further in).
 const REASSIGN_BUTTON_OFFSET_PX = 0;
@@ -108,7 +109,12 @@ export interface SessionRowProps {
   selectedBarStart?: number;
   /** Punches tabs: clicking one of this row's bars selects it. */
   onSelectBar?: (rowId: number, start: number) => void;
+  /** Message shown at the marker for a few seconds, each time `key` changes. */
+  notice?: RowNotice;
 }
+
+/** A short message for one row, shown again whenever `key` changes. */
+export type RowNotice = { rowId: number; text: string; key: number };
 
 export const SessionRow = ({
   row,
@@ -124,6 +130,7 @@ export const SessionRow = ({
   onReassign,
   selectedBarStart,
   onSelectBar,
+  notice,
 }: SessionRowProps) => {
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
@@ -186,6 +193,20 @@ export const SessionRow = ({
     const t = setTimeout(() => setPunchedOutSec(null), PUNCHED_OUT_MESSAGE_MS);
     return () => clearTimeout(t);
   }, [punchedOutSec]);
+
+  // A new notice (new key) shows at the marker for a few seconds.
+  const [prevNoticeKey, setPrevNoticeKey] = useState(notice?.key);
+  const [shownNoticeKey, setShownNoticeKey] = useState<number | null>(null);
+  if (prevNoticeKey !== notice?.key) {
+    setPrevNoticeKey(notice?.key);
+    setShownNoticeKey(notice?.key ?? null);
+  }
+
+  useEffect(() => {
+    if (shownNoticeKey === null) return;
+    const t = setTimeout(() => setShownNoticeKey(null), NOTICE_MS);
+    return () => clearTimeout(t);
+  }, [shownNoticeKey]);
 
   const punchedOutPct =
     punchedOutSec !== null
@@ -386,6 +407,18 @@ export const SessionRow = ({
           sx={{ ...hintTextSx, left: `calc(${punchedOutPct}% + 6px)` }}
         >
           Punched Out
+        </Box>
+      )}
+      {notice && shownNoticeKey === notice.key && (
+        <Box
+          component="span"
+          sx={{
+            ...hintTextSx,
+            left: `calc(${markerPct}% + 6px)`,
+            color: Colors.red,
+          }}
+        >
+          {notice.text}
         </Box>
       )}
     </Box>
