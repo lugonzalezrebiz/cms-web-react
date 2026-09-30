@@ -33,7 +33,7 @@ const Label = styled("p")({
   color: Colors.charcoalNavy,
 });
 
-const footerButtonStyle = { padding: "0 15px", height: "36px" };
+const footerButtonStyle = { padding: "0 15px", height: "30px" };
 
 const CustomerPunchDialog = ({
   open,
