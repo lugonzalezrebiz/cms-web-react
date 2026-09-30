@@ -14,6 +14,12 @@ interface Props {
   disabledTabs?: NavTab[];
 }
 
+// Tab labels always take two lines: the first word, then the rest.
+const twoLineLabel = (label: string) => {
+  const [first, ...rest] = label.split(" ");
+  return rest.length > 0 ? `${first}\n${rest.join(" ")}` : label;
+};
+
 const TimelineNavPopover = ({
   open,
   anchorEl,
@@ -100,11 +106,13 @@ const TimelineNavPopover = ({
                   lineHeight: 1.43,
                   fontFamily: Fonts.main,
                   alignItems: "center",
+                  // Honors the line break added by twoLineLabel.
+                  whiteSpace: "pre-line",
                 },
               }}
             >
               <img src={assetUrl(`${iconClass}.svg`)} alt={label} />
-              <span>{label}</span>
+              <span>{twoLineLabel(label)}</span>
             </Box>
           </Box>
         );
