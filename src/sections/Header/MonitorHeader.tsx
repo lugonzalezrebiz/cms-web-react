@@ -59,6 +59,16 @@ const markerStepItems = (imagesInterval: number): ShortcutItem[] => [
   },
 ];
 
+// Punches tabs: jump between session bars and delete one.
+const sessionBarItems: ShortcutItem[] = [
+  { keys: [textKey(mod, "14px"), arrowKey("left")], label: "Previous bar" },
+  { keys: [textKey(mod, "14px"), arrowKey("right")], label: "Next bar" },
+];
+const deleteBarItem: ShortcutItem = {
+  keys: [textKey("DEL", "12px")],
+  label: "Delete bar under marker on the selected line",
+};
+
 const goBackItem: ShortcutItem = {
   keys: [textKey(alt, "12px"), arrowKey("left")],
   label: "Go back",
@@ -123,22 +133,26 @@ const getComplianceShortcuts = (
 
 const getEmployeePunchesShortcuts = (imagesInterval: number): ShortcutItem[] => [
   ...markerStepItems(imagesInterval),
+  ...sessionBarItems,
   goBackItem,
   ...undoRedoItems,
   { keys: [textKey("+")], label: "Add employee" },
   { keys: [textKey("I")], label: "Punch in on the selected line" },
   { keys: [textKey("O")], label: "Punch out on the selected line" },
   { keys: [textKey("1-9, 0", "14px")], label: "Select employee line" },
+  deleteBarItem,
   ...playbackAndZoomItems,
 ];
 
 const getCustomerPunchesShortcuts = (imagesInterval: number): ShortcutItem[] => [
   ...markerStepItems(imagesInterval),
+  ...sessionBarItems,
   goBackItem,
   ...undoRedoItems,
   { keys: [textKey("I")], label: "Customer punch in on the selected line" },
   { keys: [textKey("O")], label: "Punch out a customer on the selected line" },
   { keys: [textKey("1-9, 0", "14px")], label: "Select line" },
+  deleteBarItem,
   ...playbackAndZoomItems,
 ];
 
