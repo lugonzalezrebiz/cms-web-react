@@ -5,6 +5,7 @@ import { hasReviewedTwin } from "../utils";
 import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
 import { getMaxZoom } from "../constants";
 import type { CameraEventPoint, FlatRow } from "../types";
+import type { SelectedBar } from "./useTimelineBodyState";
 
 interface UseTimelineKeyboardParams {
   selectableRows: FlatRow[];
@@ -62,6 +63,9 @@ interface UseTimelineKeyboardParams {
   completedSessions?: Record<number, { start: number; end: number }[]>;
   /** Session mode: Delete removes the bar that starts at `startSec` on `rowId`. */
   onDeleteSession?: (rowId: number, startSec: number) => void;
+  /** Session mode: the selected bar (clicked or reached with Ctrl+arrows). */
+  selectedBar?: SelectedBar | null;
+  setSelectedBar?: React.Dispatch<React.SetStateAction<SelectedBar | null>>;
 }
 
 // A session bar and the line that selects it; `end` is undefined while open.
@@ -108,6 +112,8 @@ export const useTimelineKeyboard = ({
   onAddRow,
   completedSessions,
   onDeleteSession,
+  selectedBar,
+  setSelectedBar,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
@@ -193,9 +199,12 @@ export const useTimelineKeyboard = ({
       .map(({ order: _order, ...bar }) => bar);
   }, [isSessionMode, flatRows, completedSessions, activeSessionStarts]);
 
-  // Bar the last Ctrl+arrow jumped to, so bars sharing a start second are
-  // stepped through one by one and Delete removes that exact bar.
-  const lastBarRef = useRef<{ rowId: number; start: number } | null>(null);
+  // Position of the selected bar among sessionBars (-1 if none / gone).
+  const selectedBarIndex = selectedBar
+    ? sessionBars.findIndex(
+        (b) => b.rowId === selectedBar.rowId && b.start === selectedBar.start,
+      )
+    : -1;
 
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
@@ -265,27 +274,12 @@ export const useTimelineKeyboard = ({
           return;
         }
         if (e.key === "Delete") {
-          if (iTrackId === null || !onDeleteSessionRef.current) return;
-          const sec = markerSec ?? timelineStartSec;
-          // The selected line's bars under the marker: the one Ctrl+arrow
-          // landed on, else the one starting there, else the latest one.
-          const underMarker = sessionBars.filter(
-            (b) =>
-              b.lineId === iTrackId &&
-              sec >= b.start &&
-              (b.end === undefined || sec <= b.end),
-          );
-          const last = lastBarRef.current;
-          const bar =
-            underMarker.find(
-              (b) => last && b.rowId === last.rowId && b.start === last.start,
-            ) ??
-            underMarker.find((b) => b.start === sec) ??
-            underMarker[underMarker.length - 1];
-          if (!bar) return;
+          // Only the selected bar is deleted, like a selected diamond.
+          const bar = sessionBars[selectedBarIndex];
+          if (!bar || !onDeleteSessionRef.current) return;
           e.preventDefault();
           onDeleteSessionRef.current(bar.rowId, bar.start);
-          lastBarRef.current = null;
+          setSelectedBar?.(null);
           // Deleting the line's own open bar leaves it punched out.
           if (bar.end === undefined && bar.rowId === iTrackId) {
             setSelectedTracks(new Set());
@@ -589,6 +583,8 @@ export const useTimelineKeyboard = ({
     isSessionMode,
     childRowIds,
     sessionBars,
+    selectedBarIndex,
+    setSelectedBar,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -619,13 +615,11 @@ export const useTimelineKeyboard = ({
         // Ctrl+arrows jump to the previous / next bar's start and select its line.
         if (e.ctrlKey || e.metaKey) {
           const base = markerSec ?? timelineStartSec;
-          const last = lastBarRef.current;
-          const current = sessionBars.findIndex(
-            (b) =>
-              b.start === base &&
-              b.lineId === iTrackId &&
-              (!last || (b.rowId === last.rowId && b.start === last.start)),
-          );
+          // From the selected bar while the marker is still on its start (so
+          // bars sharing a start second are stepped one by one), else from
+          // the marker.
+          const current =
+            sessionBars[selectedBarIndex]?.start === base ? selectedBarIndex : -1;
           const target =
             e.key === "ArrowRight"
               ? current >= 0
@@ -635,7 +629,7 @@ export const useTimelineKeyboard = ({
                 ? sessionBars[current - 1]
                 : [...sessionBars].reverse().find((b) => b.start < base);
           if (!target) return;
-          lastBarRef.current = { rowId: target.rowId, start: target.start };
+          setSelectedBar?.({ rowId: target.rowId, start: target.start });
           setMarkerSec(target.start);
           panTo(target.start);
           setITrackId(target.lineId);
@@ -759,6 +753,8 @@ export const useTimelineKeyboard = ({
     childRowIds,
     sessionBars,
     setSelectedTracks,
+    selectedBarIndex,
+    setSelectedBar,
   ]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────

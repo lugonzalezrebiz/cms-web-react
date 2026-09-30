@@ -36,6 +36,9 @@ interface SessionBarProps {
   visibleStart: number;
   visibleDuration: number;
   color: string;
+  isSelected?: boolean;
+  /** Makes the bar clickable (punches tabs), to select it. */
+  onSelect?: () => void;
 }
 
 const SessionBar = ({
@@ -43,11 +46,22 @@ const SessionBar = ({
   visibleStart,
   visibleDuration,
   color,
+  isSelected = false,
+  onSelect,
 }: SessionBarProps) => {
   const left = ((range.start - visibleStart) / visibleDuration) * 100;
   const width = ((range.end - range.start) / visibleDuration) * 100;
   return (
     <Box
+      onMouseDown={onSelect ? (e: MouseEvent) => e.stopPropagation() : undefined}
+      onClick={
+        onSelect
+          ? (e: MouseEvent) => {
+              e.stopPropagation();
+              onSelect();
+            }
+          : undefined
+      }
       sx={{
         position: "absolute",
         left: `${left}%`,
@@ -57,6 +71,11 @@ const SessionBar = ({
         height: 19,
         borderRadius: "8px",
         background: color,
+        // The rows layer ignores the mouse; selectable bars opt back in.
+        pointerEvents: onSelect ? "auto" : "none",
+        cursor: onSelect ? "pointer" : "default",
+        outline: isSelected ? `2px solid ${Colors.charcoalNavy}` : "none",
+        outlineOffset: "1px",
       }}
     />
   );
@@ -77,6 +96,10 @@ export interface SessionRowProps {
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   /** Moves the sub-row `rowId` under `parentId`. */
   onReassign?: (rowId: number, parentId: number) => void;
+  /** Start second of this row's selected bar, if it has one. */
+  selectedBarStart?: number;
+  /** Punches tabs: clicking one of this row's bars selects it. */
+  onSelectBar?: (rowId: number, start: number) => void;
 }
 
 export const SessionRow = ({
@@ -91,6 +114,8 @@ export const SessionRow = ({
   visibleDuration,
   reassignOptions,
   onReassign,
+  selectedBarStart,
+  onSelectBar,
 }: SessionRowProps) => {
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
@@ -213,6 +238,10 @@ export const SessionRow = ({
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
           color={Colors.lightSteelGray}
+          isSelected={selectedBarStart === range.start}
+          onSelect={
+            onSelectBar ? () => onSelectBar(row.id, range.start) : undefined
+          }
         />
       ))}
       {liveBar && (
@@ -221,6 +250,10 @@ export const SessionRow = ({
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
           color={Colors.vividOrange}
+          isSelected={selectedBarStart === liveBar.start}
+          onSelect={
+            onSelectBar ? () => onSelectBar(row.id, liveBar.start) : undefined
+          }
         />
       )}
       {showReassign && (
