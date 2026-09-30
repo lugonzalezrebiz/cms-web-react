@@ -23,6 +23,7 @@ type Range = { start: number; end: number };
 
 const OUTSIDE_PUNCH_TIME_NOTICE =
   "Not possible: outside the employee's punch-in time";
+const WALL_NOTICE = "Employee punched out here — punch out the customer first";
 
 interface Params {
   /** Current marker: where attendance changes happen. */
@@ -138,8 +139,10 @@ export const useCustomerPunchFlow = ({
   // A customer group can't be tracked past the punch-out of the employee
   // attending it: the earliest such punch-out among open groups is a wall the
   // marker can't pass. Employees still punched in (open session) set no limit.
-  const sessionWallSec = useMemo(() => {
+  // `wallRowId` is the row of the employee whose punch-out sets it.
+  const { sessionWallSec, wallRowId } = useMemo(() => {
     let wall: number | undefined;
+    let wallRowId: number | undefined;
     for (const group of groups) {
       const groupStart = openSessions[group.id];
       if (groupStart === undefined || group.parentRowId === UNATTENDED_ROW_ID)
@@ -151,9 +154,12 @@ export const useCustomerPunchFlow = ({
       const shift = (employeeClosedSessions[punchRowId] ?? []).find(
         (r) => groupStart >= r.start && groupStart <= r.end,
       );
-      if (shift && (wall === undefined || shift.end < wall)) wall = shift.end;
+      if (shift && (wall === undefined || shift.end < wall)) {
+        wall = shift.end;
+        wallRowId = group.parentRowId;
+      }
     }
-    return wall;
+    return { sessionWallSec: wall, wallRowId };
   }, [
     groups,
     openSessions,
@@ -193,6 +199,18 @@ export const useCustomerPunchFlow = ({
   // Message at the marker when "i" is pressed on an employee who isn't
   // punched in at that time.
   const [notice, setNotice] = useState<RowNotice | undefined>(undefined);
+
+  // While the marker sits on the wall, the employee whose punch-out sets it
+  // says why it can't go further.
+  const wallNotice = useMemo(
+    (): RowNotice | undefined =>
+      sessionWallSec !== undefined &&
+      wallRowId !== undefined &&
+      markerSec >= sessionWallSec
+        ? { rowId: wallRowId, text: WALL_NOTICE, key: 0, sticky: true }
+        : undefined,
+    [sessionWallSec, wallRowId, markerSec],
+  );
 
   // Returns false: the timeline shouldn't enter a punched-in state for this row.
   // Only opens for "Unattended" or an employee punched in at that time.
@@ -340,9 +358,10 @@ export const useCustomerPunchFlow = ({
       emptyGridMessage:
         groups.length === 0 ? CUSTOMERS_EMPTY_GRID_MESSAGE : undefined,
       rowSelectMarkerSec,
-      rowNotice: notice,
+      rowNotice: wallNotice ?? notice,
     }),
     [
+      wallNotice,
       rowSelectMarkerSec,
       notice,
       tracks,
