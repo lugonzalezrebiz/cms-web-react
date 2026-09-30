@@ -79,6 +79,11 @@ const TimelineNavPopover = ({
                 boxShadow: "0 1px 2px 0 rgba(16, 24, 40, 0.05)",
                 flexDirection: "column",
                 alignItems: "center",
+                // Design card: 100×77, 4px radius, 8px padding, 5px icon–label gap.
+                boxSizing: "border-box",
+                width: "100px",
+                height: "77px",
+                gap: "5px",
                 borderRadius: "4px",
                 cursor: isDisabled ? "not-allowed" : "pointer",
                 opacity: isDisabled ? 0.4 : 1,
@@ -94,7 +99,6 @@ const TimelineNavPopover = ({
                       "& img": { filter: "brightness(0) invert(1)" },
                     },
                 "& img": {
-                  mb: "7px",
                   filter: isSelected ? "brightness(0) invert(1)" : "none",
                 },
                 "& span": {
