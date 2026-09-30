@@ -18,7 +18,7 @@ import { useTimelineKeyboard } from "./timeline/hooks/useTimelineKeyboard";
 import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
 import { isOverlapsBlue } from "./timeline/utils";
-import type { RowNotice } from "./timeline/rows/SessionRow";
+import type { BarEdit, RowNotice } from "./timeline/rows/SessionRow";
 
 const NO_EVENT_POINTS: CameraEventPoint[] = [];
 
@@ -61,6 +61,8 @@ const TimeLine = ({
   onPunchIn,
   onPunchOut,
   onDeleteSession,
+  onUpdateSession,
+  getSessionBounds,
   rowSelectMarkerSec,
   rowNotice,
   reassignOptions,
@@ -123,6 +125,13 @@ const TimeLine = ({
   onPunchOut?: (rowId: number, endSec: number) => void;
   /** Punches tabs: Delete removes the bar starting at `startSec` on `rowId`. */
   onDeleteSession?: (rowId: number, startSec: number) => void;
+  /** Punches tabs: saves a bar whose ends were dragged (start `oldStart`). */
+  onUpdateSession?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  /** Punches tabs: how far a bar's ends may go (e.g. the employee's shift). */
+  getSessionBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
   /** Punches tabs: where the marker goes when a row is picked (list click or
    * digit), or undefined to leave it. */
   rowSelectMarkerSec?: (rowId: number) => number | undefined;
@@ -268,6 +277,26 @@ const TimeLine = ({
   useEffect(() => {
     if (isPunchesTab) scrollRowIntoViewRef.current(state.iTrackId);
   }, [isPunchesTab, state.iTrackId]);
+
+  // Punches tabs: a bar dragged by its ends is saved by the parent; if it was
+  // the selected one it stays selected under its new start.
+  const handleEditBar = (rowId: number, oldStart: number, next: BarEdit) => {
+    onUpdateSession?.(rowId, oldStart, next);
+    if (
+      state.selectedBar?.rowId === rowId &&
+      state.selectedBar.start === oldStart
+    ) {
+      state.setSelectedBar({ rowId, start: next.start });
+    }
+  };
+  // Its ends stay within the timeline and the parent's own limits.
+  const getEditBounds = (rowId: number, start: number) => {
+    const bounds = getSessionBounds?.(rowId, start);
+    return {
+      min: Math.max(timelineStartSec, bounds?.min ?? -Infinity),
+      max: Math.min(timelineEndSec, bounds?.max ?? Infinity),
+    };
+  };
 
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
@@ -656,6 +685,8 @@ const TimeLine = ({
         onSelectRow={isPunchesTab ? handleSelectRow : undefined}
         activeSubRowId={activeSubRowId}
         onSelectSubRow={isPunchesTab ? handleSelectSubRow : undefined}
+        onEditBar={isPunchesTab && onUpdateSession ? handleEditBar : undefined}
+        getEditBounds={getEditBounds}
       />
     </Box>
   );
