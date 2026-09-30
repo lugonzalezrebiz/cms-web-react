@@ -8,7 +8,7 @@ import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
 import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
-import { SessionRow, type RowNotice } from "./rows/SessionRow";
+import { SessionRow, type BarEdit, type RowNotice } from "./rows/SessionRow";
 import type { SelectedBar } from "./hooks/useTimelineBodyState";
 import { GridLines } from "./rows/GridLines";
 import Card from "../Card";
@@ -67,6 +67,13 @@ interface TimelineGridRowsProps {
   rowNotice?: RowNotice;
   /** Punches tabs: the sub-selected open sub-row. */
   activeSubRowId?: number | null;
+  /** Punches tabs: saves a bar dragged by its ends. */
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  /** Punches tabs: outer limits for a bar's ends. */
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
 
 export const TimelineGridRows = ({
@@ -113,6 +120,8 @@ export const TimelineGridRows = ({
   onSelectBar,
   rowNotice,
   activeSubRowId,
+  onEditBar,
+  getEditBounds,
 }: TimelineGridRowsProps) => {
   const selectedBarStartOf = (rowId: number) =>
     selectedBar?.rowId === rowId ? selectedBar.start : undefined;
@@ -300,6 +309,8 @@ export const TimelineGridRows = ({
                 visibleDuration={visibleDuration}
                 selectedBarStart={selectedBarStartOf(row.id)}
                 onSelectBar={onSelectBar}
+                onEditBar={onEditBar}
+                getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
               />
             ) : (
@@ -324,6 +335,8 @@ export const TimelineGridRows = ({
                   showPunchOutHint={row.id === activeSubRowId}
                   selectedBarStart={selectedBarStartOf(row.id)}
                   onSelectBar={onSelectBar}
+                  onEditBar={onEditBar}
+                  getEditBounds={getEditBounds}
                   notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
                 />
                 {/* Punches tabs (selectable bars) have no diamonds, and the

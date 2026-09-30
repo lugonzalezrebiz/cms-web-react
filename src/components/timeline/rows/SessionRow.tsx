@@ -1,5 +1,5 @@
 import { Box } from "@mui/system";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { Colors, Fonts } from "../../../theme";
 import { assetUrl } from "../../../utils";
 import DropDownMenu from "../../DropDownMenu";
@@ -44,7 +44,15 @@ interface SessionBarProps {
   isSelected?: boolean;
   /** Makes the bar clickable (punches tabs), to select it. */
   onSelect?: () => void;
+  /** While selected, its ends get drag handles like a range diamond's. */
+  onResizeStart?: (side: BarSide, e: MouseEvent) => void;
+  /** Open bars end at the marker, so only their start can be dragged. */
+  onlyStartResizable?: boolean;
 }
+
+type BarSide = "start" | "end";
+
+const BAR_HANDLE_PX = 10;
 
 const SessionBar = ({
   range,
@@ -53,9 +61,34 @@ const SessionBar = ({
   color,
   isSelected = false,
   onSelect,
+  onResizeStart,
+  onlyStartResizable = false,
 }: SessionBarProps) => {
   const left = ((range.start - visibleStart) / visibleDuration) * 100;
   const width = ((range.end - range.start) / visibleDuration) * 100;
+  const handle = (side: BarSide) => (
+    <Box
+      aria-label={side === "start" ? "Drag bar start" : "Drag bar end"}
+      onMouseDown={(e: MouseEvent) => onResizeStart?.(side, e)}
+      // Don't let the drag's click toggle the bar's selection.
+      onClick={(e: MouseEvent) => e.stopPropagation()}
+      sx={{
+        position: "absolute",
+        top: "50%",
+        left: side === "start" ? 0 : "100%",
+        width: BAR_HANDLE_PX,
+        height: BAR_HANDLE_PX,
+        transform: "translate(-50%, -50%) rotate(45deg)",
+        bgcolor: color,
+        border: `1.5px solid ${Colors.white}`,
+        boxSizing: "border-box",
+        cursor: "ew-resize",
+        pointerEvents: "auto",
+        zIndex: 2,
+      }}
+    />
+  );
+  const showHandles = isSelected && onResizeStart !== undefined;
   return (
     <Box
       onMouseDown={onSelect ? (e: MouseEvent) => e.stopPropagation() : undefined}
@@ -86,9 +119,18 @@ const SessionBar = ({
         // Drawn above its neighbors, as selected diamonds are.
         zIndex: isSelected ? 1 : "auto",
       }}
-    />
+    >
+      {showHandles && handle("start")}
+      {showHandles && !onlyStartResizable && handle("end")}
+    </Box>
   );
 };
+
+/** A bar's new bounds; `end` is left out for an open bar. */
+export type BarEdit = { start: number; end?: number };
+
+// Bars can't shrink below this.
+const MIN_BAR_SEC = 1;
 
 export interface SessionRowProps {
   row: FlatRow;
@@ -115,6 +157,13 @@ export interface SessionRowProps {
   isSubSelected?: boolean;
   /** Show "Press o to punch-out" while open (only the sub-selected sub-row). */
   showPunchOutHint?: boolean;
+  /** Punches tabs: dragging a selected bar's ends saves its new bounds here. */
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  /** Outer limits for a bar's ends (timeline span, attendance rules). */
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
 
 /** A short message for one row, shown again whenever `key` changes. */
@@ -143,7 +192,10 @@ export const SessionRow = ({
   notice,
   isSubSelected = false,
   showPunchOutHint = true,
+  onEditBar,
+  getEditBounds,
 }: SessionRowProps) => {
+  const rowRef = useRef<HTMLDivElement | null>(null);
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
   // let currentIn: number | null = null;
@@ -159,9 +211,114 @@ export const SessionRow = ({
   // === NEW: sessions created by dragging on the timeline ===
   const frozen = completedSessions[row.id] ?? [];
   const sessionStart = activeSessionStarts[row.id];
+
+  // Dragging a selected bar's end: a live preview, saved once on release so
+  // it's a single undo step. Limits: the row's other bars, a minimum length,
+  // the marker for an open bar, and the outer bounds from getEditBounds.
+  const [drag, setDrag] = useState<
+    | (BarEdit & { originalStart: number; originalEnd?: number; side: BarSide })
+    | null
+  >(null);
+  const dragRef = useRef(drag);
+  const dragLimitsRef = useRef({ min: -Infinity, max: Infinity });
+
+  const beginResize = (
+    range: { start: number; end?: number },
+    side: BarSide,
+    e: MouseEvent,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const bounds = getEditBounds?.(row.id, range.start);
+    const others = [
+      ...frozen.filter((r) => r.start !== range.start),
+      ...(sessionStart !== undefined && sessionStart !== range.start
+        ? [{ start: sessionStart, end: Infinity }]
+        : []),
+    ];
+    const barEnd = range.end ?? resolvedMarkerSec;
+    const prevEnd = Math.max(
+      -Infinity,
+      ...others.filter((r) => r.end <= range.start).map((r) => r.end),
+    );
+    const nextStart = Math.min(
+      Infinity,
+      ...others.filter((r) => r.start >= barEnd).map((r) => r.start),
+    );
+    dragLimitsRef.current =
+      side === "start"
+        ? {
+            min: Math.max(prevEnd, bounds?.min ?? -Infinity),
+            max: barEnd - MIN_BAR_SEC,
+          }
+        : {
+            min: range.start + MIN_BAR_SEC,
+            max: Math.min(nextStart, bounds?.max ?? Infinity),
+          };
+    const next = {
+      ...range,
+      originalStart: range.start,
+      originalEnd: range.end,
+      side,
+    };
+    dragRef.current = next;
+    setDrag(next);
+  };
+
+  const isDragging = drag !== null;
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      const current = dragRef.current;
+      const rect = rowRef.current?.getBoundingClientRect();
+      if (!current || !rect || rect.width === 0) return;
+      const raw =
+        visibleStart + ((e.clientX - rect.left) / rect.width) * visibleDuration;
+      const { min, max } = dragLimitsRef.current;
+      const sec = Math.round(Math.max(min, Math.min(max, raw)));
+      const next =
+        current.side === "start"
+          ? { ...current, start: sec }
+          : { ...current, end: sec };
+      dragRef.current = next;
+      setDrag(next);
+    };
+    const handleMouseUp = () => {
+      const current = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      if (!current) return;
+      const changed =
+        current.start !== current.originalStart ||
+        current.end !== current.originalEnd;
+      if (changed) {
+        onEditBar?.(row.id, current.originalStart, {
+          start: current.start,
+          end: current.end,
+        });
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, visibleStart, visibleDuration, onEditBar, row.id]);
+
+  // Bars as drawn: the one being dragged shows its preview bounds.
+  const shownRange = (range: { start: number; end: number }) =>
+    drag && drag.originalStart === range.start && drag.end !== undefined
+      ? { start: drag.start, end: drag.end }
+      : range;
+  const shownOpenStart =
+    drag && drag.originalStart === sessionStart && drag.end === undefined
+      ? drag.start
+      : sessionStart;
+
   const liveBar =
-    sessionStart !== undefined && resolvedMarkerSec > sessionStart
-      ? { start: sessionStart, end: resolvedMarkerSec }
+    shownOpenStart !== undefined && resolvedMarkerSec > shownOpenStart
+      ? { start: shownOpenStart, end: resolvedMarkerSec }
       : null;
   const markerPct =
     ((resolvedMarkerSec - visibleStart) / visibleDuration) * 100;
@@ -246,6 +403,7 @@ export const SessionRow = ({
 
   return (
     <Box
+      ref={rowRef}
       sx={{
         position: "absolute",
         top: rowIndex * ROW_HEIGHT,
@@ -281,7 +439,7 @@ export const SessionRow = ({
       {frozen.map((range, i) => (
         <SessionBar
           key={i}
-          range={range}
+          range={shownRange(range)}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
           // A selected punched-out bar turns a darker grey so it stands out.
@@ -294,18 +452,28 @@ export const SessionRow = ({
           onSelect={
             onSelectBar ? () => onSelectBar(row.id, range.start) : undefined
           }
+          onResizeStart={
+            onEditBar ? (side, e) => beginResize(range, side, e) : undefined
+          }
         />
       ))}
-      {liveBar && (
+      {liveBar && sessionStart !== undefined && (
         <SessionBar
           range={liveBar}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
           color={Colors.vividOrange}
-          isSelected={selectedBarStart === liveBar.start}
+          // Keyed by its saved start, so dragging it keeps it selected.
+          isSelected={selectedBarStart === sessionStart}
           onSelect={
-            onSelectBar ? () => onSelectBar(row.id, liveBar.start) : undefined
+            onSelectBar ? () => onSelectBar(row.id, sessionStart) : undefined
           }
+          onResizeStart={
+            onEditBar
+              ? (side, e) => beginResize({ start: sessionStart }, side, e)
+              : undefined
+          }
+          onlyStartResizable
         />
       )}
       {showReassign && (
