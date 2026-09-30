@@ -6,6 +6,7 @@ import { TimelineRowList } from "./TimelineRowList";
 import { TimelineTimeRuler } from "./TimelineTimeRuler";
 import { TimelineGridRows } from "./TimelineGridRows";
 import { TimelineMarker } from "./TimelineMarker";
+import type { SelectedBar } from "./hooks/useTimelineBodyState";
 
 export interface TimelineBodyViewProps {
   flatRows: FlatRow[];
@@ -65,6 +66,8 @@ export interface TimelineBodyViewProps {
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   onReassignRow?: (rowId: number, parentId: number) => void;
   emptyGridMessage?: React.ReactNode;
+  selectedBar?: SelectedBar | null;
+  onSelectBar?: (rowId: number, start: number) => void;
 }
 
 const TimelineBody = ({
@@ -122,6 +125,8 @@ const TimelineBody = ({
   reassignOptions,
   onReassignRow,
   emptyGridMessage,
+  selectedBar,
+  onSelectBar,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -218,6 +223,8 @@ const TimelineBody = ({
           reassignOptions={reassignOptions}
           onReassignRow={onReassignRow}
           emptyGridMessage={emptyGridMessage}
+          selectedBar={selectedBar}
+          onSelectBar={onSelectBar}
         />
 
         {!loadState && (
