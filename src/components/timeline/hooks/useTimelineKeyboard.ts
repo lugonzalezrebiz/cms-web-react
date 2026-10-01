@@ -312,7 +312,9 @@ export const useTimelineKeyboard = ({
           const step = e.key === "ArrowDown" ? 1 : -1;
           const next = (current + 1 + step + stops) % stops;
           if (next === 0) {
+            // Back on the line itself: no sub-row picked.
             setSelectedBar?.(null);
+            setSelectedSubRowId?.(null);
             return;
           }
           const bar = subRowBars[next - 1];
