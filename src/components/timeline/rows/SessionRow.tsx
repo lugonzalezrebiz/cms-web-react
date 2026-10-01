@@ -326,17 +326,26 @@ export const SessionRow = ({
   const markerPct =
     ((resolvedMarkerSec - visibleStart) / visibleDuration) * 100;
 
-  // Parent mirror of the sub-rows' sessions: growing ones in light orange,
-  // punched-out ones grey like the sub-row itself.
-  const childClosed = (childRowIds ?? []).flatMap(
-    (id) => completedSessions[id] ?? [],
-  );
-  const childLive = (childRowIds ?? []).flatMap((id) => {
+  // Parent mirror of the sub-rows' sessions: one block per stretch covered by
+  // any of them (overlaps merged), so they never pile up on each other.
+  const childRanges = (childRowIds ?? []).flatMap((id) => {
     const start = activeSessionStarts[id];
-    return start !== undefined && resolvedMarkerSec > start
-      ? [{ start, end: resolvedMarkerSec }]
-      : [];
+    return [
+      ...(completedSessions[id] ?? []),
+      ...(start !== undefined && resolvedMarkerSec > start
+        ? [{ start, end: resolvedMarkerSec }]
+        : []),
+    ];
   });
+  const childBlocks: { start: number; end: number }[] = [];
+  for (const range of [...childRanges].sort((a, b) => a.start - b.start)) {
+    const last = childBlocks[childBlocks.length - 1];
+    if (last && range.start <= last.end) {
+      last.end = Math.max(last.end, range.end);
+    } else {
+      childBlocks.push({ ...range });
+    }
+  }
 
   // A punch-out = the open session closed and a new frozen bar appeared (an
   // undone punch-in only removes the open session, so it doesn't count).
@@ -419,8 +428,8 @@ export const SessionRow = ({
             : "transparent",
       }}
     >
-      {childClosed.map((range, i) => {
-        // The selected line's bar under the marker reads as selected (orange),
+      {childBlocks.map((range, i) => {
+        // The selected line's block under the marker reads as selected,
         // until ↑/↓ moves the selection into one of its sub-rows.
         const isLineBar =
           highlightChildBars &&
@@ -428,25 +437,17 @@ export const SessionRow = ({
           resolvedMarkerSec <= range.end;
         return (
           <SessionBar
-            key={`child-closed-${i}`}
+            key={`child-block-${i}`}
             range={range}
             visibleStart={visibleStart}
             visibleDuration={visibleDuration}
-            // Otherwise a shade darker than the sub-row's own grey bar.
-            color={isLineBar ? Colors.vividOrange : Colors.softSlate}
+            // One colour for now (pending design): the light orange of an
+            // open customer, the vivid one when selected.
+            color={isLineBar ? Colors.vividOrange : Colors.lightOrange}
             isSelected={isLineBar}
           />
         );
       })}
-      {childLive.map((range, i) => (
-        <SessionBar
-          key={`child-live-${i}`}
-          range={range}
-          visibleStart={visibleStart}
-          visibleDuration={visibleDuration}
-          color={Colors.lightOrange}
-        />
-      ))}
       {/* Punched-out bars are grey; the one still growing stays orange. */}
       {frozen.map((range, i) => (
         <SessionBar
