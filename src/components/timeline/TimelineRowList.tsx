@@ -68,7 +68,12 @@ const RowItem = ({
         onSelectRow?.(row.id);
       };
 
+  // Customer punches groups: no number, name aligned with the parent's name.
+  const isCustomerSubRow = isEventSubRow && row.category === "customers";
+
   const bgColor = () => {
+    // Customer groups are white; only the selected one gets the cream tint.
+    if (isCustomerSubRow) return isSubSelected ? Colors.blushWhite : "transparent";
     if (isEventSubRow && isSubSelected) return Colors.transparentVividOrange;
     if (isEventSubRow)
       return isActive || isEventWithActiveParent
@@ -104,7 +109,9 @@ const RowItem = ({
         display: "flex",
         alignItems: "center",
         gap: isEventSubRow ? 0 : 1.5,
-        pl: isEventSubRow ? "50px" : "8px",
+        // A customer group's name starts where its parent's does (8px
+        // padding + 20px number + 12px gap).
+        pl: isCustomerSubRow ? "40px" : isEventSubRow ? "50px" : "8px",
         pr: "8px",
         py: "6px",
         cursor: "pointer",
@@ -147,9 +154,6 @@ const RowItem = ({
       )}
       <Box
         sx={{
-          // Customer groups carry no number: the badge keeps its space only.
-          visibility:
-            isEventSubRow && row.category === "customers" ? "hidden" : "visible",
           bgcolor: bgColorNumber,
           color: textColorNumber,
           height: "20px",
@@ -157,7 +161,8 @@ const RowItem = ({
           textAlign: "center",
           borderRadius: "50px",
           fontSize: "12px",
-          display: "flex",
+          // Customer groups carry no number.
+          display: isCustomerSubRow ? "none" : "flex",
           alignItems: "center",
           justifyContent: "center",
           fontWidth: 700,
@@ -201,8 +206,8 @@ interface TimelineRowListProps {
   showAddButton?: boolean;
   /** Called when a click selects a row (not when it deselects one). */
   onSelectRow?: (rowId: number) => void;
-  /** Punches tabs: the sub-selected open sub-row, highlighted. */
-  activeSubRowId?: number | null;
+  /** Punches tabs: the picked sub-row (↑/↓, click), with the cream tint. */
+  highlightedSubRowId?: number | null;
   /** Punches tabs: clicking an open sub-row sub-selects it. */
   onSelectSubRow?: (rowId: number) => void;
 }
@@ -222,7 +227,7 @@ export const TimelineRowList = ({
   emptyMessage = "Empty",
   showAddButton = false,
   onSelectRow,
-  activeSubRowId,
+  highlightedSubRowId,
   onSelectSubRow,
 }: TimelineRowListProps) => {
   // Sub-rows (kind "event") don't take a number, so the numbers shown match
@@ -318,7 +323,7 @@ export const TimelineRowList = ({
             setITrackId={setITrackId}
             setSelectedTracks={setSelectedTracks}
             onSelectRow={onSelectRow}
-            isSubSelected={row.id === activeSubRowId}
+            isSubSelected={row.id === highlightedSubRowId}
             onSelectSubRow={onSelectSubRow}
           />
         ))}
