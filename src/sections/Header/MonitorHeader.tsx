@@ -22,7 +22,9 @@ import type { NavigationAssignment } from "../../pages/Assignments/hooks/useAssi
 import {
   useMonitorState,
   useCameraGroup,
+  useTimelineTab,
 } from "../../contexts/useMonitorContext";
+import type { NavTab } from "../../components/timeline/types";
 import Button from "../../components/Button";
 import ToggleButton from "../../components/ToggleButton";
 import CustomTrackerDialog from "./CustomTrackerDialog";
@@ -38,108 +40,139 @@ const isMac =
 const mod = isMac ? "⌘" : "Ctrl";
 const alt = isMac ? "⌥" : "Alt";
 
-const getKeyboardShortcuts = (
+type ShortcutItem = KeyboardMenuData["items"][number];
+
+const textKey = (label: string, fontSize = "16px") =>
+  ({ type: "text", label, fontSize }) as const;
+const arrowKey = (dir: "left" | "right") =>
+  ({ type: "img", src: `./assets/arrow-narrow-${dir}.svg` }) as const;
+
+// Shortcuts every timeline tab shares.
+const markerStepItems = (imagesInterval: number): ShortcutItem[] => [
+  {
+    keys: [arrowKey("left")],
+    label: `Move marker back ${imagesInterval} sec`,
+  },
+  {
+    keys: [arrowKey("right")],
+    label: `Move marker forward ${imagesInterval} sec`,
+  },
+];
+
+// Punches tabs: jump between session bars and delete one.
+const sessionBarItems: ShortcutItem[] = [
+  { keys: [textKey(mod, "14px"), arrowKey("left")], label: "Previous bar" },
+  { keys: [textKey(mod, "14px"), arrowKey("right")], label: "Next bar" },
+];
+const deleteBarItem: ShortcutItem = {
+  keys: [textKey("DEL", "12px")],
+  label: "Delete selected bar",
+};
+
+const goBackItem: ShortcutItem = {
+  keys: [textKey(alt, "12px"), arrowKey("left")],
+  label: "Go back",
+};
+
+const undoRedoItems: ShortcutItem[] = [
+  { keys: [textKey(mod, "14px"), textKey("Z")], label: "Undo" },
+  { keys: [textKey(mod, "14px"), textKey("Y")], label: "Redo" },
+];
+
+const playbackAndZoomItems: ShortcutItem[] = [
+  { keys: [textKey("H")], label: "Move to start" },
+  { keys: [textKey("Space", "12px")], label: "Play / Pause" },
+  { keys: [textKey(mod, "14px"), textKey("+")], label: "Zoom in" },
+  { keys: [textKey(mod, "14px"), textKey("-")], label: "Zoom out" },
+];
+
+const getComplianceShortcuts = (
   imagesInterval: number,
   activeTracker?: { mode: "POINT" | "RANGE"; values: string[] },
-): KeyboardMenuData => {
+): ShortcutItem[] => {
   const isPointDual =
     activeTracker?.mode === "POINT" && activeTracker.values.length === 2;
   const isRange = activeTracker?.mode === "RANGE";
 
-  const ioItems: KeyboardMenuData["items"] = isPointDual
+  const ioItems: ShortcutItem[] = isPointDual
     ? [
-        {
-          keys: [{ type: "text", label: "I", fontSize: "16px" }],
-          label: activeTracker.values[0],
-        },
-        {
-          keys: [{ type: "text", label: "O", fontSize: "16px" }],
-          label: activeTracker.values[1],
-        },
+        { keys: [textKey("I")], label: activeTracker.values[0] },
+        { keys: [textKey("O")], label: activeTracker.values[1] },
       ]
     : isRange
       ? [
           {
-            keys: [{ type: "text", label: "I", fontSize: "16px" }],
+            keys: [textKey("I")],
             label: "Accept event point on the selected line",
           },
         ]
       : [];
 
-  return {
-    title: "Keyboard shortcuts",
-    items: [
-      {
-        keys: [{ type: "img", src: "./assets/arrow-narrow-left.svg" }],
-        label: `Move marker back ${imagesInterval} sec`,
-      },
-      {
-        keys: [{ type: "img", src: "./assets/arrow-narrow-right.svg" }],
-        label: `Move marker forward ${imagesInterval} sec`,
-      },
-      {
-        keys: [
-          { type: "text", label: mod, fontSize: "14px" },
-          { type: "img", src: "./assets/arrow-narrow-left.svg" },
-        ],
-        label: "Previous event point",
-      },
-      {
-        keys: [
-          { type: "text", label: mod, fontSize: "14px" },
-          { type: "img", src: "./assets/arrow-narrow-right.svg" },
-        ],
-        label: "Next event point",
-      },
-      {
-        keys: [
-          { type: "text", label: alt, fontSize: "12px" },
-          { type: "img", src: "./assets/arrow-narrow-left.svg" },
-        ],
-        label: "Go back",
-      },
-      {
-        keys: [
-          { type: "text", label: mod, fontSize: "14px" },
-          { type: "text", label: "Z", fontSize: "16px" },
-        ],
-        label: "Undo",
-      },
-      {
-        keys: [
-          { type: "text", label: mod, fontSize: "14px" },
-          { type: "text", label: "Y", fontSize: "16px" },
-        ],
-        label: "Redo",
-      },
-      ...ioItems,
-      {
-        keys: [{ type: "text", label: "1-9, 0", fontSize: "14px" }],
-        label: "Select tracker line",
-      },
-      {
-        keys: [{ type: "text", label: "H", fontSize: "16px" }],
-        label: "Move to start",
-      },
-      {
-        keys: [{ type: "text", label: "DEL", fontSize: "12px" }],
-        label: "Delete event point under marker",
-      },
-      {
-        keys: [{ type: "text", label: "Space", fontSize: "12px" }],
-        label: "Play / Pause",
-      },
-      {
-        keys: [{ type: "text", label: "+", fontSize: "16px" }],
-        label: "Zoom in",
-      },
-      {
-        keys: [{ type: "text", label: "-", fontSize: "16px" }],
-        label: "Zoom out",
-      },
-    ],
-  };
+  return [
+    ...markerStepItems(imagesInterval),
+    {
+      keys: [textKey(mod, "14px"), arrowKey("left")],
+      label: "Previous event point",
+    },
+    {
+      keys: [textKey(mod, "14px"), arrowKey("right")],
+      label: "Next event point",
+    },
+    goBackItem,
+    ...undoRedoItems,
+    ...ioItems,
+    { keys: [textKey("1-9, 0", "14px")], label: "Select tracker line" },
+    { keys: [textKey("H")], label: "Move to start" },
+    {
+      keys: [textKey("DEL", "12px")],
+      label: "Delete event point under marker",
+    },
+    ...playbackAndZoomItems.slice(1),
+  ];
 };
+
+const getEmployeePunchesShortcuts = (imagesInterval: number): ShortcutItem[] => [
+  ...markerStepItems(imagesInterval),
+  ...sessionBarItems,
+  goBackItem,
+  ...undoRedoItems,
+  { keys: [textKey("+")], label: "Add employee" },
+  { keys: [textKey("I")], label: "Punch in on the selected line" },
+  { keys: [textKey("O")], label: "Punch out on the selected line" },
+  { keys: [textKey("1-9, 0", "14px")], label: "Select employee line" },
+  deleteBarItem,
+  ...playbackAndZoomItems,
+];
+
+const getCustomerPunchesShortcuts = (imagesInterval: number): ShortcutItem[] => [
+  ...markerStepItems(imagesInterval),
+  ...sessionBarItems,
+  goBackItem,
+  ...undoRedoItems,
+  { keys: [textKey("I")], label: "Customer punch in on the selected line" },
+  {
+    keys: [textKey("↑"), textKey("↓")],
+    label: "Select a customer on the selected line",
+  },
+  { keys: [textKey("O")], label: "Punch out the selected customer" },
+  { keys: [textKey("1-9, 0", "14px")], label: "Select line" },
+  deleteBarItem,
+  ...playbackAndZoomItems,
+];
+
+const getKeyboardShortcuts = (
+  imagesInterval: number,
+  activeTab: NavTab,
+  activeTracker?: { mode: "POINT" | "RANGE"; values: string[] },
+): KeyboardMenuData => ({
+  title: "Keyboard shortcuts",
+  items:
+    activeTab === "employees"
+      ? getEmployeePunchesShortcuts(imagesInterval)
+      : activeTab === "customers"
+        ? getCustomerPunchesShortcuts(imagesInterval)
+        : getComplianceShortcuts(imagesInterval, activeTracker),
+});
 
 const StyledContainer = styled("div")({
   display: "flex",
@@ -206,7 +239,12 @@ const MonitorHeader = ({
   const { singleTrackerID } = useTrackerGroupResolution();
   const { trackers } = useTrackers();
   const activeTracker = trackers.find((t) => t.id === singleTrackerID);
-  const keyboardShortcuts = getKeyboardShortcuts(imagesInterval, activeTracker);
+  const { activeTab } = useTimelineTab();
+  const keyboardShortcuts = getKeyboardShortcuts(
+    imagesInterval,
+    activeTab,
+    activeTracker,
+  );
   const assignment =
     navState?.assignment ??
     assignments.find((a) => a.monitoringID === monitoringID) ??

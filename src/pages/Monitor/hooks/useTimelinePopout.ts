@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import type { NavTab } from "../../../components/timeline/types";
 
 export const useTimelinePopout =(
   onMarkerChange: (sec: number) => void,
@@ -7,6 +8,8 @@ export const useTimelinePopout =(
   cameraGroup: string,
   trackerOption: string,
   customTrackerIDs: string[] = [],
+  activeTab: NavTab = "compliances",
+  onTabChange?: (tab: NavTab) => void,
 ) =>{
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
@@ -31,12 +34,16 @@ export const useTimelinePopout =(
   const cameraGroupRef = useRef(cameraGroup);
   const trackerOptionRef = useRef(trackerOption);
   const customTrackerIDsRef = useRef(customTrackerIDs);
+  const activeTabRef = useRef(activeTab);
+  const onTabChangeRef = useRef(onTabChange);
 
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; });
   useEffect(() => { markerTimeSecRef.current = markerTimeSec; }, [markerTimeSec]);
   useEffect(() => { cameraGroupRef.current = cameraGroup; }, [cameraGroup]);
   useEffect(() => { trackerOptionRef.current = trackerOption; }, [trackerOption]);
   useEffect(() => { customTrackerIDsRef.current = customTrackerIDs; }, [customTrackerIDs]);
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
+  useEffect(() => { onTabChangeRef.current = onTabChange; });
 
   useEffect(() => {
     if (!timelinePopped) return;
@@ -49,6 +56,9 @@ export const useTimelinePopout =(
         lastReceivedSecRef.current = e.data.sec as number;
         onMarkerChangeRef.current(e.data.sec as number);
       }
+      if (e.data?.type === "navTab" && e.data?.source === "popout") {
+        onTabChangeRef.current?.(e.data.tab as NavTab);
+      }
       if (e.data?.type === "request-sync") {
         const sec = markerTimeSecRef.current;
         if (sec !== null) {
@@ -60,6 +70,7 @@ export const useTimelinePopout =(
           trackerOption: trackerOptionRef.current,
           customTrackerIDs: customTrackerIDsRef.current,
         });
+        channel.postMessage({ type: "navTab", tab: activeTabRef.current, source: "monitor" });
       }
     });
 
@@ -79,6 +90,11 @@ export const useTimelinePopout =(
     if (!timelinePopped) return;
     channelRef.current?.postMessage({ type: "filter", cameraGroup, trackerOption, customTrackerIDs });
   }, [cameraGroup, trackerOption, customTrackerIDs, timelinePopped]);
+
+  useEffect(() => {
+    if (!timelinePopped) return;
+    channelRef.current?.postMessage({ type: "navTab", tab: activeTab, source: "monitor" });
+  }, [activeTab, timelinePopped]);
 
   const handlePopOut = useCallback(() => {
     if (popoutRef.current && !popoutRef.current.closed) {
