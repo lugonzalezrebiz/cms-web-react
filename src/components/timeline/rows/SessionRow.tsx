@@ -156,6 +156,9 @@ export interface SessionRowProps {
   isSubSelected?: boolean;
   /** Show "Press o to punch-out" while open (only the sub-selected sub-row). */
   showPunchOutHint?: boolean;
+  /** Punches tabs: this is the selected line and none of its sub-rows' bars is
+   * selected, so its mirror bar under the marker shows as selected. */
+  highlightChildBars?: boolean;
   /** Punches tabs: dragging a selected bar's ends saves its new bounds here. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Outer limits for a bar's ends (timeline span, attendance rules). */
@@ -193,6 +196,7 @@ export const SessionRow = ({
   showPunchOutHint = true,
   onEditBar,
   getEditBounds,
+  highlightChildBars = false,
 }: SessionRowProps) => {
   const rowRef = useRef<HTMLDivElement | null>(null);
   // === OLD: sessions preloaded from API rangeSessions ===
@@ -415,16 +419,25 @@ export const SessionRow = ({
             : "transparent",
       }}
     >
-      {childClosed.map((range, i) => (
-        <SessionBar
-          key={`child-closed-${i}`}
-          range={range}
-          visibleStart={visibleStart}
-          visibleDuration={visibleDuration}
-          // A shade darker than the sub-row's own grey bar.
-          color={Colors.softSlate}
-        />
-      ))}
+      {childClosed.map((range, i) => {
+        // The selected line's bar under the marker reads as selected (orange),
+        // until ↑/↓ moves the selection into one of its sub-rows.
+        const isLineBar =
+          highlightChildBars &&
+          resolvedMarkerSec >= range.start &&
+          resolvedMarkerSec <= range.end;
+        return (
+          <SessionBar
+            key={`child-closed-${i}`}
+            range={range}
+            visibleStart={visibleStart}
+            visibleDuration={visibleDuration}
+            // Otherwise a shade darker than the sub-row's own grey bar.
+            color={isLineBar ? Colors.vividOrange : Colors.softSlate}
+            isSelected={isLineBar}
+          />
+        );
+      })}
       {childLive.map((range, i) => (
         <SessionBar
           key={`child-live-${i}`}
