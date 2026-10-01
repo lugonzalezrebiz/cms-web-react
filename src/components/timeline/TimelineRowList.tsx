@@ -3,6 +3,7 @@ import { Colors, Fonts } from "../../theme";
 import type { FlatRow } from "./types";
 import Spinner from "../Spinner";
 import { Skeleton } from "@mui/material";
+import { assetUrl } from "../../utils";
 
 interface RowItemProps {
   row: FlatRow;
@@ -12,6 +13,9 @@ interface RowItemProps {
   activeSessionStarts: Record<number, number>;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
+  onSelectRow?: (rowId: number) => void;
+  isSubSelected: boolean;
+  onSelectSubRow?: (rowId: number) => void;
 }
 
 const RowItem = ({
@@ -22,6 +26,9 @@ const RowItem = ({
   activeSessionStarts,
   setITrackId,
   setSelectedTracks,
+  onSelectRow,
+  isSubSelected,
+  onSelectSubRow,
 }: RowItemProps) => {
   const isEventSubRow = row.kind === "event";
   const isActivityRow = row.kind === "activity";
@@ -35,18 +42,39 @@ const RowItem = ({
 
   const isActive = isSelected || isFocused;
 
+  // Punches tabs: an open sub-row (customer group) can be sub-selected.
+  const isSubSelectable =
+    isEventSubRow &&
+    onSelectSubRow !== undefined &&
+    activeSessionStarts[row.id] !== undefined;
+
   const handleClick = isEventSubRow
-    ? undefined
+    ? isSubSelectable
+      ? () => onSelectSubRow(row.id)
+      : undefined
     : () => {
+        // Employee rows toggle: clicking the selected one deselects it.
+        if (row.category === "employees" && iTrackId === row.id) {
+          setITrackId(null);
+          setSelectedTracks(new Set());
+          return;
+        }
         setITrackId(row.id);
         if (activeSessionStarts[row.id] !== undefined) {
           setSelectedTracks(new Set([row.id]));
         } else {
           setSelectedTracks(new Set());
         }
+        onSelectRow?.(row.id);
       };
 
+  // Customer punches groups: no number, name aligned with the parent's name.
+  const isCustomerSubRow = isEventSubRow && row.category === "customers";
+
   const bgColor = () => {
+    // Customer groups are white; only the selected one gets the cream tint.
+    if (isCustomerSubRow) return isSubSelected ? Colors.blushWhite : "transparent";
+    if (isEventSubRow && isSubSelected) return Colors.transparentVividOrange;
     if (isEventSubRow)
       return isActive || isEventWithActiveParent
         ? Colors.blushWhite
@@ -58,6 +86,7 @@ const RowItem = ({
     if (isEventSubRow)
       return isActive || isEventWithActiveParent ? Colors.white : Colors.white;
     if (isActive) return Colors.white;
+    if (row.inactive) return Colors.silverGrey;
     return Colors.vividOrange;
   };
 
@@ -80,7 +109,9 @@ const RowItem = ({
         display: "flex",
         alignItems: "center",
         gap: isEventSubRow ? 0 : 1.5,
-        pl: isEventSubRow ? "50px" : "8px",
+        // A customer group's name starts where its parent's does (8px
+        // padding + 20px number + 12px gap).
+        pl: isCustomerSubRow ? "40px" : isEventSubRow ? "50px" : "8px",
         pr: "8px",
         py: "6px",
         cursor: "pointer",
@@ -98,7 +129,10 @@ const RowItem = ({
         transition: "background-color 150ms ease, color 150ms ease",
       }}
     >
-      {!isEventSubRow && !isActivityRow && (
+      {!isEventSubRow &&
+        !isActivityRow &&
+        row.category !== "employees" &&
+        row.category !== "customers" && (
         <Box
           sx={{
             width: "20px",
@@ -127,7 +161,8 @@ const RowItem = ({
           textAlign: "center",
           borderRadius: "50px",
           fontSize: "12px",
-          display: "flex",
+          // Customer groups carry no number.
+          display: isCustomerSubRow ? "none" : "flex",
           alignItems: "center",
           justifyContent: "center",
           fontWidth: 700,
@@ -167,6 +202,14 @@ interface TimelineRowListProps {
   onOpenDialog?: () => void;
   openDialog?: boolean;
   loadState?: boolean;
+  emptyMessage?: React.ReactNode;
+  showAddButton?: boolean;
+  /** Called when a click selects a row (not when it deselects one). */
+  onSelectRow?: (rowId: number) => void;
+  /** Punches tabs: the picked sub-row (↑/↓, click), with the cream tint. */
+  highlightedSubRowId?: number | null;
+  /** Punches tabs: clicking an open sub-row sub-selects it. */
+  onSelectSubRow?: (rowId: number) => void;
 }
 
 export const TimelineRowList = ({
@@ -181,7 +224,20 @@ export const TimelineRowList = ({
   setSelectedTracks,
   onOpenDialog,
   loadState,
+  emptyMessage = "Empty",
+  showAddButton = false,
+  onSelectRow,
+  highlightedSubRowId,
+  onSelectSubRow,
 }: TimelineRowListProps) => {
+  // Sub-rows (kind "event") don't take a number, so the numbers shown match
+  // the digit shortcuts, which only cycle through the selectable rows.
+  const rowNumbers = new Map<number, number>();
+  let position = 0;
+  for (const row of flatRows) {
+    if (row.kind !== "event") rowNumbers.set(row.id, position++);
+  }
+
   return (
     <Box
       sx={{
@@ -206,7 +262,8 @@ export const TimelineRowList = ({
           width: "100%",
           maxWidth: "245px",
           minWidth: "180px",
-          padding: "0 4px 0 8px",
+          padding: "0 8px",
+          boxSizing: "border-box",
           borderBottom: `1px solid ${Colors.lightGrayishBlue}`,
         }}
       >
@@ -230,9 +287,14 @@ export const TimelineRowList = ({
             </>
           )}
         </p>
-        <Box sx={{ cursor: "pointer", ml: "3px" }} onClick={onOpenDialog}>
-          {/* <img src="../assets/plus-1.svg" alt="Add row" /> */}
-        </Box>
+        {showAddButton && (
+          <Box
+            sx={{ cursor: "pointer", display: "flex", flexShrink: 0 }}
+            onClick={onOpenDialog}
+          >
+            <img src={assetUrl("plus-1.svg")} alt="Add row" />
+          </Box>
+        )}
       </Box>
 
       {/* List */}
@@ -250,16 +312,19 @@ export const TimelineRowList = ({
           "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {flatRows.map((row, i) => (
+        {flatRows.map((row) => (
           <RowItem
             key={row.id}
             row={row}
-            index={i + 1}
+            index={(rowNumbers.get(row.id) ?? 0) + 1}
             isSelected={selectedTracks.has(row.id)}
             iTrackId={iTrackId}
             activeSessionStarts={activeSessionStarts}
             setITrackId={setITrackId}
             setSelectedTracks={setSelectedTracks}
+            onSelectRow={onSelectRow}
+            isSubSelected={row.id === highlightedSubRowId}
+            onSelectSubRow={onSelectSubRow}
           />
         ))}
         {flatRows.filter((r) => r.kind !== "event").length === 0 && (
@@ -280,7 +345,7 @@ export const TimelineRowList = ({
             }}
           >
             {!loadState ? (
-              "Empty"
+              emptyMessage
             ) : (
               <>
                 <Spinner m="20px" />

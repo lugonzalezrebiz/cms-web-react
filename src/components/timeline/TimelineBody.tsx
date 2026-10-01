@@ -6,6 +6,8 @@ import { TimelineRowList } from "./TimelineRowList";
 import { TimelineTimeRuler } from "./TimelineTimeRuler";
 import { TimelineGridRows } from "./TimelineGridRows";
 import { TimelineMarker } from "./TimelineMarker";
+import type { SelectedBar } from "./hooks/useTimelineBodyState";
+import type { BarEdit, RowNotice } from "./rows/SessionRow";
 
 export interface TimelineBodyViewProps {
   flatRows: FlatRow[];
@@ -60,6 +62,24 @@ export interface TimelineBodyViewProps {
   loadState?: boolean;
   pendingReviewWallSec?: number;
   hasMultipleRows: boolean;
+  emptyRowsMessage?: React.ReactNode;
+  showAddButton?: boolean;
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  onReassignRow?: (rowId: number, parentId: number) => void;
+  emptyGridMessage?: React.ReactNode;
+  selectedBar?: SelectedBar | null;
+  onSelectBar?: (rowId: number, start: number) => void;
+  rowNotice?: RowNotice;
+  /** Called when a click in the list selects a row. */
+  onSelectRow?: (rowId: number) => void;
+  activeSubRowId?: number | null;
+  highlightedSubRowId?: number | null;
+  onSelectSubRow?: (rowId: number) => void;
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
 
 const TimelineBody = ({
@@ -112,6 +132,20 @@ const TimelineBody = ({
   loadState,
   pendingReviewWallSec,
   hasMultipleRows,
+  emptyRowsMessage,
+  showAddButton,
+  reassignOptions,
+  onReassignRow,
+  emptyGridMessage,
+  selectedBar,
+  onSelectBar,
+  rowNotice,
+  onSelectRow,
+  activeSubRowId,
+  highlightedSubRowId,
+  onSelectSubRow,
+  onEditBar,
+  getEditBounds,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -137,6 +171,11 @@ const TimelineBody = ({
         setITrackId={setITrackId}
         setSelectedTracks={setSelectedTracks}
         loadState={rowsLoadState}
+        emptyMessage={emptyRowsMessage}
+        showAddButton={showAddButton}
+        onSelectRow={onSelectRow}
+        highlightedSubRowId={highlightedSubRowId}
+        onSelectSubRow={onSelectSubRow}
       />
 
       <Box
@@ -203,6 +242,16 @@ const TimelineBody = ({
           loadState={loadState}
           pendingReviewWallSec={pendingReviewWallSec}
           hasMultipleRows={hasMultipleRows}
+          reassignOptions={reassignOptions}
+          onReassignRow={onReassignRow}
+          emptyGridMessage={emptyGridMessage}
+          selectedBar={selectedBar}
+          onSelectBar={onSelectBar}
+          rowNotice={rowNotice}
+          activeSubRowId={activeSubRowId}
+          highlightedSubRowId={highlightedSubRowId}
+          onEditBar={onEditBar}
+          getEditBounds={getEditBounds}
         />
 
         {!loadState && (
