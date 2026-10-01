@@ -236,6 +236,32 @@ const TimeLine = ({
         : [],
     [isPunchesTab, state.iTrackId, flatRows, activeSessionStarts],
   );
+  // The selected line's sub-row bars under the marker (punched-out ones that
+  // contain it, open ones that started before it), in list order: what ↑/↓
+  // step through.
+  const subRowBars = useMemo(() => {
+    const line = state.iTrackId;
+    if (!isPunchesTab || line === null) return [];
+    const marker = state.resolvedMarkerSec;
+    return flatRows
+      .filter((r) => r.kind === "event" && r.parentCameraId === line)
+      .flatMap((r) => {
+        const closed = (completedSessions[r.id] ?? [])
+          .filter((s) => marker >= s.start && marker <= s.end)
+          .map((s) => ({ rowId: r.id, start: s.start, isOpen: false }));
+        const openStart = activeSessionStarts[r.id];
+        return openStart !== undefined && marker >= openStart
+          ? [...closed, { rowId: r.id, start: openStart, isOpen: true }]
+          : closed;
+      });
+  }, [
+    isPunchesTab,
+    state.iTrackId,
+    state.resolvedMarkerSec,
+    flatRows,
+    completedSessions,
+    activeSessionStarts,
+  ]);
   let activeSubRowId: number | null = null;
   if (
     state.selectedSubRowId !== null &&
@@ -303,11 +329,12 @@ const TimeLine = ({
     };
   };
 
-  // Punches tabs: like a diamond, a punched-out bar of the selected line (or
-  // of its sub-rows) gets selected when the marker lands on it, and loses the
-  // selection when the marker leaves it. Only reacts to the marker moving or
-  // the line changing, so a bar picked by click isn't overridden. Open bars
-  // always reach the marker, so they're left to an explicit pick.
+  // Punches tabs: like a diamond, a punched-out bar of the selected line gets
+  // selected when the marker lands on it, and loses the selection when the
+  // marker leaves it. Sub-rows' bars (customer groups) aren't auto-picked: the
+  // line stays selected and ↑/↓ step into them. Only reacts to the marker
+  // moving or the line changing, so a bar picked by click isn't overridden.
+  // Open bars always reach the marker, so they're left to an explicit pick.
   const autoSelectBar = (markerMoved: boolean) => {
     const marker = state.resolvedMarkerSec;
     const line = state.iTrackId;
@@ -320,7 +347,7 @@ const TimeLine = ({
               .filter((r) => r.kind === "event" && r.parentCameraId === line)
               .map((r) => r.id),
           ];
-    const candidates = rowIds.flatMap((rowId) =>
+    const candidates = (line === null ? [] : [line]).flatMap((rowId) =>
       (completedSessions[rowId] ?? [])
         .filter((r) => marker >= r.start && marker <= r.end)
         .map((r) => ({ rowId, start: r.start })),
@@ -692,7 +719,7 @@ const TimeLine = ({
     selectedBar: state.selectedBar,
     setSelectedBar: state.setSelectedBar,
     onSelectRow: isPunchesTab ? handleSelectRow : undefined,
-    openSubRowIds,
+    subRowBars,
     activeSubRowId,
     setSelectedSubRowId: state.setSelectedSubRowId,
   });
