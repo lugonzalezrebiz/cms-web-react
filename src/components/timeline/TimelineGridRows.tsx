@@ -67,6 +67,8 @@ interface TimelineGridRowsProps {
   rowNotice?: RowNotice;
   /** Punches tabs: the sub-selected open sub-row. */
   activeSubRowId?: number | null;
+  /** Punches tabs: the picked sub-row (↑/↓, click), highlighted. */
+  highlightedSubRowId?: number | null;
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
@@ -120,6 +122,7 @@ export const TimelineGridRows = ({
   onSelectBar,
   rowNotice,
   activeSubRowId,
+  highlightedSubRowId,
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
@@ -340,7 +343,7 @@ export const TimelineGridRows = ({
                   onReassign={onReassignRow}
                   // Only the sub-selected sub-row is highlighted and shows
                   // the punch-out hint ("o" acts on it alone).
-                  isSubSelected={row.id === activeSubRowId}
+                  isSubSelected={row.id === highlightedSubRowId}
                   showPunchOutHint={row.id === activeSubRowId}
                   selectedBarStart={selectedBarStartOf(row.id)}
                   onSelectBar={onSelectBar}
