@@ -27,6 +27,9 @@ interface Props {
   hasPrevEventPoint?: boolean;
   hasNextEventPoint?: boolean;
   expanded?: boolean;
+  activeTab?: NavTab;
+  onTabChange?: (tab: NavTab) => void;
+  disabledTabs?: NavTab[];
 }
 
 const SmallSize = ({
@@ -47,8 +50,13 @@ const SmallSize = ({
   hasPrevEventPoint = false,
   hasNextEventPoint = false,
   expanded = false,
+  activeTab: controlledTab,
+  onTabChange,
+  disabledTabs,
 }: Props) => {
-  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
+  const [localTab, setLocalTab] = useState<NavTab>("compliances");
+  const activeTab = controlledTab ?? localTab;
+  const setActiveTab = onTabChange ?? setLocalTab;
   const navPopover = usePopover();
   const { imagesInterval } = useCompanyConfig();
 
@@ -80,6 +88,7 @@ const SmallSize = ({
             onClose={navPopover.handleClose}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            disabledTabs={disabledTabs}
           />
 
           <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
@@ -348,8 +357,13 @@ const NormalSize = ({
   hasPrevEventPoint = false,
   hasNextEventPoint = false,
   expanded = false,
+  activeTab: controlledTab,
+  onTabChange,
+  disabledTabs,
 }: Props) => {
-  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
+  const [localTab, setLocalTab] = useState<NavTab>("compliances");
+  const activeTab = controlledTab ?? localTab;
+  const setActiveTab = onTabChange ?? setLocalTab;
   const navPopover = usePopover();
   const { imagesInterval } = useCompanyConfig();
 
@@ -373,6 +387,7 @@ const NormalSize = ({
         onClose={navPopover.handleClose}
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        disabledTabs={disabledTabs}
       />
       <Grid
         container

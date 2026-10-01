@@ -10,7 +10,15 @@ interface Props {
   onClose: () => void;
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
+  /** Tabs shown but not selectable (e.g. Customer punches with no employees). */
+  disabledTabs?: NavTab[];
 }
+
+// Tab labels always take two lines: the first word, then the rest.
+const twoLineLabel = (label: string) => {
+  const [first, ...rest] = label.split(" ");
+  return rest.length > 0 ? `${first}\n${rest.join(" ")}` : label;
+};
 
 const TimelineNavPopover = ({
   open,
@@ -18,6 +26,7 @@ const TimelineNavPopover = ({
   onClose,
   activeTab,
   onTabChange,
+  disabledTabs = [],
 }: Props) => (
   <Popover
     open={open}
@@ -33,7 +42,7 @@ const TimelineNavPopover = ({
           p: "8px",
           boxShadow: "none",
           marginTop: "-10px",
-          marginLeft: "-8px",  
+          marginLeft: "-8px",
         },
       },
     }}
@@ -50,12 +59,15 @@ const TimelineNavPopover = ({
     >
       {NAV_TABS.map(({ id, label, iconClass }) => {
         const isSelected = id === activeTab;
+        const isDisabled = !isSelected && disabledTabs.includes(id);
         return (
           <Box
             component="li"
             key={id}
             sx={{ flex: 1 }}
+            aria-disabled={isDisabled || undefined}
             onClick={() => {
+              if (isDisabled) return;
               onTabChange(id);
               onClose();
             }}
@@ -67,18 +79,26 @@ const TimelineNavPopover = ({
                 boxShadow: "0 1px 2px 0 rgba(16, 24, 40, 0.05)",
                 flexDirection: "column",
                 alignItems: "center",
+                // Design card: 100×77, 4px radius, 8px padding, 5px icon–label gap.
+                boxSizing: "border-box",
+                width: "100px",
+                height: "77px",
+                gap: "5px",
                 borderRadius: "4px",
-                cursor: "pointer",
+                cursor: isDisabled ? "not-allowed" : "pointer",
+                opacity: isDisabled ? 0.4 : 1,
                 padding: "8px",
                 backgroundColor: isSelected ? Colors.vividOrange : Colors.white,
                 color: isSelected ? Colors.white : "inherit",
-                "&:hover": {
-                  backgroundColor: isSelected
-                    ? Colors.vividOrange
-                    : Colors.lightGrayishBlue,
-                },
+                // Hover looks like the selected tab (disabled tabs don't react).
+                "&:hover": isDisabled
+                  ? {}
+                  : {
+                      backgroundColor: Colors.vividOrange,
+                      color: Colors.white,
+                      "& img": { filter: "brightness(0) invert(1)" },
+                    },
                 "& img": {
-                  mb: "7px",
                   filter: isSelected ? "brightness(0) invert(1)" : "none",
                 },
                 "& span": {
@@ -90,11 +110,13 @@ const TimelineNavPopover = ({
                   lineHeight: 1.43,
                   fontFamily: Fonts.main,
                   alignItems: "center",
+                  // Honors the line break added by twoLineLabel.
+                  whiteSpace: "pre-line",
                 },
               }}
             >
               <img src={assetUrl(`${iconClass}.svg`)} alt={label} />
-              <span>{label}</span>
+              <span>{twoLineLabel(label)}</span>
             </Box>
           </Box>
         );
