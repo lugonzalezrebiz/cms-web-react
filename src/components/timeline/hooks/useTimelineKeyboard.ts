@@ -68,8 +68,9 @@ interface UseTimelineKeyboardParams {
   setSelectedBar?: React.Dispatch<React.SetStateAction<SelectedBar | null>>;
   /** Session mode: called when a digit selects a row. */
   onSelectRow?: (rowId: number) => void;
-  /** Session mode: open sub-rows of the selected line, in list order. */
-  openSubRowIds?: number[];
+  /** Session mode: the selected line's sub-row bars under the marker, in
+   * list order (↑/↓ step through them). */
+  subRowBars?: { rowId: number; start: number; isOpen: boolean }[];
   /** Session mode: the sub-selected open sub-row ("o" punches it out). */
   activeSubRowId?: number | null;
   setSelectedSubRowId?: React.Dispatch<React.SetStateAction<number | null>>;
@@ -122,7 +123,7 @@ export const useTimelineKeyboard = ({
   selectedBar,
   setSelectedBar,
   onSelectRow,
-  openSubRowIds,
+  subRowBars,
   activeSubRowId,
   setSelectedSubRowId,
 }: UseTimelineKeyboardParams) => {
@@ -290,20 +291,33 @@ export const useTimelineKeyboard = ({
           if (rowId === iTrackId) setITrackId(null);
           return;
         }
-        // ↑/↓ move the sub-selection among the selected line's open sub-rows
-        // (wrapping around); without any they keep scrolling the list.
+        // ↑/↓ step from the selected line (no bar) through its sub-rows' bars
+        // under the marker and back, selecting each bar; an open one also
+        // becomes the sub-row "o" punches out. Without any they keep
+        // scrolling the list.
         if (
           (e.key === "ArrowUp" || e.key === "ArrowDown") &&
-          openSubRowIds &&
-          openSubRowIds.length > 0
+          subRowBars &&
+          subRowBars.length > 0
         ) {
           e.preventDefault();
-          const current =
-            activeSubRowId != null ? openSubRowIds.indexOf(activeSubRowId) : -1;
+          const current = subRowBars.findIndex(
+            (b) =>
+              selectedBar != null &&
+              b.rowId === selectedBar.rowId &&
+              b.start === selectedBar.start,
+          );
+          // Position 0 is the line itself, then one per sub-row bar.
+          const stops = subRowBars.length + 1;
           const step = e.key === "ArrowDown" ? 1 : -1;
-          const next =
-            (current + step + openSubRowIds.length) % openSubRowIds.length;
-          setSelectedSubRowId?.(openSubRowIds[next]);
+          const next = (current + 1 + step + stops) % stops;
+          if (next === 0) {
+            setSelectedBar?.(null);
+            return;
+          }
+          const bar = subRowBars[next - 1];
+          setSelectedBar?.({ rowId: bar.rowId, start: bar.start });
+          if (bar.isOpen) setSelectedSubRowId?.(bar.rowId);
           return;
         }
         if (e.key === "Delete") {
@@ -619,7 +633,8 @@ export const useTimelineKeyboard = ({
     sessionBars,
     selectedBarIndex,
     setSelectedBar,
-    openSubRowIds,
+    subRowBars,
+    selectedBar,
     activeSubRowId,
     setSelectedSubRowId,
   ]);
