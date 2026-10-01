@@ -371,6 +371,26 @@ const TimeLine = ({
     autoSelectBarRef.current(prev.marker !== state.resolvedMarkerSec);
   }, [isPunchesTab, state.resolvedMarkerSec, state.iTrackId]);
 
+  // Punches tabs: the toolbar's trash deletes the selected bar, like Delete.
+  const selectedBar = state.selectedBar;
+  const canDeleteBar =
+    onDeleteSession !== undefined &&
+    selectedBar !== null &&
+    ((completedSessions[selectedBar.rowId] ?? []).some(
+      (r) => r.start === selectedBar.start,
+    ) ||
+      activeSessionStarts[selectedBar.rowId] === selectedBar.start);
+  const handleDeleteBar = () => {
+    if (!canDeleteBar || selectedBar === null) return;
+    const wasOpen = activeSessionStarts[selectedBar.rowId] === selectedBar.start;
+    onDeleteSession?.(selectedBar.rowId, selectedBar.start);
+    state.setSelectedBar(null);
+    // Deleting the line's own open bar leaves it punched out.
+    if (wasOpen && selectedBar.rowId === state.iTrackId) {
+      state.setSelectedTracks(new Set());
+    }
+  };
+
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
     const parentId = flatRows.find((r) => r.id === rowId)?.parentCameraId;
@@ -685,8 +705,12 @@ const TimeLine = ({
         onRedo={onRedo}
         canUndo={canUndo}
         canRedo={canRedo}
-        onDeleteEventPoint={handleDeleteEventPoint}
-        canDelete={targetEventPoint?.reviewed === true}
+        onDeleteEventPoint={
+          isPunchesTab ? handleDeleteBar : handleDeleteEventPoint
+        }
+        canDelete={
+          isPunchesTab ? canDeleteBar : targetEventPoint?.reviewed === true
+        }
         onGoPrevEventPoint={handleGoToPrevEventPoint}
         onGoNextEventPoint={handleGoToNextEventPoint}
         hasPrevEventPoint={prevEventPoint !== undefined}
