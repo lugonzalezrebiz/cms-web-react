@@ -337,7 +337,13 @@ const TimeLine = ({
       );
       return;
     }
-    if (!markerMoved || selected === null) return;
+    if (selected === null) return;
+    // A selected bar always belongs to the selected line.
+    if (!isSelectedHere) {
+      state.setSelectedBar(null);
+      return;
+    }
+    if (!markerMoved) return;
     // The marker left the selected bar (an open one keeps reaching it).
     const range = completedSessions[selected.rowId]?.find(
       (r) => r.start === selected.start,
