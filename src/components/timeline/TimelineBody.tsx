@@ -73,6 +73,7 @@ export interface TimelineBodyViewProps {
   /** Called when a click in the list selects a row. */
   onSelectRow?: (rowId: number) => void;
   activeSubRowId?: number | null;
+  highlightedSubRowId?: number | null;
   onSelectSubRow?: (rowId: number) => void;
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   getEditBounds?: (
@@ -141,6 +142,7 @@ const TimelineBody = ({
   rowNotice,
   onSelectRow,
   activeSubRowId,
+  highlightedSubRowId,
   onSelectSubRow,
   onEditBar,
   getEditBounds,
@@ -172,7 +174,7 @@ const TimelineBody = ({
         emptyMessage={emptyRowsMessage}
         showAddButton={showAddButton}
         onSelectRow={onSelectRow}
-        activeSubRowId={activeSubRowId}
+        highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={onSelectSubRow}
       />
 
@@ -247,6 +249,7 @@ const TimelineBody = ({
           onSelectBar={onSelectBar}
           rowNotice={rowNotice}
           activeSubRowId={activeSubRowId}
+          highlightedSubRowId={highlightedSubRowId}
           onEditBar={onEditBar}
           getEditBounds={getEditBounds}
         />

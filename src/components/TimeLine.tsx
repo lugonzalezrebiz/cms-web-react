@@ -423,6 +423,22 @@ const TimeLine = ({
     }
   };
 
+  // The sub-row the user actually picked under the selected line: the one
+  // whose bar is selected (↑/↓, click), else an open one clicked in the list.
+  // Unlike activeSubRowId, there's no default — the line alone picks none.
+  const selectedBarRow =
+    state.selectedBar !== null
+      ? flatRows.find((r) => r.id === state.selectedBar?.rowId)
+      : undefined;
+  const highlightedSubRowId =
+    selectedBarRow?.kind === "event" &&
+    selectedBarRow.parentCameraId === state.iTrackId
+      ? selectedBarRow.id
+      : state.selectedSubRowId !== null &&
+          openSubRowIds.includes(state.selectedSubRowId)
+        ? state.selectedSubRowId
+        : null;
+
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
     const parentId = flatRows.find((r) => r.id === rowId)?.parentCameraId;
@@ -813,6 +829,7 @@ const TimeLine = ({
         rowNotice={isPunchesTab ? rowNotice : undefined}
         onSelectRow={isPunchesTab ? handleSelectRow : undefined}
         activeSubRowId={activeSubRowId}
+        highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={isPunchesTab ? handleSelectSubRow : undefined}
         onEditBar={isPunchesTab && onUpdateSession ? handleEditBar : undefined}
         getEditBounds={getEditBounds}
