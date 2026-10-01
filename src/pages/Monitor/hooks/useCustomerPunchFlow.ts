@@ -189,6 +189,14 @@ export const useCustomerPunchFlow = ({
     [groups, punchRowIds, employeeOpenSessions, employeeClosedSessions],
   );
 
+  // The marker can't go back before the latest start among open customers (a
+  // punch-in, or a hand-over to another row), so a bar still being built
+  // never ends before it begins.
+  const sessionFloorSec = useMemo(() => {
+    const starts = Object.values(openSessions);
+    return starts.length > 0 ? Math.max(...starts) : undefined;
+  }, [openSessions]);
+
   // Attendance menu options at the marker: rows that can't attend are disabled.
   const reassignOptionsAtMarker = useMemo(
     () =>
@@ -378,6 +386,7 @@ export const useCustomerPunchFlow = ({
       reassignOptions: reassignOptionsAtMarker,
       onReassignRow: handleChangeParent,
       sessionWallSec,
+      sessionFloorSec,
       emptyGridMessage:
         groups.length === 0 ? CUSTOMERS_EMPTY_GRID_MESSAGE : undefined,
       rowSelectMarkerSec,
@@ -402,6 +411,7 @@ export const useCustomerPunchFlow = ({
       reassignOptionsAtMarker,
       handleChangeParent,
       sessionWallSec,
+      sessionFloorSec,
       groups.length,
     ],
   );
