@@ -68,6 +68,7 @@ const TimeLine = ({
   reassignOptions,
   onReassignRow,
   sessionWallSec,
+  sessionFloorSec,
   emptyGridMessage,
 }: {
   cameraEventPoints?: CameraEventPoint[];
@@ -144,6 +145,9 @@ const TimeLine = ({
   /** Exact second the marker can't pass (e.g. an employee's punch-out while
    * one of their customers is still open). */
   sessionWallSec?: number;
+  /** Exact second the marker can't go back past (e.g. where a still-open
+   * customer was punched in or handed over). */
+  sessionFloorSec?: number;
   /** Hint centered over the grid while there's nothing recorded yet. */
   emptyGridMessage?: React.ReactNode;
 }) => {
@@ -199,6 +203,7 @@ const TimeLine = ({
     // The review wall only applies to Compliance violations' diamonds.
     pendingReviewWallSec: isPunchesTab ? undefined : pendingReviewWallSec,
     sessionWallSec,
+    sessionFloorSec,
     playWindowRef,
   });
 
