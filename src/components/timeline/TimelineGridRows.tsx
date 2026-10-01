@@ -312,6 +312,15 @@ export const TimelineGridRows = ({
                 onEditBar={onEditBar}
                 getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                // Punches tabs: the selected line, with no sub-row bar picked.
+                highlightChildBars={
+                  onSelectBar !== undefined &&
+                  row.id === iTrackId &&
+                  !(
+                    selectedBar &&
+                    childRowIdsByParent.get(row.id)?.includes(selectedBar.rowId)
+                  )
+                }
               />
             ) : (
               <Box
