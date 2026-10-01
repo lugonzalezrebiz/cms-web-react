@@ -2,12 +2,37 @@ import { useMemo } from "react";
 import useTrackerGrouping from "../../../hooks/useTrackerGrouping";
 import { useCameraGroup } from "../../../contexts/useMonitorContext";
 
+interface TrackerGroupState {
+  cameraGroup: string;
+  trackerOption: string;
+  customTrackerIDs: string[];
+  trackerGroupings: ReturnType<typeof useTrackerGrouping>["trackers"];
+  isTrackerGroupingsLoading: boolean;
+}
 
+// Camera group selection from the monitor context (main window).
 export function useTrackerGroupResolution() {
   const { cameraGroup, trackerOption, customTrackerIDs } = useCameraGroup();
   const { trackers: trackerGroupings, isLoading: isTrackerGroupingsLoading } =
     useTrackerGrouping();
+  return useTrackerGroupResolutionFor({
+    cameraGroup,
+    trackerOption,
+    customTrackerIDs,
+    trackerGroupings,
+    isTrackerGroupingsLoading,
+  });
+}
 
+// Same resolution for a camera group selection that comes from elsewhere
+// (e.g. the popped-out timeline, which receives it over BroadcastChannel).
+export function useTrackerGroupResolutionFor({
+  cameraGroup,
+  trackerOption,
+  customTrackerIDs,
+  trackerGroupings,
+  isTrackerGroupingsLoading,
+}: TrackerGroupState) {
   const isTrackerTab = cameraGroup === "tracker";
   const isCustomMode = cameraGroup === "__custom__";
   const isCameraGroup = cameraGroup.startsWith("cam_");
