@@ -28,6 +28,9 @@ interface UseTimelineBodyStateParams {
   // punch-out while one of their customers is still being tracked.
   // undefined means no restriction.
   sessionWallSec?: number;
+  // Exact limit the marker can't go back past, e.g. where a still-open
+  // customer was punched in or handed over. undefined means no restriction.
+  sessionFloorSec?: number;
   // When a diamond is selected, playback is scoped to reviewing just that clip (start,
   // end, and the position the marker snaps back to once playback finishes) instead of
   // the whole timeline. A ref (not a reactive value) because the window is derived from
@@ -43,6 +46,7 @@ export const useTimelineBodyState = ({
   firstActivitySec,
   pendingReviewWallSec,
   sessionWallSec,
+  sessionFloorSec,
   playWindowRef,
 }: UseTimelineBodyStateParams) => {
   const { imagesInterval } = useCompanyConfig();
@@ -196,10 +200,13 @@ export const useTimelineBodyState = ({
         if (markerWallSec !== undefined && candidate > markerWallSec) {
           return markerWallSec;
         }
+        if (sessionFloorSec !== undefined && candidate < sessionFloorSec) {
+          return sessionFloorSec;
+        }
         return candidate;
       });
     },
-    [markerWallSec],
+    [markerWallSec, sessionFloorSec],
   );
 
   useEffect(() => {
