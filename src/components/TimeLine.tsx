@@ -298,6 +298,73 @@ const TimeLine = ({
     };
   };
 
+  // Punches tabs: like a diamond, a punched-out bar of the selected line (or
+  // of its sub-rows) gets selected when the marker lands on it, and loses the
+  // selection when the marker leaves it. Only reacts to the marker moving or
+  // the line changing, so a bar picked by click isn't overridden. Open bars
+  // always reach the marker, so they're left to an explicit pick.
+  const autoSelectBar = (markerMoved: boolean) => {
+    const marker = state.resolvedMarkerSec;
+    const line = state.iTrackId;
+    const rowIds =
+      line === null
+        ? []
+        : [
+            line,
+            ...flatRows
+              .filter((r) => r.kind === "event" && r.parentCameraId === line)
+              .map((r) => r.id),
+          ];
+    const candidates = rowIds.flatMap((rowId) =>
+      (completedSessions[rowId] ?? [])
+        .filter((r) => marker >= r.start && marker <= r.end)
+        .map((r) => ({ rowId, start: r.start })),
+    );
+    const selected = state.selectedBar;
+    const isSelectedHere =
+      selected !== null && rowIds.includes(selected.rowId);
+    if (candidates.length > 0) {
+      const keep =
+        selected !== null &&
+        candidates.some(
+          (c) => c.rowId === selected.rowId && c.start === selected.start,
+        );
+      // A line change keeps a bar already picked on that line (e.g. a click).
+      if (keep || (!markerMoved && isSelectedHere)) return;
+      state.setSelectedBar(
+        candidates.find((c) => c.rowId === activeSubRowId) ??
+          candidates[candidates.length - 1],
+      );
+      return;
+    }
+    if (!markerMoved || selected === null) return;
+    // The marker left the selected bar (an open one keeps reaching it).
+    const range = completedSessions[selected.rowId]?.find(
+      (r) => r.start === selected.start,
+    );
+    const stillOn = range
+      ? marker >= range.start && marker <= range.end
+      : activeSessionStarts[selected.rowId] === selected.start;
+    if (!stillOn) state.setSelectedBar(null);
+  };
+  const autoSelectBarRef = useRef(autoSelectBar);
+  useEffect(() => {
+    autoSelectBarRef.current = autoSelectBar;
+  });
+  const prevAutoSelectRef = useRef<{ marker: number; line: number | null }>({
+    marker: state.resolvedMarkerSec,
+    line: state.iTrackId,
+  });
+  useEffect(() => {
+    const prev = prevAutoSelectRef.current;
+    prevAutoSelectRef.current = {
+      marker: state.resolvedMarkerSec,
+      line: state.iTrackId,
+    };
+    if (!isPunchesTab) return;
+    autoSelectBarRef.current(prev.marker !== state.resolvedMarkerSec);
+  }, [isPunchesTab, state.resolvedMarkerSec, state.iTrackId]);
+
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
     const parentId = flatRows.find((r) => r.id === rowId)?.parentCameraId;
