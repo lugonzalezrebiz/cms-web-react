@@ -74,6 +74,8 @@ interface UseTimelineKeyboardParams {
   /** Session mode: the sub-selected open sub-row ("o" punches it out). */
   activeSubRowId?: number | null;
   setSelectedSubRowId?: React.Dispatch<React.SetStateAction<number | null>>;
+  /** Session mode: number of the first row, for the digit shortcuts. */
+  rowNumberStart?: number;
 }
 
 // A session bar and the line that selects it; `end` is undefined while open.
@@ -126,6 +128,7 @@ export const useTimelineKeyboard = ({
   subRowBars,
   activeSubRowId,
   setSelectedSubRowId,
+  rowNumberStart = 1,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
@@ -336,8 +339,12 @@ export const useTimelineKeyboard = ({
           return;
         }
         if (/^[0-9]$/.test(e.key)) {
-          const position = e.key === "0" ? 10 : Number(e.key);
-          const row = selectableRows[position - 1];
+          // Digits match the numbers in the list: from rowNumberStart, with
+          // "0" as the 10th row when the list starts at 1.
+          const digit = Number(e.key);
+          const index =
+            rowNumberStart === 1 && digit === 0 ? 9 : digit - rowNumberStart;
+          const row = selectableRows[index];
           if (!row) return;
           setITrackId(row.id);
           setSelectedTracks(
@@ -639,6 +646,7 @@ export const useTimelineKeyboard = ({
     selectedBar,
     activeSubRowId,
     setSelectedSubRowId,
+    rowNumberStart,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────

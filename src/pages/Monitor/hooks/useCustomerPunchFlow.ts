@@ -14,6 +14,7 @@ import {
   CUSTOMERS_EMPTY_GRID_MESSAGE,
   CUSTOMER_EMPLOYEE_ROW_ID_BASE,
   UNATTENDED_ROW_ID,
+  BACK_ROOM_ROW_ID,
   type TimelineTabProps,
 } from "../constants";
 import { useCustomerPunches } from "./useCustomerPunches";
@@ -416,6 +417,102 @@ export const useCustomerPunchFlow = ({
     ],
   );
 
+  // Employee and Customer tab: two default lines, "Back Room" (no behaviour
+  // yet) and "Unattended" with its customer groups — the same groups, bars
+  // and undo history as Customer punches. Both read greyed out until picked.
+  const unattendedGroups = useMemo(
+    () => groups.filter((g) => g.parentRowId === UNATTENDED_ROW_ID),
+    [groups],
+  );
+  const employeesCustomersTracks = useMemo(
+    () => [
+      {
+        id: BACK_ROOM_ROW_ID,
+        name: "Back Room",
+        category: "customers" as const,
+        sessions: [],
+        inactive: true,
+      },
+      {
+        id: UNATTENDED_ROW_ID,
+        name: "Unattended",
+        category: "customers" as const,
+        sessions: [],
+        inactive: true,
+      },
+      ...unattendedGroups.map((g) => ({
+        id: g.id,
+        name: `Customer ${g.number} (${g.count})`,
+        category: "customers" as const,
+        sessions: [],
+        parentId: UNATTENDED_ROW_ID,
+      })),
+    ],
+    [unattendedGroups],
+  );
+
+  // Only Unattended punches customers in here; Back Room does nothing yet.
+  const handleOpenPunchHere = useCallback(
+    (rowId: number, sec: number) =>
+      rowId === UNATTENDED_ROW_ID ? handleOpenPunch(rowId, sec) : false,
+    [handleOpenPunch],
+  );
+
+  // Only this tab's own open customers hold the marker back.
+  const unattendedFloorSec = useMemo(() => {
+    const starts = unattendedGroups
+      .map((g) => openSessions[g.id])
+      .filter((s): s is number => s !== undefined);
+    return starts.length > 0 ? Math.max(...starts) : undefined;
+  }, [unattendedGroups, openSessions]);
+
+  const employeesCustomersTimelineProps = useMemo(
+    (): TimelineTabProps => ({
+      headerLabel: "Employees & Customers",
+      viewMode: "camera",
+      rowsLoadState: false,
+      rowTracks: employeesCustomersTracks,
+      // Back Room is 0, Unattended 1 (and their digit shortcuts).
+      rowNumberStart: 0,
+      activeSessionStarts: openSessions,
+      completedSessions: closedSessions,
+      onPunchIn: handleOpenPunchHere,
+      onPunchOut: punchOut,
+      onDeleteSession: deleteSession,
+      onUpdateSession: updateSession,
+      getSessionBounds,
+      onUndo: undo,
+      onRedo: redo,
+      canUndo,
+      canRedo,
+      reassignOptions: reassignOptionsAtMarker,
+      onReassignRow: handleChangeParent,
+      sessionFloorSec: unattendedFloorSec,
+      emptyGridMessage:
+        unattendedGroups.length === 0 ? CUSTOMERS_EMPTY_GRID_MESSAGE : undefined,
+      rowNotice: notice,
+    }),
+    [
+      employeesCustomersTracks,
+      openSessions,
+      closedSessions,
+      handleOpenPunchHere,
+      punchOut,
+      deleteSession,
+      updateSession,
+      getSessionBounds,
+      undo,
+      redo,
+      canUndo,
+      canRedo,
+      reassignOptionsAtMarker,
+      handleChangeParent,
+      unattendedFloorSec,
+      unattendedGroups.length,
+      notice,
+    ],
+  );
+
   const punchDialogProps: ComponentProps<typeof CustomerPunchDialog> = {
     open: punchTarget !== null && !isReEnterOpen,
     onClose: handleClosePunch,
@@ -441,5 +538,10 @@ export const useCustomerPunchFlow = ({
     onConfirm: handleConfirmReEnter,
   };
 
-  return { timelineProps, punchDialogProps, reEnterDialogProps };
+  return {
+    timelineProps,
+    employeesCustomersTimelineProps,
+    punchDialogProps,
+    reEnterDialogProps,
+  };
 };
