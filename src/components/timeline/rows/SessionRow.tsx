@@ -185,6 +185,9 @@ export interface SessionRowProps {
   /** Text next to the marker while this row's bar is open, replacing
    * "Press o to punch-out". */
   openHint?: ReactNode;
+  /** Text next to the marker while this row is the selected line (and has
+   * no open bar of its own), e.g. "Press i to Punch-in a customer". */
+  selectedHint?: ReactNode;
   /** Punches tabs: dragging a selected bar's ends saves its new bounds here. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Outer limits for a bar's ends (timeline span, attendance rules). */
@@ -224,6 +227,7 @@ export const SessionRow = ({
   getEditBounds,
   highlightChildBars = false,
   openHint,
+  selectedHint,
 }: SessionRowProps) => {
   const rowRef = useRef<HTMLDivElement | null>(null);
   // === OLD: sessions preloaded from API rangeSessions ===
@@ -415,6 +419,9 @@ export const SessionRow = ({
     const t = setTimeout(() => setShownNoticeKey(null), NOTICE_MS);
     return () => clearTimeout(t);
   }, [shownNoticeKey]);
+
+  const isNoticeShown =
+    notice !== undefined && (notice.sticky || shownNoticeKey === notice.key);
 
   const punchedOutPct =
     punchedOutSec !== null
@@ -622,7 +629,7 @@ export const SessionRow = ({
           Punched Out
         </Box>
       )}
-      {notice && (notice.sticky || shownNoticeKey === notice.key) && (
+      {isNoticeShown && (
         <Box
           component="span"
           sx={{
@@ -632,6 +639,15 @@ export const SessionRow = ({
           }}
         >
           {notice.text}
+        </Box>
+      )}
+      {/* The selected line's own hint, when nothing else is said at the marker. */}
+      {selectedHint && sessionStart === undefined && !isNoticeShown && (
+        <Box
+          component="span"
+          sx={{ ...hintTextSx, left: `calc(${markerPct}% + 6px)` }}
+        >
+          {selectedHint}
         </Box>
       )}
     </Box>
