@@ -76,6 +76,14 @@ interface UseTimelineKeyboardParams {
   setSelectedSubRowId?: React.Dispatch<React.SetStateAction<number | null>>;
   /** Session mode: number of the first row, for the digit shortcuts. */
   rowNumberStart?: number;
+  /** Session mode: a letter key not handled here, for the selected line
+   * (and its sub-selected sub-row); returns whether the tab handled it. */
+  onRowKey?: (
+    key: string,
+    lineId: number,
+    subRowId: number | null,
+    sec: number,
+  ) => boolean;
 }
 
 // A session bar and the line that selects it; `end` is undefined while open.
@@ -129,18 +137,21 @@ export const useTimelineKeyboard = ({
   activeSubRowId,
   setSelectedSubRowId,
   rowNumberStart = 1,
+  onRowKey,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
   const onAddRowRef = useRef(onAddRow);
   const onDeleteSessionRef = useRef(onDeleteSession);
   const onSelectRowRef = useRef(onSelectRow);
+  const onRowKeyRef = useRef(onRowKey);
   useEffect(() => {
     onPunchInRef.current = onPunchIn;
     onPunchOutRef.current = onPunchOut;
     onAddRowRef.current = onAddRow;
     onDeleteSessionRef.current = onDeleteSession;
     onSelectRowRef.current = onSelectRow;
+    onRowKeyRef.current = onRowKey;
   });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
@@ -353,6 +364,21 @@ export const useTimelineKeyboard = ({
               : new Set(),
           );
           onSelectRowRef.current?.(row.id);
+          return;
+        }
+        // Other letters the tab handles itself (e.g. Employee and Customer's
+        // B / S), on the selected line and its sub-selected sub-row.
+        if (
+          /^[a-z]$/i.test(e.key) &&
+          iTrackId !== null &&
+          onRowKeyRef.current?.(
+            e.key.toLowerCase(),
+            iTrackId,
+            activeSubRowId ?? null,
+            markerSec ?? timelineStartSec,
+          )
+        ) {
+          e.preventDefault();
           return;
         }
       }
@@ -647,6 +673,7 @@ export const useTimelineKeyboard = ({
     activeSubRowId,
     setSelectedSubRowId,
     rowNumberStart,
+    activeSubRowId,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
