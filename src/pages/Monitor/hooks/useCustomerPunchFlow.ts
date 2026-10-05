@@ -451,11 +451,11 @@ export const useCustomerPunchFlow = ({
     ],
   );
 
-  // Employee and Customer tab: "Back Room" (no behaviour yet), then Customer
+  // Employee and Customer tab: "Back Room" (employees on a break), then Customer
   // punches' own rows — "Unattended" and the punched-in employees, each with
   // its customer groups (the same groups as Customer punches) — where the
-  // employee lines also show their Employee punches bars. Back Room and
-  // Unattended read greyed out until there's an employee.
+  // employee lines also show their Employee punches bars. Unattended reads
+  // greyed out until there's an employee, Back Room until it holds one.
   const hasEmployees = employeeTracks.length > 0;
   const breakOpen = employeeControls?.breakOpen;
   const breakClosed = employeeControls?.breakClosed;
@@ -496,7 +496,8 @@ export const useCustomerPunchFlow = ({
         name: "Back Room",
         category: "customers" as const,
         sessions: [],
-        inactive: !hasEmployees,
+        // Only selectable once it holds an employee (someone went on a break).
+        inactive: breakTracks.length === 0,
       },
       ...breakTracks,
       ...tracks.map((t) =>
