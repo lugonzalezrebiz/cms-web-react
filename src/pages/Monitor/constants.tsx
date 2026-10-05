@@ -54,8 +54,9 @@ export const EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE = (
 // break in the Back Room.
 export const EMPLOYEE_AT_WORK_HINT = (
   <>
-    Press <HintKey>B</HintKey> to move to the Back Room or{" "}
-    <HintKey>O</HintKey> to punch-out
+    Press <HintKey>B</HintKey> to move to the Back Room,{" "}
+    <HintKey>C</HintKey> to assign customer or <HintKey>O</HintKey> to
+    punch-out
   </>
 );
 export const EMPLOYEE_ON_BREAK_HINT = (
