@@ -71,6 +71,8 @@ interface TimelineGridRowsProps {
   highlightedSubRowId?: number | null;
   /** Punches tabs: per-row text next to the marker while its bar is open. */
   getOpenHint?: (rowId: number) => React.ReactNode | undefined;
+  /** Punches tabs: whether a sub-row gets the change-attendance button. */
+  canReassignRow?: (rowId: number) => boolean;
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
@@ -126,6 +128,7 @@ export const TimelineGridRows = ({
   activeSubRowId,
   highlightedSubRowId,
   getOpenHint,
+  canReassignRow,
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
@@ -344,7 +347,12 @@ export const TimelineGridRows = ({
                   visibleStart={visibleStart}
                   visibleDuration={visibleDuration}
                   reassignOptions={reassignOptions}
-                  onReassign={onReassignRow}
+                  // Only rows the tab allows (e.g. not Back Room breaks).
+                  onReassign={
+                    canReassignRow?.(row.id) === false
+                      ? undefined
+                      : onReassignRow
+                  }
                   // Only the sub-selected sub-row is highlighted and shows
                   // the punch-out hint ("o" acts on it alone).
                   isSubSelected={row.id === highlightedSubRowId}
