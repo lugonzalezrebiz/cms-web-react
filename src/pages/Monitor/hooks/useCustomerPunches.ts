@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { usePunchHistorySync } from "./usePunchHistorySync";
 
 type Range = { start: number; end: number };
 
@@ -65,6 +66,28 @@ export const useCustomerPunches = () => {
   const [present, setPresent] = useState<CustomerPunchState>(INITIAL_STATE);
   const [past, setPast] = useState<HistoryEntry[]>([]);
   const [future, setFuture] = useState<HistoryEntry[]>([]);
+
+  // Same groups, bars and history in the main window and the popout timeline.
+  const applySynced = useCallback(
+    (h: {
+      present: CustomerPunchState;
+      past: HistoryEntry[];
+      future: HistoryEntry[];
+    }) => {
+      setPresent(h.present);
+      setPast(h.past);
+      setFuture(h.future);
+    },
+    [],
+  );
+  usePunchHistorySync({
+    key: "customer-punches",
+    present,
+    past,
+    future,
+    initialPresent: INITIAL_STATE,
+    apply: applySynced,
+  });
 
   const commit = useCallback(
     (next: CustomerPunchState, sec: number) => {
