@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Box } from "@mui/system";
 import TimeLine from "../../components/TimeLine";
@@ -139,9 +139,9 @@ const MonitorTimeline = () => {
   const isPunchesTab = isPunchesNavTab(activeTab);
 
   // Reset broadcast target when filter changes so auto-pan fires immediately
-  const prevCameraGroupRef = useRef(cameraGroup);
-  if (prevCameraGroupRef.current !== cameraGroup) {
-    prevCameraGroupRef.current = cameraGroup;
+  const [prevCameraGroup, setPrevCameraGroup] = useState(cameraGroup);
+  if (prevCameraGroup !== cameraGroup) {
+    setPrevCameraGroup(cameraGroup);
     if (targetSec !== undefined) setTargetSec(undefined);
   }
 
