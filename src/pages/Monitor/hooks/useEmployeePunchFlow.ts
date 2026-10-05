@@ -36,6 +36,10 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     canRedo,
     lastUndoAt,
     lastRedoAt,
+    breakOpen,
+    breakClosed,
+    startBreak,
+    finishBreak,
   } = useEmployeePunches();
 
   // Add-employee dialog (opened from the "+" in the list or the "+" key).
@@ -137,8 +141,27 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       redo,
       lastUndoAt,
       lastRedoAt,
+      breakOpen,
+      breakClosed,
+      startBreak,
+      finishBreak,
+      // The row just added (e.g. from Employee and Customer), to select it.
+      focusedRowId,
     }),
-    [punchOut, deleteSession, updateSession, undo, redo, lastUndoAt, lastRedoAt],
+    [
+      punchOut,
+      deleteSession,
+      updateSession,
+      undo,
+      redo,
+      lastUndoAt,
+      lastRedoAt,
+      breakOpen,
+      breakClosed,
+      startBreak,
+      finishBreak,
+      focusedRowId,
+    ],
   );
 
   const dialogProps: ComponentProps<typeof EmployeePunchDialog> = {
