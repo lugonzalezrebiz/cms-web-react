@@ -536,10 +536,17 @@ export const useCustomerPunchFlow = ({
   // B (on an employee line): off to the Back Room — Back Room gets selected.
   // S (on Back Room with the employee's break sub-selected, or on the
   // employee line): back to work — their line gets selected.
+  // C (on an employee line): the Customer Punch in dialog, to give them a
+  // customer — as "i" does in Customer punches (same attendance rules).
   const startBreak = employeeControls?.startBreak;
   const finishBreak = employeeControls?.finishBreak;
   const handleRowKey = useCallback(
     (key: string, lineId: number, subRowId: number | null, sec: number) => {
+      if (key === "c") {
+        if (!punchRowIds.has(lineId)) return false;
+        handleOpenPunch(lineId, sec);
+        return true;
+      }
       if (key === "b") {
         const punchRowId = punchRowIds.get(lineId);
         if (punchRowId === undefined) return false;
@@ -564,6 +571,7 @@ export const useCustomerPunchFlow = ({
       lineIdByPunchRow,
       startBreak,
       finishBreak,
+      handleOpenPunch,
     ],
   );
 
