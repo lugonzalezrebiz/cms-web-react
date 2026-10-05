@@ -224,8 +224,8 @@ const MonitorTimeline = () => {
     },
   );
 
-  // Punches tabs start from the beginning of the timeline; only Compliance
-  // violations jumps to its first event point.
+  // Employees & Customers starts from the beginning of the timeline; only
+  // Compliance violations jumps to its first event point.
   const autoTargetSec = isPunchesTab
     ? timelineStartSec
     : isTrackerTab
@@ -245,9 +245,9 @@ const MonitorTimeline = () => {
       : earliest.timeSec;
   }, [filteredEventPoints]);
 
-  // Punches tabs: the same flows as the main window. Their rows, bars and
-  // undo history stay in sync with it (usePunchHistorySync), so what's done
-  // here is there too when the popout closes.
+  // Employees & Customers: the same flows as the main window. Their rows,
+  // bars and undo history stay in sync with it (usePunchHistorySync), so
+  // what's done here is there too when the popout closes.
   const punchMarkerSec = markerTimeSec ?? timelineStartSec;
   const employeeFlow = useEmployeePunchFlow({ markerSec: punchMarkerSec });
   const customerFlow = useCustomerPunchFlow({
@@ -297,8 +297,8 @@ const MonitorTimeline = () => {
         onRedo={handleRedo}
         canUndo={canUndo}
         canRedo={canRedo}
-        headerLabel="Activities"
-        viewMode={isPunchesTab ? "camera" : "activity"}
+        headerLabel="Compliance Violations"
+        viewMode="activity"
         activeTab={activeTab}
         onTabChange={changeTab}
         menuItems={filteredMenuItems}
@@ -311,13 +311,10 @@ const MonitorTimeline = () => {
           isTrackerGroupingsLoading ||
           isPendingCameraGroupSwitch
         }
-        // The punches lists don't depend on review data, so no loader there.
-        rowsLoadState={
-          !isPunchesTab && (isReviewDataLoading || isPendingCameraGroupSwitch)
-        }
+        rowsLoadState={isReviewDataLoading || isPendingCameraGroupSwitch}
         pendingReviewWallSec={pendingReviewWallSec}
-        // Punches tabs replace the defaults above with their own rows, bars,
-        // shortcuts and undo history.
+        // Employees & Customers overrides the Compliance violations defaults
+        // above with its own rows, bars, shortcuts and undo history.
         {...tabTimelineProps}
       />
       <EmployeePunchDialog {...employeeFlow.dialogProps} />
