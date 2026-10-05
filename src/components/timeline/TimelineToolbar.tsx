@@ -29,7 +29,6 @@ interface Props {
   expanded?: boolean;
   activeTab?: NavTab;
   onTabChange?: (tab: NavTab) => void;
-  disabledTabs?: NavTab[];
 }
 
 const SmallSize = ({
@@ -52,7 +51,6 @@ const SmallSize = ({
   expanded = false,
   activeTab: controlledTab,
   onTabChange,
-  disabledTabs,
 }: Props) => {
   const [localTab, setLocalTab] = useState<NavTab>("compliances");
   const activeTab = controlledTab ?? localTab;
@@ -88,7 +86,6 @@ const SmallSize = ({
             onClose={navPopover.handleClose}
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            disabledTabs={disabledTabs}
           />
 
           <Box sx={{ cursor: "pointer" }} onClick={navPopover.handleOpen}>
@@ -359,7 +356,6 @@ const NormalSize = ({
   expanded = false,
   activeTab: controlledTab,
   onTabChange,
-  disabledTabs,
 }: Props) => {
   const [localTab, setLocalTab] = useState<NavTab>("compliances");
   const activeTab = controlledTab ?? localTab;
@@ -387,7 +383,6 @@ const NormalSize = ({
         onClose={navPopover.handleClose}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        disabledTabs={disabledTabs}
       />
       <Grid
         container

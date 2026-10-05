@@ -13,7 +13,6 @@ interface RowItemProps {
   activeSessionStarts: Record<number, number>;
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
-  onSelectRow?: (rowId: number) => void;
   isSubSelected: boolean;
   onSelectSubRow?: (rowId: number) => void;
 }
@@ -26,7 +25,6 @@ const RowItem = ({
   activeSessionStarts,
   setITrackId,
   setSelectedTracks,
-  onSelectRow,
   isSubSelected,
   onSelectSubRow,
 }: RowItemProps) => {
@@ -56,19 +54,12 @@ const RowItem = ({
       ? // Inactive (greyed-out) lines can't be selected.
         undefined
       : () => {
-          // Employee rows toggle: clicking the selected one deselects it.
-          if (row.category === "employees" && iTrackId === row.id) {
-            setITrackId(null);
-            setSelectedTracks(new Set());
-            return;
-          }
           setITrackId(row.id);
           if (activeSessionStarts[row.id] !== undefined) {
             setSelectedTracks(new Set([row.id]));
           } else {
             setSelectedTracks(new Set());
           }
-          onSelectRow?.(row.id);
         };
 
   // Customer punches groups: no number, name aligned with the parent's name.
@@ -209,8 +200,6 @@ interface TimelineRowListProps {
   loadState?: boolean;
   emptyMessage?: React.ReactNode;
   showAddButton?: boolean;
-  /** Called when a click selects a row (not when it deselects one). */
-  onSelectRow?: (rowId: number) => void;
   /** Punches tabs: the picked sub-row (↑/↓, click), with the cream tint. */
   highlightedSubRowId?: number | null;
   /** Punches tabs: clicking an open sub-row sub-selects it. */
@@ -233,7 +222,6 @@ export const TimelineRowList = ({
   loadState,
   emptyMessage = "Empty",
   showAddButton = false,
-  onSelectRow,
   highlightedSubRowId,
   onSelectSubRow,
   rowNumberStart = 1,
@@ -330,7 +318,6 @@ export const TimelineRowList = ({
             activeSessionStarts={activeSessionStarts}
             setITrackId={setITrackId}
             setSelectedTracks={setSelectedTracks}
-            onSelectRow={onSelectRow}
             isSubSelected={row.id === highlightedSubRowId}
             onSelectSubRow={onSelectSubRow}
           />
