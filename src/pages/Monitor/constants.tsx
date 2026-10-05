@@ -3,13 +3,14 @@ import type TimeLine from "../../components/TimeLine";
 import { Colors } from "../../theme";
 import { HintKey } from "../../components/timeline/rows/SessionRow";
 
-/** TimeLine props a timeline tab (Employee/Customer punches) sets on top of the
+/** TimeLine props a timeline tab (Employees & Customers) sets on top of the
  * Compliance violations defaults. */
 export type TimelineTabProps = Partial<ComponentProps<typeof TimeLine>>;
 
-// Customer punches row ids. Each employee keeps the same id whether or not they
-// punched in, so customer groups under them stay attached. Unknown employees
-// reuse their Employee punches row id (small negatives); these sit far below.
+// Employees & Customers row ids. Each employee keeps the same id whether or
+// not they punched in, so customer groups under them stay attached. Unknown
+// employees reuse their Employee punches row id (small negatives); these sit
+// far below.
 export const UNATTENDED_ROW_ID = -100_000;
 export const CUSTOMER_EMPLOYEE_ROW_ID_BASE = -100_000;
 // Employee and Customer tab's "Back Room" line: between the employee ids
