@@ -22,7 +22,9 @@ interface CustomerPunchState {
 }
 
 // `sec` is where the change happened, so undo/redo can move the marker there.
-type HistoryEntry = { state: CustomerPunchState; sec: number };
+// `at` is when the change was made, so tabs mixing employee and customer
+// history (Employee and Customer) can undo/redo across both in order.
+type HistoryEntry = { state: CustomerPunchState; sec: number; at: number };
 
 const INITIAL_STATE: CustomerPunchState = { groups: [], open: {}, closed: {} };
 
@@ -67,7 +69,7 @@ export const useCustomerPunches = () => {
   const commit = useCallback(
     (next: CustomerPunchState, sec: number) => {
       if (next === present) return;
-      setPast((p) => [...p, { state: present, sec }]);
+      setPast((p) => [...p, { state: present, sec, at: Date.now() }]);
       setFuture([]);
       setPresent(next);
     },
@@ -264,7 +266,7 @@ export const useCustomerPunches = () => {
     const last = past[past.length - 1];
     if (!last) return;
     setPast(past.slice(0, -1));
-    setFuture((f) => [...f, { state: present, sec: last.sec }]);
+    setFuture((f) => [...f, { state: present, sec: last.sec, at: last.at }]);
     setPresent(last.state);
     return last.sec;
   }, [past, present]);
@@ -273,7 +275,7 @@ export const useCustomerPunches = () => {
     const next = future[future.length - 1];
     if (!next) return;
     setFuture(future.slice(0, -1));
-    setPast((p) => [...p, { state: present, sec: next.sec }]);
+    setPast((p) => [...p, { state: present, sec: next.sec, at: next.at }]);
     setPresent(next.state);
     return next.sec;
   }, [future, present]);
@@ -292,5 +294,8 @@ export const useCustomerPunches = () => {
     redo,
     canUndo: past.length > 0,
     canRedo: future.length > 0,
+    /** When the change an undo / a redo would revert / re-apply was made. */
+    lastUndoAt: past[past.length - 1]?.at,
+    lastRedoAt: future[future.length - 1]?.at,
   };
 };
