@@ -276,8 +276,10 @@ const Monitor = () => {
     employeeOpenSessions: employeeFlow.openSessions,
     employeeClosedSessions: employeeFlow.closedSessions,
     employeeRows: employeeFlow.employeeRows,
-    // Employee and Customer adds employees with the same dialog.
+    // Employee and Customer adds employees with the same dialog, and acts on
+    // their bars (and their undo history) through Employee punches.
     onAddEmployee: employeeFlow.openDialog,
+    employeeControls: employeeFlow.controls,
   });
 
   // Employee punches remembers where its marker was when leaving the tab;
