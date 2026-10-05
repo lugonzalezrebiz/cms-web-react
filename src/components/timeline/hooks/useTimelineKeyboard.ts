@@ -357,7 +357,8 @@ export const useTimelineKeyboard = ({
           const index =
             rowNumberStart === 1 && digit === 0 ? 9 : digit - rowNumberStart;
           const row = selectableRows[index];
-          if (!row) return;
+          // Inactive (greyed-out) lines can't be selected.
+          if (!row || row.inactive) return;
           setITrackId(row.id);
           setSelectedTracks(
             activeSessionStarts[row.id] !== undefined
