@@ -16,10 +16,8 @@ const ROW_HEIGHT = 32.8;
 const PUNCHED_OUT_MESSAGE_MS = 5000;
 const NOTICE_MS = 3000;
 const REASSIGN_BUTTON_PX = 20;
-// Gap between the marker and the attendance button (its dot sits 5px further in).
-const REASSIGN_BUTTON_OFFSET_PX = 0;
-// Extra gap while hovered, so the arrow circle doesn't touch the marker.
-const REASSIGN_HOVER_SHIFT_PX = 4;
+// Gap between the marker and the attendance button (an orange arrow circle).
+const REASSIGN_BUTTON_OFFSET_PX = 4;
 
 const hintTextSx = {
   position: "absolute",
@@ -443,8 +441,7 @@ export const SessionRow = ({
   );
   const isReassignActive =
     showReassign && (isReassignHovered || reassignAnchor !== null);
-  const reassignLeftPx =
-    REASSIGN_BUTTON_OFFSET_PX + (isReassignActive ? REASSIGN_HOVER_SHIFT_PX : 0);
+  const reassignLeftPx = REASSIGN_BUTTON_OFFSET_PX;
   const hintLeft = showReassign
     ? `calc(${markerPct}% + ${reassignLeftPx + REASSIGN_BUTTON_PX + 6}px)`
     : `calc(${markerPct}% + 6px)`;
@@ -563,30 +560,20 @@ export const SessionRow = ({
             zIndex: 4,
           }}
         >
-          {isReassignActive ? (
-            <Box
-              sx={{
-                width: REASSIGN_BUTTON_PX,
-                height: REASSIGN_BUTTON_PX,
-                borderRadius: "50%",
-                bgcolor: Colors.vividOrange,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <img src={assetUrl("arrow-narrow-right-02.svg")} alt="" />
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                bgcolor: Colors.coralPeach,
-              }}
-            />
-          )}
+          {/* Always shown as the orange arrow circle (no idle dot). */}
+          <Box
+            sx={{
+              width: REASSIGN_BUTTON_PX,
+              height: REASSIGN_BUTTON_PX,
+              borderRadius: "50%",
+              bgcolor: Colors.vividOrange,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img src={assetUrl("arrow-narrow-right-02.svg")} alt="" />
+          </Box>
         </Box>
       )}
       {showReassign && (
