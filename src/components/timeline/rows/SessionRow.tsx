@@ -358,21 +358,23 @@ export const SessionRow = ({
     ((resolvedMarkerSec - visibleStart) / visibleDuration) * 100;
 
   // Parent mirror of the sub-rows' sessions: one block per stretch covered by
-  // any of them (overlaps merged), so they never pile up on each other.
+  // any of them (overlaps merged), so they never pile up on each other. A
+  // block is "open" while any of its sub-rows is still running.
   const childRanges = (childRowIds ?? []).flatMap((id) => {
     const start = activeSessionStarts[id];
     return [
-      ...(completedSessions[id] ?? []),
+      ...(completedSessions[id] ?? []).map((r) => ({ ...r, isOpen: false })),
       ...(start !== undefined && resolvedMarkerSec > start
-        ? [{ start, end: resolvedMarkerSec }]
+        ? [{ start, end: resolvedMarkerSec, isOpen: true }]
         : []),
     ];
   });
-  const childBlocks: { start: number; end: number }[] = [];
+  const childBlocks: { start: number; end: number; isOpen: boolean }[] = [];
   for (const range of [...childRanges].sort((a, b) => a.start - b.start)) {
     const last = childBlocks[childBlocks.length - 1];
     if (last && range.start <= last.end) {
       last.end = Math.max(last.end, range.end);
+      last.isOpen = last.isOpen || range.isOpen;
     } else {
       childBlocks.push({ ...range });
     }
@@ -475,9 +477,16 @@ export const SessionRow = ({
             range={range}
             visibleStart={visibleStart}
             visibleDuration={visibleDuration}
-            // One colour for now (pending design): the light orange of an
-            // open customer, the vivid one when selected.
-            color={isLineBar ? Colors.vividOrange : Colors.lightOrange}
+            // One colour per block (pending design): light orange while a
+            // sub-row is still running, grey once they're all punched out,
+            // vivid orange when selected.
+            color={
+              isLineBar
+                ? Colors.vividOrange
+                : range.isOpen
+                  ? Colors.lightOrange
+                  : Colors.softSlate
+            }
             isSelected={isLineBar}
           />
         );
