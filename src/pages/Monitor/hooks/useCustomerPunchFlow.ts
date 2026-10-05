@@ -30,6 +30,7 @@ type Range = { start: number; end: number };
 const OUTSIDE_PUNCH_TIME_NOTICE =
   "Not possible: outside the employee's punch-in time";
 const WALL_NOTICE = "Employee punched out here — punch out the customer first";
+const ATTENDING_CUSTOMER_NOTICE = "Not possible: punch out the customer first";
 
 interface Params {
   /** Current marker: where attendance changes happen. */
@@ -551,6 +552,18 @@ export const useCustomerPunchFlow = ({
       if (key === "b") {
         const punchRowId = punchRowIds.get(lineId);
         if (punchRowId === undefined) return false;
+        // No break while attending a customer: punch them out first.
+        const isAttending = groups.some(
+          (g) => g.parentRowId === lineId && openSessions[g.id] !== undefined,
+        );
+        if (isAttending) {
+          setNotice({
+            rowId: lineId,
+            text: ATTENDING_CUSTOMER_NOTICE,
+            key: Date.now(),
+          });
+          return true;
+        }
         return startBreak?.(punchRowId, sec) ? BACK_ROOM_ROW_ID : true;
       }
       if (key === "s") {
@@ -573,6 +586,8 @@ export const useCustomerPunchFlow = ({
       startBreak,
       finishBreak,
       handleOpenPunch,
+      groups,
+      openSessions,
     ],
   );
 
