@@ -140,20 +140,6 @@ export const useEmployeePunches = () => {
     [present, commit],
   );
 
-  // Opens a new session on an existing row, unless one is already open there
-  // or startSec falls inside one of its closed bars.
-  const punchIn = useCallback(
-    (rowId: number, startSec: number) => {
-      if (present.open[rowId] !== undefined) return false;
-      // On a break, S (not a punch-in) brings them back.
-      if (present.breakOpen[rowId] !== undefined) return false;
-      if (overlapsClosed(present, rowId, startSec)) return false;
-      commit({ ...present, open: { ...present.open, [rowId]: startSec } }, startSec);
-      return true;
-    },
-    [present, commit],
-  );
-
   // Freezes the row's open session at endSec.
   const punchOut = useCallback(
     (rowId: number, endSec: number) => {
@@ -309,7 +295,6 @@ export const useEmployeePunches = () => {
     focusedRowId,
     addUnknownEmployee,
     addEmployee,
-    punchIn,
     punchOut,
     deleteSession,
     updateSession,
