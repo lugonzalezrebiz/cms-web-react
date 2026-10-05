@@ -1,20 +1,14 @@
 import type { NavTab, TimelineSnapshot } from "./types";
 
 export const NAV_TABS: { id: NavTab; label: string; iconClass: string }[] = [
-  { id: "employees", label: "Employee punches", iconClass: "users-03" },
   { id: "employeesCustomers", label: "Employee and Customer", iconClass: "users-03" },
-  { id: "customers", label: "Customer punches", iconClass: "users-left" },
   { id: "compliances", label: "Compliance violations", iconClass: "shield-tick" },
  // { id: "activities", label: "Activities", iconClass: "placeholder" },
 ];
 
 // Tabs that list people with session bars (punch in/out) instead of
 // Compliance violations' diamonds.
-const PUNCHES_NAV_TABS: NavTab[] = [
-  "employees",
-  "customers",
-  "employeesCustomers",
-];
+const PUNCHES_NAV_TABS: NavTab[] = ["employeesCustomers"];
 export const isPunchesNavTab = (tab: NavTab | undefined) =>
   tab !== undefined && PUNCHES_NAV_TABS.includes(tab);
 
