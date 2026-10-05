@@ -75,6 +75,7 @@ export interface TimelineBodyViewProps {
   activeSubRowId?: number | null;
   highlightedSubRowId?: number | null;
   onSelectSubRow?: (rowId: number) => void;
+  rowNumberStart?: number;
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   getEditBounds?: (
     rowId: number,
@@ -144,6 +145,7 @@ const TimelineBody = ({
   activeSubRowId,
   highlightedSubRowId,
   onSelectSubRow,
+  rowNumberStart,
   onEditBar,
   getEditBounds,
 }: TimelineBodyViewProps) => {
@@ -176,6 +178,7 @@ const TimelineBody = ({
         onSelectRow={onSelectRow}
         highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={onSelectSubRow}
+        rowNumberStart={rowNumberStart}
       />
 
       <Box
