@@ -39,6 +39,13 @@ export const EMPLOYEES_EMPTY_MESSAGE = (
   </span>
 );
 
+export const EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE = (
+  <>
+    Press the "<span style={{ color: Colors.vividOrange }}>i</span>" key on
+    your keyboard to punch-in the first employee.
+  </>
+);
+
 export const CUSTOMERS_EMPTY_GRID_MESSAGE = (
   <>
     Press the "<span style={{ color: Colors.vividOrange }}>i</span>" key on
