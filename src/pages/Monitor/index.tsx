@@ -41,15 +41,11 @@ import useNavigateWithQuery from "../../hooks/useNavigate";
 import { useEmployeePunchFlow } from "./hooks/useEmployeePunchFlow";
 import { useCustomerPunchFlow } from "./hooks/useCustomerPunchFlow";
 import type { TimelineTabProps } from "./constants";
-import type { NavTab } from "../../components/timeline/types";
 import { isPunchesNavTab } from "../../components/timeline/constants";
 
 const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
 // Compliance violations adds nothing on top of the default TimeLine props.
 const NO_TAB_TIMELINE_PROPS: TimelineTabProps = {};
-const NO_DISABLED_TABS: NavTab[] = [];
-// Customer punches needs employees to attend customers.
-const CUSTOMERS_TAB_DISABLED: NavTab[] = ["customers"];
 
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
@@ -85,15 +81,11 @@ const Monitor = () => {
 
   const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
-  // "employees" shows every camera and switches the timeline to per-camera bars;
-  // "customers" shows every camera and lists the punched-in employees (read-only);
-  // "employeesCustomers" shows every camera with Back Room and Unattended;
+  // "employeesCustomers" shows every camera and lists Back Room, Unattended
+  // and the punched-in employees with their customers;
   // "compliances" keeps the tracker-filtered activity view.
   // Lives in the monitor context so the header can show this tab's shortcuts.
   const { activeTab, setActiveTab } = useTimelineTab();
-  const isEmployeesTab = activeTab === "employees";
-  const isCustomersTab = activeTab === "customers";
-  const isEmployeesCustomersTab = activeTab === "employeesCustomers";
   const isPunchesTab = isPunchesNavTab(activeTab);
   const navigate = useNavigateWithQuery();
 
@@ -266,8 +258,8 @@ const Monitor = () => {
       onMarkerChange: handleCameraMarkerChange,
     });
 
-  // Employee punches and Customer punches: rows, session bars, dialogs and
-  // the TimeLine props each tab adds on top of Compliance violations'.
+  // Employees & Customers: employee and customer rows, session bars, dialogs
+  // and the TimeLine props the tab adds on top of Compliance violations'.
   const punchMarkerSec = markerTimeSec ?? timelineStartSec;
   const employeeFlow = useEmployeePunchFlow({ markerSec: punchMarkerSec });
   const customerFlow = useCustomerPunchFlow({
@@ -281,21 +273,6 @@ const Monitor = () => {
     onAddEmployee: employeeFlow.openDialog,
     employeeControls: employeeFlow.controls,
   });
-
-  // Employee punches remembers where its marker was when leaving the tab;
-  // Customer punches always starts from the beginning of the timeline.
-  const [prevTimelineTab, setPrevTimelineTab] = useState(activeTab);
-  const [employeeMarkerSec, setEmployeeMarkerSec] = useState<
-    number | undefined
-  >(undefined);
-  if (prevTimelineTab !== activeTab) {
-    if (prevTimelineTab === "employees" && markerTimeSec !== null)
-      setEmployeeMarkerSec(markerTimeSec);
-    setPrevTimelineTab(activeTab);
-  }
-  const punchesTargetSec = isEmployeesTab
-    ? (employeeMarkerSec ?? timelineStartSec)
-    : timelineStartSec;
 
   const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
@@ -354,19 +331,11 @@ const Monitor = () => {
   // is the same source useActivityRows builds its selectableRows from, one-to-one.
   const hasMultipleRows = filteredMenuItems.length >= 2;
 
-  // Employee/Customer punches override the Compliance violations defaults
-  // below with their own rows, bars, shortcuts and undo history.
-  const tabTimelineProps = isEmployeesTab
-    ? employeeFlow.timelineProps
-    : isCustomersTab
-      ? customerFlow.timelineProps
-      : isEmployeesCustomersTab
-        ? customerFlow.employeesCustomersTimelineProps
-        : NO_TAB_TIMELINE_PROPS;
-
-  // No employees in Employee punches yet → nobody can attend customers.
-  const disabledTabs =
-    employeeFlow.tracks.length === 0 ? CUSTOMERS_TAB_DISABLED : NO_DISABLED_TABS;
+  // Employees & Customers overrides the Compliance violations defaults below
+  // with its own rows, bars, shortcuts and undo history.
+  const tabTimelineProps = isPunchesTab
+    ? customerFlow.employeesCustomersTimelineProps
+    : NO_TAB_TIMELINE_PROPS;
 
   const timelineProps = useMemo(
     () => ({
@@ -379,7 +348,7 @@ const Monitor = () => {
       targetMarkerSec:
         restoreMarkerSec ??
         (isPunchesTab
-          ? punchesTargetSec
+          ? timelineStartSec
           : isTrackerTab
             ? trackerTargetSec
             : cameraGroupTargetSec),
@@ -401,7 +370,6 @@ const Monitor = () => {
       viewMode: "activity" as const,
       activeTab,
       onTabChange: setActiveTab,
-      disabledTabs,
       menuItems: filteredMenuItems,
       rangeSessions,
       expandedIcon: !expandedCamera,
@@ -422,7 +390,7 @@ const Monitor = () => {
       restoreMarkerSec,
       trackerTargetSec,
       cameraGroupTargetSec,
-      punchesTargetSec,
+      timelineStartSec,
       isTrackerTab,
       isPunchesTab,
       handleUpdateEventPoint,
@@ -448,7 +416,6 @@ const Monitor = () => {
       isReviewDataLoading,
       pendingReviewWallSec,
       tabTimelineProps,
-      disabledTabs,
     ],
   );
 

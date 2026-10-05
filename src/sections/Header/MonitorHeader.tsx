@@ -131,37 +131,8 @@ const getComplianceShortcuts = (
   ];
 };
 
-const getEmployeePunchesShortcuts = (imagesInterval: number): ShortcutItem[] => [
-  ...markerStepItems(imagesInterval),
-  ...sessionBarItems,
-  goBackItem,
-  ...undoRedoItems,
-  { keys: [textKey("+")], label: "Add employee" },
-  { keys: [textKey("I")], label: "Punch in on the selected line" },
-  { keys: [textKey("O")], label: "Punch out on the selected line" },
-  { keys: [textKey("1-9, 0", "14px")], label: "Select employee line" },
-  deleteBarItem,
-  ...playbackAndZoomItems,
-];
-
-const getCustomerPunchesShortcuts = (imagesInterval: number): ShortcutItem[] => [
-  ...markerStepItems(imagesInterval),
-  ...sessionBarItems,
-  goBackItem,
-  ...undoRedoItems,
-  { keys: [textKey("I")], label: "Customer punch in on the selected line" },
-  {
-    keys: [textKey("↑"), textKey("↓")],
-    label: "Select a customer on the selected line",
-  },
-  { keys: [textKey("O")], label: "Punch out the selected customer" },
-  { keys: [textKey("1-9, 0", "14px")], label: "Select line" },
-  deleteBarItem,
-  ...playbackAndZoomItems,
-];
-
-// Unattended works as in Customer punches; "+" (and "i" with no line
-// selected) adds an employee, and lines are numbered from 0.
+// Employees & Customers: "+" (and "i" with no line selected) adds an
+// employee, and lines are numbered from 0.
 const getEmployeesCustomersShortcuts = (
   imagesInterval: number,
 ): ShortcutItem[] => [
@@ -191,13 +162,9 @@ const getKeyboardShortcuts = (
 ): KeyboardMenuData => ({
   title: "Keyboard shortcuts",
   items:
-    activeTab === "employees"
-      ? getEmployeePunchesShortcuts(imagesInterval)
-      : activeTab === "customers"
-        ? getCustomerPunchesShortcuts(imagesInterval)
-        : activeTab === "employeesCustomers"
-          ? getEmployeesCustomersShortcuts(imagesInterval)
-          : getComplianceShortcuts(imagesInterval, activeTracker),
+    activeTab === "employeesCustomers"
+      ? getEmployeesCustomersShortcuts(imagesInterval)
+      : getComplianceShortcuts(imagesInterval, activeTracker),
 });
 
 const StyledContainer = styled("div")({
