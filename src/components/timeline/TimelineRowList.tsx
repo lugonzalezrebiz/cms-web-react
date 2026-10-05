@@ -99,6 +99,8 @@ const RowItem = ({
   const textColor = () => {
     if (isEventSubRow) return Colors.lightBlack;
     if (isActive) return Colors.white;
+    // Inactive rows are greyed out (badge and name) until selected.
+    if (row.inactive) return Colors.dimGray;
     return Colors.lightBlack;
   };
 
@@ -210,6 +212,8 @@ interface TimelineRowListProps {
   highlightedSubRowId?: number | null;
   /** Punches tabs: clicking an open sub-row sub-selects it. */
   onSelectSubRow?: (rowId: number) => void;
+  /** Number shown on the first row (and its digit shortcut); default 1. */
+  rowNumberStart?: number;
 }
 
 export const TimelineRowList = ({
@@ -229,6 +233,7 @@ export const TimelineRowList = ({
   onSelectRow,
   highlightedSubRowId,
   onSelectSubRow,
+  rowNumberStart = 1,
 }: TimelineRowListProps) => {
   // Sub-rows (kind "event") don't take a number, so the numbers shown match
   // the digit shortcuts, which only cycle through the selectable rows.
@@ -316,7 +321,7 @@ export const TimelineRowList = ({
           <RowItem
             key={row.id}
             row={row}
-            index={(rowNumbers.get(row.id) ?? 0) + 1}
+            index={(rowNumbers.get(row.id) ?? 0) + rowNumberStart}
             isSelected={selectedTracks.has(row.id)}
             iTrackId={iTrackId}
             activeSessionStarts={activeSessionStarts}
