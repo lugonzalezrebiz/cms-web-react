@@ -597,27 +597,27 @@ export const SessionRow = ({
           }))}
         />
       )}
-      {sessionStart !== undefined && isReassignActive && (
-        <Box
-          component="span"
-          sx={{ ...hintTextSx, left: hintLeft }}
-        >
-          Click to change customer attendance
-        </Box>
-      )}
-      {/* A notice at the marker takes the hint's place. */}
-      {showPunchOutHint &&
+      {/* Hint next to the marker on the sub-selected (or hovered) open bar; a
+          notice at the marker takes its place. Rows with the attendance
+          button say what both it and "o" do. */}
+      {(showPunchOutHint || isReassignActive) &&
         sessionStart !== undefined &&
-        !isReassignActive &&
         !isNoticeShown && (
         <Box
           component="span"
           sx={{ ...hintTextSx, left: hintLeft }}
         >
-          {openHint ?? (
+          {showReassign ? (
             <>
-              Press <HintKey>o</HintKey> to punch-out
+              Click to change customer attendance or <HintKey>O</HintKey> to
+              punch-out
             </>
+          ) : (
+            (openHint ?? (
+              <>
+                Press <HintKey>o</HintKey> to punch-out
+              </>
+            ))
           )}
         </Box>
       )}
