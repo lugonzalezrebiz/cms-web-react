@@ -7,7 +7,6 @@ import {
   type EmployeeDialogTab,
 } from "../../../components/timeline/constants";
 import { assetUrl } from "../../../utils";
-import { EMPLOYEES_EMPTY_MESSAGE, type TimelineTabProps } from "../constants";
 import { useEmployeePunches } from "./useEmployeePunches";
 
 interface Params {
@@ -15,8 +14,8 @@ interface Params {
   markerSec: number;
 }
 
-// Everything the Employee punches tab needs: its rows and session bars (with
-// undo/redo), the add-employee dialog, and the TimeLine props for the tab.
+// Employees for the Employee and Customer tab: their rows and session bars
+// (with undo/redo), the add-employee dialog, and the controls the tab uses.
 export const useEmployeePunchFlow = ({ markerSec }: Params) => {
   const {
     tracks,
@@ -26,14 +25,11 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     focusedRowId,
     addUnknownEmployee,
     addEmployee,
-    punchIn,
     punchOut,
     deleteSession,
     updateSession,
     undo,
     redo,
-    canUndo,
-    canRedo,
     lastUndoAt,
     lastRedoAt,
     breakOpen,
@@ -89,46 +85,6 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     addEmployee(employee, markerSec);
     closeDialog();
   }, [selectedEmployeeId, addEmployee, markerSec, closeDialog]);
-
-  const timelineProps = useMemo(
-    (): TimelineTabProps => ({
-      headerLabel: "Employee Punches",
-      viewMode: "camera",
-      // The employee list doesn't depend on review data, so no loader.
-      rowsLoadState: false,
-      emptyRowsMessage: EMPLOYEES_EMPTY_MESSAGE,
-      showAddButton: true,
-      onAddRow: openDialog,
-      rowTracks: tracks,
-      activeSessionStarts: openSessions,
-      completedSessions: closedSessions,
-      focusRowId: focusedRowId,
-      onPunchIn: punchIn,
-      onPunchOut: punchOut,
-      onDeleteSession: deleteSession,
-      onUpdateSession: updateSession,
-      // Its own history, separate from Compliance violations' event points.
-      onUndo: undo,
-      onRedo: redo,
-      canUndo,
-      canRedo,
-    }),
-    [
-      openDialog,
-      tracks,
-      openSessions,
-      closedSessions,
-      focusedRowId,
-      punchIn,
-      punchOut,
-      deleteSession,
-      updateSession,
-      undo,
-      redo,
-      canUndo,
-      canRedo,
-    ],
-  );
 
   // What Employee and Customer needs to act on employee bars and share the
   // undo/redo history.
@@ -190,7 +146,6 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     // Opens the add-employee dialog (also used by Employee and Customer).
     openDialog,
     controls,
-    timelineProps,
     dialogProps,
   };
 };

@@ -680,7 +680,6 @@ export const useTimelineKeyboard = ({
     activeSubRowId,
     setSelectedSubRowId,
     rowNumberStart,
-    activeSubRowId,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
