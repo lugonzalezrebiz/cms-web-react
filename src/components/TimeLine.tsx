@@ -8,7 +8,11 @@ import type {
   TimelineSnapshot,
 } from "./timeline/types";
 import TimelineToolbar from "./timeline/TimelineToolbar";
-import { EMPLOYEE_TRACKS, MOCK_SNAPSHOT } from "./timeline/constants";
+import {
+  EMPLOYEE_TRACKS,
+  MOCK_SNAPSHOT,
+  isPunchesNavTab,
+} from "./timeline/constants";
 import { useFlatRows } from "./timeline/hooks/useFlatRows";
 import { useActivityRows } from "./timeline/hooks/useActivityRows";
 import { useTimelineBodyState } from "./timeline/hooks/useTimelineBodyState";
@@ -65,6 +69,7 @@ const TimeLine = ({
   getSessionBounds,
   rowSelectMarkerSec,
   rowNotice,
+  rowNumberStart,
   reassignOptions,
   onReassignRow,
   sessionWallSec,
@@ -138,6 +143,8 @@ const TimeLine = ({
   rowSelectMarkerSec?: (rowId: number) => number | undefined;
   /** Punches tabs: a message shown at the marker on one row. */
   rowNotice?: RowNotice;
+  /** Number shown on the first row (and its digit shortcut); default 1. */
+  rowNumberStart?: number;
   /** Rows a sub-row's group can be moved to (Customer punches). */
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   /** Moves the sub-row `rowId` under `parentId`. */
@@ -152,7 +159,7 @@ const TimeLine = ({
   emptyGridMessage?: React.ReactNode;
 }) => {
   // Employee and Customer punches both list employee rows instead of cameras.
-  const isPunchesTab = activeTab === "employees" || activeTab === "customers";
+  const isPunchesTab = isPunchesNavTab(activeTab);
   // Punches tabs don't draw diamonds, so they're left out: without them the
   // arrows/play step freely instead of snapping to or stopping at review
   // windows. Compliance violations gets the event points untouched.
@@ -726,6 +733,7 @@ const TimeLine = ({
     // Free arrows/digits on both punches tabs; "i"/"o" only act when the
     // parent passes onPunchIn/onPunchOut (Employee punches).
     isSessionMode: isPunchesTab,
+    rowNumberStart,
     onPunchIn,
     onPunchOut,
     onAddRow,
@@ -831,6 +839,7 @@ const TimeLine = ({
         activeSubRowId={activeSubRowId}
         highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={isPunchesTab ? handleSelectSubRow : undefined}
+        rowNumberStart={rowNumberStart}
         onEditBar={isPunchesTab && onUpdateSession ? handleEditBar : undefined}
         getEditBounds={getEditBounds}
       />
