@@ -171,6 +171,7 @@ const getEmployeesCustomersShortcuts = (
   ...undoRedoItems,
   { keys: [textKey("+")], label: "Add employee" },
   { keys: [textKey("I")], label: "Customer punch in on Unattended" },
+  { keys: [textKey("C")], label: "Assign a customer to the employee" },
   { keys: [textKey("B")], label: "Move the employee to the Back Room" },
   { keys: [textKey("S")], label: "Move the employee to the Show Room" },
   {
