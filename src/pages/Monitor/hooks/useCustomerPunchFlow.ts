@@ -37,6 +37,21 @@ interface Params {
   employeeRows: Record<number, number>;
   /** Opens Employee punches' add-employee dialog (Employee and Customer tab). */
   onAddEmployee?: () => void;
+  /** Employee punches' bar actions and history, for the employee lines of
+   * the Employee and Customer tab. */
+  employeeControls?: {
+    punchOut: (rowId: number, endSec: number) => void;
+    deleteSession: (rowId: number, startSec: number) => void;
+    updateSession: (
+      rowId: number,
+      oldStart: number,
+      next: { start: number; end?: number },
+    ) => void;
+    undo: () => number | void;
+    redo: () => number | void;
+    lastUndoAt?: number;
+    lastRedoAt?: number;
+  };
 }
 
 // Everything the Customer punches tab needs: its rows (employees + customer
@@ -49,6 +64,7 @@ export const useCustomerPunchFlow = ({
   employeeClosedSessions,
   employeeRows,
   onAddEmployee,
+  employeeControls,
 }: Params) => {
   const {
     groups,
@@ -64,6 +80,8 @@ export const useCustomerPunchFlow = ({
     redo,
     canUndo,
     canRedo,
+    lastUndoAt,
+    lastRedoAt,
   } = useCustomerPunches();
 
   // Rows: "Unattended" first, then only the employees punched in on Employee
@@ -421,13 +439,12 @@ export const useCustomerPunchFlow = ({
     ],
   );
 
-  // Employee and Customer tab: two default lines, "Back Room" (no behaviour
-  // yet) and "Unattended" with its customer groups — the same groups, bars
-  // and undo history as Customer punches. Both read greyed out until picked.
-  const unattendedGroups = useMemo(
-    () => groups.filter((g) => g.parentRowId === UNATTENDED_ROW_ID),
-    [groups],
-  );
+  // Employee and Customer tab: "Back Room" (no behaviour yet), then Customer
+  // punches' own rows — "Unattended" and the punched-in employees, each with
+  // its customer groups (the same groups as Customer punches) — where the
+  // employee lines also show their Employee punches bars. Back Room and
+  // Unattended read greyed out until there's an employee.
+  const hasEmployees = employeeTracks.length > 0;
   const employeesCustomersTracks = useMemo(
     () => [
       {
@@ -435,40 +452,90 @@ export const useCustomerPunchFlow = ({
         name: "Back Room",
         category: "customers" as const,
         sessions: [],
-        inactive: true,
+        inactive: !hasEmployees,
       },
-      {
-        id: UNATTENDED_ROW_ID,
-        name: "Unattended",
-        category: "customers" as const,
-        sessions: [],
-        inactive: true,
-      },
-      ...unattendedGroups.map((g) => ({
-        id: g.id,
-        name: `Customer ${g.number} (${g.count})`,
-        category: "customers" as const,
-        sessions: [],
-        parentId: UNATTENDED_ROW_ID,
-      })),
+      ...tracks.map((t) =>
+        t.id === UNATTENDED_ROW_ID ? { ...t, inactive: !hasEmployees } : t,
+      ),
     ],
-    [unattendedGroups],
+    [tracks, hasEmployees],
   );
 
-  // Only Unattended punches customers in here; Back Room does nothing yet.
+  // Customer groups' sessions plus each employee line's own punches, keyed by
+  // this tab's row ids.
+  const { employeesCustomersOpen, employeesCustomersClosed } = useMemo(() => {
+    const open = { ...openSessions };
+    const closed = { ...closedSessions };
+    for (const [rowId, punchRowId] of punchRowIds) {
+      const start = employeeOpenSessions[punchRowId];
+      if (start !== undefined) open[rowId] = start;
+      const ranges = employeeClosedSessions[punchRowId];
+      if (ranges) closed[rowId] = ranges;
+    }
+    return { employeesCustomersOpen: open, employeesCustomersClosed: closed };
+  }, [
+    openSessions,
+    closedSessions,
+    punchRowIds,
+    employeeOpenSessions,
+    employeeClosedSessions,
+  ]);
+
+  // Only Unattended punches customers in here; Back Room and the employee
+  // lines do nothing on "i" yet.
   const handleOpenPunchHere = useCallback(
     (rowId: number, sec: number) =>
       rowId === UNATTENDED_ROW_ID ? handleOpenPunch(rowId, sec) : false,
     [handleOpenPunch],
   );
 
-  // Only this tab's own open customers hold the marker back.
-  const unattendedFloorSec = useMemo(() => {
-    const starts = unattendedGroups
-      .map((g) => openSessions[g.id])
-      .filter((s): s is number => s !== undefined);
-    return starts.length > 0 ? Math.max(...starts) : undefined;
-  }, [unattendedGroups, openSessions]);
+  // An employee line's bar is an Employee punches session; anything else is a
+  // customer group's.
+  const punchOutHere = useCallback(
+    (rowId: number, endSec: number) => {
+      const punchRowId = punchRowIds.get(rowId);
+      if (punchRowId === undefined) punchOut(rowId, endSec);
+      else employeeControls?.punchOut(punchRowId, endSec);
+    },
+    [punchRowIds, punchOut, employeeControls],
+  );
+  const deleteSessionHere = useCallback(
+    (rowId: number, startSec: number) => {
+      const punchRowId = punchRowIds.get(rowId);
+      if (punchRowId === undefined) deleteSession(rowId, startSec);
+      else employeeControls?.deleteSession(punchRowId, startSec);
+    },
+    [punchRowIds, deleteSession, employeeControls],
+  );
+  const updateSessionHere = useCallback(
+    (rowId: number, oldStart: number, next: { start: number; end?: number }) => {
+      const punchRowId = punchRowIds.get(rowId);
+      if (punchRowId === undefined) updateSession(rowId, oldStart, next);
+      else employeeControls?.updateSession(punchRowId, oldStart, next);
+    },
+    [punchRowIds, updateSession, employeeControls],
+  );
+
+  // One undo/redo across both histories, in the order the changes were made:
+  // undo the most recent change, redo the one undone last.
+  const employeeUndoAt = employeeControls?.lastUndoAt;
+  const employeeRedoAt = employeeControls?.lastRedoAt;
+  const undoHere = useCallback((): number | void => {
+    if (
+      employeeUndoAt !== undefined &&
+      (lastUndoAt === undefined || employeeUndoAt > lastUndoAt)
+    )
+      return employeeControls?.undo();
+    return undo();
+  }, [employeeUndoAt, lastUndoAt, employeeControls, undo]);
+  const redoHere = useCallback((): number | void => {
+    if (
+      employeeRedoAt !== undefined &&
+      (lastRedoAt === undefined || employeeRedoAt < lastRedoAt)
+    )
+      return employeeControls?.redo();
+    return redo();
+  }, [employeeRedoAt, lastRedoAt, employeeControls, redo]);
 
   const employeesCustomersTimelineProps = useMemo(
     (): TimelineTabProps => ({
@@ -480,48 +547,53 @@ export const useCustomerPunchFlow = ({
       showAddButton: onAddEmployee !== undefined,
       onAddRow: onAddEmployee,
       rowTracks: employeesCustomersTracks,
-      // Back Room is 0, Unattended 1 (and their digit shortcuts).
+      // Back Room is 0, Unattended 1, then the employees (and digit keys).
       rowNumberStart: 0,
-      activeSessionStarts: openSessions,
-      completedSessions: closedSessions,
+      activeSessionStarts: employeesCustomersOpen,
+      completedSessions: employeesCustomersClosed,
       onPunchIn: handleOpenPunchHere,
-      onPunchOut: punchOut,
-      onDeleteSession: deleteSession,
-      onUpdateSession: updateSession,
+      onPunchOut: punchOutHere,
+      onDeleteSession: deleteSessionHere,
+      onUpdateSession: updateSessionHere,
       getSessionBounds,
-      onUndo: undo,
-      onRedo: redo,
-      canUndo,
-      canRedo,
+      onUndo: undoHere,
+      onRedo: redoHere,
+      canUndo: canUndo || employeeUndoAt !== undefined,
+      canRedo: canRedo || employeeRedoAt !== undefined,
       reassignOptions: reassignOptionsAtMarker,
       onReassignRow: handleChangeParent,
-      sessionFloorSec: unattendedFloorSec,
-      // Until there's anybody: no employees and no Unattended customers.
+      sessionWallSec,
+      sessionFloorSec,
+      // Until there's anybody: no employees and no customers.
       emptyGridMessage:
-        employeeTracks.length === 0 && unattendedGroups.length === 0
+        !hasEmployees && groups.length === 0
           ? EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE
           : undefined,
-      rowNotice: notice,
+      rowNotice: wallNotice ?? notice,
     }),
     [
       onAddEmployee,
-      employeeTracks.length,
       employeesCustomersTracks,
-      openSessions,
-      closedSessions,
+      employeesCustomersOpen,
+      employeesCustomersClosed,
       handleOpenPunchHere,
-      punchOut,
-      deleteSession,
-      updateSession,
+      punchOutHere,
+      deleteSessionHere,
+      updateSessionHere,
       getSessionBounds,
-      undo,
-      redo,
+      undoHere,
+      redoHere,
       canUndo,
       canRedo,
+      employeeUndoAt,
+      employeeRedoAt,
       reassignOptionsAtMarker,
       handleChangeParent,
-      unattendedFloorSec,
-      unattendedGroups.length,
+      sessionWallSec,
+      sessionFloorSec,
+      hasEmployees,
+      groups.length,
+      wallNotice,
       notice,
     ],
   );
