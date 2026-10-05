@@ -1,4 +1,4 @@
-export type NavTab = "employees" | "compliances" | "activities" | "customers" | "employeesCustomers";
+export type NavTab = "compliances" | "activities" | "employeesCustomers";
 
 export interface TimelineBodyHandle {
   stepMarker: (deltaSec: number) => void;
