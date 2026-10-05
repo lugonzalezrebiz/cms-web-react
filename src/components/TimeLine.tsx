@@ -148,13 +148,14 @@ const TimeLine = ({
   /** Number shown on the first row (and its digit shortcut); default 1. */
   rowNumberStart?: number;
   /** Punches tabs: letter keys the tab handles itself (e.g. B / S) on the
-   * selected line and its sub-selected sub-row; returns whether it did. */
+   * selected line and its sub-selected sub-row; returns whether it did, or
+   * the id of the line to select next. */
   onRowKey?: (
     key: string,
     lineId: number,
     subRowId: number | null,
     sec: number,
-  ) => boolean;
+  ) => boolean | number;
   /** Punches tabs: per-row text next to the marker while its bar is open. */
   getOpenHint?: (rowId: number) => React.ReactNode | undefined;
   /** Rows a sub-row's group can be moved to (Customer punches). */
