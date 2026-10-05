@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import { Colors, Fonts } from "../../theme";
@@ -87,67 +87,80 @@ const PunchPickerPanel = ({
   selectedCamera,
   onSelectCamera,
   previewSrc,
-}: Props) => (
-  <Box
-    sx={{
-      display: "flex",
-      border: `1px solid ${Colors.silverGrey}`,
-      borderRadius: "8px",
-      overflow: "hidden",
-    }}
-  >
+}: Props) => {
+  // Keep the selected item in view (e.g. when picked with the arrow keys).
+  const listRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (selectedId === null) return;
+    listRef.current
+      ?.querySelector(`[data-item-id="${selectedId}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selectedId]);
+
+  return (
     <Box
       sx={{
-        width: "210px",
-        flexShrink: 0,
-        height: "386px",
-        bgcolor: Colors.white,
-        borderRight: `1px solid ${Colors.silverGrey}`,
-        overflowY: "auto",
-        scrollbarWidth: "none",
-        "&::-webkit-scrollbar": { display: "none" },
+        display: "flex",
+        border: `1px solid ${Colors.silverGrey}`,
+        borderRadius: "8px",
+        overflow: "hidden",
       }}
     >
-      {items.map((item) => (
-        <ListItem
-          key={item.id}
-          selected={selectedId === item.id}
-          onClick={() => onSelect(item.id)}
-        >
-          <PickerTitleText>{item.title}</PickerTitleText>
-          {item.lines.map((line, i) => (
-            <PickerSubText key={i}>{line}</PickerSubText>
-          ))}
-        </ListItem>
-      ))}
-    </Box>
-
-    <Box sx={{ display: "flex", gap: "8px", p: "8px", flex: 1, minWidth: 0 }}>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        {Array.from({ length: cameraCount }, (_, i) => (
-          <CameraSlot
-            key={i}
-            selected={selectedCamera === i}
-            onClick={() => onSelectCamera(i)}
+      <Box
+        ref={listRef}
+        sx={{
+          width: "210px",
+          flexShrink: 0,
+          height: "386px",
+          bgcolor: Colors.white,
+          borderRight: `1px solid ${Colors.silverGrey}`,
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          "&::-webkit-scrollbar": { display: "none" },
+        }}
+      >
+        {items.map((item) => (
+          <ListItem
+            key={item.id}
+            data-item-id={item.id}
+            selected={selectedId === item.id}
+            onClick={() => onSelect(item.id)}
           >
-            <img src={assetUrl("webcam-01.svg")} alt="Webcam" />
-          </CameraSlot>
+            <PickerTitleText>{item.title}</PickerTitleText>
+            {item.lines.map((line, i) => (
+              <PickerSubText key={i}>{line}</PickerSubText>
+            ))}
+          </ListItem>
         ))}
       </Box>
-      <Box
-        component="img"
-        src={previewSrc}
-        alt="Camera thumbnail"
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          height: "370px",
-          objectFit: "cover",
-          bgcolor: Colors.blushWhite,
-        }}
-      />
+  
+      <Box sx={{ display: "flex", gap: "8px", p: "8px", flex: 1, minWidth: 0 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {Array.from({ length: cameraCount }, (_, i) => (
+            <CameraSlot
+              key={i}
+              selected={selectedCamera === i}
+              onClick={() => onSelectCamera(i)}
+            >
+              <img src={assetUrl("webcam-01.svg")} alt="Webcam" />
+            </CameraSlot>
+          ))}
+        </Box>
+        <Box
+          component="img"
+          src={previewSrc}
+          alt="Camera thumbnail"
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            height: "370px",
+            objectFit: "cover",
+            bgcolor: Colors.blushWhite,
+          }}
+        />
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 export default PunchPickerPanel;
