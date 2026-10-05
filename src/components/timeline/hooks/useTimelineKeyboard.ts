@@ -77,13 +77,14 @@ interface UseTimelineKeyboardParams {
   /** Session mode: number of the first row, for the digit shortcuts. */
   rowNumberStart?: number;
   /** Session mode: a letter key not handled here, for the selected line
-   * (and its sub-selected sub-row); returns whether the tab handled it. */
+   * (and its sub-selected sub-row); returns whether the tab handled it, or
+   * the id of the line to select next. */
   onRowKey?: (
     key: string,
     lineId: number,
     subRowId: number | null,
     sec: number,
-  ) => boolean;
+  ) => boolean | number;
 }
 
 // A session bar and the line that selects it; `end` is undefined while open.
@@ -368,18 +369,22 @@ export const useTimelineKeyboard = ({
         }
         // Other letters the tab handles itself (e.g. Employee and Customer's
         // B / S), on the selected line and its sub-selected sub-row.
-        if (
-          /^[a-z]$/i.test(e.key) &&
-          iTrackId !== null &&
-          onRowKeyRef.current?.(
+        if (/^[a-z]$/i.test(e.key) && iTrackId !== null) {
+          const handled = onRowKeyRef.current?.(
             e.key.toLowerCase(),
             iTrackId,
             activeSubRowId ?? null,
             markerSec ?? timelineStartSec,
-          )
-        ) {
-          e.preventDefault();
-          return;
+          );
+          if (handled !== undefined && handled !== false) {
+            e.preventDefault();
+            // A row id: the line the tab wants selected next.
+            if (typeof handled === "number") {
+              setITrackId(handled);
+              setSelectedTracks(new Set());
+            }
+            return;
+          }
         }
       }
 
