@@ -42,6 +42,7 @@ import { useEmployeePunchFlow } from "./hooks/useEmployeePunchFlow";
 import { useCustomerPunchFlow } from "./hooks/useCustomerPunchFlow";
 import type { TimelineTabProps } from "./constants";
 import type { NavTab } from "../../components/timeline/types";
+import { isPunchesNavTab } from "../../components/timeline/constants";
 
 const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
 // Compliance violations adds nothing on top of the default TimeLine props.
@@ -86,12 +87,14 @@ const Monitor = () => {
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
   // "employees" shows every camera and switches the timeline to per-camera bars;
   // "customers" shows every camera and lists the punched-in employees (read-only);
+  // "employeesCustomers" shows every camera with Back Room and Unattended;
   // "compliances" keeps the tracker-filtered activity view.
   // Lives in the monitor context so the header can show this tab's shortcuts.
   const { activeTab, setActiveTab } = useTimelineTab();
   const isEmployeesTab = activeTab === "employees";
   const isCustomersTab = activeTab === "customers";
-  const isPunchesTab = isEmployeesTab || isCustomersTab;
+  const isEmployeesCustomersTab = activeTab === "employeesCustomers";
+  const isPunchesTab = isPunchesNavTab(activeTab);
   const navigate = useNavigateWithQuery();
 
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
@@ -353,7 +356,9 @@ const Monitor = () => {
     ? employeeFlow.timelineProps
     : isCustomersTab
       ? customerFlow.timelineProps
-      : NO_TAB_TIMELINE_PROPS;
+      : isEmployeesCustomersTab
+        ? customerFlow.employeesCustomersTimelineProps
+        : NO_TAB_TIMELINE_PROPS;
 
   // No employees in Employee punches yet → nobody can attend customers.
   const disabledTabs =

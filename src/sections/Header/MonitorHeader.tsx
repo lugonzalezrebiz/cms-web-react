@@ -169,7 +169,8 @@ const getKeyboardShortcuts = (
   items:
     activeTab === "employees"
       ? getEmployeePunchesShortcuts(imagesInterval)
-      : activeTab === "customers"
+      : // Employee and Customer's Unattended works like Customer punches'.
+        activeTab === "customers" || activeTab === "employeesCustomers"
         ? getCustomerPunchesShortcuts(imagesInterval)
         : getComplianceShortcuts(imagesInterval, activeTracker),
 });

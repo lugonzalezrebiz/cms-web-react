@@ -20,6 +20,7 @@ import { useComplianceMarkerTargets } from "../Monitor/hooks/useComplianceMarker
 import { useBroadcastSync } from "./hooks/useBroadcastSync";
 import { timeStringToSec, hasReviewedTwin } from "../../components/timeline/utils";
 import NoReviewGuard from "../../components/NoReviewGuard";
+import { isPunchesNavTab } from "../../components/timeline/constants";
 
 const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
 
@@ -127,7 +128,7 @@ const MonitorTimeline = () => {
     markerTimeSec,
     setTargetSec,
   );
-  const isPunchesTab = activeTab === "employees" || activeTab === "customers";
+  const isPunchesTab = isPunchesNavTab(activeTab);
 
   // Reset broadcast target when filter changes so auto-pan fires immediately
   const prevCameraGroupRef = useRef(cameraGroup);
@@ -273,7 +274,9 @@ const MonitorTimeline = () => {
             ? "Employee Punches"
             : activeTab === "customers"
               ? "Customer Punches"
-              : "Activities"
+              : activeTab === "employeesCustomers"
+                ? "Employees & Customers"
+                : "Activities"
         }
         viewMode={isPunchesTab ? "camera" : "activity"}
         activeTab={activeTab}
