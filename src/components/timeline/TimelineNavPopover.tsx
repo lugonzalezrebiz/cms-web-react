@@ -110,8 +110,9 @@ const TimelineNavPopover = ({
                   lineHeight: 1.43,
                   fontFamily: Fonts.main,
                   alignItems: "center",
-                  // Honors the line break added by twoLineLabel.
-                  whiteSpace: "pre-line",
+                  // Exactly the two lines from twoLineLabel: neither of them
+                  // wraps again (e.g. "and Customer" in a 100px card).
+                  whiteSpace: "pre",
                 },
               }}
             >
