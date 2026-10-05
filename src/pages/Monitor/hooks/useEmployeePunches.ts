@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { EMPLOYEE_TRACKS } from "../../../components/timeline/constants";
 import type { TimelineSnapshot } from "../../../components/timeline/types";
+import { usePunchHistorySync } from "./usePunchHistorySync";
 
 type Range = { start: number; end: number };
 
@@ -45,6 +46,24 @@ export const useEmployeePunches = () => {
   const [past, setPast] = useState<HistoryEntry[]>([]);
   const [future, setFuture] = useState<HistoryEntry[]>([]);
   const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
+
+  // Same rows, bars and history in the main window and the popout timeline.
+  const applySynced = useCallback(
+    (h: { present: PunchState; past: HistoryEntry[]; future: HistoryEntry[] }) => {
+      setPresent(h.present);
+      setPast(h.past);
+      setFuture(h.future);
+    },
+    [],
+  );
+  usePunchHistorySync({
+    key: "employee-punches",
+    present,
+    past,
+    future,
+    initialPresent: INITIAL_STATE,
+    apply: applySynced,
+  });
 
   const commit = useCallback(
     (next: PunchState, sec: number) => {
