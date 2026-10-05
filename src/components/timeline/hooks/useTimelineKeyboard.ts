@@ -288,17 +288,18 @@ export const useTimelineKeyboard = ({
         if (e.key === "o") {
           if (iTrackId === null) return;
           const end = markerSec ?? timelineStartSec;
-          // The selected row's own session, else its sub-selected open sub-row
-          // (Customer punches groups hang under their employee row).
+          // The sub-selected open sub-row first (a customer group under its
+          // employee: an employee can't leave mid-customer), else the selected
+          // row's own session.
           const rowId =
-            activeSessionStarts[iTrackId] !== undefined
-              ? iTrackId
-              : (activeSubRowId ?? undefined);
+            activeSubRowId ??
+            (activeSessionStarts[iTrackId] !== undefined ? iTrackId : undefined);
           if (rowId === undefined) return;
           const start = activeSessionStarts[rowId];
           if (start === undefined || end <= start) return;
           onPunchOutRef.current?.(rowId, end);
-          setSelectedTracks(new Set());
+          // The line is no longer punched in only if its own bar closed.
+          if (rowId === iTrackId) setSelectedTracks(new Set());
           // The next open sub-row (if any) takes over the sub-selection.
           if (rowId !== iTrackId) setSelectedSubRowId?.(null);
           // Punching out the row itself (Employee punches) also deselects it;
