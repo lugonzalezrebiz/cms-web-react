@@ -2,6 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { NavTab } from "../../../components/timeline/types";
 
+// How many received marker seconds are remembered to avoid echoing them.
+const RECENT_RECEIVED_SECS = 30;
+
 export const useTimelinePopout =(
   onMarkerChange: (sec: number) => void,
   markerTimeSec: number | null,
@@ -30,7 +33,10 @@ export const useTimelinePopout =(
   const channelRef = useRef<BroadcastChannel | null>(null);
   const onMarkerChangeRef = useRef(onMarkerChange);
   const markerTimeSecRef = useRef(markerTimeSec);
-  const lastReceivedSecRef = useRef<number | null>(null);
+  // Recent seconds received from the other window: never echoed back, even
+  // when several arrive before this window re-renders (e.g. while dragging
+  // the marker or holding an arrow), which would make the marker jump back.
+  const receivedSecsRef = useRef<number[]>([]);
   const cameraGroupRef = useRef(cameraGroup);
   const trackerOptionRef = useRef(trackerOption);
   const customTrackerIDsRef = useRef(customTrackerIDs);
@@ -47,13 +53,16 @@ export const useTimelinePopout =(
 
   useEffect(() => {
     if (!timelinePopped) return;
-    lastReceivedSecRef.current = null;
+    receivedSecsRef.current = [];
     const channel = new BroadcastChannel("timeline-sync");
     channelRef.current = channel;
 
     channel.addEventListener("message", (e: MessageEvent) => {
       if (e.data?.type === "marker" && e.data?.source === "popout") {
-        lastReceivedSecRef.current = e.data.sec as number;
+        receivedSecsRef.current = [
+          ...receivedSecsRef.current.slice(-(RECENT_RECEIVED_SECS - 1)),
+          e.data.sec as number,
+        ];
         onMarkerChangeRef.current(e.data.sec as number);
       }
       if (e.data?.type === "navTab" && e.data?.source === "popout") {
@@ -82,7 +91,7 @@ export const useTimelinePopout =(
 
   useEffect(() => {
     if (!timelinePopped || markerTimeSec === null) return;
-    if (lastReceivedSecRef.current === markerTimeSec) return;
+    if (receivedSecsRef.current.includes(markerTimeSec)) return;
     channelRef.current?.postMessage({ type: "marker", sec: markerTimeSec, source: "monitor" });
   }, [markerTimeSec, timelinePopped]);
 
