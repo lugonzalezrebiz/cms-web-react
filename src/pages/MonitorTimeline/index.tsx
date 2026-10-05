@@ -21,8 +21,20 @@ import { useBroadcastSync } from "./hooks/useBroadcastSync";
 import { timeStringToSec, hasReviewedTwin } from "../../components/timeline/utils";
 import NoReviewGuard from "../../components/NoReviewGuard";
 import { isPunchesNavTab } from "../../components/timeline/constants";
+import type { NavTab } from "../../components/timeline/types";
+import EmployeePunchDialog from "../../components/timeline/EmployeePunchDialog";
+import CustomerPunchDialog from "../../components/timeline/CustomerPunchDialog";
+import CustomerReEnterDialog from "../../components/timeline/CustomerReEnterDialog";
+import { useEmployeePunchFlow } from "../Monitor/hooks/useEmployeePunchFlow";
+import { useCustomerPunchFlow } from "../Monitor/hooks/useCustomerPunchFlow";
+import type { TimelineTabProps } from "../Monitor/constants";
 
 const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
+// Compliance violations adds nothing on top of the default TimeLine props.
+const NO_TAB_TIMELINE_PROPS: TimelineTabProps = {};
+const NO_DISABLED_TABS: NavTab[] = [];
+// Customer punches needs employees to attend customers.
+const CUSTOMERS_TAB_DISABLED: NavTab[] = ["customers"];
 
 const MonitorTimeline = () => {
   const [searchParams] = useSearchParams();
@@ -237,6 +249,32 @@ const MonitorTimeline = () => {
       : earliest.timeSec;
   }, [filteredEventPoints]);
 
+  // Punches tabs: the same flows as the main window. Their rows, bars and
+  // undo history stay in sync with it (usePunchHistorySync), so what's done
+  // here is there too when the popout closes.
+  const punchMarkerSec = markerTimeSec ?? timelineStartSec;
+  const employeeFlow = useEmployeePunchFlow({ markerSec: punchMarkerSec });
+  const customerFlow = useCustomerPunchFlow({
+    markerSec: punchMarkerSec,
+    employeeTracks: employeeFlow.tracks,
+    employeeOpenSessions: employeeFlow.openSessions,
+    employeeClosedSessions: employeeFlow.closedSessions,
+    employeeRows: employeeFlow.employeeRows,
+    onAddEmployee: employeeFlow.openDialog,
+    employeeControls: employeeFlow.controls,
+  });
+  const tabTimelineProps =
+    activeTab === "employees"
+      ? employeeFlow.timelineProps
+      : activeTab === "customers"
+        ? customerFlow.timelineProps
+        : activeTab === "employeesCustomers"
+          ? customerFlow.employeesCustomersTimelineProps
+          : NO_TAB_TIMELINE_PROPS;
+  // No employees yet → nobody can attend customers (as in the main window).
+  const disabledTabs =
+    employeeFlow.tracks.length === 0 ? CUSTOMERS_TAB_DISABLED : NO_DISABLED_TABS;
+
   const eventPointsToSave = useMemo(
     () => allEventPoints.filter((ep) => !ep.entryIds || ep.touchedThisSession),
     [allEventPoints],
@@ -259,6 +297,8 @@ const MonitorTimeline = () => {
         onMarkerChange={handleMarkerChange}
         markerTimeSec={markerTimeSec}
         targetMarkerSec={targetSec ?? autoTargetSec}
+        // Re-applies the target on every tab switch, even to the same second.
+        targetMarkerKey={activeTab}
         onUpdateEventPoint={handleUpdateEventPoint}
         onRemoveEventPoint={handleDeleteEventPoint}
         onAcceptEventPoint={handleAcceptEventPoint}
@@ -281,6 +321,7 @@ const MonitorTimeline = () => {
         viewMode={isPunchesTab ? "camera" : "activity"}
         activeTab={activeTab}
         onTabChange={changeTab}
+        disabledTabs={disabledTabs}
         menuItems={filteredMenuItems}
         rangeSessions={rangeSessions}
         onPopOut={() => window.close()}
@@ -296,7 +337,13 @@ const MonitorTimeline = () => {
           !isPunchesTab && (isReviewDataLoading || isPendingCameraGroupSwitch)
         }
         pendingReviewWallSec={pendingReviewWallSec}
+        // Punches tabs replace the defaults above with their own rows, bars,
+        // shortcuts and undo history.
+        {...tabTimelineProps}
       />
+      <EmployeePunchDialog {...employeeFlow.dialogProps} />
+      <CustomerPunchDialog {...customerFlow.punchDialogProps} />
+      <CustomerReEnterDialog {...customerFlow.reEnterDialogProps} />
       <NoReviewGuard reason={noReviewReason} onGoBack={() => window.close()} />
     </Box>
   );
