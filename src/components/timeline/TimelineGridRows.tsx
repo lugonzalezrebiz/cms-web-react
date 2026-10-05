@@ -73,6 +73,8 @@ interface TimelineGridRowsProps {
   getOpenHint?: (rowId: number) => React.ReactNode | undefined;
   /** Punches tabs: whether a sub-row gets the change-attendance button. */
   canReassignRow?: (rowId: number) => boolean;
+  /** Punches tabs: text next to the marker on the selected line. */
+  getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
@@ -129,6 +131,7 @@ export const TimelineGridRows = ({
   highlightedSubRowId,
   getOpenHint,
   canReassignRow,
+  getSelectedHint,
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
@@ -322,6 +325,9 @@ export const TimelineGridRows = ({
                 getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
                 openHint={getOpenHint?.(row.id)}
+                selectedHint={
+                  row.id === iTrackId ? getSelectedHint?.(row.id) : undefined
+                }
                 // Punches tabs: the selected line, with no sub-row bar picked.
                 highlightChildBars={
                   onSelectBar !== undefined &&
@@ -363,6 +369,9 @@ export const TimelineGridRows = ({
                   getEditBounds={getEditBounds}
                   notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
                   openHint={getOpenHint?.(row.id)}
+                  selectedHint={
+                    row.id === iTrackId ? getSelectedHint?.(row.id) : undefined
+                  }
                 />
                 {/* Punches tabs (selectable bars) have no diamonds, and the
                     diamond canvas would swallow the clicks on sub-row bars. */}
