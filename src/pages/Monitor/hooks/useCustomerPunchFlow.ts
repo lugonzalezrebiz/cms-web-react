@@ -16,6 +16,9 @@ import {
   CUSTOMER_EMPLOYEE_ROW_ID_BASE,
   UNATTENDED_ROW_ID,
   BACK_ROOM_ROW_ID,
+  BACK_ROOM_BREAK_ROW_ID_BASE,
+  EMPLOYEE_AT_WORK_HINT,
+  EMPLOYEE_ON_BREAK_HINT,
   type TimelineTabProps,
 } from "../constants";
 import { useCustomerPunches } from "./useCustomerPunches";
@@ -51,6 +54,13 @@ interface Params {
     redo: () => number | void;
     lastUndoAt?: number;
     lastRedoAt?: number;
+    // Back Room breaks (B / S), by Employee punches row id.
+    breakOpen: Record<number, number>;
+    breakClosed: Record<number, Range[]>;
+    startBreak: (rowId: number, sec: number) => boolean;
+    finishBreak: (rowId: number, sec: number, backToWork: boolean) => boolean;
+    /** Employee punches row just added, to select it here too. */
+    focusedRowId: number | null;
   };
 }
 
@@ -445,6 +455,38 @@ export const useCustomerPunchFlow = ({
   // employee lines also show their Employee punches bars. Back Room and
   // Unattended read greyed out until there's an employee.
   const hasEmployees = employeeTracks.length > 0;
+  const breakOpen = employeeControls?.breakOpen;
+  const breakClosed = employeeControls?.breakClosed;
+
+  // Employee lines ↔ their Employee punches rows, and each employee who has
+  // been to the Back Room (B) gets a line under it with their breaks.
+  const { lineIdByPunchRow, breakTracks, breakPunchRowIds } = useMemo(() => {
+    const lineIdByPunchRow = new Map<number, number>();
+    for (const [lineId, punchRowId] of punchRowIds)
+      lineIdByPunchRow.set(punchRowId, lineId);
+    const breakPunchRowIds = new Map<number, number>();
+    const breakTracks = tracks.flatMap((t) => {
+      const punchRowId = punchRowIds.get(t.id);
+      if (punchRowId === undefined) return [];
+      const hasBreaks =
+        breakOpen?.[punchRowId] !== undefined ||
+        (breakClosed?.[punchRowId]?.length ?? 0) > 0;
+      if (!hasBreaks) return [];
+      const id = BACK_ROOM_BREAK_ROW_ID_BASE + punchRowId;
+      breakPunchRowIds.set(id, punchRowId);
+      return [
+        {
+          id,
+          name: t.name,
+          category: "customers" as const,
+          sessions: [],
+          parentId: BACK_ROOM_ROW_ID,
+        },
+      ];
+    });
+    return { lineIdByPunchRow, breakTracks, breakPunchRowIds };
+  }, [tracks, punchRowIds, breakOpen, breakClosed]);
+
   const employeesCustomersTracks = useMemo(
     () => [
       {
@@ -454,15 +496,16 @@ export const useCustomerPunchFlow = ({
         sessions: [],
         inactive: !hasEmployees,
       },
+      ...breakTracks,
       ...tracks.map((t) =>
         t.id === UNATTENDED_ROW_ID ? { ...t, inactive: !hasEmployees } : t,
       ),
     ],
-    [tracks, hasEmployees],
+    [tracks, breakTracks, hasEmployees],
   );
 
-  // Customer groups' sessions plus each employee line's own punches, keyed by
-  // this tab's row ids.
+  // Customer groups' sessions plus each employee line's own punches and each
+  // break line's breaks, keyed by this tab's row ids.
   const { employeesCustomersOpen, employeesCustomersClosed } = useMemo(() => {
     const open = { ...openSessions };
     const closed = { ...closedSessions };
@@ -472,6 +515,12 @@ export const useCustomerPunchFlow = ({
       const ranges = employeeClosedSessions[punchRowId];
       if (ranges) closed[rowId] = ranges;
     }
+    for (const [rowId, punchRowId] of breakPunchRowIds) {
+      const start = breakOpen?.[punchRowId];
+      if (start !== undefined) open[rowId] = start;
+      const ranges = breakClosed?.[punchRowId];
+      if (ranges) closed[rowId] = ranges;
+    }
     return { employeesCustomersOpen: open, employeesCustomersClosed: closed };
   }, [
     openSessions,
@@ -479,7 +528,62 @@ export const useCustomerPunchFlow = ({
     punchRowIds,
     employeeOpenSessions,
     employeeClosedSessions,
+    breakPunchRowIds,
+    breakOpen,
+    breakClosed,
   ]);
+
+  // B (on an employee line): off to the Back Room — Back Room gets selected.
+  // S (on Back Room with the employee's break sub-selected, or on the
+  // employee line): back to work — their line gets selected.
+  const startBreak = employeeControls?.startBreak;
+  const finishBreak = employeeControls?.finishBreak;
+  const handleRowKey = useCallback(
+    (key: string, lineId: number, subRowId: number | null, sec: number) => {
+      if (key === "b") {
+        const punchRowId = punchRowIds.get(lineId);
+        if (punchRowId === undefined) return false;
+        return startBreak?.(punchRowId, sec) ? BACK_ROOM_ROW_ID : true;
+      }
+      if (key === "s") {
+        const punchRowId =
+          lineId === BACK_ROOM_ROW_ID
+            ? subRowId !== null
+              ? breakPunchRowIds.get(subRowId)
+              : undefined
+            : punchRowIds.get(lineId);
+        if (punchRowId === undefined) return false;
+        if (!finishBreak?.(punchRowId, sec, true)) return true;
+        return lineIdByPunchRow.get(punchRowId) ?? true;
+      }
+      return false;
+    },
+    [
+      punchRowIds,
+      breakPunchRowIds,
+      lineIdByPunchRow,
+      startBreak,
+      finishBreak,
+    ],
+  );
+
+  // Hints next to the marker: an employee at work can go on a break or punch
+  // out; one on a break can come back.
+  const getOpenHint = useCallback(
+    (rowId: number) => {
+      if (punchRowIds.has(rowId)) return EMPLOYEE_AT_WORK_HINT;
+      if (breakPunchRowIds.has(rowId)) return EMPLOYEE_ON_BREAK_HINT;
+      return undefined;
+    },
+    [punchRowIds, breakPunchRowIds],
+  );
+
+  // An employee just added (e.g. with "+" here) gets selected.
+  const addedFocusedRowId = employeeControls?.focusedRowId;
+  const employeesCustomersFocusRowId =
+    addedFocusedRowId != null
+      ? (lineIdByPunchRow.get(addedFocusedRowId) ?? null)
+      : null;
 
   // Only Unattended punches customers in here; Back Room and the employee
   // lines do nothing on "i" yet.
@@ -491,29 +595,38 @@ export const useCustomerPunchFlow = ({
 
   // An employee line's bar is an Employee punches session; anything else is a
   // customer group's.
+  // "o" on a break line punches them out of the Back Room (no return).
   const punchOutHere = useCallback(
     (rowId: number, endSec: number) => {
+      const breakPunchRowId = breakPunchRowIds.get(rowId);
+      if (breakPunchRowId !== undefined) {
+        finishBreak?.(breakPunchRowId, endSec, false);
+        return;
+      }
       const punchRowId = punchRowIds.get(rowId);
       if (punchRowId === undefined) punchOut(rowId, endSec);
       else employeeControls?.punchOut(punchRowId, endSec);
     },
-    [punchRowIds, punchOut, employeeControls],
+    [breakPunchRowIds, finishBreak, punchRowIds, punchOut, employeeControls],
   );
+  // Break bars can't be deleted or edited yet.
   const deleteSessionHere = useCallback(
     (rowId: number, startSec: number) => {
+      if (breakPunchRowIds.has(rowId)) return;
       const punchRowId = punchRowIds.get(rowId);
       if (punchRowId === undefined) deleteSession(rowId, startSec);
       else employeeControls?.deleteSession(punchRowId, startSec);
     },
-    [punchRowIds, deleteSession, employeeControls],
+    [breakPunchRowIds, punchRowIds, deleteSession, employeeControls],
   );
   const updateSessionHere = useCallback(
     (rowId: number, oldStart: number, next: { start: number; end?: number }) => {
+      if (breakPunchRowIds.has(rowId)) return;
       const punchRowId = punchRowIds.get(rowId);
       if (punchRowId === undefined) updateSession(rowId, oldStart, next);
       else employeeControls?.updateSession(punchRowId, oldStart, next);
     },
-    [punchRowIds, updateSession, employeeControls],
+    [breakPunchRowIds, punchRowIds, updateSession, employeeControls],
   );
 
   // One undo/redo across both histories, in the order the changes were made:
@@ -549,6 +662,10 @@ export const useCustomerPunchFlow = ({
       rowTracks: employeesCustomersTracks,
       // Back Room is 0, Unattended 1, then the employees (and digit keys).
       rowNumberStart: 0,
+      // B / S send an employee to the Back Room and back, with their hints.
+      onRowKey: handleRowKey,
+      getOpenHint,
+      focusRowId: employeesCustomersFocusRowId,
       activeSessionStarts: employeesCustomersOpen,
       completedSessions: employeesCustomersClosed,
       onPunchIn: handleOpenPunchHere,
@@ -594,6 +711,9 @@ export const useCustomerPunchFlow = ({
       hasEmployees,
       groups.length,
       wallNotice,
+      handleRowKey,
+      getOpenHint,
+      employeesCustomersFocusRowId,
       notice,
     ],
   );
