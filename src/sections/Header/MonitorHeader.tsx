@@ -160,6 +160,27 @@ const getCustomerPunchesShortcuts = (imagesInterval: number): ShortcutItem[] => 
   ...playbackAndZoomItems,
 ];
 
+// Unattended works as in Customer punches; "+" (and "i" with no line
+// selected) adds an employee, and lines are numbered from 0.
+const getEmployeesCustomersShortcuts = (
+  imagesInterval: number,
+): ShortcutItem[] => [
+  ...markerStepItems(imagesInterval),
+  ...sessionBarItems,
+  goBackItem,
+  ...undoRedoItems,
+  { keys: [textKey("+")], label: "Add employee" },
+  { keys: [textKey("I")], label: "Customer punch in on Unattended" },
+  {
+    keys: [textKey("↑"), textKey("↓")],
+    label: "Select a customer on the selected line",
+  },
+  { keys: [textKey("O")], label: "Punch out the selected customer" },
+  { keys: [textKey("0-9", "14px")], label: "Select line" },
+  deleteBarItem,
+  ...playbackAndZoomItems,
+];
+
 const getKeyboardShortcuts = (
   imagesInterval: number,
   activeTab: NavTab,
@@ -169,10 +190,11 @@ const getKeyboardShortcuts = (
   items:
     activeTab === "employees"
       ? getEmployeePunchesShortcuts(imagesInterval)
-      : // Employee and Customer's Unattended works like Customer punches'.
-        activeTab === "customers" || activeTab === "employeesCustomers"
+      : activeTab === "customers"
         ? getCustomerPunchesShortcuts(imagesInterval)
-        : getComplianceShortcuts(imagesInterval, activeTracker),
+        : activeTab === "employeesCustomers"
+          ? getEmployeesCustomersShortcuts(imagesInterval)
+          : getComplianceShortcuts(imagesInterval, activeTracker),
 });
 
 const StyledContainer = styled("div")({
