@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Box } from "@mui/system";
 import styled from "@emotion/styled";
 import Dialog from "../Dialog";
@@ -65,6 +66,58 @@ const EmployeePunchDialog = ({
   onPunchInUnknown,
   onPunchInSelected,
 }: Props) => {
+  // Keyboard while open: ↑/↓ move through the employees, ←/→ through the
+  // tabs, Enter punches in the selected employee. Listened to in the capture
+  // phase so these keys don't also reach the timeline's shortcuts.
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (employees.length === 0) return;
+        const current = employees.findIndex((x) => x.id === selectedEmployeeId);
+        const next =
+          current === -1
+            ? e.key === "ArrowDown"
+              ? 0
+              : employees.length - 1
+            : Math.max(
+                0,
+                Math.min(
+                  employees.length - 1,
+                  current + (e.key === "ArrowDown" ? 1 : -1),
+                ),
+              );
+        onSelectEmployee(employees[next].id);
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        e.stopPropagation();
+        const current = tabs.findIndex((t) => t.key === selectedTab);
+        const next = Math.max(
+          0,
+          Math.min(tabs.length - 1, current + (e.key === "ArrowRight" ? 1 : -1)),
+        );
+        if (tabs[next] && next !== current) onTabChange(tabs[next].key);
+      } else if (e.key === "Enter" && selectedEmployeeId !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        onPunchInSelected();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [
+    open,
+    employees,
+    selectedEmployeeId,
+    onSelectEmployee,
+    tabs,
+    selectedTab,
+    onTabChange,
+    onPunchInSelected,
+  ]);
+
   return (
     <Dialog
       open={open}
