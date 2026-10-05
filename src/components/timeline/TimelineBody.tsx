@@ -62,7 +62,6 @@ export interface TimelineBodyViewProps {
   loadState?: boolean;
   pendingReviewWallSec?: number;
   hasMultipleRows: boolean;
-  emptyRowsMessage?: React.ReactNode;
   showAddButton?: boolean;
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   onReassignRow?: (rowId: number, parentId: number) => void;
@@ -71,7 +70,6 @@ export interface TimelineBodyViewProps {
   onSelectBar?: (rowId: number, start: number) => void;
   rowNotice?: RowNotice;
   /** Called when a click in the list selects a row. */
-  onSelectRow?: (rowId: number) => void;
   activeSubRowId?: number | null;
   highlightedSubRowId?: number | null;
   onSelectSubRow?: (rowId: number) => void;
@@ -136,7 +134,6 @@ const TimelineBody = ({
   loadState,
   pendingReviewWallSec,
   hasMultipleRows,
-  emptyRowsMessage,
   showAddButton,
   reassignOptions,
   onReassignRow,
@@ -144,7 +141,6 @@ const TimelineBody = ({
   selectedBar,
   onSelectBar,
   rowNotice,
-  onSelectRow,
   activeSubRowId,
   highlightedSubRowId,
   onSelectSubRow,
@@ -179,9 +175,7 @@ const TimelineBody = ({
         setITrackId={setITrackId}
         setSelectedTracks={setSelectedTracks}
         loadState={rowsLoadState}
-        emptyMessage={emptyRowsMessage}
         showAddButton={showAddButton}
-        onSelectRow={onSelectRow}
         highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={onSelectSubRow}
         rowNumberStart={rowNumberStart}
