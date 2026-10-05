@@ -34,6 +34,8 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     redo,
     canUndo,
     canRedo,
+    lastUndoAt,
+    lastRedoAt,
   } = useEmployeePunches();
 
   // Add-employee dialog (opened from the "+" in the list or the "+" key).
@@ -124,6 +126,21 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     ],
   );
 
+  // What Employee and Customer needs to act on employee bars and share the
+  // undo/redo history.
+  const controls = useMemo(
+    () => ({
+      punchOut,
+      deleteSession,
+      updateSession,
+      undo,
+      redo,
+      lastUndoAt,
+      lastRedoAt,
+    }),
+    [punchOut, deleteSession, updateSession, undo, redo, lastUndoAt, lastRedoAt],
+  );
+
   const dialogProps: ComponentProps<typeof EmployeePunchDialog> = {
     open: isDialogOpen,
     onClose: closeDialog,
@@ -149,6 +166,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     employeeRows,
     // Opens the add-employee dialog (also used by Employee and Customer).
     openDialog,
+    controls,
     timelineProps,
     dialogProps,
   };
