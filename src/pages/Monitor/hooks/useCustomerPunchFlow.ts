@@ -11,7 +11,6 @@ import type { TimelineSnapshot } from "../../../components/timeline/types";
 import { secToTimeString } from "../../../components/timeline/utils";
 import { assetUrl } from "../../../utils";
 import {
-  CUSTOMERS_EMPTY_GRID_MESSAGE,
   EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE,
   CUSTOMER_EMPLOYEE_ROW_ID_BASE,
   UNATTENDED_ROW_ID,
@@ -290,36 +289,6 @@ export const useCustomerPunchFlow = ({
     [canAttendAt],
   );
 
-  // Picking an employee moves the marker to their punch-in: the start of the
-  // shift the marker is in, else of the latest one before it, else the first.
-  // While any customer bar is still being built (open), the marker stays put,
-  // so several customers can be tracked at once across employees.
-  const rowSelectMarkerSec = useCallback(
-    (rowId: number) => {
-      if (Object.keys(openSessions).length > 0) return undefined;
-      const punchRowId = punchRowIds.get(rowId);
-      if (punchRowId === undefined) return undefined;
-      const shifts = [...(employeeClosedSessions[punchRowId] ?? [])];
-      const openStart = employeeOpenSessions[punchRowId];
-      if (openStart !== undefined)
-        shifts.push({ start: openStart, end: Infinity });
-      if (shifts.length === 0) return undefined;
-      shifts.sort((a, b) => a.start - b.start);
-      const shift =
-        shifts.find((s) => markerSec >= s.start && markerSec <= s.end) ??
-        [...shifts].reverse().find((s) => s.start <= markerSec) ??
-        shifts[0];
-      return shift.start;
-    },
-    [
-      openSessions,
-      punchRowIds,
-      employeeClosedSessions,
-      employeeOpenSessions,
-      markerSec,
-    ],
-  );
-
   // Customers that can re-enter: groups with no open session, each with the
   // row that attended it last and when it punched out there.
   const reEnterCustomers = useMemo((): ReEnterCustomer[] => {
@@ -398,60 +367,6 @@ export const useCustomerPunchFlow = ({
     handleClosePunch();
   }, [punchTarget, punchCount, reEnterCustomer, reEnter, addGroup, handleClosePunch]);
 
-  const timelineProps = useMemo(
-    (): TimelineTabProps => ({
-      headerLabel: "Customer Punches",
-      viewMode: "camera",
-      // The list doesn't depend on review data, so no loader.
-      rowsLoadState: false,
-      rowTracks: tracks,
-      activeSessionStarts: openSessions,
-      completedSessions: closedSessions,
-      // Starts on "Unattended" each time the tab is opened.
-      focusRowId: UNATTENDED_ROW_ID,
-      onPunchIn: handleOpenPunch,
-      onPunchOut: punchOut,
-      onDeleteSession: deleteSession,
-      onUpdateSession: updateSession,
-      getSessionBounds,
-      onUndo: undo,
-      onRedo: redo,
-      canUndo,
-      canRedo,
-      reassignOptions: reassignOptionsAtMarker,
-      onReassignRow: handleChangeParent,
-      sessionWallSec,
-      sessionFloorSec,
-      emptyGridMessage:
-        groups.length === 0 ? CUSTOMERS_EMPTY_GRID_MESSAGE : undefined,
-      rowSelectMarkerSec,
-      rowNotice: wallNotice ?? notice,
-    }),
-    [
-      wallNotice,
-      rowSelectMarkerSec,
-      notice,
-      tracks,
-      openSessions,
-      closedSessions,
-      handleOpenPunch,
-      punchOut,
-      deleteSession,
-      updateSession,
-      getSessionBounds,
-      undo,
-      redo,
-      canUndo,
-      canRedo,
-      reassignOptionsAtMarker,
-      handleChangeParent,
-      sessionWallSec,
-      sessionFloorSec,
-      groups.length,
-    ],
-  );
-
-  // Employee and Customer tab: "Back Room" (employees on a break), then Customer
   // punches' own rows — "Unattended" and the punched-in employees, each with
   // its customer groups (the same groups as Customer punches) — where the
   // employee lines also show their Employee punches bars. Unattended reads
@@ -786,7 +701,6 @@ export const useCustomerPunchFlow = ({
   };
 
   return {
-    timelineProps,
     employeesCustomersTimelineProps,
     punchDialogProps,
     reEnterDialogProps,
