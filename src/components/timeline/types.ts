@@ -1,5 +1,9 @@
 export type NavTab = "compliances" | "activities" | "employeesCustomers";
 
+// What a timeline row lists: a nav tab's own kind of row, or the employee /
+// customer rows of Employees & Customers.
+export type TrackCategory = NavTab | "employees" | "customers";
+
 export interface TimelineBodyHandle {
   stepMarker: (deltaSec: number) => void;
   setMarker: (sec: number) => void;
@@ -22,7 +26,7 @@ export interface TimelineSnapshot {
     tracks: {
       id: number;
       name: string;
-      category: NavTab;
+      category: TrackCategory;
       sessions: {
         type: "in" | "out";
         timestamp: string;
@@ -35,7 +39,7 @@ export interface TimelineSnapshot {
   ui: {
     panOffsetSec: number;
     zoom: number;
-    category: NavTab;
+    category: TrackCategory;
     playback: boolean;
   };
 }
@@ -47,7 +51,7 @@ export type FlatRow = {
   parentCameraId?: number;
   cameraNumber: number;
   sessions: { type: "in" | "out"; timestamp: string }[];
-  category?: NavTab;
+  category?: TrackCategory;
   /** Rendered greyed out in the row list (e.g. an employee who hasn't punched in). */
   inactive?: boolean;
 };
