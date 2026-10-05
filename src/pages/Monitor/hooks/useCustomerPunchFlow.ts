@@ -578,6 +578,12 @@ export const useCustomerPunchFlow = ({
     [punchRowIds, breakPunchRowIds],
   );
 
+  // Only customer groups change attendance; Back Room break lines don't.
+  const canReassignRow = useCallback(
+    (rowId: number) => !breakPunchRowIds.has(rowId),
+    [breakPunchRowIds],
+  );
+
   // An employee just added (e.g. with "+" here) gets selected.
   const addedFocusedRowId = employeeControls?.focusedRowId;
   const employeesCustomersFocusRowId =
@@ -665,6 +671,7 @@ export const useCustomerPunchFlow = ({
       // B / S send an employee to the Back Room and back, with their hints.
       onRowKey: handleRowKey,
       getOpenHint,
+      canReassignRow,
       focusRowId: employeesCustomersFocusRowId,
       activeSessionStarts: employeesCustomersOpen,
       completedSessions: employeesCustomersClosed,
@@ -713,6 +720,7 @@ export const useCustomerPunchFlow = ({
       wallNotice,
       handleRowKey,
       getOpenHint,
+      canReassignRow,
       employeesCustomersFocusRowId,
       notice,
     ],
