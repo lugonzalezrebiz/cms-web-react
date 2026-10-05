@@ -12,6 +12,10 @@ interface PunchState {
   closed: Record<number, Range[]>;
   /** Employee id → its row id, so a known employee reuses the same row. */
   employeeRows: Record<number, number>;
+  /** Breaks in the Back Room (Employee and Customer's B / S), by row id:
+   * the open one's start, and the closed ones. */
+  breakOpen: Record<number, number>;
+  breakClosed: Record<number, Range[]>;
 }
 
 // `sec` is where the change happened, so undo/redo can move the marker there.
@@ -24,10 +28,15 @@ const INITIAL_STATE: PunchState = {
   open: {},
   closed: {},
   employeeRows: {},
+  breakOpen: {},
+  breakClosed: {},
 };
 
+// Inside one of the row's past work or break bars.
 const overlapsClosed = (state: PunchState, rowId: number, sec: number) =>
-  (state.closed[rowId] ?? []).some((r) => sec >= r.start && sec < r.end);
+  [...(state.closed[rowId] ?? []), ...(state.breakClosed[rowId] ?? [])].some(
+    (r) => sec >= r.start && sec < r.end,
+  );
 
 // Local state of the Employee punches timeline (rows + session bars) with
 // undo/redo history. Nothing is persisted to the backend yet.
@@ -117,6 +126,8 @@ export const useEmployeePunches = () => {
   const punchIn = useCallback(
     (rowId: number, startSec: number) => {
       if (present.open[rowId] !== undefined) return false;
+      // On a break, S (not a punch-in) brings them back.
+      if (present.breakOpen[rowId] !== undefined) return false;
       if (overlapsClosed(present, rowId, startSec)) return false;
       commit({ ...present, open: { ...present.open, [rowId]: startSec } }, startSec);
       return true;
@@ -141,6 +152,54 @@ export const useEmployeePunches = () => {
         },
         endSec,
       );
+    },
+    [present, commit],
+  );
+
+  // B: off to the Back Room at sec — their work bar closes there and a break
+  // opens. One history step. Returns whether it happened.
+  const startBreak = useCallback(
+    (rowId: number, sec: number) => {
+      const start = present.open[rowId];
+      if (start === undefined || sec <= start) return false;
+      const { [rowId]: _working, ...open } = present.open;
+      commit(
+        {
+          ...present,
+          open,
+          closed: {
+            ...present.closed,
+            [rowId]: [...(present.closed[rowId] ?? []), { start, end: sec }],
+          },
+          breakOpen: { ...present.breakOpen, [rowId]: sec },
+        },
+        sec,
+      );
+      return true;
+    },
+    [present, commit],
+  );
+
+  // Closes the row's open break at sec; with `backToWork` (S) a new work bar
+  // opens there, otherwise ("o") they're just punched out. One history step.
+  const finishBreak = useCallback(
+    (rowId: number, sec: number, backToWork: boolean) => {
+      const start = present.breakOpen[rowId];
+      if (start === undefined || sec <= start) return false;
+      const { [rowId]: _break, ...breakOpen } = present.breakOpen;
+      commit(
+        {
+          ...present,
+          open: backToWork ? { ...present.open, [rowId]: sec } : present.open,
+          breakOpen,
+          breakClosed: {
+            ...present.breakClosed,
+            [rowId]: [...(present.breakClosed[rowId] ?? []), { start, end: sec }],
+          },
+        },
+        sec,
+      );
+      return true;
     },
     [present, commit],
   );
@@ -224,6 +283,10 @@ export const useEmployeePunches = () => {
     openSessions: present.open,
     closedSessions: present.closed,
     employeeRows: present.employeeRows,
+    breakOpen: present.breakOpen,
+    breakClosed: present.breakClosed,
+    startBreak,
+    finishBreak,
     focusedRowId,
     addUnknownEmployee,
     addEmployee,
