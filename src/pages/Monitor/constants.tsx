@@ -12,6 +12,9 @@ export type TimelineTabProps = Partial<ComponentProps<typeof TimeLine>>;
 // reuse their Employee punches row id (small negatives); these sit far below.
 export const UNATTENDED_ROW_ID = -100_000;
 export const CUSTOMER_EMPLOYEE_ROW_ID_BASE = -100_000;
+// Employee and Customer tab's "Back Room" line: between the employee ids
+// (just below -100_000) and the customer groups (-200_000 and down).
+export const BACK_ROOM_ROW_ID = -150_000;
 
 export const EMPLOYEES_EMPTY_MESSAGE = (
   <span
