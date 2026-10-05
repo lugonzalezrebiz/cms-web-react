@@ -54,8 +54,6 @@ const TimeLine = ({
   pendingReviewWallSec,
   activeTab,
   onTabChange,
-  disabledTabs,
-  emptyRowsMessage,
   showAddButton,
   onAddRow,
   rowTracks,
@@ -67,7 +65,6 @@ const TimeLine = ({
   onDeleteSession,
   onUpdateSession,
   getSessionBounds,
-  rowSelectMarkerSec,
   rowNotice,
   rowNumberStart,
   onRowKey,
@@ -116,9 +113,6 @@ const TimeLine = ({
   pendingReviewWallSec?: number;
   activeTab?: NavTab;
   onTabChange?: (tab: NavTab) => void;
-  /** Nav tabs shown but not selectable. */
-  disabledTabs?: NavTab[];
-  emptyRowsMessage?: React.ReactNode;
   showAddButton?: boolean;
   onAddRow?: () => void;
   /** Replaces the snapshot's tracks as the timeline rows (camera view mode). */
@@ -142,9 +136,6 @@ const TimeLine = ({
     rowId: number,
     start: number,
   ) => { min: number; max: number } | undefined;
-  /** Punches tabs: where the marker goes when a row is picked (list click or
-   * digit), or undefined to leave it. */
-  rowSelectMarkerSec?: (rowId: number) => number | undefined;
   /** Punches tabs: a message shown at the marker on one row. */
   rowNotice?: RowNotice;
   /** Number shown on the first row (and its digit shortcut); default 1. */
@@ -485,26 +476,6 @@ const TimeLine = ({
     state.setSelectedSubRowId(rowId);
   };
 
-  // Punches tabs: picking a row can move the marker (e.g. to the employee's
-  // punch-in), panning to it if it's off-screen.
-  const handleSelectRow = (rowId: number) => {
-    const sec = rowSelectMarkerSec?.(rowId);
-    if (sec === undefined) return;
-    state.setMarkerSec(sec);
-    const visibleEnd = state.panOffsetSec + state.visibleDuration;
-    if (sec < state.panOffsetSec || sec > visibleEnd) {
-      state.setPanOffsetSec(
-        Math.max(
-          0,
-          Math.min(
-            state.totalSec - state.visibleDuration,
-            sec - state.visibleDuration * 0.2,
-          ),
-        ),
-      );
-    }
-  };
-
   // A group handed over to another row follows it: that row becomes the
   // selected line, so "o" can punch the group out from there.
   const handleReassignRow = (rowId: number, parentId: number) => {
@@ -769,7 +740,6 @@ const TimeLine = ({
     onDeleteSession,
     selectedBar: state.selectedBar,
     setSelectedBar: state.setSelectedBar,
-    onSelectRow: isPunchesTab ? handleSelectRow : undefined,
     subRowBars,
     activeSubRowId,
     setSelectedSubRowId: state.setSelectedSubRowId,
@@ -801,7 +771,6 @@ const TimeLine = ({
         expanded={expandedIcon}
         activeTab={activeTab}
         onTabChange={onTabChange}
-        disabledTabs={disabledTabs}
       />
 
       <TimelineBody
@@ -851,7 +820,6 @@ const TimeLine = ({
         onConvertEventPointToLocal={onConvertEventPointToLocal}
         onEnterEditMode={handleEnterEditMode}
         rowsLoadState={rowsLoadState}
-        emptyRowsMessage={emptyRowsMessage}
         showAddButton={showAddButton}
         loadState={loadState}
         pendingReviewWallSec={state.pendingReviewWallSec}
@@ -862,7 +830,6 @@ const TimeLine = ({
         selectedBar={isPunchesTab ? state.selectedBar : null}
         onSelectBar={isPunchesTab ? handleSelectBar : undefined}
         rowNotice={isPunchesTab ? rowNotice : undefined}
-        onSelectRow={isPunchesTab ? handleSelectRow : undefined}
         activeSubRowId={activeSubRowId}
         highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={isPunchesTab ? handleSelectSubRow : undefined}

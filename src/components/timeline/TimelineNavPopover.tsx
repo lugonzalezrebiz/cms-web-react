@@ -10,8 +10,6 @@ interface Props {
   onClose: () => void;
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
-  /** Tabs shown but not selectable (e.g. Customer punches with no employees). */
-  disabledTabs?: NavTab[];
 }
 
 // Tab labels always take two lines: the first word, then the rest.
@@ -26,7 +24,6 @@ const TimelineNavPopover = ({
   onClose,
   activeTab,
   onTabChange,
-  disabledTabs = [],
 }: Props) => (
   <Popover
     open={open}
@@ -59,15 +56,12 @@ const TimelineNavPopover = ({
     >
       {NAV_TABS.map(({ id, label, iconClass }) => {
         const isSelected = id === activeTab;
-        const isDisabled = !isSelected && disabledTabs.includes(id);
         return (
           <Box
             component="li"
             key={id}
             sx={{ flex: 1 }}
-            aria-disabled={isDisabled || undefined}
             onClick={() => {
-              if (isDisabled) return;
               onTabChange(id);
               onClose();
             }}
@@ -85,19 +79,16 @@ const TimelineNavPopover = ({
                 height: "77px",
                 gap: "5px",
                 borderRadius: "4px",
-                cursor: isDisabled ? "not-allowed" : "pointer",
-                opacity: isDisabled ? 0.4 : 1,
+                cursor: "pointer",
                 padding: "8px",
                 backgroundColor: isSelected ? Colors.vividOrange : Colors.white,
                 color: isSelected ? Colors.white : "inherit",
-                // Hover looks like the selected tab (disabled tabs don't react).
-                "&:hover": isDisabled
-                  ? {}
-                  : {
-                      backgroundColor: Colors.vividOrange,
-                      color: Colors.white,
-                      "& img": { filter: "brightness(0) invert(1)" },
-                    },
+                // Hover looks like the selected tab.
+                "&:hover": {
+                  backgroundColor: Colors.vividOrange,
+                  color: Colors.white,
+                  "& img": { filter: "brightness(0) invert(1)" },
+                },
                 "& img": {
                   filter: isSelected ? "brightness(0) invert(1)" : "none",
                 },
