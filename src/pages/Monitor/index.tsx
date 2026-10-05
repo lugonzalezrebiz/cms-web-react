@@ -276,6 +276,8 @@ const Monitor = () => {
     employeeOpenSessions: employeeFlow.openSessions,
     employeeClosedSessions: employeeFlow.closedSessions,
     employeeRows: employeeFlow.employeeRows,
+    // Employee and Customer adds employees with the same dialog.
+    onAddEmployee: employeeFlow.openDialog,
   });
 
   // Employee punches remembers where its marker was when leaving the tab;
