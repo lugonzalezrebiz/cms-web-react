@@ -140,13 +140,15 @@ The `/monitor` route is the core feature. Key concepts:
 
 ### Timeline tabs
 
-The timeline nav popover switches between three tabs (`NavTab`), shared through `TimelineTabContext` so the header can show each tab's shortcuts:
+The timeline nav popover switches between two tabs (`NavTab`), shared through `TimelineTabContext` so the header can show each tab's shortcuts:
 
 - **Compliance violations** — the tracker-filtered diamond review flow described above.
-- **Employee punches** — all cameras; employee rows with session bars (`i` punch in, `o` punch out, `+` add employee). State in `useEmployeePunches` / `useEmployeePunchFlow`.
-- **Customer punches** — all cameras; "Unattended" + every employee, with customer groups as sub-rows attended by an employee who is punched in at that time. State in `useCustomerPunches` / `useCustomerPunchFlow`.
+- **Employees & Customers** (`employeesCustomers`) — all cameras; lines numbered from 0:
+  - **Back Room** — employees on a break, as sub-rows (`B` sends the selected employee there, `S` brings them back to work).
+  - **Unattended** — its customer groups as sub-rows (`i` punches a customer in).
+  - **The punched-in employees** — each with their work bars and the customer groups they attend (`C` assigns a customer, `o` punches out the sub-selected customer first, then the employee). `+` (or `i` with no line selected) adds an employee.
 
-Each punches flow returns the `TimeLine` props for its tab, spread over the Compliance violations defaults in `Monitor/index.tsx`. Punches state is local only (not persisted yet).
+Employee state (work bars, breaks) lives in `useEmployeePunches` / `useEmployeePunchFlow`; customer groups in `useCustomerPunches` / `useCustomerPunchFlow`, which also builds the tab's `TimeLine` props (`employeesCustomersTimelineProps`), spread over the Compliance violations defaults in `Monitor/index.tsx` and `MonitorTimeline/index.tsx`. The tab's undo/redo merges both histories by time. Punches state is local only (not persisted yet), kept in sync with the popout timeline by `usePunchHistorySync` (a `BroadcastChannel`).
 
 ### Styling
 
