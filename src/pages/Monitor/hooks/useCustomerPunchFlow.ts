@@ -12,6 +12,7 @@ import { secToTimeString } from "../../../components/timeline/utils";
 import { assetUrl } from "../../../utils";
 import {
   CUSTOMERS_EMPTY_GRID_MESSAGE,
+  EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE,
   CUSTOMER_EMPLOYEE_ROW_ID_BASE,
   UNATTENDED_ROW_ID,
   BACK_ROOM_ROW_ID,
@@ -34,6 +35,8 @@ interface Params {
   employeeOpenSessions: Record<number, number>;
   employeeClosedSessions: Record<number, Range[]>;
   employeeRows: Record<number, number>;
+  /** Opens Employee punches' add-employee dialog (Employee and Customer tab). */
+  onAddEmployee?: () => void;
 }
 
 // Everything the Customer punches tab needs: its rows (employees + customer
@@ -45,6 +48,7 @@ export const useCustomerPunchFlow = ({
   employeeOpenSessions,
   employeeClosedSessions,
   employeeRows,
+  onAddEmployee,
 }: Params) => {
   const {
     groups,
@@ -471,6 +475,10 @@ export const useCustomerPunchFlow = ({
       headerLabel: "Employees & Customers",
       viewMode: "camera",
       rowsLoadState: false,
+      // "+" (header or key), and "i" with no line selected, add an employee
+      // as in Employee punches.
+      showAddButton: onAddEmployee !== undefined,
+      onAddRow: onAddEmployee,
       rowTracks: employeesCustomersTracks,
       // Back Room is 0, Unattended 1 (and their digit shortcuts).
       rowNumberStart: 0,
@@ -488,11 +496,16 @@ export const useCustomerPunchFlow = ({
       reassignOptions: reassignOptionsAtMarker,
       onReassignRow: handleChangeParent,
       sessionFloorSec: unattendedFloorSec,
+      // Until there's anybody: no employees and no Unattended customers.
       emptyGridMessage:
-        unattendedGroups.length === 0 ? CUSTOMERS_EMPTY_GRID_MESSAGE : undefined,
+        employeeTracks.length === 0 && unattendedGroups.length === 0
+          ? EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE
+          : undefined,
       rowNotice: notice,
     }),
     [
+      onAddEmployee,
+      employeeTracks.length,
       employeesCustomersTracks,
       openSessions,
       closedSessions,
