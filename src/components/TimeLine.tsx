@@ -238,6 +238,13 @@ const TimeLine = ({
     activeSessionStartsProp ?? state.activeSessionStarts;
   const completedSessions = completedSessionsProp ?? state.completedSessions;
 
+  // A line that turns inactive (greyed out, e.g. Employee and Customer's
+  // defaults once nobody is punched in) can't stay selected.
+  if (flatRows.find((r) => r.id === state.iTrackId)?.inactive) {
+    state.setITrackId(null);
+    state.setSelectedTracks(new Set());
+  }
+
   // A selected bar belongs to its tab: switching tabs clears it.
   const [prevTab, setPrevTab] = useState(activeTab);
   if (prevTab !== activeTab) {
