@@ -52,21 +52,24 @@ const RowItem = ({
     ? isSubSelectable
       ? () => onSelectSubRow(row.id)
       : undefined
-    : () => {
-        // Employee rows toggle: clicking the selected one deselects it.
-        if (row.category === "employees" && iTrackId === row.id) {
-          setITrackId(null);
-          setSelectedTracks(new Set());
-          return;
-        }
-        setITrackId(row.id);
-        if (activeSessionStarts[row.id] !== undefined) {
-          setSelectedTracks(new Set([row.id]));
-        } else {
-          setSelectedTracks(new Set());
-        }
-        onSelectRow?.(row.id);
-      };
+    : row.inactive
+      ? // Inactive (greyed-out) lines can't be selected.
+        undefined
+      : () => {
+          // Employee rows toggle: clicking the selected one deselects it.
+          if (row.category === "employees" && iTrackId === row.id) {
+            setITrackId(null);
+            setSelectedTracks(new Set());
+            return;
+          }
+          setITrackId(row.id);
+          if (activeSessionStarts[row.id] !== undefined) {
+            setSelectedTracks(new Set([row.id]));
+          } else {
+            setSelectedTracks(new Set());
+          }
+          onSelectRow?.(row.id);
+        };
 
   // Customer punches groups: no number, name aligned with the parent's name.
   const isCustomerSubRow = isEventSubRow && row.category === "customers";
@@ -116,7 +119,7 @@ const RowItem = ({
         pl: isCustomerSubRow ? "40px" : isEventSubRow ? "50px" : "8px",
         pr: "8px",
         py: "6px",
-        cursor: "pointer",
+        cursor: row.inactive ? "default" : "pointer",
         fontFamily: Fonts.main,
         fontSize: 14,
         height: "20px",
