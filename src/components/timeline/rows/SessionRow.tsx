@@ -618,7 +618,11 @@ export const SessionRow = ({
           Click to change customer attendance
         </Box>
       )}
-      {showPunchOutHint && sessionStart !== undefined && !isReassignActive && (
+      {/* A notice at the marker takes the hint's place. */}
+      {showPunchOutHint &&
+        sessionStart !== undefined &&
+        !isReassignActive &&
+        !isNoticeShown && (
         <Box
           component="span"
           sx={{ ...hintTextSx, left: hintLeft }}
