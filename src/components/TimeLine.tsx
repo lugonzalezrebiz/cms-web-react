@@ -73,6 +73,7 @@ const TimeLine = ({
   onRowKey,
   getOpenHint,
   canReassignRow,
+  getSelectedHint,
   reassignOptions,
   onReassignRow,
   sessionWallSec,
@@ -161,6 +162,8 @@ const TimeLine = ({
   getOpenHint?: (rowId: number) => React.ReactNode | undefined;
   /** Punches tabs: whether a sub-row gets the change-attendance button. */
   canReassignRow?: (rowId: number) => boolean;
+  /** Punches tabs: text next to the marker on the selected line. */
+  getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
   /** Rows a sub-row's group can be moved to (Customer punches). */
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
   /** Moves the sub-row `rowId` under `parentId`. */
@@ -859,6 +862,7 @@ const TimeLine = ({
         rowNumberStart={rowNumberStart}
         getOpenHint={isPunchesTab ? getOpenHint : undefined}
         canReassignRow={canReassignRow}
+        getSelectedHint={isPunchesTab ? getSelectedHint : undefined}
         onEditBar={isPunchesTab && onUpdateSession ? handleEditBar : undefined}
         getEditBounds={getEditBounds}
       />

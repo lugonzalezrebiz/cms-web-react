@@ -19,6 +19,7 @@ import {
   BACK_ROOM_BREAK_ROW_ID_BASE,
   EMPLOYEE_AT_WORK_HINT,
   EMPLOYEE_ON_BREAK_HINT,
+  UNATTENDED_SELECTED_HINT,
   type TimelineTabProps,
 } from "../constants";
 import { useCustomerPunches } from "./useCustomerPunches";
@@ -586,6 +587,13 @@ export const useCustomerPunchFlow = ({
     [punchRowIds, breakPunchRowIds],
   );
 
+  // Unattended, when selected, says how to punch a customer in.
+  const getSelectedHint = useCallback(
+    (rowId: number) =>
+      rowId === UNATTENDED_ROW_ID ? UNATTENDED_SELECTED_HINT : undefined,
+    [],
+  );
+
   // Only customer groups change attendance; Back Room break lines don't.
   const canReassignRow = useCallback(
     (rowId: number) => !breakPunchRowIds.has(rowId),
@@ -680,6 +688,7 @@ export const useCustomerPunchFlow = ({
       onRowKey: handleRowKey,
       getOpenHint,
       canReassignRow,
+      getSelectedHint,
       focusRowId: employeesCustomersFocusRowId,
       activeSessionStarts: employeesCustomersOpen,
       completedSessions: employeesCustomersClosed,
@@ -729,6 +738,7 @@ export const useCustomerPunchFlow = ({
       handleRowKey,
       getOpenHint,
       canReassignRow,
+      getSelectedHint,
       employeesCustomersFocusRowId,
       notice,
     ],

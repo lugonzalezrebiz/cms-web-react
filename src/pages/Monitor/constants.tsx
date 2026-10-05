@@ -64,6 +64,12 @@ export const EMPLOYEE_ON_BREAK_HINT = (
     Press <HintKey>S</HintKey> to move to the Show Room
   </>
 );
+// Next to the marker while "Unattended" is the selected line.
+export const UNATTENDED_SELECTED_HINT = (
+  <>
+    Press <HintKey>i</HintKey> to Punch-in a customer
+  </>
+);
 
 export const CUSTOMERS_EMPTY_GRID_MESSAGE = (
   <>
