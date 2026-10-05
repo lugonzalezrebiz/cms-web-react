@@ -69,6 +69,8 @@ interface TimelineGridRowsProps {
   activeSubRowId?: number | null;
   /** Punches tabs: the picked sub-row (↑/↓, click), highlighted. */
   highlightedSubRowId?: number | null;
+  /** Punches tabs: per-row text next to the marker while its bar is open. */
+  getOpenHint?: (rowId: number) => React.ReactNode | undefined;
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
@@ -123,6 +125,7 @@ export const TimelineGridRows = ({
   rowNotice,
   activeSubRowId,
   highlightedSubRowId,
+  getOpenHint,
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
@@ -315,6 +318,7 @@ export const TimelineGridRows = ({
                 onEditBar={onEditBar}
                 getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                openHint={getOpenHint?.(row.id)}
                 // Punches tabs: the selected line, with no sub-row bar picked.
                 highlightChildBars={
                   onSelectBar !== undefined &&
@@ -350,6 +354,7 @@ export const TimelineGridRows = ({
                   onEditBar={onEditBar}
                   getEditBounds={getEditBounds}
                   notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                  openHint={getOpenHint?.(row.id)}
                 />
                 {/* Punches tabs (selectable bars) have no diamonds, and the
                     diamond canvas would swallow the clicks on sub-row bars. */}

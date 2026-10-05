@@ -1,5 +1,11 @@
 import { Box } from "@mui/system";
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { Colors, Fonts } from "../../../theme";
 import { assetUrl } from "../../../utils";
 import DropDownMenu from "../../DropDownMenu";
@@ -30,6 +36,23 @@ const hintTextSx = {
   pointerEvents: "none",
   zIndex: 3,
 } as const;
+
+/** A key inside a row hint ("Press o to punch-out"), in orange. */
+export const HintKey = ({ children }: { children: ReactNode }) => (
+  <span
+    style={{
+      fontFamily: Fonts.main,
+      fontWeight: 400,
+      fontStyle: "normal",
+      fontSize: 12,
+      lineHeight: "18px",
+      letterSpacing: 0,
+      color: Colors.vividOrange,
+    }}
+  >
+    {children}
+  </span>
+);
 
 // const toSeconds = (time: string) => {
 //   const [h, m, s] = time.split(":").map(Number);
@@ -159,6 +182,9 @@ export interface SessionRowProps {
   /** Punches tabs: this is the selected line and none of its sub-rows' bars is
    * selected, so its mirror bar under the marker shows as selected. */
   highlightChildBars?: boolean;
+  /** Text next to the marker while this row's bar is open, replacing
+   * "Press o to punch-out". */
+  openHint?: ReactNode;
   /** Punches tabs: dragging a selected bar's ends saves its new bounds here. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Outer limits for a bar's ends (timeline span, attendance rules). */
@@ -197,6 +223,7 @@ export const SessionRow = ({
   onEditBar,
   getEditBounds,
   highlightChildBars = false,
+  openHint,
 }: SessionRowProps) => {
   const rowRef = useRef<HTMLDivElement | null>(null);
   // === OLD: sessions preloaded from API rangeSessions ===
@@ -580,21 +607,11 @@ export const SessionRow = ({
           component="span"
           sx={{ ...hintTextSx, left: hintLeft }}
         >
-          Press{" "}
-          <span
-            style={{
-              fontFamily: Fonts.main,
-              fontWeight: 400,
-              fontStyle: "normal",
-              fontSize: 12,
-              lineHeight: "18px",
-              letterSpacing: 0,
-              color: Colors.vividOrange,
-            }}
-          >
-            o
-          </span>{" "}
-          to punch-out
+          {openHint ?? (
+            <>
+              Press <HintKey>o</HintKey> to punch-out
+            </>
+          )}
         </Box>
       )}
       {sessionStart === undefined && punchedOutPct !== null && (
