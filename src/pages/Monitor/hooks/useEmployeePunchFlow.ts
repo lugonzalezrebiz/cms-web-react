@@ -147,6 +147,8 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     openSessions,
     closedSessions,
     employeeRows,
+    // Opens the add-employee dialog (also used by Employee and Customer).
+    openDialog,
     timelineProps,
     dialogProps,
   };
