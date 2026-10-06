@@ -65,8 +65,6 @@ interface TimelineGridRowsProps {
   onSelectBar?: (rowId: number, start: number) => void;
   /** Punches tabs: a message shown at the marker on one row. */
   rowNotice?: RowNotice;
-  /** Punches tabs: the sub-selected open sub-row. */
-  activeSubRowId?: number | null;
   /** Punches tabs: the picked sub-row (↑/↓, click), highlighted. */
   highlightedSubRowId?: number | null;
   /** Punches tabs: per-row text next to the marker while its bar is open. */
@@ -131,7 +129,6 @@ export const TimelineGridRows = ({
   selectedBar,
   onSelectBar,
   rowNotice,
-  activeSubRowId,
   highlightedSubRowId,
   getOpenHint,
   canReassignRow,
@@ -374,18 +371,18 @@ export const TimelineGridRows = ({
                   visibleStart={visibleStart}
                   visibleDuration={visibleDuration}
                   reassignOptions={reassignOptions}
-                  // Only on the sub-row in play (the one "o" closes), and only
-                  // where the tab allows it (e.g. not Back Room breaks).
+                  // Only on the picked sub-row, and only where the tab allows
+                  // it (e.g. not Back Room breaks).
                   onReassign={
-                    row.id !== activeSubRowId ||
+                    row.id !== highlightedSubRowId ||
                     canReassignRow?.(row.id) === false
                       ? undefined
                       : onReassignRow
                   }
-                  // Only the sub-selected sub-row is highlighted and shows
-                  // the punch-out hint ("o" acts on it alone).
+                  // Only the picked sub-row is highlighted and shows the
+                  // punch-out hint (not while just its line is selected).
                   isSubSelected={row.id === highlightedSubRowId}
-                  showPunchOutHint={row.id === activeSubRowId}
+                  showPunchOutHint={row.id === highlightedSubRowId}
                   selectedBarStart={selectedBarStartOf(row.id)}
                   onSelectBar={onSelectBar}
                   onEditBar={onEditBar}
