@@ -883,7 +883,6 @@ const TimeLine = ({
         selectedBar={isPunchesTab ? state.selectedBar : null}
         onSelectBar={isPunchesTab ? handleSelectBar : undefined}
         rowNotice={isPunchesTab ? rowNotice : undefined}
-        activeSubRowId={activeSubRowId}
         highlightedSubRowId={highlightedSubRowId}
         onSelectSubRow={isPunchesTab ? handleSelectSubRow : undefined}
         rowNumberStart={rowNumberStart}
