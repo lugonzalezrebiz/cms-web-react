@@ -325,6 +325,8 @@ export const TimelineGridRows = ({
                 getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
                 openHint={getOpenHint?.(row.id)}
+                // Only the selected line says what its open bar can do.
+                showPunchOutHint={row.id === iTrackId}
                 selectedHint={
                   row.id === iTrackId ? getSelectedHint?.(row.id) : undefined
                 }
