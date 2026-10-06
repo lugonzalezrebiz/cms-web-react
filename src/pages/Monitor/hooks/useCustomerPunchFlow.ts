@@ -30,6 +30,7 @@ const OUTSIDE_PUNCH_TIME_NOTICE =
   "Not possible: outside the employee's punch-in time";
 const WALL_NOTICE = "Employee punched out here — punch out the customer first";
 const ATTENDING_CUSTOMER_NOTICE = "Not possible: punch out the customer first";
+const CUSTOMER_UNDER_NOTICE = "Not possible: delete the customer first";
 
 interface Params {
   /** Current marker: where attendance changes happen. */
@@ -625,15 +626,53 @@ export const useCustomerPunchFlow = ({
       focusOn,
     ],
   );
-  // Break bars can't be deleted or edited yet.
+  // Break bars can't be deleted or edited yet. An employee's bar can't be
+  // deleted while a customer of theirs falls within it (delete that first).
+  // Returns false when refused, so the bar stays selected.
   const deleteSessionHere = useCallback(
     (rowId: number, startSec: number) => {
-      if (breakPunchRowIds.has(rowId)) return;
+      if (breakPunchRowIds.has(rowId)) return false;
       const punchRowId = punchRowIds.get(rowId);
-      if (punchRowId === undefined) deleteSession(rowId, startSec);
-      else employeeControls?.deleteSession(punchRowId, startSec);
+      if (punchRowId === undefined) {
+        deleteSession(rowId, startSec);
+        return true;
+      }
+      const barEnd =
+        employeeOpenSessions[punchRowId] === startSec
+          ? Infinity
+          : (employeeClosedSessions[punchRowId] ?? []).find(
+              (r) => r.start === startSec,
+            )?.end;
+      if (barEnd === undefined) return false;
+      const hasCustomer = groups.some((g) => {
+        if (g.parentRowId !== rowId) return false;
+        const openStart = openSessions[g.id];
+        const ranges = [
+          ...(closedSessions[g.id] ?? []),
+          ...(openStart !== undefined
+            ? [{ start: openStart, end: Infinity }]
+            : []),
+        ];
+        return ranges.some((r) => r.start < barEnd && r.end > startSec);
+      });
+      if (hasCustomer) {
+        setNotice({ rowId, text: CUSTOMER_UNDER_NOTICE, key: Date.now() });
+        return false;
+      }
+      employeeControls?.deleteSession(punchRowId, startSec);
+      return true;
     },
-    [breakPunchRowIds, punchRowIds, deleteSession, employeeControls],
+    [
+      breakPunchRowIds,
+      punchRowIds,
+      deleteSession,
+      employeeOpenSessions,
+      employeeClosedSessions,
+      groups,
+      openSessions,
+      closedSessions,
+      employeeControls,
+    ],
   );
   const updateSessionHere = useCallback(
     (rowId: number, oldStart: number, next: { start: number; end?: number }) => {
