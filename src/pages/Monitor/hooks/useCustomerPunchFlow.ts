@@ -18,8 +18,7 @@ import {
   BACK_ROOM_BREAK_ROW_ID_BASE,
   EMPLOYEE_AT_WORK_HINT,
   EMPLOYEE_ON_BREAK_HINT,
-  UNATTENDED_SELECTED_HINT,
-  EMPLOYEE_ASSIGN_CUSTOMER_HINT,
+  PUNCH_IN_CUSTOMER_HINT,
   type TimelineTabProps,
 } from "../constants";
 import { useCustomerPunches } from "./useCustomerPunches";
@@ -549,19 +548,17 @@ export const useCustomerPunchFlow = ({
   // Unattended, when selected, says how to punch a customer in.
   const getSelectedHint = useCallback(
     (rowId: number) =>
-      rowId === UNATTENDED_ROW_ID ? UNATTENDED_SELECTED_HINT : undefined,
+      rowId === UNATTENDED_ROW_ID ? PUNCH_IN_CUSTOMER_HINT : undefined,
     [],
   );
 
-  // With one of its customers picked, the line still says how to add
-  // another with C: Unattended punches one in, an employee gets assigned one.
+  // With one of its customers picked, the line (Unattended or an employee)
+  // still says how to add another with C.
   const getParentHint = useCallback(
     (rowId: number) =>
-      rowId === UNATTENDED_ROW_ID
-        ? UNATTENDED_SELECTED_HINT
-        : punchRowIds.has(rowId)
-          ? EMPLOYEE_ASSIGN_CUSTOMER_HINT
-          : undefined,
+      rowId === UNATTENDED_ROW_ID || punchRowIds.has(rowId)
+        ? PUNCH_IN_CUSTOMER_HINT
+        : undefined,
     [punchRowIds],
   );
 
