@@ -120,10 +120,11 @@ export const useTimelinePopout =(
         ? `${window.location.href.split("#")[0]}#${route}`
         : route;
       
+    // Tall enough for the punch dialogs (e.g. the add-employee one) to fit.
     const win = window.open(
       url,
       "timeline-popout",
-      "width=1400,height=500,resizable=yes",
+      "width=1400,height=700,resizable=yes",
     );
     if (!win) return;
     popoutRef.current = win;
