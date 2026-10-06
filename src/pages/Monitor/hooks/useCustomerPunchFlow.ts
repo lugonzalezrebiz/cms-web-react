@@ -669,6 +669,24 @@ export const useCustomerPunchFlow = ({
     [breakPunchRowIds, hasCustomerUnder],
   );
 
+  // Delete on a line with no bar picked (e.g. Unattended, whose block is its
+  // customers'): with customers under the marker, say they go first.
+  const deleteLineHere = useCallback(
+    (lineId: number, sec: number) => {
+      const hasCustomerHere = groups.some((g) => {
+        if (g.parentRowId !== lineId) return false;
+        const openStart = openSessions[g.id];
+        if (openStart !== undefined && sec >= openStart) return true;
+        return (closedSessions[g.id] ?? []).some(
+          (r) => sec >= r.start && sec <= r.end,
+        );
+      });
+      if (hasCustomerHere)
+        setNotice({ rowId: lineId, text: CUSTOMER_UNDER_NOTICE, key: Date.now() });
+    },
+    [groups, openSessions, closedSessions],
+  );
+
   // Returns false when refused, so the bar stays selected.
   const deleteSessionHere = useCallback(
     (rowId: number, startSec: number) => {
@@ -745,6 +763,7 @@ export const useCustomerPunchFlow = ({
       onPunchOut: punchOutHere,
       onDeleteSession: deleteSessionHere,
       canDeleteSession: canDeleteSessionHere,
+      onDeleteLine: deleteLineHere,
       onUpdateSession: updateSessionHere,
       getSessionBounds,
       onUndo: undoHere,
@@ -771,6 +790,7 @@ export const useCustomerPunchFlow = ({
       punchOutHere,
       deleteSessionHere,
       canDeleteSessionHere,
+      deleteLineHere,
       updateSessionHere,
       getSessionBounds,
       undoHere,
