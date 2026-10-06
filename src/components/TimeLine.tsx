@@ -63,6 +63,7 @@ const TimeLine = ({
   onPunchIn,
   onPunchOut,
   onDeleteSession,
+  canDeleteSession,
   onUpdateSession,
   getSessionBounds,
   rowNotice,
@@ -131,6 +132,8 @@ const TimeLine = ({
   /** Punches tabs: Delete removes the bar starting at `startSec` on `rowId`;
    * returning false means it was refused (the bar stays selected). */
   onDeleteSession?: (rowId: number, startSec: number) => boolean | void;
+  /** Punches tabs: whether that bar can be deleted (the trash greys out). */
+  canDeleteSession?: (rowId: number, startSec: number) => boolean;
   /** Punches tabs: saves a bar whose ends were dragged (start `oldStart`). */
   onUpdateSession?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: how far a bar's ends may go (e.g. the employee's shift). */
@@ -439,7 +442,9 @@ const TimeLine = ({
     ((completedSessions[selectedBar.rowId] ?? []).some(
       (r) => r.start === selectedBar.start,
     ) ||
-      activeSessionStarts[selectedBar.rowId] === selectedBar.start);
+      activeSessionStarts[selectedBar.rowId] === selectedBar.start) &&
+    // …and the tab allows deleting it (e.g. no customers on an employee bar).
+    canDeleteSession?.(selectedBar.rowId, selectedBar.start) !== false;
   const handleDeleteBar = () => {
     if (!canDeleteBar || selectedBar === null) return;
     const wasOpen = activeSessionStarts[selectedBar.rowId] === selectedBar.start;
