@@ -626,17 +626,12 @@ export const useCustomerPunchFlow = ({
       focusOn,
     ],
   );
-  // Break bars can't be deleted or edited yet. An employee's bar can't be
-  // deleted while a customer of theirs falls within it (delete that first).
-  // Returns false when refused, so the bar stays selected.
-  const deleteSessionHere = useCallback(
+  // An employee's bar with a customer of theirs within it (delete that
+  // first).
+  const hasCustomerUnder = useCallback(
     (rowId: number, startSec: number) => {
-      if (breakPunchRowIds.has(rowId)) return false;
       const punchRowId = punchRowIds.get(rowId);
-      if (punchRowId === undefined) {
-        deleteSession(rowId, startSec);
-        return true;
-      }
+      if (punchRowId === undefined) return false;
       const barEnd =
         employeeOpenSessions[punchRowId] === startSec
           ? Infinity
@@ -644,7 +639,7 @@ export const useCustomerPunchFlow = ({
               (r) => r.start === startSec,
             )?.end;
       if (barEnd === undefined) return false;
-      const hasCustomer = groups.some((g) => {
+      return groups.some((g) => {
         if (g.parentRowId !== rowId) return false;
         const openStart = openSessions[g.id];
         const ranges = [
@@ -655,22 +650,43 @@ export const useCustomerPunchFlow = ({
         ];
         return ranges.some((r) => r.start < barEnd && r.end > startSec);
       });
-      if (hasCustomer) {
-        setNotice({ rowId, text: CUSTOMER_UNDER_NOTICE, key: Date.now() });
-        return false;
-      }
-      employeeControls?.deleteSession(punchRowId, startSec);
-      return true;
     },
     [
-      breakPunchRowIds,
       punchRowIds,
-      deleteSession,
       employeeOpenSessions,
       employeeClosedSessions,
       groups,
       openSessions,
       closedSessions,
+    ],
+  );
+
+  // Break bars can't be deleted or edited yet, nor an employee's bar with a
+  // customer under it (the trash greys out for both).
+  const canDeleteSessionHere = useCallback(
+    (rowId: number, startSec: number) =>
+      !breakPunchRowIds.has(rowId) && !hasCustomerUnder(rowId, startSec),
+    [breakPunchRowIds, hasCustomerUnder],
+  );
+
+  // Returns false when refused, so the bar stays selected.
+  const deleteSessionHere = useCallback(
+    (rowId: number, startSec: number) => {
+      if (breakPunchRowIds.has(rowId)) return false;
+      if (hasCustomerUnder(rowId, startSec)) {
+        setNotice({ rowId, text: CUSTOMER_UNDER_NOTICE, key: Date.now() });
+        return false;
+      }
+      const punchRowId = punchRowIds.get(rowId);
+      if (punchRowId === undefined) deleteSession(rowId, startSec);
+      else employeeControls?.deleteSession(punchRowId, startSec);
+      return true;
+    },
+    [
+      breakPunchRowIds,
+      hasCustomerUnder,
+      punchRowIds,
+      deleteSession,
       employeeControls,
     ],
   );
@@ -728,6 +744,7 @@ export const useCustomerPunchFlow = ({
       onPunchIn: handleOpenPunchHere,
       onPunchOut: punchOutHere,
       onDeleteSession: deleteSessionHere,
+      canDeleteSession: canDeleteSessionHere,
       onUpdateSession: updateSessionHere,
       getSessionBounds,
       onUndo: undoHere,
@@ -753,6 +770,7 @@ export const useCustomerPunchFlow = ({
       handleOpenPunchHere,
       punchOutHere,
       deleteSessionHere,
+      canDeleteSessionHere,
       updateSessionHere,
       getSessionBounds,
       undoHere,
