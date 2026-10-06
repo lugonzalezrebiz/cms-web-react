@@ -25,6 +25,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     focusedRowId,
     addUnknownEmployee,
     addEmployee,
+    punchIn,
     punchOut,
     deleteSession,
     updateSession,
@@ -90,6 +91,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
   // undo/redo history.
   const controls = useMemo(
     () => ({
+      punchIn,
       punchOut,
       deleteSession,
       updateSession,
@@ -105,6 +107,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       focusedRowId,
     }),
     [
+      punchIn,
       punchOut,
       deleteSession,
       updateSession,
