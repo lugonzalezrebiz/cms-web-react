@@ -73,6 +73,9 @@ interface TimelineGridRowsProps {
   canReassignRow?: (rowId: number) => boolean;
   /** Punches tabs: text next to the marker on the selected line. */
   getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
+  /** Punches tabs: text next to the marker on the line whose sub-row is
+   * picked (e.g. how to add another). */
+  getParentHint?: (rowId: number) => React.ReactNode | undefined;
   /** The row just punched out with "o", and where. */
   punchedOut?: { rowId: number; sec: number; key: number };
   /** Punches tabs: clicking a line's sub-rows block selects that line. */
@@ -133,6 +136,7 @@ export const TimelineGridRows = ({
   getOpenHint,
   canReassignRow,
   getSelectedHint,
+  getParentHint,
   punchedOut,
   onSelectLine,
   onEditBar,
@@ -340,11 +344,23 @@ export const TimelineGridRows = ({
                 punchedOut={
                   punchedOut?.rowId === row.id ? punchedOut : undefined
                 }
-                openHint={getOpenHint?.(row.id)}
-                // Only the selected line says what its open bar can do.
-                showPunchOutHint={row.id === shownLineId}
+                // Only the selected line says what its open bar can do; the line
+                // of a picked sub-row says how to add another (getParentHint).
+                openHint={
+                  row.id === pickedParentId
+                    ? getParentHint?.(row.id)
+                    : getOpenHint?.(row.id)
+                }
+                showPunchOutHint={
+                  row.id === shownLineId ||
+                  (row.id === pickedParentId && !!getParentHint?.(row.id))
+                }
                 selectedHint={
-                  row.id === shownLineId ? getSelectedHint?.(row.id) : undefined
+                  row.id === shownLineId
+                    ? getSelectedHint?.(row.id)
+                    : row.id === pickedParentId
+                      ? getParentHint?.(row.id)
+                      : undefined
                 }
                 // Punches tabs: the selected line, with no sub-row bar picked.
                 highlightChildBars={
