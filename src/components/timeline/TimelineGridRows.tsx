@@ -77,6 +77,8 @@ interface TimelineGridRowsProps {
   getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
   /** The row just punched out with "o", and where. */
   punchedOut?: { rowId: number; sec: number; key: number };
+  /** Punches tabs: clicking a line's sub-rows block selects that line. */
+  onSelectLine?: (rowId: number) => void;
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
@@ -135,6 +137,7 @@ export const TimelineGridRows = ({
   canReassignRow,
   getSelectedHint,
   punchedOut,
+  onSelectLine,
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
@@ -336,6 +339,7 @@ export const TimelineGridRows = ({
                 onEditBar={onEditBar}
                 getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                onSelectLine={onSelectLine}
                 punchedOut={
                   punchedOut?.rowId === row.id ? punchedOut : undefined
                 }
