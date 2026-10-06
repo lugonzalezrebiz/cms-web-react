@@ -236,6 +236,14 @@ const TimeLine = ({
     state.setSelectedTracks(new Set());
   }
 
+  // Punches tabs: the row just punched out with "o" (and where), so only
+  // that shows "Punched Out" — not bars closed by a break or a hand-over.
+  const [punchedOut, setPunchedOut] = useState<
+    { rowId: number; sec: number; key: number } | undefined
+  >(undefined);
+  const handlePunchedOut = (rowId: number, sec: number) =>
+    setPunchedOut({ rowId, sec, key: Date.now() });
+
   // A selected bar belongs to its tab: switching tabs clears it.
   const [prevTab, setPrevTab] = useState(activeTab);
   if (prevTab !== activeTab) {
@@ -732,6 +740,7 @@ const TimeLine = ({
     isSessionMode: isPunchesTab,
     rowNumberStart,
     onRowKey: isPunchesTab ? onRowKey : undefined,
+    onPunchedOut: handlePunchedOut,
     onPunchIn,
     onPunchOut,
     onAddRow,
@@ -837,6 +846,7 @@ const TimeLine = ({
         getOpenHint={isPunchesTab ? getOpenHint : undefined}
         canReassignRow={canReassignRow}
         getSelectedHint={isPunchesTab ? getSelectedHint : undefined}
+        punchedOut={isPunchesTab ? punchedOut : undefined}
         onEditBar={isPunchesTab && onUpdateSession ? handleEditBar : undefined}
         getEditBounds={getEditBounds}
       />
