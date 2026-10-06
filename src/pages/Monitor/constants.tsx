@@ -32,7 +32,7 @@ export const EMPLOYEES_CUSTOMERS_EMPTY_GRID_MESSAGE = (
 export const EMPLOYEE_AT_WORK_HINT = (
   <>
     Press <HintKey>B</HintKey> to move to the Back Room,{" "}
-    <HintKey>C</HintKey> to assign customer or <HintKey>O</HintKey> to
+    <HintKey>C</HintKey> to Punch-in a customer or <HintKey>O</HintKey> to
     punch-out
   </>
 );
@@ -41,14 +41,10 @@ export const EMPLOYEE_ON_BREAK_HINT = (
     Press <HintKey>S</HintKey> to move to the Show Room
   </>
 );
-// Next to the marker on an employee while one of their customers is picked.
-export const EMPLOYEE_ASSIGN_CUSTOMER_HINT = (
-  <>
-    Press <HintKey>C</HintKey> to assign customer
-  </>
-);
-// Next to the marker while "Unattended" is the selected line.
-export const UNATTENDED_SELECTED_HINT = (
+// Next to the marker on a line that takes customers with C: Unattended when
+// selected, and Unattended or an employee while one of their customers is
+// picked.
+export const PUNCH_IN_CUSTOMER_HINT = (
   <>
     Press <HintKey>C</HintKey> to Punch-in a customer
   </>
