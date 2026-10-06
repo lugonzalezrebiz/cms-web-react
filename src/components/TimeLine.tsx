@@ -58,7 +58,6 @@ const TimeLine = ({
   onAddRow,
   rowTracks,
   activeSessionStarts: activeSessionStartsProp,
-  focusRowId,
   focusRow,
   completedSessions: completedSessionsProp,
   onPunchIn,
@@ -120,8 +119,6 @@ const TimeLine = ({
   rowTracks?: TimelineSnapshot["timeline"]["tracks"];
   /** Open sessions by row id → start second; overrides the internal state. */
   activeSessionStarts?: Record<number, number>;
-  /** Row to select whenever this value changes. */
-  focusRowId?: number | null;
   /** Row to select whenever `key` changes (e.g. one just created): a line
    * gets selected; a sub-row gets picked under its line. */
   focusRow?: { rowId: number; key: number };
@@ -526,16 +523,9 @@ const TimeLine = ({
     }
   };
 
-  // Let the parent move the selection to a row it just created.
-  useEffect(() => {
-    if (focusRowId === undefined || focusRowId === null) return;
-    state.setITrackId(focusRowId);
-    state.setSelectedTracks(new Set([focusRowId]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusRowId]);
-
-  // Same with a key, so the same row can be focused again; a sub-row is
-  // picked under its line (only it looks selected).
+  // Let the parent move the selection to a row it just created (keyed, so the
+  // same row can be focused again); a sub-row is picked under its line (only
+  // it looks selected).
   const focusRowKey = focusRow?.key;
   useEffect(() => {
     if (!focusRow) return;
