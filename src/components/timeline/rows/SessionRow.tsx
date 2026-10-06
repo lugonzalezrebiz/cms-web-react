@@ -183,6 +183,9 @@ export interface SessionRowProps {
   /** Where this row was just punched out with "o"; a new key shows
    * "Punched Out" there for a few seconds. */
   punchedOut?: { sec: number; key: number };
+  /** Punches tabs: clicking the block that sums up its sub-rows selects
+   * this line. */
+  onSelectLine?: (rowId: number) => void;
   /** Text next to the marker while this row's bar is open, replacing
    * "Press o to punch-out". */
   openHint?: ReactNode;
@@ -228,6 +231,7 @@ export const SessionRow = ({
   getEditBounds,
   highlightChildBars = false,
   punchedOut,
+  onSelectLine,
   openHint,
   selectedHint,
 }: SessionRowProps) => {
@@ -477,6 +481,8 @@ export const SessionRow = ({
                   : Colors.softSlate
             }
             isSelected={isLineBar}
+            // Clicking it selects this line (its customers stay as they are).
+            onSelect={onSelectLine ? () => onSelectLine(row.id) : undefined}
           />
         );
       })}

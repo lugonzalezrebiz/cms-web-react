@@ -78,6 +78,7 @@ export interface TimelineBodyViewProps {
   canReassignRow?: (rowId: number) => boolean;
   getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
   punchedOut?: { rowId: number; sec: number; key: number };
+  onSelectLine?: (rowId: number) => void;
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   getEditBounds?: (
     rowId: number,
@@ -150,6 +151,7 @@ const TimelineBody = ({
   canReassignRow,
   getSelectedHint,
   punchedOut,
+  onSelectLine,
   onEditBar,
   getEditBounds,
 }: TimelineBodyViewProps) => {
@@ -259,6 +261,7 @@ const TimelineBody = ({
           canReassignRow={canReassignRow}
           getSelectedHint={getSelectedHint}
           punchedOut={punchedOut}
+          onSelectLine={onSelectLine}
           onEditBar={onEditBar}
           getEditBounds={getEditBounds}
         />
