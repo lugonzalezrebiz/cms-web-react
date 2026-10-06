@@ -180,6 +180,9 @@ export interface SessionRowProps {
   /** Punches tabs: this is the selected line and none of its sub-rows' bars is
    * selected, so its mirror bar under the marker shows as selected. */
   highlightChildBars?: boolean;
+  /** Where this row was just punched out with "o"; a new key shows
+   * "Punched Out" there for a few seconds. */
+  punchedOut?: { sec: number; key: number };
   /** Text next to the marker while this row's bar is open, replacing
    * "Press o to punch-out". */
   openHint?: ReactNode;
@@ -224,6 +227,7 @@ export const SessionRow = ({
   onEditBar,
   getEditBounds,
   highlightChildBars = false,
+  punchedOut,
   openHint,
   selectedHint,
 }: SessionRowProps) => {
@@ -378,26 +382,14 @@ export const SessionRow = ({
     }
   }
 
-  // A punch-out = the open session closed and a new frozen bar appeared (an
-  // undone punch-in only removes the open session, so it doesn't count).
-  const closedCount = frozen.length;
-  const [prevSessions, setPrevSessions] = useState({
-    open: sessionStart,
-    closedCount,
-  });
+  // "Punched Out" shows where this row was just punched out with "o" (a new
+  // punchedOut key) — not when a bar closes any other way (a break, a
+  // hand-over, undo/redo).
+  const [prevPunchedOutKey, setPrevPunchedOutKey] = useState(punchedOut?.key);
   const [punchedOutSec, setPunchedOutSec] = useState<number | null>(null);
-  if (
-    prevSessions.open !== sessionStart ||
-    prevSessions.closedCount !== closedCount
-  ) {
-    if (
-      prevSessions.open !== undefined &&
-      sessionStart === undefined &&
-      closedCount > prevSessions.closedCount
-    ) {
-      setPunchedOutSec(frozen[closedCount - 1].end);
-    }
-    setPrevSessions({ open: sessionStart, closedCount });
+  if (prevPunchedOutKey !== punchedOut?.key) {
+    setPrevPunchedOutKey(punchedOut?.key);
+    if (punchedOut) setPunchedOutSec(punchedOut.sec);
   }
 
   useEffect(() => {
