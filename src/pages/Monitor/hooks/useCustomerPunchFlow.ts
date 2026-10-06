@@ -62,7 +62,7 @@ interface Params {
     startBreak: (rowId: number, sec: number) => boolean;
     finishBreak: (rowId: number, sec: number, backToWork: boolean) => boolean;
     /** Employee punches row just added, to select it here too. */
-    focusedRowId: number | null;
+    focused: { rowId: number; key: number } | null;
   };
 }
 
@@ -253,8 +253,18 @@ export const useCustomerPunchFlow = ({
     [canAttendAt, changeParent, markerSec],
   );
 
-  // Customer Punch in dialog: opened by "i" on a Customer punches row, for that
-  // row at the marker.
+  // Row to select next in Employees & Customers: whatever was just created
+  // here (a customer, an employee's break line), keyed so it applies again.
+  const [focus, setFocus] = useState<{ rowId: number; key: number } | null>(
+    null,
+  );
+  const focusOn = useCallback(
+    (rowId: number) => setFocus({ rowId, key: Date.now() }),
+    [],
+  );
+
+  // Customer Punch in dialog: opened by C on an employee or Unattended, for
+  // that row at the marker.
   const [punchTarget, setPunchTarget] = useState<{
     rowId: number;
     sec: number;
@@ -361,18 +371,27 @@ export const useCustomerPunchFlow = ({
   const handleConfirmPunch = useCallback(() => {
     if (punchTarget === null) return;
     const { rowId, sec } = punchTarget;
-    if (reEnterCustomer) {
-      reEnter(reEnterCustomer.number, rowId, punchCount, sec);
-    } else {
-      addGroup(rowId, punchCount, sec);
-    }
+    const groupRowId = reEnterCustomer
+      ? reEnter(reEnterCustomer.number, rowId, punchCount, sec)
+      : addGroup(rowId, punchCount, sec);
+    // The customer just punched in gets picked.
+    if (groupRowId !== undefined) focusOn(groupRowId);
     handleClosePunch();
-  }, [punchTarget, punchCount, reEnterCustomer, reEnter, addGroup, handleClosePunch]);
+  }, [
+    punchTarget,
+    punchCount,
+    reEnterCustomer,
+    reEnter,
+    addGroup,
+    focusOn,
+    handleClosePunch,
+  ]);
 
-  // punches' own rows — "Unattended" and the punched-in employees, each with
-  // its customer groups (the same groups as Customer punches) — where the
-  // employee lines also show their Employee punches bars. Unattended reads
-  // greyed out until there's an employee, Back Room until it holds one.
+  // Employees & Customers rows: "Back Room" (employees on a break), then
+  // "Unattended" and the punched-in employees, each with its customer groups
+  // — where the employee lines also show their Employee punches bars.
+  // Unattended reads greyed out until there's an employee, Back Room until
+  // it holds one.
   const hasEmployees = employeeTracks.length > 0;
   const breakOpen = employeeControls?.breakOpen;
   const breakClosed = employeeControls?.breakClosed;
@@ -483,7 +502,10 @@ export const useCustomerPunchFlow = ({
           });
           return true;
         }
-        return startBreak?.(punchRowId, sec) ? BACK_ROOM_ROW_ID : true;
+        // Their break line under Back Room gets picked (not Back Room).
+        if (startBreak?.(punchRowId, sec))
+          focusOn(BACK_ROOM_BREAK_ROW_ID_BASE + punchRowId);
+        return true;
       }
       if (key === "s") {
         const punchRowId =
@@ -505,6 +527,7 @@ export const useCustomerPunchFlow = ({
       startBreak,
       finishBreak,
       handleOpenPunch,
+      focusOn,
       groups,
       openSessions,
     ],
@@ -534,12 +557,22 @@ export const useCustomerPunchFlow = ({
     [breakPunchRowIds],
   );
 
-  // An employee just added (e.g. with "+" here) gets selected.
-  const addedFocusedRowId = employeeControls?.focusedRowId;
-  const employeesCustomersFocusRowId =
-    addedFocusedRowId != null
-      ? (lineIdByPunchRow.get(addedFocusedRowId) ?? null)
-      : null;
+  // What gets selected: whatever was created last — a customer or a break
+  // line here, or an employee just added (or re-added) with "+" / "i".
+  const employeeFocused = employeeControls?.focused;
+  const employeesCustomersFocusRow = useMemo(() => {
+    const employeeLineId =
+      employeeFocused != null
+        ? lineIdByPunchRow.get(employeeFocused.rowId)
+        : undefined;
+    const employeeFocus =
+      employeeFocused != null && employeeLineId !== undefined
+        ? { rowId: employeeLineId, key: employeeFocused.key }
+        : null;
+    if (!focus) return employeeFocus ?? undefined;
+    if (!employeeFocus) return focus;
+    return employeeFocus.key > focus.key ? employeeFocus : focus;
+  }, [focus, employeeFocused, lineIdByPunchRow]);
 
   // "i" builds employees: on an employee who has punched out (not working, not
   // on a break) it starts a new bar for them at the marker; anywhere else it
@@ -633,7 +666,7 @@ export const useCustomerPunchFlow = ({
       getOpenHint,
       canReassignRow,
       getSelectedHint,
-      focusRowId: employeesCustomersFocusRowId,
+      focusRow: employeesCustomersFocusRow,
       activeSessionStarts: employeesCustomersOpen,
       completedSessions: employeesCustomersClosed,
       onPunchIn: handleOpenPunchHere,
@@ -683,7 +716,7 @@ export const useCustomerPunchFlow = ({
       getOpenHint,
       canReassignRow,
       getSelectedHint,
-      employeesCustomersFocusRowId,
+      employeesCustomersFocusRow,
       notice,
     ],
   );

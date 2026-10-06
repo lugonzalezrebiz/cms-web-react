@@ -45,7 +45,11 @@ export const useEmployeePunches = () => {
   const [present, setPresent] = useState<PunchState>(INITIAL_STATE);
   const [past, setPast] = useState<HistoryEntry[]>([]);
   const [future, setFuture] = useState<HistoryEntry[]>([]);
-  const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
+  // The row just added (or re-added), keyed so the same row can be focused
+  // again.
+  const [focused, setFocused] = useState<{ rowId: number; key: number } | null>(
+    null,
+  );
 
   // Same rows, bars and history in the main window and the popout timeline.
   const applySynced = useCallback(
@@ -97,7 +101,7 @@ export const useEmployeePunches = () => {
         },
         startSec,
       );
-      setFocusedRowId(id);
+      setFocused({ rowId: id, key: Date.now() });
     },
     [present, commit],
   );
@@ -108,7 +112,7 @@ export const useEmployeePunches = () => {
     (employee: { id: number; name: string }, startSec: number) => {
       const existingRowId = present.employeeRows[employee.id];
       if (existingRowId !== undefined) {
-        setFocusedRowId(existingRowId);
+        setFocused({ rowId: existingRowId, key: Date.now() });
         if (
           present.open[existingRowId] !== undefined ||
           overlapsClosed(present, existingRowId, startSec)
@@ -134,7 +138,7 @@ export const useEmployeePunches = () => {
         },
         startSec,
       );
-      setFocusedRowId(id);
+      setFocused({ rowId: id, key: Date.now() });
       return true;
     },
     [present, commit],
@@ -306,7 +310,7 @@ export const useEmployeePunches = () => {
     breakClosed: present.breakClosed,
     startBreak,
     finishBreak,
-    focusedRowId,
+    focused,
     addUnknownEmployee,
     addEmployee,
     punchIn,
