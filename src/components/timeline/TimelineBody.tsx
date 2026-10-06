@@ -70,7 +70,6 @@ export interface TimelineBodyViewProps {
   onSelectBar?: (rowId: number, start: number) => void;
   rowNotice?: RowNotice;
   /** Called when a click in the list selects a row. */
-  activeSubRowId?: number | null;
   highlightedSubRowId?: number | null;
   onSelectSubRow?: (rowId: number) => void;
   rowNumberStart?: number;
@@ -143,7 +142,6 @@ const TimelineBody = ({
   selectedBar,
   onSelectBar,
   rowNotice,
-  activeSubRowId,
   highlightedSubRowId,
   onSelectSubRow,
   rowNumberStart,
@@ -255,7 +253,6 @@ const TimelineBody = ({
           selectedBar={selectedBar}
           onSelectBar={onSelectBar}
           rowNotice={rowNotice}
-          activeSubRowId={activeSubRowId}
           highlightedSubRowId={highlightedSubRowId}
           getOpenHint={getOpenHint}
           canReassignRow={canReassignRow}
