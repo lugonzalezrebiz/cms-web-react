@@ -128,8 +128,9 @@ const TimeLine = ({
   onPunchIn?: (rowId: number, startSec: number) => boolean;
   /** Employee punches: "o" closes the selected row's open session at `endSec`. */
   onPunchOut?: (rowId: number, endSec: number) => void;
-  /** Punches tabs: Delete removes the bar starting at `startSec` on `rowId`. */
-  onDeleteSession?: (rowId: number, startSec: number) => void;
+  /** Punches tabs: Delete removes the bar starting at `startSec` on `rowId`;
+   * returning false means it was refused (the bar stays selected). */
+  onDeleteSession?: (rowId: number, startSec: number) => boolean | void;
   /** Punches tabs: saves a bar whose ends were dragged (start `oldStart`). */
   onUpdateSession?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: how far a bar's ends may go (e.g. the employee's shift). */
@@ -442,7 +443,9 @@ const TimeLine = ({
   const handleDeleteBar = () => {
     if (!canDeleteBar || selectedBar === null) return;
     const wasOpen = activeSessionStarts[selectedBar.rowId] === selectedBar.start;
-    onDeleteSession?.(selectedBar.rowId, selectedBar.start);
+    // The tab may refuse (e.g. an employee bar with customers on it).
+    if (onDeleteSession?.(selectedBar.rowId, selectedBar.start) === false)
+      return;
     state.setSelectedBar(null);
     // Deleting the line's own open bar leaves it punched out.
     if (wasOpen && selectedBar.rowId === state.iTrackId) {

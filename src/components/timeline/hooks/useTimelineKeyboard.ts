@@ -61,8 +61,9 @@ interface UseTimelineKeyboardParams {
   onAddRow?: () => void;
   /** Closed session bars by row id (session mode: Ctrl+arrows and Delete). */
   completedSessions?: Record<number, { start: number; end: number }[]>;
-  /** Session mode: Delete removes the bar that starts at `startSec` on `rowId`. */
-  onDeleteSession?: (rowId: number, startSec: number) => void;
+  /** Session mode: Delete removes the bar that starts at `startSec` on `rowId`;
+   * returning false means it was refused (the bar stays selected). */
+  onDeleteSession?: (rowId: number, startSec: number) => boolean | void;
   /** Session mode: the selected bar (clicked or reached with Ctrl+arrows). */
   selectedBar?: SelectedBar | null;
   setSelectedBar?: React.Dispatch<React.SetStateAction<SelectedBar | null>>;
@@ -344,7 +345,8 @@ export const useTimelineKeyboard = ({
           const bar = sessionBars[selectedBarIndex];
           if (!bar || !onDeleteSessionRef.current) return;
           e.preventDefault();
-          onDeleteSessionRef.current(bar.rowId, bar.start);
+          // The tab may refuse (e.g. an employee bar with customers on it).
+          if (onDeleteSessionRef.current(bar.rowId, bar.start) === false) return;
           setSelectedBar?.(null);
           // Deleting the line's own open bar leaves it punched out.
           if (bar.end === undefined && bar.rowId === iTrackId) {
