@@ -138,6 +138,15 @@ export const TimelineGridRows = ({
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
+  // With one of its sub-rows picked, the selected line stays the context but
+  // only that sub-row looks selected (no band, hint or highlight on the line).
+  const pickedParentId =
+    highlightedSubRowId != null
+      ? flatRows.find((r) => r.id === highlightedSubRowId)?.parentCameraId
+      : undefined;
+  const shownLineId =
+    iTrackId != null && iTrackId !== pickedParentId ? iTrackId : null;
+
   const selectedBarStartOf = (rowId: number) =>
     selectedBar?.rowId === rowId ? selectedBar.start : undefined;
   const visibleEnd = visibleStart + visibleDuration;
@@ -298,14 +307,14 @@ export const TimelineGridRows = ({
           <Box
             sx={{
               position: "absolute",
-              top: Math.max(0, flatRows.findIndex((r) => r.id === iTrackId)) * ROW_HEIGHT,
+              top: Math.max(0, flatRows.findIndex((r) => r.id === shownLineId)) * ROW_HEIGHT,
               left: 0,
               right: 0,
               height: ROW_HEIGHT,
               bgcolor: `${Colors.transparentVividOrange}`,
               pointerEvents: "none",
               zIndex: 0,
-              opacity: iTrackId !== null && flatRows.some((r) => r.id === iTrackId) ? 1 : 0,
+              opacity: shownLineId !== null && flatRows.some((r) => r.id === shownLineId) ? 1 : 0,
               transition: "top 150ms ease, opacity 150ms ease",
             }}
           />
@@ -316,7 +325,7 @@ export const TimelineGridRows = ({
                 row={row}
                 rowIndex={rowIndex}
                 childRowIds={childRowIdsByParent.get(row.id)}
-                isSelected={selectedTracks.has(row.id)}
+                isSelected={selectedTracks.has(row.id) && row.id !== pickedParentId}
                 completedSessions={completedSessions}
                 activeSessionStarts={activeSessionStarts}
                 resolvedMarkerSec={resolvedMarkerSec}
@@ -332,14 +341,14 @@ export const TimelineGridRows = ({
                 }
                 openHint={getOpenHint?.(row.id)}
                 // Only the selected line says what its open bar can do.
-                showPunchOutHint={row.id === iTrackId}
+                showPunchOutHint={row.id === shownLineId}
                 selectedHint={
-                  row.id === iTrackId ? getSelectedHint?.(row.id) : undefined
+                  row.id === shownLineId ? getSelectedHint?.(row.id) : undefined
                 }
                 // Punches tabs: the selected line, with no sub-row bar picked.
                 highlightChildBars={
                   onSelectBar !== undefined &&
-                  row.id === iTrackId &&
+                  row.id === shownLineId &&
                   !(
                     selectedBar &&
                     childRowIdsByParent.get(row.id)?.includes(selectedBar.rowId)
@@ -381,7 +390,7 @@ export const TimelineGridRows = ({
                   }
                   openHint={getOpenHint?.(row.id)}
                   selectedHint={
-                    row.id === iTrackId ? getSelectedHint?.(row.id) : undefined
+                    row.id === shownLineId ? getSelectedHint?.(row.id) : undefined
                   }
                 />
                 {/* Punches tabs (selectable bars) have no diamonds, and the
