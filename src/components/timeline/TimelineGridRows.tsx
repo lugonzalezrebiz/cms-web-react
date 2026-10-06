@@ -370,8 +370,10 @@ export const TimelineGridRows = ({
                   visibleStart={visibleStart}
                   visibleDuration={visibleDuration}
                   reassignOptions={reassignOptions}
-                  // Only rows the tab allows (e.g. not Back Room breaks).
+                  // Only on the sub-row in play (the one "o" closes), and only
+                  // where the tab allows it (e.g. not Back Room breaks).
                   onReassign={
+                    row.id !== activeSubRowId ||
                     canReassignRow?.(row.id) === false
                       ? undefined
                       : onReassignRow
