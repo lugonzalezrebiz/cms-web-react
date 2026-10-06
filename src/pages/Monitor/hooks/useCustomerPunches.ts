@@ -128,7 +128,7 @@ export const useCustomerPunches = () => {
   // the employee who ended up attending it): what's been tracked so far stays
   // closed under the previous row, and the group continues under the new row
   // from atSec — on the sub-row it already has there if it was attended by
-  // that row before, otherwise on a new one.
+  // that row before, otherwise on a new one. Returns that sub-row's id.
   const changeParent = useCallback(
     (groupRowId: number, parentRowId: number, atSec: number) => {
       const group = present.groups.find((g) => g.id === groupRowId);
@@ -151,7 +151,7 @@ export const useCustomerPunches = () => {
             },
             atSec,
           );
-          return;
+          return groupRowId;
         }
         const { [groupRowId]: _moved, ...open } = present.open;
         commit(
@@ -167,7 +167,7 @@ export const useCustomerPunches = () => {
           },
           atSec,
         );
-        return;
+        return existingRow.id;
       }
 
       const afterClose = closeSession(present, groupRowId, atSec);
@@ -176,7 +176,7 @@ export const useCustomerPunches = () => {
           { ...afterClose, open: { ...afterClose.open, [existingRow.id]: atSec } },
           atSec,
         );
-        return;
+        return existingRow.id;
       }
       const id = nextRowId(afterClose);
       commit(
@@ -187,6 +187,7 @@ export const useCustomerPunches = () => {
         },
         atSec,
       );
+      return id;
     },
     [present, commit],
   );
