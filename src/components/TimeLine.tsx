@@ -157,8 +157,9 @@ const TimeLine = ({
   getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
   /** Rows a sub-row's group can be moved to (Customer punches). */
   reassignOptions?: { id: number; label: string; disabled?: boolean }[];
-  /** Moves the sub-row `rowId` under `parentId`. */
-  onReassignRow?: (rowId: number, parentId: number) => void;
+  /** Moves the sub-row `rowId` under `parentId`; returns the sub-row it
+   * continues on there, if it moved. */
+  onReassignRow?: (rowId: number, parentId: number) => number | void;
   /** Exact second the marker can't pass (e.g. an employee's punch-out while
    * one of their customers is still open). */
   sessionWallSec?: number;
@@ -486,15 +487,17 @@ const TimeLine = ({
   };
 
   // A group handed over to another row follows it: that row becomes the
-  // selected line, so "o" can punch the group out from there.
+  // selected line and the group, in its new place, the sub-selected one —
+  // so "o" punches it out from there.
   const handleReassignRow = (rowId: number, parentId: number) => {
-    onReassignRow?.(rowId, parentId);
+    const movedRowId = onReassignRow?.(rowId, parentId);
     state.setITrackId(parentId);
     state.setSelectedTracks(
       activeSessionStarts[parentId] !== undefined
         ? new Set([parentId])
         : new Set(),
     );
+    if (typeof movedRowId === "number") state.setSelectedSubRowId(movedRowId);
   };
 
   // Punches tabs: clicking a bar selects it (clicking it again deselects it)

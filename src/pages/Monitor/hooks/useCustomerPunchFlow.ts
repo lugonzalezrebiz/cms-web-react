@@ -247,7 +247,8 @@ export const useCustomerPunchFlow = ({
   const handleChangeParent = useCallback(
     (groupRowId: number, parentRowId: number) => {
       if (!canAttendAt(parentRowId, markerSec)) return;
-      changeParent(groupRowId, parentRowId, markerSec);
+      // The sub-row the group continues on, to select it there.
+      return changeParent(groupRowId, parentRowId, markerSec);
     },
     [canAttendAt, changeParent, markerSec],
   );
