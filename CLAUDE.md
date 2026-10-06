@@ -145,8 +145,10 @@ The timeline nav popover switches between two tabs (`NavTab`), shared through `T
 - **Compliance violations** — the tracker-filtered diamond review flow described above.
 - **Employees & Customers** (`employeesCustomers`) — all cameras; lines numbered from 0:
   - **Back Room** — employees on a break, as sub-rows (`B` sends the selected employee there, `S` brings them back to work).
-  - **Unattended** — its customer groups as sub-rows (`i` punches a customer in).
-  - **The punched-in employees** — each with their work bars and the customer groups they attend (`C` assigns a customer, `o` punches out the sub-selected customer first, then the employee). `+` (or `i` with no line selected) adds an employee.
+  - **Unattended** — its customer groups as sub-rows (`C` punches a customer in).
+  - **The punched-in employees** — each with their work bars and the customer groups they attend (`C` assigns a customer, `o` punches out the sub-selected customer first, then the employee; `i` on a punched-out employee starts a new bar).
+
+  `+` and `i` (anywhere but on a punched-out employee) open the add-employee dialog.
 
 Employee state (work bars, breaks) lives in `useEmployeePunches` / `useEmployeePunchFlow`; customer groups in `useCustomerPunches` / `useCustomerPunchFlow`, which also builds the tab's `TimeLine` props (`employeesCustomersTimelineProps`), spread over the Compliance violations defaults in `Monitor/index.tsx` and `MonitorTimeline/index.tsx`. The tab's undo/redo merges both histories by time. Punches state is local only (not persisted yet), kept in sync with the popout timeline by `usePunchHistorySync` (a `BroadcastChannel`).
 
