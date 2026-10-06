@@ -22,7 +22,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
     openSessions,
     closedSessions,
     employeeRows,
-    focusedRowId,
+    focused,
     addUnknownEmployee,
     addEmployee,
     punchIn,
@@ -104,7 +104,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       startBreak,
       finishBreak,
       // The row just added (e.g. from Employee and Customer), to select it.
-      focusedRowId,
+      focused,
     }),
     [
       punchIn,
@@ -119,7 +119,7 @@ export const useEmployeePunchFlow = ({ markerSec }: Params) => {
       breakClosed,
       startBreak,
       finishBreak,
-      focusedRowId,
+      focused,
     ],
   );
 

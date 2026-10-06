@@ -99,7 +99,8 @@ export const useCustomerPunches = () => {
     [present],
   );
 
-  // Adds "Customer N (count)" under parentRowId and opens its session at startSec.
+  // Adds "Customer N (count)" under parentRowId and opens its session at
+  // startSec. Returns its sub-row id.
   const addGroup = useCallback(
     (parentRowId: number, count: number, startSec: number) => {
       const id = nextRowId(present);
@@ -112,6 +113,7 @@ export const useCustomerPunches = () => {
         },
         startSec,
       );
+      return id;
     },
     [present, commit],
   );
@@ -194,7 +196,7 @@ export const useCustomerPunches = () => {
 
   // A punched-out group coming back: continues as the same "Customer N" under
   // parentRowId from startSec — on its sub-row there if it has one, otherwise
-  // on a new one with the given count.
+  // on a new one with the given count. Returns that sub-row's id.
   const reEnter = useCallback(
     (number: number, parentRowId: number, count: number, startSec: number) => {
       const rows = present.groups.filter((g) => g.number === number);
@@ -210,7 +212,7 @@ export const useCustomerPunches = () => {
           { ...present, open: { ...present.open, [existingRow.id]: startSec } },
           startSec,
         );
-        return;
+        return existingRow.id;
       }
       const id = nextRowId(present);
       commit(
@@ -221,6 +223,7 @@ export const useCustomerPunches = () => {
         },
         startSec,
       );
+      return id;
     },
     [present, commit],
   );

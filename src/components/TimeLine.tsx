@@ -59,6 +59,7 @@ const TimeLine = ({
   rowTracks,
   activeSessionStarts: activeSessionStartsProp,
   focusRowId,
+  focusRow,
   completedSessions: completedSessionsProp,
   onPunchIn,
   onPunchOut,
@@ -121,6 +122,9 @@ const TimeLine = ({
   activeSessionStarts?: Record<number, number>;
   /** Row to select whenever this value changes. */
   focusRowId?: number | null;
+  /** Row to select whenever `key` changes (e.g. one just created): a line
+   * gets selected; a sub-row gets picked under its line. */
+  focusRow?: { rowId: number; key: number };
   /** Closed sessions by row id; overrides the internal state. */
   completedSessions?: Record<number, { start: number; end: number }[]>;
   /** Employee punches: "i" opens a session on the selected row; returns whether it did. */
@@ -529,6 +533,29 @@ const TimeLine = ({
     state.setSelectedTracks(new Set([focusRowId]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusRowId]);
+
+  // Same with a key, so the same row can be focused again; a sub-row is
+  // picked under its line (only it looks selected).
+  const focusRowKey = focusRow?.key;
+  useEffect(() => {
+    if (!focusRow) return;
+    const row = flatRows.find((r) => r.id === focusRow.rowId);
+    const parentId =
+      row?.kind === "event" ? row.parentCameraId : undefined;
+    if (parentId !== undefined) {
+      state.setITrackId(parentId);
+      state.setSelectedTracks(new Set());
+      state.setSelectedSubRowId(focusRow.rowId);
+      return;
+    }
+    state.setITrackId(focusRow.rowId);
+    state.setSelectedTracks(
+      activeSessionStarts[focusRow.rowId] !== undefined
+        ? new Set([focusRow.rowId])
+        : new Set(),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusRowKey]);
 
   useMarkerSync({
     targetMarkerSec,
