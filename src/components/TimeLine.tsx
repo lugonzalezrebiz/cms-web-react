@@ -333,13 +333,6 @@ const TimeLine = ({
   useEffect(() => {
     scrollRowIntoViewRef.current = scrollRowIntoView;
   });
-  // Declared first so a line change (next effect) wins when both change.
-  useEffect(() => {
-    if (isPunchesTab) scrollRowIntoViewRef.current(activeSubRowId);
-  }, [isPunchesTab, activeSubRowId]);
-  useEffect(() => {
-    if (isPunchesTab) scrollRowIntoViewRef.current(state.iTrackId);
-  }, [isPunchesTab, state.iTrackId]);
 
   // Punches tabs: a bar dragged by its ends is saved by the parent; if it was
   // the selected one it stays selected under its new start.
@@ -470,6 +463,14 @@ const TimeLine = ({
           openSubRowIds.includes(state.selectedSubRowId)
         ? state.selectedSubRowId
         : null;
+
+  // Scroll target: the customer (sub-row) in play under the selected line —
+  // the picked one, else the open one "o" would close — or the line itself.
+  const scrollTargetRowId =
+    highlightedSubRowId ?? activeSubRowId ?? state.iTrackId;
+  useEffect(() => {
+    if (isPunchesTab) scrollRowIntoViewRef.current(scrollTargetRowId);
+  }, [isPunchesTab, scrollTargetRowId]);
 
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
