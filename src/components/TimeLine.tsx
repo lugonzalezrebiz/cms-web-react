@@ -64,6 +64,7 @@ const TimeLine = ({
   onPunchOut,
   onDeleteSession,
   canDeleteSession,
+  onDeleteLine,
   onUpdateSession,
   getSessionBounds,
   rowNotice,
@@ -134,6 +135,8 @@ const TimeLine = ({
   onDeleteSession?: (rowId: number, startSec: number) => boolean | void;
   /** Punches tabs: whether that bar can be deleted (the trash greys out). */
   canDeleteSession?: (rowId: number, startSec: number) => boolean;
+  /** Punches tabs: Delete on the selected line with no bar picked. */
+  onDeleteLine?: (lineId: number, sec: number) => void;
   /** Punches tabs: saves a bar whose ends were dragged (start `oldStart`). */
   onUpdateSession?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: how far a bar's ends may go (e.g. the employee's shift). */
@@ -482,6 +485,17 @@ const TimeLine = ({
     if (isPunchesTab) scrollRowIntoViewRef.current(scrollTargetRowId);
   }, [isPunchesTab, scrollTargetRowId]);
 
+  // Clicking a line's sub-rows block selects the line itself: no bar or
+  // sub-row picked, so its block shows as the selected one.
+  const handleSelectLine = (rowId: number) => {
+    state.setITrackId(rowId);
+    state.setSelectedTracks(
+      activeSessionStarts[rowId] !== undefined ? new Set([rowId]) : new Set(),
+    );
+    state.setSelectedBar(null);
+    state.setSelectedSubRowId(null);
+  };
+
   // Clicking an open sub-row in the list sub-selects it (and its line).
   const handleSelectSubRow = (rowId: number) => {
     const parentId = flatRows.find((r) => r.id === rowId)?.parentCameraId;
@@ -770,6 +784,7 @@ const TimeLine = ({
     rowNumberStart,
     onRowKey: isPunchesTab ? onRowKey : undefined,
     onPunchedOut: handlePunchedOut,
+    onDeleteLine: isPunchesTab ? onDeleteLine : undefined,
     onPunchIn,
     onPunchOut,
     onAddRow,
@@ -876,6 +891,7 @@ const TimeLine = ({
         canReassignRow={canReassignRow}
         getSelectedHint={isPunchesTab ? getSelectedHint : undefined}
         punchedOut={isPunchesTab ? punchedOut : undefined}
+        onSelectLine={isPunchesTab ? handleSelectLine : undefined}
         onEditBar={isPunchesTab && onUpdateSession ? handleEditBar : undefined}
         getEditBounds={getEditBounds}
       />

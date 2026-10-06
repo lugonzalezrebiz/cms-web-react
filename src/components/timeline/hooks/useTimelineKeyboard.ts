@@ -77,6 +77,8 @@ interface UseTimelineKeyboardParams {
   rowNumberStart?: number;
   /** Session mode: called after "o" punches a row out (rowId, at sec). */
   onPunchedOut?: (rowId: number, sec: number) => void;
+  /** Session mode: Delete on the selected line with no bar picked. */
+  onDeleteLine?: (lineId: number, sec: number) => void;
   /** Session mode: a letter key not handled here, for the selected line
    * (and its sub-selected sub-row); returns whether the tab handled it, or
    * the id of the line to select next. */
@@ -140,6 +142,7 @@ export const useTimelineKeyboard = ({
   rowNumberStart = 1,
   onRowKey,
   onPunchedOut,
+  onDeleteLine,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
@@ -147,6 +150,7 @@ export const useTimelineKeyboard = ({
   const onDeleteSessionRef = useRef(onDeleteSession);
   const onRowKeyRef = useRef(onRowKey);
   const onPunchedOutRef = useRef(onPunchedOut);
+  const onDeleteLineRef = useRef(onDeleteLine);
   useEffect(() => {
     onPunchInRef.current = onPunchIn;
     onPunchOutRef.current = onPunchOut;
@@ -154,6 +158,7 @@ export const useTimelineKeyboard = ({
     onDeleteSessionRef.current = onDeleteSession;
     onRowKeyRef.current = onRowKey;
     onPunchedOutRef.current = onPunchedOut;
+    onDeleteLineRef.current = onDeleteLine;
   });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
@@ -343,7 +348,16 @@ export const useTimelineKeyboard = ({
         if (e.key === "Delete") {
           // Only the selected bar is deleted, like a selected diamond.
           const bar = sessionBars[selectedBarIndex];
-          if (!bar || !onDeleteSessionRef.current) return;
+          if (!bar) {
+            // No bar picked: the tab can still answer for the line (e.g. say
+            // why its customers' block can't be deleted).
+            if (iTrackId !== null) {
+              e.preventDefault();
+              onDeleteLineRef.current?.(iTrackId, markerSec ?? timelineStartSec);
+            }
+            return;
+          }
+          if (!onDeleteSessionRef.current) return;
           e.preventDefault();
           // The tab may refuse (e.g. an employee bar with customers on it).
           if (onDeleteSessionRef.current(bar.rowId, bar.start) === false) return;
