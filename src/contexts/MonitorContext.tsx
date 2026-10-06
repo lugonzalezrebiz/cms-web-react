@@ -1,9 +1,11 @@
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useMemo, type ReactNode } from "react";
 import {
   MonitorStateContext,
   MonitorSetterContext,
   CameraGroupContext,
+  TimelineTabContext,
 } from "./MonitorContexts";
+import type { NavTab } from "../components/timeline/types";
 
 export const MonitorProvider = ({ children }: { children: ReactNode }) => {
   const [state, setStateInternal] = useState({
@@ -18,6 +20,11 @@ export const MonitorProvider = ({ children }: { children: ReactNode }) => {
   const [cameraGroup, setCameraGroup] = useState("tracker");
   const [trackerOption, setTrackerOption] = useState("");
   const [customTrackerIDs, setCustomTrackerIDs] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
+  const timelineTab = useMemo(
+    () => ({ activeTab, setActiveTab }),
+    [activeTab],
+  );
 
   return (
     <MonitorSetterContext.Provider value={setState}>
@@ -25,7 +32,9 @@ export const MonitorProvider = ({ children }: { children: ReactNode }) => {
         <CameraGroupContext.Provider
           value={{ cameraGroup, setCameraGroup, trackerOption, setTrackerOption, customTrackerIDs, setCustomTrackerIDs }}
         >
-          {children}
+          <TimelineTabContext.Provider value={timelineTab}>
+            {children}
+          </TimelineTabContext.Provider>
         </CameraGroupContext.Provider>
       </MonitorStateContext.Provider>
     </MonitorSetterContext.Provider>

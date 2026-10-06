@@ -1,9 +1,14 @@
 import { Menu, MenuItem } from "@mui/material";
+import type { PopoverOrigin } from "@mui/material";
 import { Colors, Fonts } from "../theme";
 
 interface Option {
   label: string;
   onClick: () => void;
+  /** Highlights the option as the current choice. */
+  selected?: boolean;
+  /** Shown but not selectable. */
+  disabled?: boolean;
 }
 
 interface DropDownMenuProps {
@@ -11,6 +16,9 @@ interface DropDownMenuProps {
   open: boolean;
   handleClose: () => void;
   options?: Option[];
+  anchorOrigin?: PopoverOrigin;
+  transformOrigin?: PopoverOrigin;
+  maxWidth?: string;
 }
 
 const DropDownMenu = ({
@@ -18,6 +26,9 @@ const DropDownMenu = ({
   open,
   handleClose,
   options,
+  anchorOrigin = { vertical: "center", horizontal: "left" },
+  transformOrigin = { vertical: "top", horizontal: "right" },
+  maxWidth = "160px",
 }: DropDownMenuProps) => {
   return (
     <Menu
@@ -25,15 +36,15 @@ const DropDownMenu = ({
       open={open}
       onClose={handleClose}
       autoFocus={false}
-      anchorOrigin={{ vertical: "center", horizontal: "left" }}
-      transformOrigin={{ vertical: "top", horizontal: "right" }}
+      anchorOrigin={anchorOrigin}
+      transformOrigin={transformOrigin}
       slotProps={{
         list: { disablePadding: true },
         paper: {
           sx: {
             borderRadius: "8px",
             boxShadow: "0 2px 10px 0 rgba(0, 0, 0, 0.16)",
-            maxWidth: "160px",
+            maxWidth,
             width: "100%",
           },
         },
@@ -53,7 +64,16 @@ const DropDownMenu = ({
               backgroundColor: Colors.transparentVividOrange,
               color: Colors.vividOrange,
             },
+            ...(option.selected && {
+              backgroundColor: Colors.vividOrange,
+              color: Colors.white,
+              ":hover": {
+                backgroundColor: Colors.vividOrange,
+                color: Colors.white,
+              },
+            }),
           }}
+          disabled={option.disabled}
           onClick={option.onClick}
         >
           {option.label}

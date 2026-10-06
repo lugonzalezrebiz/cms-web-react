@@ -3,12 +3,14 @@ import {
   MonitorStateContext,
   MonitorSetterContext,
   CameraGroupContext,
+  TimelineTabContext,
   type MonitorState,
 } from "./MonitorContexts";
 
 export const useMonitorState = () => useContext(MonitorStateContext);
 export const useMonitorSetter = () => useContext(MonitorSetterContext);
 export const useCameraGroup = () => useContext(CameraGroupContext);
+export const useTimelineTab = () => useContext(TimelineTabContext);
 
 export const useRegisterMonitorActions = (
   handleDone: () => void,
