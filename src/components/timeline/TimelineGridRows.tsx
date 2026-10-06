@@ -75,6 +75,8 @@ interface TimelineGridRowsProps {
   canReassignRow?: (rowId: number) => boolean;
   /** Punches tabs: text next to the marker on the selected line. */
   getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
+  /** The row just punched out with "o", and where. */
+  punchedOut?: { rowId: number; sec: number; key: number };
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
@@ -132,6 +134,7 @@ export const TimelineGridRows = ({
   getOpenHint,
   canReassignRow,
   getSelectedHint,
+  punchedOut,
   onEditBar,
   getEditBounds,
 }: TimelineGridRowsProps) => {
@@ -324,6 +327,9 @@ export const TimelineGridRows = ({
                 onEditBar={onEditBar}
                 getEditBounds={getEditBounds}
                 notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                punchedOut={
+                  punchedOut?.rowId === row.id ? punchedOut : undefined
+                }
                 openHint={getOpenHint?.(row.id)}
                 // Only the selected line says what its open bar can do.
                 showPunchOutHint={row.id === iTrackId}
@@ -370,6 +376,9 @@ export const TimelineGridRows = ({
                   onEditBar={onEditBar}
                   getEditBounds={getEditBounds}
                   notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                  punchedOut={
+                    punchedOut?.rowId === row.id ? punchedOut : undefined
+                  }
                   openHint={getOpenHint?.(row.id)}
                   selectedHint={
                     row.id === iTrackId ? getSelectedHint?.(row.id) : undefined
