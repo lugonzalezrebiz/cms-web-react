@@ -74,6 +74,8 @@ interface UseTimelineKeyboardParams {
   setSelectedSubRowId?: React.Dispatch<React.SetStateAction<number | null>>;
   /** Session mode: number of the first row, for the digit shortcuts. */
   rowNumberStart?: number;
+  /** Session mode: called after "o" punches a row out (rowId, at sec). */
+  onPunchedOut?: (rowId: number, sec: number) => void;
   /** Session mode: a letter key not handled here, for the selected line
    * (and its sub-selected sub-row); returns whether the tab handled it, or
    * the id of the line to select next. */
@@ -136,18 +138,21 @@ export const useTimelineKeyboard = ({
   setSelectedSubRowId,
   rowNumberStart = 1,
   onRowKey,
+  onPunchedOut,
 }: UseTimelineKeyboardParams) => {
   const onPunchInRef = useRef(onPunchIn);
   const onPunchOutRef = useRef(onPunchOut);
   const onAddRowRef = useRef(onAddRow);
   const onDeleteSessionRef = useRef(onDeleteSession);
   const onRowKeyRef = useRef(onRowKey);
+  const onPunchedOutRef = useRef(onPunchedOut);
   useEffect(() => {
     onPunchInRef.current = onPunchIn;
     onPunchOutRef.current = onPunchOut;
     onAddRowRef.current = onAddRow;
     onDeleteSessionRef.current = onDeleteSession;
     onRowKeyRef.current = onRowKey;
+    onPunchedOutRef.current = onPunchedOut;
   });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
@@ -293,6 +298,7 @@ export const useTimelineKeyboard = ({
           const start = activeSessionStarts[rowId];
           if (start === undefined || end <= start) return;
           onPunchOutRef.current?.(rowId, end);
+          onPunchedOutRef.current?.(rowId, end);
           // The line is no longer punched in only if its own bar closed.
           if (rowId === iTrackId) setSelectedTracks(new Set());
           // The next open sub-row (if any) takes over the sub-selection.
