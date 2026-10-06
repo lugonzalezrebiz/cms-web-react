@@ -14,6 +14,8 @@ interface RowItemProps {
   setITrackId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedTracks: React.Dispatch<React.SetStateAction<Set<number>>>;
   isSubSelected: boolean;
+  /** One of this line's sub-rows is the picked one. */
+  isChildPicked: boolean;
   onSelectSubRow?: (rowId: number) => void;
 }
 
@@ -26,6 +28,7 @@ const RowItem = ({
   setITrackId,
   setSelectedTracks,
   isSubSelected,
+  isChildPicked,
   onSelectSubRow,
 }: RowItemProps) => {
   const isEventSubRow = row.kind === "event";
@@ -36,9 +39,10 @@ const RowItem = ({
     row.parentCameraId !== undefined &&
     iTrackId === row.parentCameraId;
 
-  const isFocused = iTrackId === row.id;
+  // With one of its sub-rows picked, only that sub-row reads as selected.
+  const isFocused = iTrackId === row.id && !isChildPicked;
 
-  const isActive = isSelected || isFocused;
+  const isActive = (isSelected || isFocused) && !isChildPicked;
 
   // Punches tabs: an open sub-row (customer group) can be sub-selected.
   const isSubSelectable =
@@ -226,6 +230,13 @@ export const TimelineRowList = ({
   onSelectSubRow,
   rowNumberStart = 1,
 }: TimelineRowListProps) => {
+  // The line whose sub-row is picked: it stays the context, but only the
+  // sub-row looks selected.
+  const pickedParentId =
+    highlightedSubRowId != null
+      ? flatRows.find((r) => r.id === highlightedSubRowId)?.parentCameraId
+      : undefined;
+
   // Sub-rows (kind "event") don't take a number, so the numbers shown match
   // the digit shortcuts, which only cycle through the selectable rows.
   const rowNumbers = new Map<number, number>();
@@ -319,6 +330,7 @@ export const TimelineRowList = ({
             setITrackId={setITrackId}
             setSelectedTracks={setSelectedTracks}
             isSubSelected={row.id === highlightedSubRowId}
+            isChildPicked={row.id === pickedParentId}
             onSelectSubRow={onSelectSubRow}
           />
         ))}
