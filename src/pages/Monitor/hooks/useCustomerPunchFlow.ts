@@ -603,10 +603,27 @@ export const useCustomerPunchFlow = ({
         return;
       }
       const punchRowId = punchRowIds.get(rowId);
-      if (punchRowId === undefined) punchOut(rowId, endSec);
-      else employeeControls?.punchOut(punchRowId, endSec);
+      if (punchRowId === undefined) {
+        punchOut(rowId, endSec);
+        return;
+      }
+      employeeControls?.punchOut(punchRowId, endSec);
+      // An employee punched out hands the selection to the employee above.
+      const employeeLineIds = tracks
+        .filter((t) => punchRowIds.has(t.id))
+        .map((t) => t.id);
+      const above = employeeLineIds[employeeLineIds.indexOf(rowId) - 1];
+      if (above !== undefined) focusOn(above);
     },
-    [breakPunchRowIds, finishBreak, punchRowIds, punchOut, employeeControls],
+    [
+      breakPunchRowIds,
+      finishBreak,
+      punchRowIds,
+      punchOut,
+      employeeControls,
+      tracks,
+      focusOn,
+    ],
   );
   // Break bars can't be deleted or edited yet.
   const deleteSessionHere = useCallback(
