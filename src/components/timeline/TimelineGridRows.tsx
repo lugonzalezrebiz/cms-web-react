@@ -229,6 +229,18 @@ export const TimelineGridRows = ({
     selectedBlock = blocks.find(
       (b) => resolvedMarkerSec >= b.start && resolvedMarkerSec <= b.end,
     );
+    // With the line's own bar selected, its sub-rows' bars that share its
+    // stretch look selected with it.
+    if (selectedBar && selectedBar.rowId === shownLineId) {
+      const openStart = activeSessionStarts[shownLineId];
+      const ownBar =
+        openStart === selectedBar.start
+          ? { start: openStart, end: Math.max(openStart, resolvedMarkerSec) }
+          : completedSessions[shownLineId]?.find(
+              (r) => r.start === selectedBar.start,
+            );
+      if (ownBar) selectedBlock = ownBar;
+    }
   }
 
   return (
