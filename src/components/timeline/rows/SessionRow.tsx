@@ -27,20 +27,21 @@ const hintTextSx = {
   fontWeight: 400,
   fontStyle: "normal",
   fontSize: 12,
-  lineHeight: "18px",
+  lineHeight: "22px",
+  height: 22,
+  boxSizing: "border-box",
   letterSpacing: 0,
   color: Colors.dimGray,
   whiteSpace: "nowrap",
   pointerEvents: "none",
   zIndex: 3,
   // Liquid glass: a frosted, translucent panel over the bars and grid.
-  padding: "2px 8px",
+  padding: "0 8px",
   borderRadius: "8px",
   background: Colors.glassWhite,
   backdropFilter: "blur(8px) saturate(180%)",
   WebkitBackdropFilter: "blur(8px) saturate(180%)",
-  border: `1px solid ${Colors.glassBorderWhite}`,
-  boxShadow: `0 4px 12px ${Colors.glassShadow}, inset 0 1px 0 ${Colors.glassBorderWhite}`,
+  boxShadow: `0 2px 6px ${Colors.glassShadow}`,
 } as const;
 
 /** A key inside a row hint ("Press o to punch-out"), in orange. */
