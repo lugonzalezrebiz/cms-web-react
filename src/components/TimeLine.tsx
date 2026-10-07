@@ -639,37 +639,6 @@ const TimeLine = ({
     isPlaying: state.isPlaying,
   });
 
-  const handleStepMarker = (delta: number) => {
-    const next = Math.max(
-      timelineStartSec,
-      Math.min(timelineEndSec, state.resolvedMarkerSec + delta),
-    );
-    state.setMarkerSec(next);
-  };
-
-  const sortedEventPoints = useMemo(
-    () => [...mergedEventPoints].sort((a, b) => a.timeSec - b.timeSec),
-    [mergedEventPoints],
-  );
-  const prevEventPoint = useMemo(
-    () =>
-      [...sortedEventPoints]
-        .reverse()
-        .find((ep) => ep.timeSec < state.resolvedMarkerSec),
-    [sortedEventPoints, state.resolvedMarkerSec],
-  );
-  const nextEventPoint = useMemo(
-    () => sortedEventPoints.find((ep) => ep.timeSec > state.resolvedMarkerSec),
-    [sortedEventPoints, state.resolvedMarkerSec],
-  );
-
-  const handleGoToPrevEventPoint = () => {
-    if (prevEventPoint) state.setMarkerSec(prevEventPoint.timeSec);
-  };
-  const handleGoToNextEventPoint = () => {
-    if (nextEventPoint) state.setMarkerSec(nextEventPoint.timeSec);
-  };
-
   const selectedActivityLabel = isActivityMode
     ? menuItems.find((m) => m.id === state.iTrackId)?.name
     : undefined;
@@ -778,7 +747,7 @@ const TimeLine = ({
     state.setSelectedEventPointId(id);
   };
 
-  useTimelineKeyboard({
+  const keyboard = useTimelineKeyboard({
     selectableRows,
     iTrackId: state.iTrackId,
     setITrackId: state.setITrackId,
@@ -839,11 +808,11 @@ const TimeLine = ({
         snapshot={snapshot}
         markerTimeSec={markerTimeSec}
         isPlaying={state.isPlaying}
-        onStepMarker={handleStepMarker}
+        onStepMarker={(delta) => keyboard.stepMarker(delta > 0 ? 1 : -1)}
         onTogglePlay={handleTogglePlay}
         onPopOut={onPopOut}
-        onUndo={onUndo}
-        onRedo={onRedo}
+        onUndo={keyboard.undo}
+        onRedo={keyboard.redo}
         canUndo={canUndo}
         canRedo={canRedo}
         onDeleteEventPoint={
@@ -852,10 +821,10 @@ const TimeLine = ({
         canDelete={
           isPunchesTab ? canDeleteBar : targetEventPoint?.reviewed === true
         }
-        onGoPrevEventPoint={handleGoToPrevEventPoint}
-        onGoNextEventPoint={handleGoToNextEventPoint}
-        hasPrevEventPoint={prevEventPoint !== undefined}
-        hasNextEventPoint={nextEventPoint !== undefined}
+        onGoPrevEventPoint={() => keyboard.jumpMarker(-1)}
+        onGoNextEventPoint={() => keyboard.jumpMarker(1)}
+        hasPrevEventPoint={keyboard.canJumpPrev}
+        hasNextEventPoint={keyboard.canJumpNext}
         expanded={expandedIcon}
         activeTab={activeTab}
         onTabChange={onTabChange}
