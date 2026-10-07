@@ -63,6 +63,9 @@ interface SessionBarProps {
   visibleDuration: number;
   color: string;
   isSelected?: boolean;
+  /** Looks selected (part of the selected line's block) without being the
+   * picked bar: no drag handles. */
+  isHighlighted?: boolean;
   /** Makes the bar clickable (punches tabs), to select it. */
   onSelect?: () => void;
   /** While selected, its ends get drag handles like a range diamond's. */
@@ -82,6 +85,7 @@ const SessionBar = ({
   visibleDuration,
   color,
   isSelected = false,
+  isHighlighted = false,
   onSelect,
   onResizeStart,
   onlyStartResizable = false,
@@ -134,10 +138,11 @@ const SessionBar = ({
         cursor: onSelect ? "pointer" : "default",
         // Selected like a diamond: a glow in the bar's own color (alpha 0x99,
         // blur 10), eased in and out.
-        boxShadow: isSelected ? `0 0 10px ${color}99` : "none",
+        boxShadow:
+          isSelected || isHighlighted ? `0 0 10px ${color}99` : "none",
         transition: "box-shadow 200ms ease, background 200ms ease",
         // Drawn above its neighbors, as selected diamonds are.
-        zIndex: isSelected ? 1 : "auto",
+        zIndex: isSelected || isHighlighted ? 1 : "auto",
       }}
     >
       {showHandles && handle("start")}
@@ -186,6 +191,9 @@ export interface SessionRowProps {
   /** Punches tabs: clicking the block that sums up its sub-rows selects
    * this line. */
   onSelectLine?: (rowId: number) => void;
+  /** Stretch of this sub-row's line that is selected (its block): bars in it
+   * look selected too. */
+  selectedBlock?: { start: number; end: number };
   /** Text next to the marker while this row's bar is open, replacing
    * "Press o to punch-out". */
   openHint?: ReactNode;
@@ -232,10 +240,15 @@ export const SessionRow = ({
   highlightChildBars = false,
   punchedOut,
   onSelectLine,
+  selectedBlock,
   openHint,
   selectedHint,
 }: SessionRowProps) => {
   const rowRef = useRef<HTMLDivElement | null>(null);
+  const isInSelectedBlock = (range: { start: number; end: number }) =>
+    selectedBlock !== undefined &&
+    range.start < selectedBlock.end &&
+    range.end > selectedBlock.start;
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
   // let currentIn: number | null = null;
@@ -493,13 +506,15 @@ export const SessionRow = ({
           range={shownRange(range)}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
-          // A selected (editable) punched-out bar turns orange.
+          // A selected (editable) punched-out bar turns orange, and so do
+          // the ones in the selected block of their line.
           color={
-            selectedBarStart === range.start
+            selectedBarStart === range.start || isInSelectedBlock(range)
               ? Colors.vividOrange
               : Colors.lightSteelGray
           }
           isSelected={selectedBarStart === range.start}
+          isHighlighted={isInSelectedBlock(range)}
           onSelect={
             onSelectBar ? () => onSelectBar(row.id, range.start) : undefined
           }
@@ -516,6 +531,7 @@ export const SessionRow = ({
           color={Colors.vividOrange}
           // Keyed by its saved start, so dragging it keeps it selected.
           isSelected={selectedBarStart === sessionStart}
+          isHighlighted={isInSelectedBlock(liveBar)}
           onSelect={
             onSelectBar ? () => onSelectBar(row.id, sessionStart) : undefined
           }
