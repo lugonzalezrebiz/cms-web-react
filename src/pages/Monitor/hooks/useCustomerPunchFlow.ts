@@ -619,12 +619,23 @@ export const useCustomerPunchFlow = ({
         return;
       }
       employeeControls?.punchOut(punchRowId, endSec);
-      // An employee punched out hands the selection to the employee above.
+      // An employee punched out hands the selection to the nearest one still
+      // at work: above first, else below.
       const employeeLineIds = tracks
         .filter((t) => punchRowIds.has(t.id))
         .map((t) => t.id);
-      const above = employeeLineIds[employeeLineIds.indexOf(rowId) - 1];
-      if (above !== undefined) focusOn(above);
+      const isWorking = (lineId: number) => {
+        const otherPunchRowId = punchRowIds.get(lineId);
+        return (
+          otherPunchRowId !== undefined &&
+          employeeOpenSessions[otherPunchRowId] !== undefined
+        );
+      };
+      const index = employeeLineIds.indexOf(rowId);
+      const above = employeeLineIds.slice(0, index).reverse().find(isWorking);
+      const below = employeeLineIds.slice(index + 1).find(isWorking);
+      const next = above ?? below;
+      if (next !== undefined) focusOn(next);
     },
     [
       breakPunchRowIds,
@@ -633,6 +644,7 @@ export const useCustomerPunchFlow = ({
       punchOut,
       employeeControls,
       tracks,
+      employeeOpenSessions,
       focusOn,
     ],
   );
