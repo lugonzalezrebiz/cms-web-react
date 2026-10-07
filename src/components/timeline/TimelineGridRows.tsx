@@ -79,7 +79,10 @@ interface TimelineGridRowsProps {
   /** The row just punched out with "o", and where. */
   punchedOut?: { rowId: number; sec: number; key: number };
   /** Punches tabs: clicking a line's sub-rows block selects that line. */
-  onSelectLine?: (rowId: number) => void;
+  onSelectLine?: (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => void;
   /** Punches tabs: saves a bar dragged by its ends. */
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   /** Punches tabs: outer limits for a bar's ends. */
