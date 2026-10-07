@@ -8,7 +8,8 @@ import { useEventPointResize } from "./hooks/useEventPointResize";
 import { useWheelZoomPan } from "./hooks/useWheelZoomPan";
 import { useDragExtendEventPoint } from "./hooks/useDragExtendEventPoint";
 import { EventRow } from "./rows/EventRow";
-import { SessionRow } from "./rows/SessionRow";
+import { SessionRow, type BarEdit, type RowNotice } from "./rows/SessionRow";
+import type { SelectedBar } from "./hooks/useTimelineBodyState";
 import { GridLines } from "./rows/GridLines";
 import Card from "../Card";
 
@@ -54,6 +55,41 @@ interface TimelineGridRowsProps {
   loadState?: boolean;
   pendingReviewWallSec?: number;
   hasMultipleRows: boolean;
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  onReassignRow?: (rowId: number, parentId: number) => void;
+  /** Hint centered over the grid while there's nothing recorded yet. */
+  emptyGridMessage?: React.ReactNode;
+  /** Punches tabs: the selected session bar. */
+  selectedBar?: SelectedBar | null;
+  /** Punches tabs: clicking a bar selects it. */
+  onSelectBar?: (rowId: number, start: number) => void;
+  /** Punches tabs: a message shown at the marker on one row. */
+  rowNotice?: RowNotice;
+  /** Punches tabs: the picked sub-row (↑/↓, click), highlighted. */
+  highlightedSubRowId?: number | null;
+  /** Punches tabs: per-row text next to the marker while its bar is open. */
+  getOpenHint?: (rowId: number) => React.ReactNode | undefined;
+  /** Punches tabs: whether a sub-row gets the change-attendance button. */
+  canReassignRow?: (rowId: number) => boolean;
+  /** Punches tabs: text next to the marker on the selected line. */
+  getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
+  /** Punches tabs: text next to the marker on the line whose sub-row is
+   * picked (e.g. how to add another). */
+  getParentHint?: (rowId: number) => React.ReactNode | undefined;
+  /** The row just punched out with "o", and where. */
+  punchedOut?: { rowId: number; sec: number; key: number };
+  /** Punches tabs: clicking a line's sub-rows block selects that line. */
+  onSelectLine?: (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => void;
+  /** Punches tabs: saves a bar dragged by its ends. */
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  /** Punches tabs: outer limits for a bar's ends. */
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
 
 export const TimelineGridRows = ({
@@ -93,7 +129,33 @@ export const TimelineGridRows = ({
   loadState = false,
   pendingReviewWallSec,
   hasMultipleRows,
+  reassignOptions,
+  onReassignRow,
+  emptyGridMessage,
+  selectedBar,
+  onSelectBar,
+  rowNotice,
+  highlightedSubRowId,
+  getOpenHint,
+  canReassignRow,
+  getSelectedHint,
+  getParentHint,
+  punchedOut,
+  onSelectLine,
+  onEditBar,
+  getEditBounds,
 }: TimelineGridRowsProps) => {
+  // With one of its sub-rows picked, the selected line stays the context but
+  // only that sub-row looks selected (no band, hint or highlight on the line).
+  const pickedParentId =
+    highlightedSubRowId != null
+      ? flatRows.find((r) => r.id === highlightedSubRowId)?.parentCameraId
+      : undefined;
+  const shownLineId =
+    iTrackId != null && iTrackId !== pickedParentId ? iTrackId : null;
+
+  const selectedBarStartOf = (rowId: number) =>
+    selectedBar?.rowId === rowId ? selectedBar.start : undefined;
   const visibleEnd = visibleStart + visibleDuration;
 
   const setResizing = useEventPointResize({
@@ -125,6 +187,61 @@ export const TimelineGridRows = ({
     timelineEndSec,
     onUpdateEventPoint,
   });
+
+  // Sub-rows under each parent row (e.g. Customer punches groups), so the
+  // parent can mirror their bars.
+  const childRowIdsByParent = new Map<number, number[]>();
+  for (const r of flatRows) {
+    if (r.kind !== "event" || r.parentCameraId === undefined) continue;
+    const ids = childRowIdsByParent.get(r.parentCameraId) ?? [];
+    ids.push(r.id);
+    childRowIdsByParent.set(r.parentCameraId, ids);
+  }
+
+  // Punches tabs: the selected line's block under the marker (its sub-rows'
+  // bars merged, as the line draws it) while no sub-row bar is picked — the
+  // sub-rows' bars in that stretch look selected along with it.
+  const selectedLineChildIds =
+    shownLineId !== null ? (childRowIdsByParent.get(shownLineId) ?? []) : [];
+  let selectedBlock: { start: number; end: number } | undefined;
+  if (
+    onSelectBar !== undefined &&
+    selectedLineChildIds.length > 0 &&
+    !(selectedBar && selectedLineChildIds.includes(selectedBar.rowId))
+  ) {
+    const ranges = selectedLineChildIds
+      .flatMap((id) => {
+        const start = activeSessionStarts[id];
+        return [
+          ...(completedSessions[id] ?? []),
+          ...(start !== undefined && resolvedMarkerSec > start
+            ? [{ start, end: resolvedMarkerSec }]
+            : []),
+        ];
+      })
+      .sort((a, b) => a.start - b.start);
+    const blocks: { start: number; end: number }[] = [];
+    for (const range of ranges) {
+      const last = blocks[blocks.length - 1];
+      if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
+      else blocks.push({ ...range });
+    }
+    selectedBlock = blocks.find(
+      (b) => resolvedMarkerSec >= b.start && resolvedMarkerSec <= b.end,
+    );
+    // With the line's own bar selected, its sub-rows' bars that share its
+    // stretch look selected with it.
+    if (selectedBar && selectedBar.rowId === shownLineId) {
+      const openStart = activeSessionStarts[shownLineId];
+      const ownBar =
+        openStart === selectedBar.start
+          ? { start: openStart, end: Math.max(openStart, resolvedMarkerSec) }
+          : completedSessions[shownLineId]?.find(
+              (r) => r.start === selectedBar.start,
+            );
+      if (ownBar) selectedBlock = ownBar;
+    }
+  }
 
   return (
     <Box
@@ -189,6 +306,40 @@ export const TimelineGridRows = ({
         </Box>
       )}
 
+      {emptyGridMessage && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        >
+          <Box
+            sx={{
+              maxWidth: "270px",
+              fontFamily: Fonts.main,
+              fontWeight: 400,
+              fontSize: 12,
+              lineHeight: "18px",
+              letterSpacing: 0,
+              color: Colors.dimGray,
+              textAlign: "center",
+              // A see-through card so it reads over the bars and grid lines.
+              bgcolor: Colors.softWhite,
+              boxShadow: "0 2px 10px 0 rgba(0, 0, 0, 0.16)",
+              borderRadius: "8px",
+              p: "8px 12px",
+            }}
+          >
+            {emptyGridMessage}
+          </Box>
+        </Box>
+      )}
+
       {/* Rows — scroll-synced with left list */}
       <Box
         ref={rowsScrollRef}
@@ -198,7 +349,9 @@ export const TimelineGridRows = ({
           left: 0,
           right: 0,
           bottom: 0,
-          overflowY: "hidden",
+          // Both axes: with only overflowY hidden the other one turns "auto",
+          // and hints past the right edge would show a horizontal scrollbar.
+          overflow: "hidden",
           pointerEvents: "none",
         }}
       >
@@ -208,14 +361,14 @@ export const TimelineGridRows = ({
           <Box
             sx={{
               position: "absolute",
-              top: Math.max(0, flatRows.findIndex((r) => r.id === iTrackId)) * ROW_HEIGHT,
+              top: Math.max(0, flatRows.findIndex((r) => r.id === shownLineId)) * ROW_HEIGHT,
               left: 0,
               right: 0,
               height: ROW_HEIGHT,
               bgcolor: `${Colors.transparentVividOrange}`,
               pointerEvents: "none",
               zIndex: 0,
-              opacity: iTrackId !== null && flatRows.some((r) => r.id === iTrackId) ? 1 : 0,
+              opacity: shownLineId !== null && flatRows.some((r) => r.id === shownLineId) ? 1 : 0,
               transition: "top 150ms ease, opacity 150ms ease",
             }}
           />
@@ -225,12 +378,49 @@ export const TimelineGridRows = ({
                 key={row.id}
                 row={row}
                 rowIndex={rowIndex}
-                isSelected={selectedTracks.has(row.id)}
+                childRowIds={childRowIdsByParent.get(row.id)}
+                isSelected={selectedTracks.has(row.id) && row.id !== pickedParentId}
                 completedSessions={completedSessions}
                 activeSessionStarts={activeSessionStarts}
                 resolvedMarkerSec={resolvedMarkerSec}
                 visibleStart={visibleStart}
                 visibleDuration={visibleDuration}
+                selectedBarStart={selectedBarStartOf(row.id)}
+                onSelectBar={onSelectBar}
+                onEditBar={onEditBar}
+                getEditBounds={getEditBounds}
+                notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                onSelectLine={onSelectLine}
+                punchedOut={
+                  punchedOut?.rowId === row.id ? punchedOut : undefined
+                }
+                // Only the selected line says what its open bar can do; the line
+                // of a picked sub-row says how to add another (getParentHint).
+                openHint={
+                  row.id === pickedParentId
+                    ? getParentHint?.(row.id)
+                    : getOpenHint?.(row.id)
+                }
+                showPunchOutHint={
+                  row.id === shownLineId ||
+                  (row.id === pickedParentId && !!getParentHint?.(row.id))
+                }
+                selectedHint={
+                  row.id === shownLineId
+                    ? getSelectedHint?.(row.id)
+                    : row.id === pickedParentId
+                      ? getParentHint?.(row.id)
+                      : undefined
+                }
+                // Punches tabs: the selected line, with no sub-row bar picked.
+                highlightChildBars={
+                  onSelectBar !== undefined &&
+                  row.id === shownLineId &&
+                  !(
+                    selectedBar &&
+                    childRowIdsByParent.get(row.id)?.includes(selectedBar.rowId)
+                  )
+                }
               />
             ) : (
               <Box
@@ -246,29 +436,61 @@ export const TimelineGridRows = ({
                   resolvedMarkerSec={resolvedMarkerSec}
                   visibleStart={visibleStart}
                   visibleDuration={visibleDuration}
+                  reassignOptions={reassignOptions}
+                  // Only on the picked sub-row, and only where the tab allows
+                  // it (e.g. not Back Room breaks).
+                  onReassign={
+                    row.id !== highlightedSubRowId ||
+                    canReassignRow?.(row.id) === false
+                      ? undefined
+                      : onReassignRow
+                  }
+                  // Only the picked sub-row is highlighted and shows the
+                  // punch-out hint (not while just its line is selected).
+                  isSubSelected={row.id === highlightedSubRowId}
+                  showPunchOutHint={row.id === highlightedSubRowId}
+                  selectedBarStart={selectedBarStartOf(row.id)}
+                  onSelectBar={onSelectBar}
+                  onEditBar={onEditBar}
+                  getEditBounds={getEditBounds}
+                  notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                  selectedBlock={
+                    row.parentCameraId === shownLineId ? selectedBlock : undefined
+                  }
+                  punchedOut={
+                    punchedOut?.rowId === row.id ? punchedOut : undefined
+                  }
+                  openHint={getOpenHint?.(row.id)}
+                  selectedHint={
+                    row.id === shownLineId ? getSelectedHint?.(row.id) : undefined
+                  }
                 />
-                <EventRow
-                  row={row}
-                  rowIndex={rowIndex}
-                  cameraEventPoints={cameraEventPoints}
-                  visibleStart={visibleStart}
-                  visibleEnd={visibleEnd}
-                  visibleDuration={visibleDuration}
-                  setResizing={setResizing}
-                  setMarkerSec={setMarkerSec}
-                  setITrackId={setITrackId}
-                  selectedEventPointId={selectedEventPointId}
-                  setSelectedEventPointId={setSelectedEventPointId}
-                  editingEventPointId={editingEventPointId}
-                  onExitEditMode={onExitEditMode}
-                  onStartMove={startMove}
-                  onExtendStart={startExtend}
-                  onConvertEventPointToLocal={onConvertEventPointToLocal}
-                  onEnterEditMode={onEnterEditMode}
-                  onEditEventPoint={onEditEventPoint}
-                  pendingReviewWallSec={pendingReviewWallSec}
-                  hasMultipleRows={hasMultipleRows}
-                />
+                {/* Punches tabs (selectable bars) have no diamonds, and the
+                    diamond canvas would swallow the clicks on sub-row bars. */}
+                {!onSelectBar && (
+                  <EventRow
+                    row={row}
+                    rowIndex={rowIndex}
+                    cameraEventPoints={cameraEventPoints}
+                    visibleStart={visibleStart}
+                    visibleEnd={visibleEnd}
+                    visibleDuration={visibleDuration}
+                    setResizing={setResizing}
+                    setMarkerSec={setMarkerSec}
+                    setITrackId={setITrackId}
+                    selectedEventPointId={selectedEventPointId}
+                    setSelectedEventPointId={setSelectedEventPointId}
+                    editingEventPointId={editingEventPointId}
+                    onExitEditMode={onExitEditMode}
+                    onStartMove={startMove}
+                    onExtendStart={startExtend}
+                    onConvertEventPointToLocal={onConvertEventPointToLocal}
+                    onEnterEditMode={onEnterEditMode}
+                    onEditEventPoint={onEditEventPoint}
+                    pendingReviewWallSec={pendingReviewWallSec}
+                    hasMultipleRows={hasMultipleRows}
+                  />
+                )}
               </Box>
             ),
           )}

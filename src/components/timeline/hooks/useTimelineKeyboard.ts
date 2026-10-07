@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import useNavigateWithQuery from "../../../hooks/useNavigate";
 import useCompanyConfig from "../../../hooks/useCompanyConfig";
 import { hasReviewedTwin } from "../utils";
 import { TAG_TOLERANCE_SEC } from "../../../hooks/useTagsForCamera";
 import { getMaxZoom } from "../constants";
 import type { CameraEventPoint, FlatRow } from "../types";
+import type { SelectedBar } from "./useTimelineBodyState";
 
 interface UseTimelineKeyboardParams {
   selectableRows: FlatRow[];
@@ -52,7 +53,45 @@ interface UseTimelineKeyboardParams {
   setSelectedEventPointId?: React.Dispatch<React.SetStateAction<number | null>>;
   flatRows?: FlatRow[];
   isActivityMode?: boolean;
+  /** Employee punches: rows are session bars, not diamonds — see the early branches below. */
+  isSessionMode?: boolean;
+  onPunchIn?: (rowId: number, startSec: number) => boolean;
+  onPunchOut?: (rowId: number, endSec: number) => void;
+  /** "+" adds a row (session mode only), e.g. the add-employee dialog. */
+  onAddRow?: () => void;
+  /** Closed session bars by row id (session mode: Ctrl+arrows and Delete). */
+  completedSessions?: Record<number, { start: number; end: number }[]>;
+  /** Session mode: Delete removes the bar that starts at `startSec` on `rowId`;
+   * returning false means it was refused (the bar stays selected). */
+  onDeleteSession?: (rowId: number, startSec: number) => boolean | void;
+  /** Session mode: the selected bar (clicked or reached with Ctrl+arrows). */
+  selectedBar?: SelectedBar | null;
+  setSelectedBar?: React.Dispatch<React.SetStateAction<SelectedBar | null>>;
+  /** Session mode: the selected line's sub-row bars under the marker, in
+   * list order (↑/↓ step through them). */
+  subRowBars?: { rowId: number; start: number; isOpen: boolean }[];
+  /** Session mode: the sub-selected open sub-row ("o" punches it out). */
+  activeSubRowId?: number | null;
+  setSelectedSubRowId?: React.Dispatch<React.SetStateAction<number | null>>;
+  /** Session mode: number of the first row, for the digit shortcuts. */
+  rowNumberStart?: number;
+  /** Session mode: called after "o" punches a row out (rowId, at sec). */
+  onPunchedOut?: (rowId: number, sec: number) => void;
+  /** Session mode: Delete on the selected line with no bar picked. */
+  onDeleteLine?: (lineId: number, sec: number) => void;
+  /** Session mode: a letter key not handled here, for the selected line
+   * (and its sub-selected sub-row); returns whether the tab handled it, or
+   * the id of the line to select next. */
+  onRowKey?: (
+    key: string,
+    lineId: number,
+    subRowId: number | null,
+    sec: number,
+  ) => boolean | number;
 }
+
+// A session bar and the line that selects it; `end` is undefined while open.
+type SessionBar = { rowId: number; lineId: number; start: number; end?: number };
 
 export const useTimelineKeyboard = ({
   selectableRows,
@@ -89,7 +128,38 @@ export const useTimelineKeyboard = ({
   setSelectedEventPointId,
   flatRows,
   isActivityMode,
+  isSessionMode = false,
+  onPunchIn,
+  onPunchOut,
+  onAddRow,
+  completedSessions,
+  onDeleteSession,
+  selectedBar,
+  setSelectedBar,
+  subRowBars,
+  activeSubRowId,
+  setSelectedSubRowId,
+  rowNumberStart = 1,
+  onRowKey,
+  onPunchedOut,
+  onDeleteLine,
 }: UseTimelineKeyboardParams) => {
+  const onPunchInRef = useRef(onPunchIn);
+  const onPunchOutRef = useRef(onPunchOut);
+  const onAddRowRef = useRef(onAddRow);
+  const onDeleteSessionRef = useRef(onDeleteSession);
+  const onRowKeyRef = useRef(onRowKey);
+  const onPunchedOutRef = useRef(onPunchedOut);
+  const onDeleteLineRef = useRef(onDeleteLine);
+  useEffect(() => {
+    onPunchInRef.current = onPunchIn;
+    onPunchOutRef.current = onPunchOut;
+    onAddRowRef.current = onAddRow;
+    onDeleteSessionRef.current = onDeleteSession;
+    onRowKeyRef.current = onRowKey;
+    onPunchedOutRef.current = onPunchedOut;
+    onDeleteLineRef.current = onDeleteLine;
+  });
   const onDeleteRef = useRef(onDeleteEventPoint);
   const onAcceptRef = useRef(onAcceptEventPoint);
   const onRejectRef = useRef(onRejectEventPoint);
@@ -131,6 +201,46 @@ export const useTimelineKeyboard = ({
     [totalSec, zoom, panOffsetSec, setPanOffsetSec],
   );
 
+  // Sub-rows hanging under a row (e.g. Customer punches groups).
+  const childRowIds = useCallback(
+    (rowId: number) =>
+      (flatRows ?? [])
+        .filter((r) => r.kind === "event" && r.parentCameraId === rowId)
+        .map((r) => r.id),
+    [flatRows],
+  );
+
+  // Session mode: every bar, ordered by start and then by row, each with the
+  // line that selects it (a sub-row's bar selects its parent row).
+  const sessionBars = useMemo((): SessionBar[] => {
+    if (!isSessionMode) return [];
+    const rows = flatRows ?? [];
+    const bars: (SessionBar & { order: number })[] = [];
+    rows.forEach((row, order) => {
+      const lineId =
+        row.kind === "event" && row.parentCameraId !== undefined
+          ? row.parentCameraId
+          : row.id;
+      for (const { start, end } of completedSessions?.[row.id] ?? []) {
+        bars.push({ rowId: row.id, lineId, start, end, order });
+      }
+      const openStart = activeSessionStarts[row.id];
+      if (openStart !== undefined) {
+        bars.push({ rowId: row.id, lineId, start: openStart, order });
+      }
+    });
+    return bars
+      .sort((a, b) => a.start - b.start || a.order - b.order)
+      .map(({ order: _order, ...bar }) => bar);
+  }, [isSessionMode, flatRows, completedSessions, activeSessionStarts]);
+
+  // Position of the selected bar among sessionBars (-1 if none / gone).
+  const selectedBarIndex = selectedBar
+    ? sessionBars.findIndex(
+        (b) => b.rowId === selectedBar.rowId && b.start === selectedBar.start,
+      )
+    : -1;
+
   // Track mouse X relative to the grid element
   const mouseXRef = useRef<number>(0);
 
@@ -145,12 +255,365 @@ export const useTimelineKeyboard = ({
     return () => el.removeEventListener("mousemove", onMouseMove);
   }, [gridRef]);
 
+  // ── Actions shared by the keys and the toolbar buttons ──────────────────
+  const markerBase = markerSec ?? timelineStartSec;
+
+  // Ctrl+←/→ target: in session mode the previous / next bar (from the
+  // selected bar while the marker is still on its start, so bars sharing a
+  // start second are stepped one by one, else from the marker); otherwise the
+  // previous / next diamond (never forward off a pending one).
+  const jumpTarget = useCallback(
+    (
+      direction: 1 | -1,
+    ): { bar: SessionBar } | { ep: CameraEventPoint } | undefined => {
+      if (isSessionMode) {
+        const current =
+          sessionBars[selectedBarIndex]?.start === markerBase
+            ? selectedBarIndex
+            : -1;
+        const bar =
+          direction === 1
+            ? current >= 0
+              ? sessionBars[current + 1]
+              : sessionBars.find((b) => b.start > markerBase)
+            : current >= 0
+              ? sessionBars[current - 1]
+              : [...sessionBars].reverse().find((b) => b.start < markerBase);
+        return bar ? { bar } : undefined;
+      }
+      const onPendingDiamond = cameraEventPoints?.some(
+        (ep) =>
+          ep.timeSec === markerBase && ep.reviewed === false && !ep.rejected,
+      );
+      if (onPendingDiamond && direction === 1) return undefined;
+      const sorted = [...(cameraEventPoints ?? [])].sort(
+        (a, b) => a.timeSec - b.timeSec,
+      );
+      const ep =
+        direction === 1
+          ? sorted.find((p) => p.timeSec > markerBase)
+          : [...sorted].reverse().find((p) => p.timeSec < markerBase);
+      return ep ? { ep } : undefined;
+    },
+    [isSessionMode, sessionBars, selectedBarIndex, markerBase, cameraEventPoints],
+  );
+
+  // Ctrl+←/→: move the marker to the jump target and select it (a bar and
+  // its line, or a diamond and its row).
+  const jumpMarker = useCallback(
+    (direction: 1 | -1) => {
+      const target = jumpTarget(direction);
+      if (!target) return;
+      if ("bar" in target) {
+        const { bar } = target;
+        setSelectedBar?.({ rowId: bar.rowId, start: bar.start });
+        setMarkerSec(bar.start);
+        panTo(bar.start);
+        setITrackId(bar.lineId);
+        setSelectedTracks(
+          activeSessionStarts[bar.lineId] !== undefined
+            ? new Set([bar.lineId])
+            : new Set(),
+        );
+        return;
+      }
+      const { ep } = target;
+      setMarkerSec(ep.timeSec);
+      panTo(ep.timeSec);
+      const targetRow = flatRows?.find((r) =>
+        isActivityMode
+          ? r.kind === "activity" && r.name === ep.label
+          : r.kind === "event" &&
+            r.parentCameraId === ep.cameraId &&
+            r.name === ep.label,
+      );
+      if (targetRow && targetRow.id !== iTrackId) setITrackId(targetRow.id);
+      setSelectedEventPointId?.(ep.id);
+    },
+    [
+      jumpTarget,
+      setSelectedBar,
+      setMarkerSec,
+      panTo,
+      setITrackId,
+      setSelectedTracks,
+      activeSessionStarts,
+      flatRows,
+      isActivityMode,
+      iTrackId,
+      setSelectedEventPointId,
+    ],
+  );
+
+  // ←/→: step the marker one frame.
+  const stepMarker = useCallback(
+    (direction: 1 | -1) => {
+      const delta = direction * imagesInterval;
+      // Session mode: plain steps both ways so an overshot bar can be pulled
+      // back, but never before the selected line's (or its sub-rows') open
+      // punch-in.
+      if (isSessionMode) {
+        const openStarts =
+          iTrackId !== null
+            ? [iTrackId, ...childRowIds(iTrackId)]
+                .map((id) => activeSessionStarts[id])
+                .filter((s): s is number => s !== undefined)
+            : [];
+        const minSec =
+          openStarts.length > 0 ? Math.max(...openStarts) : timelineStartSec;
+        const next = Math.max(
+          minSec,
+          Math.min(timelineEndSec, markerBase + delta),
+        );
+        setMarkerSec(next);
+        panTo(next);
+        return;
+      }
+
+      if (selectedTracks.size > 0 && direction !== 1) return;
+      let next = Math.max(
+        timelineStartSec,
+        Math.min(timelineEndSec, markerBase + delta),
+      );
+
+      // Skip the dead zone between diamonds' review windows — nothing is
+      // selectable there (useAutoSelectOnMarkerOverDiamond only hit-tests within
+      // TAG_TOLERANCE_SEC of a diamond), so stepping past a window's edge jumps
+      // straight to the start of the next diamond's window instead of
+      // frame-stepping through empty space.
+      const windows: { start: number; end: number }[] = [];
+      for (const ep of cameraEventPoints ?? []) {
+        if (ep.rejected) continue;
+        const windowEnd =
+          (ep.mode === "RANGE" && ep.endSec > ep.timeSec ? ep.endSec : ep.timeSec) +
+          TAG_TOLERANCE_SEC;
+        windows.push({ start: ep.timeSec - TAG_TOLERANCE_SEC, end: windowEnd });
+      }
+      windows.sort((a, b) => a.start - b.start);
+      const merged: { start: number; end: number }[] = [];
+      for (const w of windows) {
+        const last = merged[merged.length - 1];
+        if (last && w.start <= last.end) {
+          last.end = Math.max(last.end, w.end);
+        } else {
+          merged.push({ ...w });
+        }
+      }
+
+      const currentWindow = merged.find(
+        (w) => markerBase >= w.start && markerBase <= w.end,
+      );
+      if (currentWindow) {
+        if (direction === 1 && next > currentWindow.end) {
+          const nextWindow = merged.find((w) => w.start > currentWindow.end);
+          if (nextWindow) next = Math.min(timelineEndSec, nextWindow.start);
+        } else if (direction === -1 && next < currentWindow.start) {
+          const prevWindow = [...merged].reverse().find((w) => w.end < currentWindow.start);
+          if (prevWindow) next = Math.max(timelineStartSec, prevWindow.end);
+        }
+      }
+
+      setMarkerSec(next);
+      panTo(next);
+    },
+    [
+      imagesInterval,
+      isSessionMode,
+      iTrackId,
+      childRowIds,
+      activeSessionStarts,
+      timelineStartSec,
+      timelineEndSec,
+      markerBase,
+      setMarkerSec,
+      panTo,
+      selectedTracks,
+      cameraEventPoints,
+    ],
+  );
+
+  // Ctrl+Z / Ctrl+Y: undo / redo, then move the marker to where it happened.
+  const moveToAction = useCallback(
+    (actionSec: number | void) => {
+      if (typeof actionSec !== "number") return;
+      (setMarkerSecRaw ?? setMarkerSec)(actionSec);
+      panTo(actionSec);
+    },
+    [setMarkerSecRaw, setMarkerSec, panTo],
+  );
+  const undo = useCallback(
+    () => moveToAction(onUndoRef.current?.()),
+    [moveToAction],
+  );
+  const redo = useCallback(
+    () => moveToAction(onRedoRef.current?.()),
+    [moveToAction],
+  );
+
   // ── "i" (new event point on selected line) and "o" (punch-out all) ──────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
+
+      // Employee punches: "i" opens a new bar on the selected row at the marker,
+      // "o" closes that row's open session at the marker, and digits jump to
+      // any row (no diamond-proximity rule).
+      if (isSessionMode && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // "+" adds a row (Employee punches' add-employee dialog), when offered.
+        if (e.key === "+" && onAddRowRef.current) {
+          e.preventDefault();
+          onAddRowRef.current();
+          return;
+        }
+        if (e.key === "i") {
+          // No rows yet or none selected: "i" works like "+" (add a row),
+          // when the tab offers it.
+          if (
+            iTrackId === null ||
+            !selectableRows.some((r) => r.id === iTrackId)
+          ) {
+            if (onAddRowRef.current) {
+              e.preventDefault();
+              onAddRowRef.current();
+            }
+            return;
+          }
+          const start = markerSec ?? timelineStartSec;
+          if (onPunchInRef.current?.(iTrackId, start)) {
+            setSelectedTracks(new Set([iTrackId]));
+          }
+          return;
+        }
+        if (e.key === "o") {
+          if (iTrackId === null) return;
+          const end = markerSec ?? timelineStartSec;
+          // The sub-selected open sub-row first (a customer group under its
+          // employee: an employee can't leave mid-customer), else the selected
+          // row's own session.
+          const rowId =
+            activeSubRowId ??
+            (activeSessionStarts[iTrackId] !== undefined ? iTrackId : undefined);
+          if (rowId === undefined) return;
+          const start = activeSessionStarts[rowId];
+          if (start === undefined || end <= start) return;
+          onPunchOutRef.current?.(rowId, end);
+          onPunchedOutRef.current?.(rowId, end);
+          // The line is no longer punched in only if its own bar closed.
+          if (rowId === iTrackId) setSelectedTracks(new Set());
+          // Another open sub-row of the line takes over the pick (the next one
+          // down, else the one above), bar and all; with none left, the line
+          // itself is selected again.
+          if (rowId !== iTrackId) {
+            const openBars = (subRowBars ?? []).filter((b) => b.isOpen);
+            const index = openBars.findIndex((b) => b.rowId === rowId);
+            const next =
+              index === -1
+                ? undefined
+                : (openBars[index + 1] ?? openBars[index - 1]);
+            setSelectedSubRowId?.(next ? next.rowId : null);
+            setSelectedBar?.(
+              next ? { rowId: next.rowId, start: next.start } : null,
+            );
+          }
+          // Punching out the row itself (Employee punches) also deselects it;
+          // closing a sub-row's session (a customer group) keeps its parent.
+          if (rowId === iTrackId) setITrackId(null);
+          return;
+        }
+        // ↑/↓ step from the selected line (no bar) through its sub-rows' bars
+        // under the marker and back, selecting each bar; an open one also
+        // becomes the sub-row "o" punches out. Without any they keep
+        // scrolling the list.
+        if (
+          (e.key === "ArrowUp" || e.key === "ArrowDown") &&
+          subRowBars &&
+          subRowBars.length > 0
+        ) {
+          e.preventDefault();
+          const current = subRowBars.findIndex(
+            (b) =>
+              selectedBar != null &&
+              b.rowId === selectedBar.rowId &&
+              b.start === selectedBar.start,
+          );
+          // Position 0 is the line itself, then one per sub-row bar.
+          const stops = subRowBars.length + 1;
+          const step = e.key === "ArrowDown" ? 1 : -1;
+          const next = (current + 1 + step + stops) % stops;
+          if (next === 0) {
+            // Back on the line itself: no sub-row picked.
+            setSelectedBar?.(null);
+            setSelectedSubRowId?.(null);
+            return;
+          }
+          const bar = subRowBars[next - 1];
+          setSelectedBar?.({ rowId: bar.rowId, start: bar.start });
+          if (bar.isOpen) setSelectedSubRowId?.(bar.rowId);
+          return;
+        }
+        if (e.key === "Delete") {
+          // Only the selected bar is deleted, like a selected diamond.
+          const bar = sessionBars[selectedBarIndex];
+          if (!bar) {
+            // No bar picked: the tab can still answer for the line (e.g. say
+            // why its customers' block can't be deleted).
+            if (iTrackId !== null) {
+              e.preventDefault();
+              onDeleteLineRef.current?.(iTrackId, markerSec ?? timelineStartSec);
+            }
+            return;
+          }
+          if (!onDeleteSessionRef.current) return;
+          e.preventDefault();
+          // The tab may refuse (e.g. an employee bar with customers on it).
+          if (onDeleteSessionRef.current(bar.rowId, bar.start) === false) return;
+          setSelectedBar?.(null);
+          // Deleting the line's own open bar leaves it punched out.
+          if (bar.end === undefined && bar.rowId === iTrackId) {
+            setSelectedTracks(new Set());
+          }
+          return;
+        }
+        if (/^[0-9]$/.test(e.key)) {
+          // Digits match the numbers in the list: from rowNumberStart, with
+          // "0" as the 10th row when the list starts at 1.
+          const digit = Number(e.key);
+          const index =
+            rowNumberStart === 1 && digit === 0 ? 9 : digit - rowNumberStart;
+          const row = selectableRows[index];
+          // Inactive (greyed-out) lines can't be selected.
+          if (!row || row.inactive) return;
+          setITrackId(row.id);
+          setSelectedTracks(
+            activeSessionStarts[row.id] !== undefined
+              ? new Set([row.id])
+              : new Set(),
+          );
+          return;
+        }
+        // Other letters the tab handles itself (e.g. Employee and Customer's
+        // B / S), on the selected line and its sub-selected sub-row.
+        if (/^[a-z]$/i.test(e.key) && iTrackId !== null) {
+          const handled = onRowKeyRef.current?.(
+            e.key.toLowerCase(),
+            iTrackId,
+            activeSubRowId ?? null,
+            markerSec ?? timelineStartSec,
+          );
+          if (handled !== undefined && handled !== false) {
+            e.preventDefault();
+            // A row id: the line the tab wants selected next.
+            if (typeof handled === "number") {
+              setITrackId(handled);
+              setSelectedTracks(new Set());
+            }
+            return;
+          }
+        }
+      }
+
       if (
         e.key === "i" &&
         !e.ctrlKey &&
@@ -354,18 +817,10 @@ export const useTimelineKeyboard = ({
         }
       } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
         e.preventDefault();
-        const actionSec = onUndoRef.current?.();
-        if (typeof actionSec === "number") {
-          (setMarkerSecRaw ?? setMarkerSec)(actionSec);
-          panTo(actionSec);
-        }
+        undo();
       } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
         e.preventDefault();
-        const actionSec = onRedoRef.current?.();
-        if (typeof actionSec === "number") {
-          (setMarkerSecRaw ?? setMarkerSec)(actionSec);
-          panTo(actionSec);
-        }
+        redo();
       } else if (e.key === "Delete") {
         const target = cameraEventPoints?.find(
           (ep) => ep.id === selectedEventPointId,
@@ -431,6 +886,18 @@ export const useTimelineKeyboard = ({
     setSelectedEventPointId,
     flatRows,
     isActivityMode,
+    isSessionMode,
+    childRowIds,
+    sessionBars,
+    selectedBarIndex,
+    setSelectedBar,
+    subRowBars,
+    selectedBar,
+    activeSubRowId,
+    setSelectedSubRowId,
+    rowNumberStart,
+    undo,
+    redo,
   ]);
 
   // ── Alt+ArrowLeft: go back ───────────────────────────────────────────────
@@ -455,99 +922,14 @@ export const useTimelineKeyboard = ({
       if (isEditable) return;
       e.preventDefault();
 
-      if (e.ctrlKey || e.metaKey) {
-        const currentSec = markerSec ?? timelineStartSec;
-        const onPendingDiamond = cameraEventPoints?.some(
-          (ep) =>
-            ep.timeSec === currentSec &&
-            ep.reviewed === false &&
-            !ep.rejected,
-        );
-        if (onPendingDiamond && e.key === "ArrowRight") return;
-        const sorted = [...(cameraEventPoints ?? [])].sort((a, b) => a.timeSec - b.timeSec);
-        let targetEp: CameraEventPoint | undefined;
-        if (e.key === "ArrowLeft") {
-          targetEp = [...sorted].reverse().find((ep) => ep.timeSec < currentSec);
-        } else {
-          targetEp = sorted.find((ep) => ep.timeSec > currentSec);
-        }
-        if (targetEp) {
-          setMarkerSec(targetEp.timeSec);
-          panTo(targetEp.timeSec);
-          const targetRow = flatRows?.find((r) =>
-            isActivityMode
-              ? r.kind === "activity" && r.name === targetEp.label
-              : r.kind === "event" &&
-                r.parentCameraId === targetEp.cameraId &&
-                r.name === targetEp.label,
-          );
-          if (targetRow && targetRow.id !== iTrackId) setITrackId(targetRow.id);
-          setSelectedEventPointId?.(targetEp.id);
-        }
-        return;
-      }
-
-      if (selectedTracks.size > 0 && e.key !== "ArrowRight") return;
-      const delta = e.key === "ArrowRight" ? imagesInterval : -imagesInterval;
-      const base = markerSec ?? timelineStartSec;
-      let next = Math.max(timelineStartSec, Math.min(timelineEndSec, base + delta));
-
-      // Skip the dead zone between diamonds' review windows — nothing is
-      // selectable there (useAutoSelectOnMarkerOverDiamond only hit-tests within
-      // TAG_TOLERANCE_SEC of a diamond), so stepping past a window's edge jumps
-      // straight to the start of the next diamond's window instead of
-      // frame-stepping through empty space.
-      const windows: { start: number; end: number }[] = [];
-      for (const ep of cameraEventPoints ?? []) {
-        if (ep.rejected) continue;
-        const windowEnd =
-          (ep.mode === "RANGE" && ep.endSec > ep.timeSec ? ep.endSec : ep.timeSec) +
-          TAG_TOLERANCE_SEC;
-        windows.push({ start: ep.timeSec - TAG_TOLERANCE_SEC, end: windowEnd });
-      }
-      windows.sort((a, b) => a.start - b.start);
-      const merged: { start: number; end: number }[] = [];
-      for (const w of windows) {
-        const last = merged[merged.length - 1];
-        if (last && w.start <= last.end) {
-          last.end = Math.max(last.end, w.end);
-        } else {
-          merged.push({ ...w });
-        }
-      }
-
-      const currentWindow = merged.find((w) => base >= w.start && base <= w.end);
-      if (currentWindow) {
-        if (e.key === "ArrowRight" && next > currentWindow.end) {
-          const nextWindow = merged.find((w) => w.start > currentWindow.end);
-          if (nextWindow) next = Math.min(timelineEndSec, nextWindow.start);
-        } else if (e.key === "ArrowLeft" && next < currentWindow.start) {
-          const prevWindow = [...merged].reverse().find((w) => w.end < currentWindow.start);
-          if (prevWindow) next = Math.max(timelineStartSec, prevWindow.end);
-        }
-      }
-
-      setMarkerSec(next);
-      panTo(next);
+      const direction = e.key === "ArrowRight" ? 1 : -1;
+      if (e.ctrlKey || e.metaKey) jumpMarker(direction);
+      else stepMarker(direction);
     };
 
     window.addEventListener("keydown", handleArrow);
     return () => window.removeEventListener("keydown", handleArrow);
-  }, [
-    selectedTracks,
-    timelineStartSec,
-    timelineEndSec,
-    setMarkerSec,
-    markerSec,
-    cameraEventPoints,
-    imagesInterval,
-    panTo,
-    iTrackId,
-    setITrackId,
-    flatRows,
-    isActivityMode,
-    setSelectedEventPointId,
-  ]);
+  }, [jumpMarker, stepMarker]);
 
   // ── Space: play / pause ──────────────────────────────────────────────────
   useEffect(() => {
@@ -563,13 +945,17 @@ export const useTimelineKeyboard = ({
     return () => window.removeEventListener("keydown", handleSpace);
   }, []);
 
-  // ── + / - keys: zoom centered on mouse position ───────────────────────────
+  // ── Ctrl/Cmd + "+" / "-": zoom centered on mouse position ────────────────
   useEffect(() => {
     const handleZoom = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       const isEditable = tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement)?.isContentEditable;
       if (isEditable) return;
-      if (e.key !== "+" && e.key !== "-") return;
+      if (!e.ctrlKey && !e.metaKey) return;
+      // "=" is the unshifted "+" key; preventDefault also stops the browser's
+      // own page zoom on these shortcuts.
+      const isZoomIn = e.key === "+" || e.key === "=";
+      if (!isZoomIn && e.key !== "-") return;
       e.preventDefault();
 
       const el = gridRef.current;
@@ -580,7 +966,7 @@ export const useTimelineKeyboard = ({
       const maxZoom = getMaxZoom(width, imagesInterval);
       const newZoom = Math.min(
         maxZoom,
-        Math.max(1, oldZoom * (e.key === "+" ? 1.25 : 1 / 1.25)),
+        Math.max(1, oldZoom * (isZoomIn ? 1.25 : 1 / 1.25)),
       );
       if (newZoom === oldZoom) return;
 
@@ -599,4 +985,14 @@ export const useTimelineKeyboard = ({
     window.addEventListener("keydown", handleZoom);
     return () => window.removeEventListener("keydown", handleZoom);
   }, [zoom, panOffsetSec, totalSec, gridRef, setZoom, setPanOffsetSec, imagesInterval]);
+
+  // The toolbar buttons run the same actions as their keys.
+  return {
+    stepMarker,
+    jumpMarker,
+    canJumpPrev: jumpTarget(-1) !== undefined,
+    canJumpNext: jumpTarget(1) !== undefined,
+    undo,
+    redo,
+  };
 };

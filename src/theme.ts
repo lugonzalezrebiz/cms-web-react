@@ -65,6 +65,8 @@ export const Colors = {
   verylightgrayishblue: "#eef0f2",
   semiTransparentWhite: "rgba(255, 255, 255, 0.5)",
   transparentWhite: "rgba(255, 255, 255, 0.1)",
+  glassWhite: "rgba(255, 255, 255, 0.55)",
+  glassShadow: "rgba(15, 23, 42, 0.08)",
   coolGray: "#E9E9EA",
   lightOrange: "#fb966f",
   lightGray: "#eff1f4",

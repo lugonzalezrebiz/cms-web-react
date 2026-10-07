@@ -1,9 +1,65 @@
 import { Box } from "@mui/system";
-import { Colors } from "../../../theme";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
+import { Colors, Fonts } from "../../../theme";
+import { assetUrl } from "../../../utils";
+import DropDownMenu from "../../DropDownMenu";
 
 import type { FlatRow } from "../types";
 
 const ROW_HEIGHT = 32.8;
+const PUNCHED_OUT_MESSAGE_MS = 5000;
+const NOTICE_MS = 3000;
+const REASSIGN_BUTTON_PX = 20;
+// Gap between the marker and the attendance button (an orange arrow circle).
+const REASSIGN_BUTTON_OFFSET_PX = 4;
+
+const hintTextSx = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  fontFamily: Fonts.main,
+  fontWeight: 400,
+  fontStyle: "normal",
+  fontSize: 12,
+  lineHeight: "22px",
+  height: 22,
+  boxSizing: "border-box",
+  letterSpacing: 0,
+  color: Colors.dimGray,
+  whiteSpace: "nowrap",
+  pointerEvents: "none",
+  zIndex: 3,
+  // Liquid glass: a frosted, translucent panel over the bars and grid.
+  padding: "0 8px",
+  borderRadius: "8px",
+  background: Colors.glassWhite,
+  backdropFilter: "blur(8px) saturate(180%)",
+  WebkitBackdropFilter: "blur(8px) saturate(180%)",
+  boxShadow: `0 2px 6px ${Colors.glassShadow}`,
+} as const;
+
+/** A key inside a row hint ("Press o to punch-out"), in orange. */
+export const HintKey = ({ children }: { children: ReactNode }) => (
+  <span
+    style={{
+      fontFamily: Fonts.main,
+      fontWeight: 400,
+      fontStyle: "normal",
+      fontSize: 12,
+      lineHeight: "18px",
+      letterSpacing: 0,
+      color: Colors.vividOrange,
+    }}
+  >
+    {children}
+  </span>
+);
 
 // const toSeconds = (time: string) => {
 //   const [h, m, s] = time.split(":").map(Number);
@@ -14,74 +70,197 @@ interface SessionBarProps {
   range: { start: number; end: number };
   visibleStart: number;
   visibleDuration: number;
+  color: string;
+  isSelected?: boolean;
+  /** Looks selected (part of the selected line's block) without being the
+   * picked bar: no drag handles. */
+  isHighlighted?: boolean;
+  /** Makes the bar clickable (punches tabs), to select it. */
+  onSelect?: () => void;
+  /** While selected, its ends get drag handles like a range diamond's. */
+  onResizeStart?: (side: BarSide, e: MouseEvent) => void;
+  /** Open bars end at the marker, so only their start can be dragged. */
+  onlyStartResizable?: boolean;
 }
 
-const Diamond = ({ pct }: { pct: number }) => (
-  <Box
-    sx={{
-      position: "absolute",
-      left: `${pct}%`,
-      top: "50%",
-      transform: "translate(-50%, -50%) rotate(45deg)",
-      width: 14,
-      height: 14,
-      bgcolor: Colors.lightOrange,
-      outline: `1px solid ${Colors.white}`,
-      zIndex: 2,
-      pointerEvents: "none",
-    }}
-  />
-);
+type BarSide = "start" | "end";
+
+// Width of the invisible grab zone on each end of a selected bar.
+const BAR_HANDLE_PX = 8;
 
 const SessionBar = ({
   range,
   visibleStart,
   visibleDuration,
+  color,
+  isSelected = false,
+  isHighlighted = false,
+  onSelect,
+  onResizeStart,
+  onlyStartResizable = false,
 }: SessionBarProps) => {
   const left = ((range.start - visibleStart) / visibleDuration) * 100;
   const width = ((range.end - range.start) / visibleDuration) * 100;
-  const rightPct = left + width;
+  const handle = (side: BarSide) => (
+    <Box
+      aria-label={side === "start" ? "Drag bar start" : "Drag bar end"}
+      onMouseDown={(e: MouseEvent) => onResizeStart?.(side, e)}
+      // Don't let the drag's click toggle the bar's selection.
+      onClick={(e: MouseEvent) => e.stopPropagation()}
+      // Nothing drawn: hovering an end just shows the resize cursor.
+      sx={{
+        position: "absolute",
+        top: 0,
+        left: side === "start" ? 0 : "100%",
+        width: BAR_HANDLE_PX,
+        height: "100%",
+        transform: "translateX(-50%)",
+        cursor: "ew-resize",
+        pointerEvents: "auto",
+        zIndex: 2,
+      }}
+    />
+  );
+  const showHandles = isSelected && onResizeStart !== undefined;
   return (
-    <>
-      <Box
-        sx={{
-          position: "absolute",
-          left: `${left}%`,
-          width: `${width}%`,
-          top: "50%",
-          transform: "translateY(-50%)",
-          height: 19,
-          borderRadius: "8px",
-          background: Colors.vividOrange,
-        }}
-      />
-      <Diamond pct={left} />
-      <Diamond pct={rightPct} />
-    </>
+    <Box
+      onMouseDown={onSelect ? (e: MouseEvent) => e.stopPropagation() : undefined}
+      onClick={
+        onSelect
+          ? (e: MouseEvent) => {
+              e.stopPropagation();
+              onSelect();
+            }
+          : undefined
+      }
+      sx={{
+        position: "absolute",
+        left: `${left}%`,
+        width: `${width}%`,
+        top: "50%",
+        transform: "translateY(-50%)",
+        height: 19,
+        borderRadius: "8px",
+        background: color,
+        // The rows layer ignores the mouse; selectable bars opt back in.
+        pointerEvents: onSelect ? "auto" : "none",
+        cursor: onSelect ? "pointer" : "default",
+        // Selected like a diamond: a glow in the bar's own color (alpha 0x99,
+        // blur 10), eased in and out.
+        boxShadow:
+          isSelected || isHighlighted ? `0 0 10px ${color}99` : "none",
+        transition: "box-shadow 200ms ease, background 200ms ease",
+        // Drawn above its neighbors, as selected diamonds are.
+        zIndex: isSelected || isHighlighted ? 1 : "auto",
+      }}
+    >
+      {showHandles && handle("start")}
+      {showHandles && !onlyStartResizable && handle("end")}
+    </Box>
   );
 };
+
+/** A bar's new bounds; `end` is left out for an open bar. */
+export type BarEdit = { start: number; end?: number };
+
+// Bars can't shrink below this.
+const MIN_BAR_SEC = 1;
 
 export interface SessionRowProps {
   row: FlatRow;
   rowIndex: number;
+  /** Sub-rows whose sessions this row mirrors as lighter bars. */
+  childRowIds?: number[];
   isSelected: boolean;
   completedSessions: Record<number, { start: number; end: number }[]>;
   activeSessionStarts: Record<number, number>;
   resolvedMarkerSec: number;
   visibleStart: number;
   visibleDuration: number;
+  /** Rows a sub-row's group can be moved to (Customer punches). */
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  /** Moves the sub-row `rowId` under `parentId`. */
+  onReassign?: (rowId: number, parentId: number) => void;
+  /** Start second of this row's selected bar, if it has one. */
+  selectedBarStart?: number;
+  /** Punches tabs: clicking one of this row's bars selects it. */
+  onSelectBar?: (rowId: number, start: number) => void;
+  /** Message shown at the marker for a few seconds, each time `key` changes. */
+  notice?: RowNotice;
+  /** Punches tabs: this sub-row is the sub-selected one (highlighted). */
+  isSubSelected?: boolean;
+  /** Show "Press o to punch-out" while open (only the sub-selected sub-row). */
+  showPunchOutHint?: boolean;
+  /** Punches tabs: this is the selected line and none of its sub-rows' bars is
+   * selected, so its mirror bar under the marker shows as selected. */
+  highlightChildBars?: boolean;
+  /** Where this row was just punched out with "o"; a new key shows
+   * "Punched Out" there for a few seconds. */
+  punchedOut?: { sec: number; key: number };
+  /** Punches tabs: clicking the block that sums up its sub-rows selects
+   * this line. */
+  onSelectLine?: (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => void;
+  /** Stretch of this sub-row's line that is selected (its block): bars in it
+   * look selected too. */
+  selectedBlock?: { start: number; end: number };
+  /** Text next to the marker while this row's bar is open, replacing
+   * "Press o to punch-out". */
+  openHint?: ReactNode;
+  /** Text next to the marker while this row is the selected line (and has
+   * no open bar of its own), e.g. "Press i to Punch-in a customer". */
+  selectedHint?: ReactNode;
+  /** Punches tabs: dragging a selected bar's ends saves its new bounds here. */
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  /** Outer limits for a bar's ends (timeline span, attendance rules). */
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
+
+/** A short message for one row, shown again whenever `key` changes. */
+export type RowNotice = {
+  rowId: number;
+  text: string;
+  key: number;
+  /** Stays up for as long as it is passed, instead of a few seconds. */
+  sticky?: boolean;
+};
 
 export const SessionRow = ({
   row,
   rowIndex,
+  childRowIds,
   isSelected,
   completedSessions,
   activeSessionStarts,
   resolvedMarkerSec,
   visibleStart,
   visibleDuration,
+  reassignOptions,
+  onReassign,
+  selectedBarStart,
+  onSelectBar,
+  notice,
+  isSubSelected = false,
+  showPunchOutHint = true,
+  onEditBar,
+  getEditBounds,
+  highlightChildBars = false,
+  punchedOut,
+  onSelectLine,
+  selectedBlock,
+  openHint,
+  selectedHint,
 }: SessionRowProps) => {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const overlaps = (
+    range: { start: number; end: number },
+    block: { start: number; end: number } | undefined,
+  ) => block !== undefined && range.start < block.end && range.end > block.start;
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
   // let currentIn: number | null = null;
@@ -97,31 +276,413 @@ export const SessionRow = ({
   // === NEW: sessions created by dragging on the timeline ===
   const frozen = completedSessions[row.id] ?? [];
   const sessionStart = activeSessionStarts[row.id];
+
+  // Dragging a selected bar's end: a live preview, saved once on release so
+  // it's a single undo step. Limits: the row's other bars, a minimum length,
+  // the marker for an open bar, and the outer bounds from getEditBounds.
+  const [drag, setDrag] = useState<
+    | (BarEdit & { originalStart: number; originalEnd?: number; side: BarSide })
+    | null
+  >(null);
+  const dragRef = useRef(drag);
+  const dragLimitsRef = useRef({ min: -Infinity, max: Infinity });
+
+  const beginResize = (
+    range: { start: number; end?: number },
+    side: BarSide,
+    e: MouseEvent,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const bounds = getEditBounds?.(row.id, range.start);
+    const others = [
+      ...frozen.filter((r) => r.start !== range.start),
+      ...(sessionStart !== undefined && sessionStart !== range.start
+        ? [{ start: sessionStart, end: Infinity }]
+        : []),
+    ];
+    const barEnd = range.end ?? resolvedMarkerSec;
+    const prevEnd = Math.max(
+      -Infinity,
+      ...others.filter((r) => r.end <= range.start).map((r) => r.end),
+    );
+    const nextStart = Math.min(
+      Infinity,
+      ...others.filter((r) => r.start >= barEnd).map((r) => r.start),
+    );
+    dragLimitsRef.current =
+      side === "start"
+        ? {
+            min: Math.max(prevEnd, bounds?.min ?? -Infinity),
+            max: barEnd - MIN_BAR_SEC,
+          }
+        : {
+            min: range.start + MIN_BAR_SEC,
+            max: Math.min(nextStart, bounds?.max ?? Infinity),
+          };
+    const next = {
+      ...range,
+      originalStart: range.start,
+      originalEnd: range.end,
+      side,
+    };
+    dragRef.current = next;
+    setDrag(next);
+  };
+
+  const isDragging = drag !== null;
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      const current = dragRef.current;
+      const rect = rowRef.current?.getBoundingClientRect();
+      if (!current || !rect || rect.width === 0) return;
+      const raw =
+        visibleStart + ((e.clientX - rect.left) / rect.width) * visibleDuration;
+      const { min, max } = dragLimitsRef.current;
+      const sec = Math.round(Math.max(min, Math.min(max, raw)));
+      const next =
+        current.side === "start"
+          ? { ...current, start: sec }
+          : { ...current, end: sec };
+      dragRef.current = next;
+      setDrag(next);
+    };
+    const handleMouseUp = () => {
+      const current = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      if (!current) return;
+      const changed =
+        current.start !== current.originalStart ||
+        current.end !== current.originalEnd;
+      if (changed) {
+        onEditBar?.(row.id, current.originalStart, {
+          start: current.start,
+          end: current.end,
+        });
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, visibleStart, visibleDuration, onEditBar, row.id]);
+
+  // Bars as drawn: the one being dragged shows its preview bounds.
+  const shownRange = (range: { start: number; end: number }) =>
+    drag && drag.originalStart === range.start && drag.end !== undefined
+      ? { start: drag.start, end: drag.end }
+      : range;
+  const shownOpenStart =
+    drag && drag.originalStart === sessionStart && drag.end === undefined
+      ? drag.start
+      : sessionStart;
+
   const liveBar =
-    sessionStart !== undefined && resolvedMarkerSec > sessionStart
-      ? { start: sessionStart, end: resolvedMarkerSec }
+    shownOpenStart !== undefined && resolvedMarkerSec > shownOpenStart
+      ? { start: shownOpenStart, end: resolvedMarkerSec }
       : null;
-  const allRanges = liveBar ? [...frozen, liveBar] : frozen;
+  const markerPct =
+    ((resolvedMarkerSec - visibleStart) / visibleDuration) * 100;
+
+  // Parent mirror of the sub-rows' sessions: one block per stretch covered by
+  // any of them (overlaps merged), so they never pile up on each other. A
+  // block is "open" while any of its sub-rows is still running.
+  const childRanges = (childRowIds ?? []).flatMap((id) => {
+    const start = activeSessionStarts[id];
+    return [
+      ...(completedSessions[id] ?? []).map((r) => ({ ...r, isOpen: false })),
+      ...(start !== undefined && resolvedMarkerSec > start
+        ? [{ start, end: resolvedMarkerSec, isOpen: true }]
+        : []),
+    ];
+  });
+  const childBlocks: { start: number; end: number; isOpen: boolean }[] = [];
+  for (const range of [...childRanges].sort((a, b) => a.start - b.start)) {
+    const last = childBlocks[childBlocks.length - 1];
+    if (last && range.start <= last.end) {
+      last.end = Math.max(last.end, range.end);
+      last.isOpen = last.isOpen || range.isOpen;
+    } else {
+      childBlocks.push({ ...range });
+    }
+  }
+
+  // The selected line's block under the marker reads as selected, until ↑/↓
+  // moves the selection into one of its sub-rows.
+  const lineBlock = highlightChildBars
+    ? childBlocks.find(
+        (r) => resolvedMarkerSec >= r.start && resolvedMarkerSec <= r.end,
+      )
+    : undefined;
+  // A bar in the selected block (its line's, or this line's own block) looks
+  // selected too, so the line's own bar and its block read as one.
+  const isInSelectedBlock = (range: { start: number; end: number }) =>
+    overlaps(range, selectedBlock) || overlaps(range, lineBlock);
+
+  // "Punched Out" shows where this row was just punched out with "o" (a new
+  // punchedOut key) — not when a bar closes any other way (a break, a
+  // hand-over, undo/redo).
+  const [prevPunchedOutKey, setPrevPunchedOutKey] = useState(punchedOut?.key);
+  const [punchedOutSec, setPunchedOutSec] = useState<number | null>(null);
+  if (prevPunchedOutKey !== punchedOut?.key) {
+    setPrevPunchedOutKey(punchedOut?.key);
+    if (punchedOut) setPunchedOutSec(punchedOut.sec);
+  }
+
+  useEffect(() => {
+    if (punchedOutSec === null) return;
+    const t = setTimeout(() => setPunchedOutSec(null), PUNCHED_OUT_MESSAGE_MS);
+    return () => clearTimeout(t);
+  }, [punchedOutSec]);
+
+  // A new notice (new key) shows at the marker for a few seconds.
+  const [prevNoticeKey, setPrevNoticeKey] = useState(notice?.key);
+  const [shownNoticeKey, setShownNoticeKey] = useState<number | null>(null);
+  if (prevNoticeKey !== notice?.key) {
+    setPrevNoticeKey(notice?.key);
+    setShownNoticeKey(notice?.key ?? null);
+  }
+
+  useEffect(() => {
+    if (shownNoticeKey === null) return;
+    const t = setTimeout(() => setShownNoticeKey(null), NOTICE_MS);
+    return () => clearTimeout(t);
+  }, [shownNoticeKey]);
+
+  const isNoticeShown =
+    notice !== undefined && (notice.sticky || shownNoticeKey === notice.key);
+
+  const punchedOutPct =
+    punchedOutSec !== null
+      ? ((punchedOutSec - visibleStart) / visibleDuration) * 100
+      : null;
+
+  // Customer group sub-rows with an open session get a button at the marker to
+  // move the group to another row (dot → arrow on hover → menu on click).
+  const showReassign =
+    row.kind === "event" &&
+    sessionStart !== undefined &&
+    onReassign !== undefined &&
+    (reassignOptions?.length ?? 0) > 0;
+  const [isReassignHovered, setIsReassignHovered] = useState(false);
+  const [reassignAnchor, setReassignAnchor] = useState<HTMLElement | null>(
+    null,
+  );
+  const isReassignActive =
+    showReassign && (isReassignHovered || reassignAnchor !== null);
+  const reassignLeftPx = REASSIGN_BUTTON_OFFSET_PX;
+  const hintLeft = showReassign
+    ? `calc(${markerPct}% + ${reassignLeftPx + REASSIGN_BUTTON_PX + 6}px)`
+    : `calc(${markerPct}% + 6px)`;
 
   return (
     <Box
+      ref={rowRef}
       sx={{
         position: "absolute",
         top: rowIndex * ROW_HEIGHT,
         left: 0,
         right: 0,
         height: ROW_HEIGHT,
-        bgcolor: isSelected ? Colors.transparentVividOrange : "transparent",
+        bgcolor:
+          isSelected || isSubSelected
+            ? Colors.transparentVividOrange
+            : "transparent",
       }}
     >
-      {allRanges.map((range, i) => (
+      {childBlocks.map((range, i) => {
+        const isLineBar = range === lineBlock;
+        return (
+          <SessionBar
+            key={`child-block-${i}`}
+            range={range}
+            visibleStart={visibleStart}
+            visibleDuration={visibleDuration}
+            // One colour per block (pending design): light orange while a
+            // sub-row is still running, grey once they're all punched out,
+            // vivid orange when selected.
+            color={
+              isLineBar
+                ? Colors.vividOrange
+                : range.isOpen
+                  ? Colors.lightOrange
+                  : Colors.softSlate
+            }
+            isSelected={isLineBar}
+            // Clicking it selects this line (its customers stay as they are).
+            onSelect={onSelectLine ? () => onSelectLine(row.id, range) : undefined}
+          />
+        );
+      })}
+      {/* Punched-out bars are grey; the one still growing stays orange. */}
+      {frozen.map((range, i) => (
         <SessionBar
           key={i}
-          range={range}
+          range={shownRange(range)}
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
+          // A selected (editable) punched-out bar turns orange, and so do
+          // the ones in the selected block of their line.
+          color={
+            selectedBarStart === range.start || isInSelectedBlock(range)
+              ? Colors.vividOrange
+              : Colors.lightSteelGray
+          }
+          isSelected={selectedBarStart === range.start}
+          isHighlighted={isInSelectedBlock(range)}
+          onSelect={
+            onSelectBar ? () => onSelectBar(row.id, range.start) : undefined
+          }
+          onResizeStart={
+            onEditBar ? (side, e) => beginResize(range, side, e) : undefined
+          }
         />
       ))}
+      {liveBar && sessionStart !== undefined && (
+        <SessionBar
+          range={liveBar}
+          visibleStart={visibleStart}
+          visibleDuration={visibleDuration}
+          color={Colors.vividOrange}
+          // Keyed by its saved start, so dragging it keeps it selected.
+          isSelected={selectedBarStart === sessionStart}
+          isHighlighted={isInSelectedBlock(liveBar)}
+          onSelect={
+            onSelectBar ? () => onSelectBar(row.id, sessionStart) : undefined
+          }
+          onResizeStart={
+            onEditBar
+              ? (side, e) => beginResize({ start: sessionStart }, side, e)
+              : undefined
+          }
+          onlyStartResizable
+        />
+      )}
+      {showReassign && (
+        <Box
+          component="button"
+          type="button"
+          aria-label="Change customer attendance"
+          onMouseEnter={() => setIsReassignHovered(true)}
+          onMouseLeave={() => setIsReassignHovered(false)}
+          // Keep the grid's drag-to-pan from starting under the button.
+          onMouseDown={(e: MouseEvent) => e.stopPropagation()}
+          onClick={(e: MouseEvent<HTMLElement>) => {
+            e.stopPropagation();
+            setReassignAnchor(e.currentTarget);
+          }}
+          sx={{
+            position: "absolute",
+            left: `calc(${markerPct}% + ${reassignLeftPx}px)`,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: REASSIGN_BUTTON_PX,
+            height: REASSIGN_BUTTON_PX,
+            p: 0,
+            border: "none",
+            background: "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            pointerEvents: "auto",
+            zIndex: 4,
+          }}
+        >
+          {/* Always shown as the orange arrow circle (no idle dot). */}
+          <Box
+            sx={{
+              width: REASSIGN_BUTTON_PX,
+              height: REASSIGN_BUTTON_PX,
+              borderRadius: "50%",
+              bgcolor: Colors.vividOrange,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img src={assetUrl("arrow-narrow-right-02.svg")} alt="" />
+          </Box>
+        </Box>
+      )}
+      {showReassign && (
+        <DropDownMenu
+          anchorEl={reassignAnchor}
+          open={reassignAnchor !== null}
+          handleClose={() => setReassignAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          maxWidth="150px"
+          options={reassignOptions?.map((option) => ({
+            label: option.label,
+            selected: option.id === row.parentCameraId,
+            disabled: option.disabled && option.id !== row.parentCameraId,
+            onClick: () => {
+              if (option.disabled) return;
+              setReassignAnchor(null);
+              setIsReassignHovered(false);
+              if (option.id !== row.parentCameraId) onReassign?.(row.id, option.id);
+            },
+          }))}
+        />
+      )}
+      {/* Hint next to the marker on the sub-selected (or hovered) open bar; a
+          notice at the marker takes its place. Rows with the attendance
+          button say what both it and "o" do. */}
+      {(showPunchOutHint || isReassignActive) &&
+        sessionStart !== undefined &&
+        !isNoticeShown && (
+        <Box
+          component="span"
+          sx={{ ...hintTextSx, left: hintLeft }}
+        >
+          {showReassign ? (
+            <>
+              Click to change customer attendance or <HintKey>O</HintKey> to
+              punch-out
+            </>
+          ) : (
+            (openHint ?? (
+              <>
+                Press <HintKey>o</HintKey> to punch-out
+              </>
+            ))
+          )}
+        </Box>
+      )}
+      {sessionStart === undefined && punchedOutPct !== null && (
+        <Box
+          component="span"
+          sx={{ ...hintTextSx, left: `calc(${punchedOutPct}% + 6px)` }}
+        >
+          Punched Out
+        </Box>
+      )}
+      {isNoticeShown && (
+        <Box
+          component="span"
+          sx={{
+            ...hintTextSx,
+            left: `calc(${markerPct}% + 6px)`,
+            color: Colors.red,
+          }}
+        >
+          {notice.text}
+        </Box>
+      )}
+      {/* The selected line's own hint, when nothing else is said at the marker. */}
+      {selectedHint && sessionStart === undefined && !isNoticeShown && (
+        <Box
+          component="span"
+          sx={{ ...hintTextSx, left: `calc(${markerPct}% + 6px)` }}
+        >
+          {selectedHint}
+        </Box>
+      )}
     </Box>
   );
 };
