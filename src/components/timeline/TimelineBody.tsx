@@ -78,7 +78,10 @@ export interface TimelineBodyViewProps {
   getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
   getParentHint?: (rowId: number) => React.ReactNode | undefined;
   punchedOut?: { rowId: number; sec: number; key: number };
-  onSelectLine?: (rowId: number) => void;
+  onSelectLine?: (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => void;
   onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
   getEditBounds?: (
     rowId: number,

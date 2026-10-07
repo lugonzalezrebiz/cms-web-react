@@ -190,7 +190,10 @@ export interface SessionRowProps {
   punchedOut?: { sec: number; key: number };
   /** Punches tabs: clicking the block that sums up its sub-rows selects
    * this line. */
-  onSelectLine?: (rowId: number) => void;
+  onSelectLine?: (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => void;
   /** Stretch of this sub-row's line that is selected (its block): bars in it
    * look selected too. */
   selectedBlock?: { start: number; end: number };
@@ -495,7 +498,7 @@ export const SessionRow = ({
             }
             isSelected={isLineBar}
             // Clicking it selects this line (its customers stay as they are).
-            onSelect={onSelectLine ? () => onSelectLine(row.id) : undefined}
+            onSelect={onSelectLine ? () => onSelectLine(row.id, range) : undefined}
           />
         );
       })}
