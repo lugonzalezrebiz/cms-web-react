@@ -248,10 +248,10 @@ export const SessionRow = ({
   selectedHint,
 }: SessionRowProps) => {
   const rowRef = useRef<HTMLDivElement | null>(null);
-  const isInSelectedBlock = (range: { start: number; end: number }) =>
-    selectedBlock !== undefined &&
-    range.start < selectedBlock.end &&
-    range.end > selectedBlock.start;
+  const overlaps = (
+    range: { start: number; end: number },
+    block: { start: number; end: number } | undefined,
+  ) => block !== undefined && range.start < block.end && range.end > block.start;
   // === OLD: sessions preloaded from API rangeSessions ===
   // const snapshotRanges: { start: number; end: number }[] = [];
   // let currentIn: number | null = null;
@@ -402,6 +402,18 @@ export const SessionRow = ({
     }
   }
 
+  // The selected line's block under the marker reads as selected, until ↑/↓
+  // moves the selection into one of its sub-rows.
+  const lineBlock = highlightChildBars
+    ? childBlocks.find(
+        (r) => resolvedMarkerSec >= r.start && resolvedMarkerSec <= r.end,
+      )
+    : undefined;
+  // A bar in the selected block (its line's, or this line's own block) looks
+  // selected too, so the line's own bar and its block read as one.
+  const isInSelectedBlock = (range: { start: number; end: number }) =>
+    overlaps(range, selectedBlock) || overlaps(range, lineBlock);
+
   // "Punched Out" shows where this row was just punched out with "o" (a new
   // punchedOut key) — not when a bar closes any other way (a break, a
   // hand-over, undo/redo).
@@ -474,12 +486,7 @@ export const SessionRow = ({
       }}
     >
       {childBlocks.map((range, i) => {
-        // The selected line's block under the marker reads as selected,
-        // until ↑/↓ moves the selection into one of its sub-rows.
-        const isLineBar =
-          highlightChildBars &&
-          resolvedMarkerSec >= range.start &&
-          resolvedMarkerSec <= range.end;
+        const isLineBar = range === lineBlock;
         return (
           <SessionBar
             key={`child-block-${i}`}
