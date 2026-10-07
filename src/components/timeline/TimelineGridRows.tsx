@@ -301,7 +301,9 @@ export const TimelineGridRows = ({
           left: 0,
           right: 0,
           bottom: 0,
-          overflowY: "hidden",
+          // Both axes: with only overflowY hidden the other one turns "auto",
+          // and hints past the right edge would show a horizontal scrollbar.
+          overflow: "hidden",
           pointerEvents: "none",
         }}
       >
