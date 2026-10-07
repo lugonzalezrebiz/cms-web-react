@@ -47,7 +47,7 @@ const CustomerPunchDialog = ({
   reEnterCustomer,
   onClearReEnter,
 }: Props) => {
-  // Keyboard while open: arrows step through the counts, a digit picks one
+  // Keyboard while open: → / ↑ raise the count, ← / ↓ lower it, a digit picks one
   // ("0" is 10), Enter punches in. Listened to in the capture phase so these
   // keys don't also reach the timeline's shortcuts.
   useEffect(() => {
@@ -55,9 +55,9 @@ const CustomerPunchDialog = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       const current = countOptions.indexOf(selectedCount);
       const step =
-        e.key === "ArrowRight" || e.key === "ArrowDown"
+        e.key === "ArrowRight" || e.key === "ArrowUp"
           ? 1
-          : e.key === "ArrowLeft" || e.key === "ArrowUp"
+          : e.key === "ArrowLeft" || e.key === "ArrowDown"
             ? -1
             : 0;
       if (step !== 0) {
