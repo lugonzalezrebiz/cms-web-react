@@ -195,6 +195,39 @@ export const TimelineGridRows = ({
     childRowIdsByParent.set(r.parentCameraId, ids);
   }
 
+  // Punches tabs: the selected line's block under the marker (its sub-rows'
+  // bars merged, as the line draws it) while no sub-row bar is picked — the
+  // sub-rows' bars in that stretch look selected along with it.
+  const selectedLineChildIds =
+    shownLineId !== null ? (childRowIdsByParent.get(shownLineId) ?? []) : [];
+  let selectedBlock: { start: number; end: number } | undefined;
+  if (
+    onSelectBar !== undefined &&
+    selectedLineChildIds.length > 0 &&
+    !(selectedBar && selectedLineChildIds.includes(selectedBar.rowId))
+  ) {
+    const ranges = selectedLineChildIds
+      .flatMap((id) => {
+        const start = activeSessionStarts[id];
+        return [
+          ...(completedSessions[id] ?? []),
+          ...(start !== undefined && resolvedMarkerSec > start
+            ? [{ start, end: resolvedMarkerSec }]
+            : []),
+        ];
+      })
+      .sort((a, b) => a.start - b.start);
+    const blocks: { start: number; end: number }[] = [];
+    for (const range of ranges) {
+      const last = blocks[blocks.length - 1];
+      if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
+      else blocks.push({ ...range });
+    }
+    selectedBlock = blocks.find(
+      (b) => resolvedMarkerSec >= b.start && resolvedMarkerSec <= b.end,
+    );
+  }
+
   return (
     <Box
       ref={gridRef}
@@ -406,6 +439,9 @@ export const TimelineGridRows = ({
                   onEditBar={onEditBar}
                   getEditBounds={getEditBounds}
                   notice={rowNotice?.rowId === row.id ? rowNotice : undefined}
+                  selectedBlock={
+                    row.parentCameraId === shownLineId ? selectedBlock : undefined
+                  }
                   punchedOut={
                     punchedOut?.rowId === row.id ? punchedOut : undefined
                   }
