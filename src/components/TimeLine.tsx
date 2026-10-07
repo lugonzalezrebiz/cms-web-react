@@ -489,15 +489,40 @@ const TimeLine = ({
     if (isPunchesTab) scrollRowIntoViewRef.current(scrollTargetRowId);
   }, [isPunchesTab, scrollTargetRowId]);
 
+  // Punches tabs: like clicking a diamond, clicking a bar (or a line's block)
+  // takes the marker there — to its start, panning if it's off-screen — when
+  // it isn't on it already.
+  const moveMarkerInto = (range: { start: number; end: number }) => {
+    const marker = state.resolvedMarkerSec;
+    if (marker >= range.start && marker <= range.end) return;
+    state.setMarkerSec(range.start);
+    const visibleEnd = state.panOffsetSec + state.visibleDuration;
+    if (range.start < state.panOffsetSec || range.start > visibleEnd) {
+      state.setPanOffsetSec(
+        Math.max(
+          0,
+          Math.min(
+            state.totalSec - state.visibleDuration,
+            range.start - state.visibleDuration * 0.2,
+          ),
+        ),
+      );
+    }
+  };
+
   // Clicking a line's sub-rows block selects the line itself: no bar or
   // sub-row picked, so its block shows as the selected one.
-  const handleSelectLine = (rowId: number) => {
+  const handleSelectLine = (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => {
     state.setITrackId(rowId);
     state.setSelectedTracks(
       activeSessionStarts[rowId] !== undefined ? new Set([rowId]) : new Set(),
     );
     state.setSelectedBar(null);
     state.setSelectedSubRowId(null);
+    moveMarkerInto(block);
   };
 
   // Clicking an open sub-row in the list sub-selects it (and its line).
@@ -547,28 +572,12 @@ const TimeLine = ({
     if (lineId !== rowId && activeSessionStarts[rowId] !== undefined) {
       state.setSelectedSubRowId(rowId);
     }
-    // Like a diamond, the marker goes to the bar (its start) when it isn't on
-    // it already — panning there if it's off-screen. Open bars always reach
-    // the marker, so they never move it.
+    // The marker goes to the bar; open bars always reach it, so only a
+    // punched-out one can move it.
     const closed = (completedSessions[rowId] ?? []).find(
       (r) => r.start === start,
     );
-    const marker = state.resolvedMarkerSec;
-    if (closed && (marker < closed.start || marker > closed.end)) {
-      state.setMarkerSec(closed.start);
-      const visibleEnd = state.panOffsetSec + state.visibleDuration;
-      if (closed.start < state.panOffsetSec || closed.start > visibleEnd) {
-        state.setPanOffsetSec(
-          Math.max(
-            0,
-            Math.min(
-              state.totalSec - state.visibleDuration,
-              closed.start - state.visibleDuration * 0.2,
-            ),
-          ),
-        );
-      }
-    }
+    if (closed) moveMarkerInto(closed);
   };
 
   // Let the parent move the selection to a row it just created (keyed, so the
