@@ -307,8 +307,21 @@ export const useTimelineKeyboard = ({
           onPunchedOutRef.current?.(rowId, end);
           // The line is no longer punched in only if its own bar closed.
           if (rowId === iTrackId) setSelectedTracks(new Set());
-          // The next open sub-row (if any) takes over the sub-selection.
-          if (rowId !== iTrackId) setSelectedSubRowId?.(null);
+          // Another open sub-row of the line takes over the pick (the next one
+          // down, else the one above), bar and all; with none left, the line
+          // itself is selected again.
+          if (rowId !== iTrackId) {
+            const openBars = (subRowBars ?? []).filter((b) => b.isOpen);
+            const index = openBars.findIndex((b) => b.rowId === rowId);
+            const next =
+              index === -1
+                ? undefined
+                : (openBars[index + 1] ?? openBars[index - 1]);
+            setSelectedSubRowId?.(next ? next.rowId : null);
+            setSelectedBar?.(
+              next ? { rowId: next.rowId, start: next.start } : null,
+            );
+          }
           // Punching out the row itself (Employee punches) also deselects it;
           // closing a sub-row's session (a customer group) keeps its parent.
           if (rowId === iTrackId) setITrackId(null);
