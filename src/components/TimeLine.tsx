@@ -547,6 +547,28 @@ const TimeLine = ({
     if (lineId !== rowId && activeSessionStarts[rowId] !== undefined) {
       state.setSelectedSubRowId(rowId);
     }
+    // Like a diamond, the marker goes to the bar (its start) when it isn't on
+    // it already — panning there if it's off-screen. Open bars always reach
+    // the marker, so they never move it.
+    const closed = (completedSessions[rowId] ?? []).find(
+      (r) => r.start === start,
+    );
+    const marker = state.resolvedMarkerSec;
+    if (closed && (marker < closed.start || marker > closed.end)) {
+      state.setMarkerSec(closed.start);
+      const visibleEnd = state.panOffsetSec + state.visibleDuration;
+      if (closed.start < state.panOffsetSec || closed.start > visibleEnd) {
+        state.setPanOffsetSec(
+          Math.max(
+            0,
+            Math.min(
+              state.totalSec - state.visibleDuration,
+              closed.start - state.visibleDuration * 0.2,
+            ),
+          ),
+        );
+      }
+    }
   };
 
   // Let the parent move the selection to a row it just created (keyed, so the
