@@ -590,20 +590,17 @@ const TimeLine = ({
   }, [isPunchesTab, scrollTargetRowId]);
 
   // Punches tabs: like clicking a diamond, clicking a bar (or a line's block)
-  // takes the marker there — to its start, panning if it's off-screen — when
-  // it isn't on it already.
+  // takes the marker to its end, panning if that's off-screen.
   const moveMarkerInto = (range: { start: number; end: number }) => {
-    const marker = state.resolvedMarkerSec;
-    if (marker >= range.start && marker <= range.end) return;
-    state.setMarkerSec(range.start);
+    state.setMarkerSec(range.end);
     const visibleEnd = state.panOffsetSec + state.visibleDuration;
-    if (range.start < state.panOffsetSec || range.start > visibleEnd) {
+    if (range.end < state.panOffsetSec || range.end > visibleEnd) {
       state.setPanOffsetSec(
         Math.max(
           0,
           Math.min(
             state.totalSec - state.visibleDuration,
-            range.start - state.visibleDuration * 0.2,
+            range.end - state.visibleDuration * 0.8,
           ),
         ),
       );
@@ -673,8 +670,8 @@ const TimeLine = ({
     if (lineId !== rowId && activeSessionStarts[rowId] !== undefined) {
       state.setSelectedSubRowId(rowId);
     }
-    // The marker goes to the bar; open bars always reach it, so only a
-    // punched-out one can move it.
+    // The marker goes to the bar's end; an open bar already ends at it, so
+    // only a punched-out one moves it.
     const closed = (completedSessions[rowId] ?? []).find(
       (r) => r.start === start,
     );
