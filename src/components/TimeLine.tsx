@@ -246,6 +246,85 @@ const TimeLine = ({
     activeSessionStartsProp ?? state.activeSessionStarts;
   const completedSessions = completedSessionsProp ?? state.completedSessions;
 
+  // Punches tabs: undo / redo select the bar their action touched — the one
+  // that appeared or changed (preferring the one starting, else ending, at the
+  // action's second) — with its line; nothing when the action only removed a
+  // bar. The bars from before the action are kept until the next render,
+  // which already has the parent's undone state.
+  type BarSnapshot = {
+    open: Record<number, number>;
+    closed: Record<number, { start: number; end: number }[]>;
+    sec: number;
+  };
+  const [actionSnapshot, setActionSnapshot] = useState<BarSnapshot | null>(
+    null,
+  );
+  const runHistoryAction = (action?: () => number | void) => {
+    const sec = action?.();
+    if (isPunchesTab && typeof sec === "number") {
+      setActionSnapshot({
+        open: activeSessionStarts,
+        closed: completedSessions,
+        sec,
+      });
+    }
+    return sec;
+  };
+  const handleUndo = () => runHistoryAction(onUndo);
+  const handleRedo = () => runHistoryAction(onRedo);
+  if (actionSnapshot) {
+    setActionSnapshot(null);
+    const barsOf = (
+      open: BarSnapshot["open"],
+      closed: BarSnapshot["closed"],
+    ) => [
+      ...Object.entries(closed).flatMap(([id, ranges]) =>
+        ranges.map((r) => ({
+          rowId: Number(id),
+          start: r.start,
+          end: r.end as number | undefined,
+        })),
+      ),
+      ...Object.entries(open).map(([id, start]) => ({
+        rowId: Number(id),
+        start,
+        end: undefined as number | undefined,
+      })),
+    ];
+    const keyOf = (b: { rowId: number; start: number; end?: number }) =>
+      `${b.rowId}:${b.start}:${b.end ?? "open"}`;
+    const before = new Set(
+      barsOf(actionSnapshot.open, actionSnapshot.closed).map(keyOf),
+    );
+    const touched = barsOf(activeSessionStarts, completedSessions).filter(
+      (b) => !before.has(keyOf(b)) && flatRows.some((r) => r.id === b.rowId),
+    );
+    const bar =
+      touched.find((b) => b.start === actionSnapshot.sec) ??
+      touched.find((b) => b.end === actionSnapshot.sec) ??
+      touched[0];
+    if (bar) {
+      const row = flatRows.find((r) => r.id === bar.rowId);
+      const lineId =
+        row?.kind === "event" && row.parentCameraId !== undefined
+          ? row.parentCameraId
+          : bar.rowId;
+      state.setITrackId(lineId);
+      state.setSelectedTracks(
+        activeSessionStarts[lineId] !== undefined
+          ? new Set([lineId])
+          : new Set(),
+      );
+      // A sub-row's open bar is also the one "o" punches out.
+      state.setSelectedSubRowId(
+        lineId !== bar.rowId && bar.end === undefined ? bar.rowId : null,
+      );
+      state.setSelectedBar({ rowId: bar.rowId, start: bar.start });
+    } else {
+      state.setSelectedBar(null);
+    }
+  }
+
   // A line that turns inactive (greyed out, e.g. Employee and Customer's
   // defaults once nobody is punched in) can't stay selected.
   if (flatRows.find((r) => r.id === state.iTrackId)?.inactive) {
@@ -791,8 +870,8 @@ const TimeLine = ({
     onAcceptEventPoint,
     onRejectEventPoint,
     onMarkAiIncorrect,
-    onUndo,
-    onRedo,
+    onUndo: handleUndo,
+    onRedo: handleRedo,
     onTogglePlay: handleTogglePlay,
     setMarkerSecRaw: state.setMarkerSecRaw,
     selectedEventPointId: state.selectedEventPointId,
