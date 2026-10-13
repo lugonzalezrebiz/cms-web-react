@@ -335,6 +335,23 @@ const TimeLine = ({
         lineId !== bar.rowId && bar.end === undefined ? bar.rowId : null,
       );
       state.setSelectedBar({ rowId: bar.rowId, start: bar.start });
+      // The marker goes to the bar's end, like any bar selection (an open
+      // bar already ends at it).
+      if (bar.end !== undefined) {
+        state.setMarkerSecRaw(bar.end);
+        const visibleEnd = state.panOffsetSec + state.visibleDuration;
+        if (bar.end < state.panOffsetSec || bar.end > visibleEnd) {
+          state.setPanOffsetSec(
+            Math.max(
+              0,
+              Math.min(
+                state.totalSec - state.visibleDuration,
+                bar.end - state.visibleDuration * 0.8,
+              ),
+            ),
+          );
+        }
+      }
     } else {
       state.setSelectedBar(null);
     }
