@@ -613,14 +613,6 @@ export const useCustomerPunchFlow = ({
         finishBreak?.(breakPunchRowId, endSec, false);
         return;
       }
-      const punchRowId = punchRowIds.get(rowId);
-      if (punchRowId === undefined) {
-        punchOut(rowId, endSec);
-        return;
-      }
-      employeeControls?.punchOut(punchRowId, endSec);
-      // An employee punched out hands the selection to the nearest one still
-      // at work: above first, else below.
       const employeeLineIds = tracks
         .filter((t) => punchRowIds.has(t.id))
         .map((t) => t.id);
@@ -631,6 +623,30 @@ export const useCustomerPunchFlow = ({
           employeeOpenSessions[otherPunchRowId] !== undefined
         );
       };
+      const punchRowId = punchRowIds.get(rowId);
+      if (punchRowId === undefined) {
+        punchOut(rowId, endSec);
+        // The last customer out of Unattended hands the selection to the
+        // first employee at work, if any (else Unattended stays selected).
+        const isUnattended = (id: number) =>
+          groups.some(
+            (g) => g.id === id && g.parentRowId === UNATTENDED_ROW_ID,
+          );
+        const othersOpen = groups.some(
+          (g) =>
+            g.id !== rowId &&
+            g.parentRowId === UNATTENDED_ROW_ID &&
+            openSessions[g.id] !== undefined,
+        );
+        if (isUnattended(rowId) && !othersOpen) {
+          const next = employeeLineIds.find(isWorking);
+          if (next !== undefined) focusOn(next);
+        }
+        return;
+      }
+      employeeControls?.punchOut(punchRowId, endSec);
+      // An employee punched out hands the selection to the nearest one still
+      // at work: above first, else below.
       const index = employeeLineIds.indexOf(rowId);
       const above = employeeLineIds.slice(0, index).reverse().find(isWorking);
       const below = employeeLineIds.slice(index + 1).find(isWorking);
@@ -646,6 +662,8 @@ export const useCustomerPunchFlow = ({
       tracks,
       employeeOpenSessions,
       focusOn,
+      groups,
+      openSessions,
     ],
   );
   // An employee's bar with a customer of theirs within it (delete that
