@@ -39,6 +39,33 @@ const overlapsClosed = (state: PunchState, rowId: number, sec: number) =>
     (r) => sec >= r.start && sec < r.end,
   );
 
+// A new row's id: below every existing one (rows can be removed, so the count
+// of rows could repeat an id still in use).
+const nextRowId = (state: PunchState) =>
+  Math.min(0, ...state.tracks.map((t) => t.id)) - 1;
+
+// Without any bar left (work or break, open or closed), an employee's row
+// goes away — and their employee → row link with it.
+const dropRowIfEmpty = (state: PunchState, rowId: number): PunchState => {
+  const isEmpty =
+    state.open[rowId] === undefined &&
+    state.breakOpen[rowId] === undefined &&
+    (state.closed[rowId] ?? []).length === 0 &&
+    (state.breakClosed[rowId] ?? []).length === 0;
+  if (!isEmpty) return state;
+  const { [rowId]: _closed, ...closed } = state.closed;
+  const { [rowId]: _breaks, ...breakClosed } = state.breakClosed;
+  return {
+    ...state,
+    tracks: state.tracks.filter((t) => t.id !== rowId),
+    closed,
+    breakClosed,
+    employeeRows: Object.fromEntries(
+      Object.entries(state.employeeRows).filter(([, id]) => id !== rowId),
+    ),
+  };
+};
+
 // Local state of the Employee punches timeline (rows + session bars) with
 // undo/redo history. Nothing is persisted to the backend yet.
 export const useEmployeePunches = () => {
@@ -81,10 +108,16 @@ export const useEmployeePunches = () => {
   // Adds an "Unknown NNN" row and opens its session at startSec.
   const addUnknownEmployee = useCallback(
     (startSec: number) => {
+      // One past the highest Unknown number, so a removed one isn't repeated.
       const unknownCount =
-        present.tracks.filter((t) => t.name.startsWith("Unknown ")).length + 1;
+        Math.max(
+          0,
+          ...present.tracks
+            .filter((t) => t.name.startsWith("Unknown "))
+            .map((t) => Number(t.name.slice("Unknown ".length)) || 0),
+        ) + 1;
       // Negative ids can't collide with camera ids, which event points reference.
-      const id = -(present.tracks.length + 1);
+      const id = nextRowId(present);
       commit(
         {
           ...present,
@@ -125,7 +158,7 @@ export const useEmployeePunches = () => {
         return true;
       }
 
-      const id = -(present.tracks.length + 1);
+      const id = nextRowId(present);
       commit(
         {
           ...present,
@@ -228,24 +261,28 @@ export const useEmployeePunches = () => {
   );
 
   // Removes the bar starting at startSec on the row (open or closed). The row
-  // stays, so its employee keeps the same line.
+  // stays while it has other bars, so its employee keeps the same line; with
+  // its last bar gone, the row goes too (undo brings both back).
   const deleteSession = useCallback(
     (rowId: number, startSec: number) => {
       if (present.open[rowId] === startSec) {
         const { [rowId]: _deleted, ...open } = present.open;
-        commit({ ...present, open }, startSec);
+        commit(dropRowIfEmpty({ ...present, open }, rowId), startSec);
         return;
       }
       const ranges = present.closed[rowId] ?? [];
       if (!ranges.some((r) => r.start === startSec)) return;
       commit(
-        {
-          ...present,
-          closed: {
-            ...present.closed,
-            [rowId]: ranges.filter((r) => r.start !== startSec),
+        dropRowIfEmpty(
+          {
+            ...present,
+            closed: {
+              ...present.closed,
+              [rowId]: ranges.filter((r) => r.start !== startSec),
+            },
           },
-        },
+          rowId,
+        ),
         startSec,
       );
     },
