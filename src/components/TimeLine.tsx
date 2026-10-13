@@ -246,6 +246,18 @@ const TimeLine = ({
     activeSessionStartsProp ?? state.activeSessionStarts;
   const completedSessions = completedSessionsProp ?? state.completedSessions;
 
+  // Punches tabs: while any bar is being built (still open), punched-out bars
+  // can't be selected — not by click, Ctrl+arrows, ↑/↓, the marker or
+  // undo/redo — and one already selected is let go.
+  const isBuilding =
+    isPunchesTab &&
+    flatRows.some((r) => activeSessionStarts[r.id] !== undefined);
+  const isClosedBar = (bar: { rowId: number; start: number }) =>
+    activeSessionStarts[bar.rowId] !== bar.start;
+  if (isBuilding && state.selectedBar && isClosedBar(state.selectedBar)) {
+    state.setSelectedBar(null);
+  }
+
   // Punches tabs: undo / redo select the bar their action touched — the one
   // that appeared or changed (preferring the one starting, else ending, at the
   // action's second) — with its line; nothing when the action only removed a
@@ -297,7 +309,10 @@ const TimeLine = ({
       barsOf(actionSnapshot.open, actionSnapshot.closed).map(keyOf),
     );
     const touched = barsOf(activeSessionStarts, completedSessions).filter(
-      (b) => !before.has(keyOf(b)) && flatRows.some((r) => r.id === b.rowId),
+      (b) =>
+        !before.has(keyOf(b)) &&
+        flatRows.some((r) => r.id === b.rowId) &&
+        (!isBuilding || b.end === undefined),
     );
     const bar =
       touched.find((b) => b.start === actionSnapshot.sec) ??
@@ -374,7 +389,7 @@ const TimeLine = ({
     return flatRows
       .filter((r) => r.kind === "event" && r.parentCameraId === line)
       .flatMap((r) => {
-        const closed = (completedSessions[r.id] ?? [])
+        const closed = (isBuilding ? [] : (completedSessions[r.id] ?? []))
           .filter((s) => marker >= s.start && marker <= s.end)
           .map((s) => ({ rowId: r.id, start: s.start, isOpen: false }));
         const openStart = activeSessionStarts[r.id];
@@ -389,6 +404,7 @@ const TimeLine = ({
     flatRows,
     completedSessions,
     activeSessionStarts,
+    isBuilding,
   ]);
   let activeSubRowId: number | null = null;
   if (
@@ -468,7 +484,8 @@ const TimeLine = ({
               .filter((r) => r.kind === "event" && r.parentCameraId === line)
               .map((r) => r.id),
           ];
-    const candidates = (line === null ? [] : [line]).flatMap((rowId) =>
+    const lines = line === null || isBuilding ? [] : [line];
+    const candidates = lines.flatMap((rowId) =>
       (completedSessions[rowId] ?? [])
         .filter((r) => marker >= r.start && marker <= r.end)
         .map((r) => ({ rowId, start: r.start })),
@@ -638,6 +655,7 @@ const TimeLine = ({
   // Punches tabs: clicking a bar selects it (clicking it again deselects it)
   // along with its line — a customer group's bar selects the row attending it.
   const handleSelectBar = (rowId: number, start: number) => {
+    if (isBuilding && isClosedBar({ rowId, start })) return;
     const isSame =
       state.selectedBar?.rowId === rowId && state.selectedBar.start === start;
     state.setSelectedBar(isSame ? null : { rowId, start });
@@ -889,7 +907,8 @@ const TimeLine = ({
     onPunchOut,
     onAddRow,
     // Ctrl+arrows step through the bars and Delete removes one (punches tabs).
-    completedSessions,
+    // While a bar is being built, only open bars can be reached.
+    completedSessions: isBuilding ? {} : completedSessions,
     onDeleteSession,
     selectedBar: state.selectedBar,
     setSelectedBar: state.setSelectedBar,
