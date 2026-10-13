@@ -79,6 +79,7 @@ const TimeLine = ({
   sessionWallSec,
   sessionFloorSec,
   emptyGridMessage,
+  pausePlayback = false,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -180,6 +181,9 @@ const TimeLine = ({
   sessionFloorSec?: number;
   /** Hint centered over the grid while there's nothing recorded yet. */
   emptyGridMessage?: React.ReactNode;
+  /** A dialog is open over the timeline: playback pauses and can't be
+   * resumed until it closes. */
+  pausePlayback?: boolean;
 }) => {
   // Employee and Customer punches both list employee rows instead of cameras.
   const isPunchesTab = isPunchesNavTab(activeTab);
@@ -702,7 +706,12 @@ const TimeLine = ({
     playWindowRef.current = playWindow;
   }, [playWindow]);
 
+  // A dialog over the timeline (e.g. a punch-in dialog) pauses playback, and
+  // neither Space nor the play button resumes it while it's open.
+  if (pausePlayback && state.isPlaying) state.setIsPlaying(false);
+
   const handleTogglePlay = () => {
+    if (pausePlayback) return;
     const next = !state.isPlaying;
     if (next && playWindow) state.setMarkerSec(playWindow.start);
     state.setIsPlaying(next);
