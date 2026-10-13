@@ -203,9 +203,6 @@ export interface SessionRowProps {
     rowId: number,
     block: { start: number; end: number },
   ) => void;
-  /** Stretch of this sub-row's line that is selected (its block): bars in it
-   * look selected too. */
-  selectedBlock?: { start: number; end: number };
   /** Text next to the marker while this row's bar is open, replacing
    * "Press o to punch-out". */
   openHint?: ReactNode;
@@ -252,7 +249,6 @@ export const SessionRow = ({
   highlightChildBars = false,
   punchedOut,
   onSelectLine,
-  selectedBlock,
   openHint,
   selectedHint,
 }: SessionRowProps) => {
@@ -418,10 +414,10 @@ export const SessionRow = ({
         (r) => resolvedMarkerSec >= r.start && resolvedMarkerSec <= r.end,
       )
     : undefined;
-  // A bar in the selected block (its line's, or this line's own block) looks
-  // selected too, so the line's own bar and its block read as one.
+  // The line's own bars in that block look selected too, so the line's bar
+  // and its block read as one.
   const isInSelectedBlock = (range: { start: number; end: number }) =>
-    overlaps(range, selectedBlock) || overlaps(range, lineBlock);
+    overlaps(range, lineBlock);
 
   // "Punched Out" shows where this row was just punched out with "o" (a new
   // punchedOut key) — not when a bar closes any other way (a break, a
@@ -526,7 +522,7 @@ export const SessionRow = ({
           visibleStart={visibleStart}
           visibleDuration={visibleDuration}
           // A selected (editable) punched-out bar turns orange, and so do
-          // the ones in the selected block of their line.
+          // the ones in this line's selected block.
           color={
             selectedBarStart === range.start || isInSelectedBlock(range)
               ? Colors.vividOrange
