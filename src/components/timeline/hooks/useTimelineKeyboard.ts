@@ -258,27 +258,39 @@ export const useTimelineKeyboard = ({
   // ── Actions shared by the keys and the toolbar buttons ──────────────────
   const markerBase = markerSec ?? timelineStartSec;
 
-  // Ctrl+←/→ target: in session mode the previous / next bar (from the
-  // selected bar while the marker is still on its start, so bars sharing a
-  // start second are stepped one by one, else from the marker); otherwise the
-  // previous / next diamond (never forward off a pending one).
+  // Session mode: where a bar ends — an open one at the marker.
+  const barEnd = useCallback(
+    (bar: SessionBar) => bar.end ?? markerBase,
+    [markerBase],
+  );
+
+  // Ctrl+←/→ target: in session mode the previous / next bar by where it ends
+  // (from the selected bar while the marker is still on its end, so bars
+  // ending at the same second — like the open ones — are stepped one by one,
+  // else the nearest from the marker); otherwise the previous / next diamond
+  // (never forward off a pending one).
   const jumpTarget = useCallback(
     (
       direction: 1 | -1,
     ): { bar: SessionBar } | { ep: CameraEventPoint } | undefined => {
       if (isSessionMode) {
+        const byEnd = sessionBars
+          .map((bar, order) => ({ bar, order }))
+          .sort((a, b) => barEnd(a.bar) - barEnd(b.bar) || a.order - b.order)
+          .map(({ bar }) => bar);
+        const selected = sessionBars[selectedBarIndex];
         const current =
-          sessionBars[selectedBarIndex]?.start === markerBase
-            ? selectedBarIndex
+          selected && barEnd(selected) === markerBase
+            ? byEnd.indexOf(selected)
             : -1;
         const bar =
           direction === 1
             ? current >= 0
-              ? sessionBars[current + 1]
-              : sessionBars.find((b) => b.start > markerBase)
+              ? byEnd[current + 1]
+              : byEnd.find((b) => barEnd(b) >= markerBase)
             : current >= 0
-              ? sessionBars[current - 1]
-              : [...sessionBars].reverse().find((b) => b.start < markerBase);
+              ? byEnd[current - 1]
+              : [...byEnd].reverse().find((b) => barEnd(b) <= markerBase);
         return bar ? { bar } : undefined;
       }
       const onPendingDiamond = cameraEventPoints?.some(
@@ -295,7 +307,14 @@ export const useTimelineKeyboard = ({
           : [...sorted].reverse().find((p) => p.timeSec < markerBase);
       return ep ? { ep } : undefined;
     },
-    [isSessionMode, sessionBars, selectedBarIndex, markerBase, cameraEventPoints],
+    [
+      isSessionMode,
+      sessionBars,
+      selectedBarIndex,
+      markerBase,
+      barEnd,
+      cameraEventPoints,
+    ],
   );
 
   // Ctrl+←/→: move the marker to the jump target and select it (a bar and
@@ -307,8 +326,10 @@ export const useTimelineKeyboard = ({
       if ("bar" in target) {
         const { bar } = target;
         setSelectedBar?.({ rowId: bar.rowId, start: bar.start });
-        setMarkerSec(bar.start);
-        panTo(bar.start);
+        // The marker goes to the bar's end (an open bar's is the marker).
+        const end = barEnd(bar);
+        setMarkerSec(end);
+        panTo(end);
         setITrackId(bar.lineId);
         setSelectedTracks(
           activeSessionStarts[bar.lineId] !== undefined
@@ -332,6 +353,7 @@ export const useTimelineKeyboard = ({
     },
     [
       jumpTarget,
+      barEnd,
       setSelectedBar,
       setMarkerSec,
       panTo,
