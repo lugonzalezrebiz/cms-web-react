@@ -337,6 +337,12 @@ const Monitor = () => {
     ? customerFlow.employeesCustomersTimelineProps
     : NO_TAB_TIMELINE_PROPS;
 
+  // The punch-in dialogs pause the timeline while they're open.
+  const isPunchDialogOpen =
+    employeeFlow.dialogProps.open ||
+    customerFlow.punchDialogProps.open ||
+    customerFlow.reEnterDialogProps.open;
+
   const timelineProps = useMemo(
     () => ({
       snapshot,
@@ -380,6 +386,7 @@ const Monitor = () => {
         isTrackerGroupingsLoading ||
         isPendingCameraGroupSwitch,
       pendingReviewWallSec,
+      pausePlayback: isPunchDialogOpen,
       ...tabTimelineProps,
     }),
     [
@@ -416,6 +423,7 @@ const Monitor = () => {
       isReviewDataLoading,
       pendingReviewWallSec,
       tabTimelineProps,
+      isPunchDialogOpen,
     ],
   );
 

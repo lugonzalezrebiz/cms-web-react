@@ -313,6 +313,12 @@ const MonitorTimeline = () => {
         }
         rowsLoadState={isReviewDataLoading || isPendingCameraGroupSwitch}
         pendingReviewWallSec={pendingReviewWallSec}
+        // The punch-in dialogs pause the timeline while they're open.
+        pausePlayback={
+          employeeFlow.dialogProps.open ||
+          customerFlow.punchDialogProps.open ||
+          customerFlow.reEnterDialogProps.open
+        }
         // Employees & Customers overrides the Compliance violations defaults
         // above with its own rows, bars, shortcuts and undo history.
         {...tabTimelineProps}
