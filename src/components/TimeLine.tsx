@@ -707,8 +707,16 @@ const TimeLine = ({
   }, [playWindow]);
 
   // A dialog over the timeline (e.g. a punch-in dialog) pauses playback, and
-  // neither Space nor the play button resumes it while it's open.
-  if (pausePlayback && state.isPlaying) state.setIsPlaying(false);
+  // neither Space nor the play button resumes it while it's open; once it
+  // closes, playback picks up again if the dialog was what paused it.
+  const [resumeAfterPause, setResumeAfterPause] = useState(false);
+  if (pausePlayback && state.isPlaying) {
+    state.setIsPlaying(false);
+    setResumeAfterPause(true);
+  } else if (!pausePlayback && resumeAfterPause) {
+    setResumeAfterPause(false);
+    state.setIsPlaying(true);
+  }
 
   const handleTogglePlay = () => {
     if (pausePlayback) return;
