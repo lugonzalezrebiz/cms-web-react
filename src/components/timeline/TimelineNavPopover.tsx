@@ -12,6 +12,12 @@ interface Props {
   onTabChange: (tab: NavTab) => void;
 }
 
+// Tab labels always take two lines: the first word, then the rest.
+const twoLineLabel = (label: string) => {
+  const [first, ...rest] = label.split(" ");
+  return rest.length > 0 ? `${first}\n${rest.join(" ")}` : label;
+};
+
 const TimelineNavPopover = ({
   open,
   anchorEl,
@@ -33,7 +39,7 @@ const TimelineNavPopover = ({
           p: "8px",
           boxShadow: "none",
           marginTop: "-10px",
-          marginLeft: "-8px",  
+          marginLeft: "-8px",
         },
       },
     }}
@@ -67,18 +73,23 @@ const TimelineNavPopover = ({
                 boxShadow: "0 1px 2px 0 rgba(16, 24, 40, 0.05)",
                 flexDirection: "column",
                 alignItems: "center",
+                // Design card: 100×77, 4px radius, 8px padding, 5px icon–label gap.
+                boxSizing: "border-box",
+                width: "100px",
+                height: "77px",
+                gap: "5px",
                 borderRadius: "4px",
                 cursor: "pointer",
                 padding: "8px",
                 backgroundColor: isSelected ? Colors.vividOrange : Colors.white,
                 color: isSelected ? Colors.white : "inherit",
+                // Hover looks like the selected tab.
                 "&:hover": {
-                  backgroundColor: isSelected
-                    ? Colors.vividOrange
-                    : Colors.lightGrayishBlue,
+                  backgroundColor: Colors.vividOrange,
+                  color: Colors.white,
+                  "& img": { filter: "brightness(0) invert(1)" },
                 },
                 "& img": {
-                  mb: "7px",
                   filter: isSelected ? "brightness(0) invert(1)" : "none",
                 },
                 "& span": {
@@ -90,11 +101,14 @@ const TimelineNavPopover = ({
                   lineHeight: 1.43,
                   fontFamily: Fonts.main,
                   alignItems: "center",
+                  // Exactly the two lines from twoLineLabel: neither of them
+                  // wraps again (e.g. "and Customer" in a 100px card).
+                  whiteSpace: "pre",
                 },
               }}
             >
               <img src={assetUrl(`${iconClass}.svg`)} alt={label} />
-              <span>{label}</span>
+              <span>{twoLineLabel(label)}</span>
             </Box>
           </Box>
         );

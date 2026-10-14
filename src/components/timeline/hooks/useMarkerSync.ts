@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 
 export const useMarkerSync = ({
   targetMarkerSec,
+  targetMarkerKey,
   resolvedMarkerSec,
   timelineStartSec,
   timelineEndSec,
@@ -13,6 +14,9 @@ export const useMarkerSync = ({
   panOffsetSec,
 }: {
   targetMarkerSec?: number;
+  // Changing it re-applies targetMarkerSec even when the number is the same
+  // (e.g. switching timeline tabs that both target the timeline start).
+  targetMarkerKey?: string | number;
   resolvedMarkerSec: number;
   timelineStartSec: number;
   timelineEndSec: number;
@@ -74,7 +78,7 @@ export const useMarkerSync = ({
       }
     }
     prevTargetRef.current = targetMarkerSec;
-  }, [targetMarkerSec]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [targetMarkerSec, targetMarkerKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (skipInitialHandleRef.current) {
