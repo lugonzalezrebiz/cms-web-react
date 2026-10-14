@@ -1,85 +1,33 @@
 import { Box } from "@mui/system";
-import { useState, useMemo } from "react";
-import useAssignments from "../../hooks/useAssignments";
+import { useState } from "react";
 import TimeLine from "../../components/TimeLine";
 import CameraLayout from "../../components/CameraLayout";
 import { useExpandedCamera } from "../../hooks/useExpandedCamera";
-import { useMonitoring } from "../../components/timeline/hooks/useMonitoring";
-import useTrackers from "../../hooks/useTrackers";
-import { useCameraEventPoints } from "../../components/timeline/hooks/useCameraEventPoints";
 import { useDashboardParams } from "./hooks/useDashboardParams";
 import { useMarkerState } from "./hooks/useMarkerState";
-import { useSessionDate } from "../../components/timeline/hooks/useSessionDate";
-import {
-  timeStringToSec,
-  hasReviewedTwin,
-} from "../../components/timeline/utils";
-import { useSaveMonitoring } from "../../components/timeline/hooks/useSaveMonitoring";
-import { useTimelineMarker } from "../../components/timeline/hooks/useTimelineMarker";
 import { useTimelinePopout } from "./hooks/useTimelinePopout";
-import { useDeleteEventPoint } from "./hooks/useDeleteEventPoint";
-import { useReviewedEventPoints } from "./hooks/useReviewedEventPoints";
 import { useActiveCameras } from "./hooks/useActiveCameras";
 import { useGuardedActivityHandlers } from "./hooks/useGuardedActivityHandlers";
 import { useCameraContextMenus } from "./hooks/useCameraContextMenus";
-import { useComplianceMarkerTargets } from "./hooks/useComplianceMarkerTargets";
 import { useExpandedCameraTags } from "./hooks/useExpandedCameraTags";
 import {
   useRegisterMonitorActions,
   useTimelineTab,
 } from "../../contexts/useMonitorContext";
-import { useEventPointsBroadcast } from "./hooks/useEventPointsBroadcast";
 import { ExpandedCameraDialog } from "./components/ExpandedCameraDialog";
+import { PunchDialogs } from "./components/PunchDialogs";
 import { useTrackerGroupResolution } from "./hooks/useTrackerGroupResolution";
-import { useFilteredEventPoints } from "./hooks/useFilteredEventPoints";
-import { useFilteredMenuItems } from "./hooks/useFilteredMenuItems";
+import { useMonitorTimeline } from "./hooks/useMonitorTimeline";
 import NoReviewGuard from "../../components/NoReviewGuard";
-import EmployeePunchDialog from "../../components/timeline/EmployeePunchDialog";
-import CustomerPunchDialog from "../../components/timeline/CustomerPunchDialog";
-import CustomerReEnterDialog from "../../components/timeline/CustomerReEnterDialog";
 import useNavigateWithQuery from "../../hooks/useNavigate";
-import { useEmployeePunchFlow } from "./hooks/useEmployeePunchFlow";
-import { useCustomerPunchFlow } from "./hooks/useCustomerPunchFlow";
-import type { TimelineTabProps } from "./constants";
 import { isPunchesNavTab } from "../../components/timeline/constants";
-
-const EMPTY_MENU_ITEMS: ReturnType<typeof useFilteredMenuItems> = [];
-// Compliance violations adds nothing on top of the default TimeLine props.
-const NO_TAB_TIMELINE_PROPS: TimelineTabProps = {};
 
 const Monitor = () => {
   const { company, location, date, monitoringID } = useDashboardParams();
 
-  const { assignments } = useAssignments({
-    companyID: company,
-    locationID: location,
-  });
-  const currentAssignment = assignments.find(
-    (a) => a.monitoringID === monitoringID,
-  );
-  const timeStart = currentAssignment?.open ?? null;
-  const timeEnd = currentAssignment?.close ?? null;
-
   const trackerResolution = useTrackerGroupResolution();
-  const {
-    cameraGroup,
-    trackerOption,
-    customTrackerIDs,
-    trackerGroupings,
-    isTrackerGroupingsLoading,
-    isTrackerTab,
-    isCustomMode,
-    cameraSpecificId,
-    cameraGroupNum,
-    joinCameraTrackerMap,
-    cameraToJoinTrackerMap,
-    isJoinCameraTracker,
-    isJoinCameraSpecific,
-    isDirectTracker,
-    singleTrackerID,
-  } = trackerResolution;
+  const { cameraGroup, trackerOption, customTrackerIDs } = trackerResolution;
 
-  const { trackers, isLoading: isTrackersLoading } = useTrackers();
   const [openMenuCamera, setOpenMenuCamera] = useState<number | null>(null);
   // "employeesCustomers" shows every camera and lists Back Room, Unattended
   // and the punched-in employees with their customers;
@@ -90,88 +38,43 @@ const Monitor = () => {
   const navigate = useNavigateWithQuery();
 
   const { expandedCamera, handleExpandCamera } = useExpandedCamera();
+  const { timestamp, setTimestamp } = useMarkerState();
 
+  // The timeline's data, review state, filtering, marker, Employees &
+  // Customers flows and saving — shared with the popout timeline.
   const {
-    cameraEventPoints,
-    rejectedEventIds,
-    handleRejectEventPoint,
-    acceptedEventIds,
-    handleAcceptEventPoint,
-    aiIncorrectEventIds,
-    handleMarkAiIncorrect,
+    timelineProps,
+    tabTargetSec,
+    punchDialogProps,
+    noReviewReason,
+    trackers,
+    monitoringCameras,
+    isMonitoringLoading,
+    allEventPoints,
+    unreviewedTrackerIds,
+    aiTrackerIds,
+    filteredEventPoints,
+    filteredMenuItems,
     markerSec,
-    handleRemoveEventPoint,
-    handleRegisterPreloadedDelete,
-    handleConvertToEditableLocal,
+    markerTimeSec,
+    handleMarkerChange,
+    showFinalizeButton,
+    handleDone,
+    isDoneLoading,
     handleActivitySelect,
     handleActivityReject,
-    handleMarkerChange: handleCameraMarkerChange,
-    handleUpdateEventPoint,
-    handleUndo,
-    handleRedo,
-    canUndo,
-    canRedo,
-    cleanUp,
-  } = useCameraEventPoints(monitoringID);
-
-  const {
-    snapshot,
-    eventPoints: preloadedEventPoints,
-    rangeSessions,
-    cameras: monitoringCameras,
-    loading: isMonitoringLoading,
-  } = useMonitoring(trackers, monitoringID, timeStart, timeEnd);
-
-  const { allEventPoints, unreviewedTrackerIds, aiTrackerIds } =
-    useReviewedEventPoints({
-      cameraEventPoints,
-      preloadedEventPoints,
-      rejectedEventIds,
-      acceptedEventIds,
-      aiIncorrectEventIds,
-      trackerGroupings,
-    });
-
-  const isReviewDataLoading =
-    isMonitoringLoading || isTrackersLoading || isTrackerGroupingsLoading;
-  const hasNoTrackersConfigured = !isReviewDataLoading && trackers.length === 0;
-  const hasNoGroupsConfigured =
-    !isReviewDataLoading && trackerGroupings.length === 0;
-  const hasNoEventsLoaded =
-    !isReviewDataLoading && preloadedEventPoints.length === 0;
-
-  const noReviewReason = hasNoTrackersConfigured
-    ? "no-trackers"
-    : hasNoGroupsConfigured
-      ? "no-groups"
-      : hasNoEventsLoaded
-        ? "no-events"
-        : undefined;
-
-  const isPendingCameraGroupSwitch =
-    isTrackerTab && !trackerOption && unreviewedTrackerIds.size > 0;
-
-  const visibleEventPoints = useMemo(
-    () => allEventPoints.filter((ep) => !ep.rejected),
-    [allEventPoints],
-  );
-
-  const filteredEventPoints = useFilteredEventPoints({
-    allEventPoints: visibleEventPoints,
-    trackerGroupings,
-    trackers,
-    isJoinCameraTracker,
-    isJoinCameraSpecific,
-    isDirectTracker,
-    isCustomMode,
-    isTrackerTab,
-    cameraGroupNum,
-    cameraSpecificId,
-    singleTrackerID,
-    customTrackerIDs,
-    trackerOption,
-    joinCameraTrackerMap,
-    cameraToJoinTrackerMap,
+    handleAcceptEventPoint,
+    handleMarkAiIncorrect,
+    handleRejectEventPoint,
+    handleDeleteEventPoint,
+  } = useMonitorTimeline({
+    monitoringID,
+    company,
+    location,
+    trackerResolution,
+    activeTab,
+    onTabChange: setActiveTab,
+    onTimeChange: setTimestamp,
   });
 
   const { cameraGroupKey, isCameraReloading, sortedCameras } =
@@ -185,20 +88,6 @@ const Monitor = () => {
       expandedCamera,
       handleExpandCamera,
     });
-
-  const pendingReviewWallSec = useMemo(() => {
-    let earliest: (typeof filteredEventPoints)[number] | undefined;
-    for (const ep of filteredEventPoints) {
-      if (ep.reviewed !== false || ep.rejected) continue;
-      if (hasReviewedTwin(ep, filteredEventPoints)) continue;
-      if (earliest === undefined || ep.timeSec < earliest.timeSec)
-        earliest = ep;
-    }
-    if (!earliest) return undefined;
-    return earliest.mode === "RANGE" && earliest.endSec > earliest.timeSec
-      ? earliest.endSec
-      : earliest.timeSec;
-  }, [filteredEventPoints]);
 
   const { handleActivitySelectGuarded, handleActivityRejectGuarded } =
     useGuardedActivityHandlers({
@@ -222,58 +111,6 @@ const Monitor = () => {
     trackerResolution,
   });
 
-  const { broadcastMutation } = useEventPointsBroadcast(monitoringID);
-
-  const { handleDeleteEventPoint, handleConvertEventPoint } =
-    useDeleteEventPoint(
-      monitoringID,
-      allEventPoints,
-      handleRemoveEventPoint,
-      handleRegisterPreloadedDelete,
-      handleConvertToEditableLocal,
-      handleRejectEventPoint,
-      broadcastMutation,
-    );
-
-  const { timestamp, setTimestamp } = useMarkerState();
-
-  const timelineStartSec = timeStringToSec(
-    snapshot?.timeline?.times?.start ?? "00:00:00",
-  );
-
-  const { trackerTargetSec, cameraGroupTargetSec } = useComplianceMarkerTargets(
-    {
-      cameraGroup,
-      trackerOption,
-      isTrackerTab,
-      filteredEventPoints,
-      timelineStartSec,
-    },
-  );
-
-  const { markerTimeSec, handleMarkerChange, showFinalizeButton } =
-    useTimelineMarker({
-      snapshot,
-      onTimeChange: setTimestamp,
-      onMarkerChange: handleCameraMarkerChange,
-    });
-
-  // Employees & Customers: employee and customer rows, session bars, dialogs
-  // and the TimeLine props the tab adds on top of Compliance violations'.
-  const punchMarkerSec = markerTimeSec ?? timelineStartSec;
-  const employeeFlow = useEmployeePunchFlow({ markerSec: punchMarkerSec });
-  const customerFlow = useCustomerPunchFlow({
-    markerSec: punchMarkerSec,
-    employeeTracks: employeeFlow.tracks,
-    employeeOpenSessions: employeeFlow.openSessions,
-    employeeClosedSessions: employeeFlow.closedSessions,
-    employeeRows: employeeFlow.employeeRows,
-    // Employee and Customer adds employees with the same dialog, and acts on
-    // their bars (and their undo history) through Employee punches.
-    onAddEmployee: employeeFlow.openDialog,
-    employeeControls: employeeFlow.controls,
-  });
-
   const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
@@ -284,19 +121,6 @@ const Monitor = () => {
     setActiveTab,
   );
 
-  const sessionDate = useSessionDate();
-  const eventPointsToSave = useMemo(
-    () => allEventPoints.filter((ep) => !ep.entryIds || ep.touchedThisSession),
-    [allEventPoints],
-  );
-  const { handleDone, isDoneLoading } = useSaveMonitoring({
-    trackers,
-    eventPoints: eventPointsToSave,
-    sessionDate,
-    monitoringID,
-    onSuccess: cleanUp,
-  });
-
   useRegisterMonitorActions(
     handleDone,
     showFinalizeButton,
@@ -305,127 +129,9 @@ const Monitor = () => {
     aiTrackerIds,
   );
 
-  const rawFilteredMenuItems = useFilteredMenuItems({
-    trackers,
-    trackerGroupings,
-    handleActivitySelect,
-    handleActivityReject,
-    isJoinCameraTracker,
-    isJoinCameraSpecific,
-    isDirectTracker,
-    isCustomMode,
-    isTrackerTab,
-    cameraGroupNum,
-    cameraSpecificId,
-    singleTrackerID,
-    customTrackerIDs,
-    trackerOption,
-    joinCameraTrackerMap,
-    cameraToJoinTrackerMap,
-  });
-  const filteredMenuItems =
-    isReviewDataLoading || isPendingCameraGroupSwitch
-      ? EMPTY_MENU_ITEMS
-      : rawFilteredMenuItems;
   // Mirrors TimeLine.tsx's own hasMultipleRows (selectableRows.length >= 2) — filteredMenuItems
   // is the same source useActivityRows builds its selectableRows from, one-to-one.
   const hasMultipleRows = filteredMenuItems.length >= 2;
-
-  // Employees & Customers overrides the Compliance violations defaults below
-  // with its own rows, bars, shortcuts and undo history.
-  const tabTimelineProps = isPunchesTab
-    ? customerFlow.employeesCustomersTimelineProps
-    : NO_TAB_TIMELINE_PROPS;
-
-  // The punch-in dialogs pause the timeline while they're open.
-  const isPunchDialogOpen =
-    employeeFlow.dialogProps.open ||
-    customerFlow.punchDialogProps.open ||
-    customerFlow.reEnterDialogProps.open;
-
-  const timelineProps = useMemo(
-    () => ({
-      snapshot,
-      cameraEventPoints: filteredEventPoints,
-      onMarkerChange: handleMarkerChange,
-      markerTimeSec,
-      // Punches tabs start from the beginning of the timeline; only Compliance
-      // violations jumps to its first event point.
-      targetMarkerSec:
-        restoreMarkerSec ??
-        (isPunchesTab
-          ? timelineStartSec
-          : isTrackerTab
-            ? trackerTargetSec
-            : cameraGroupTargetSec),
-      // Re-applies the target on every tab switch, even when two tabs target
-      // the same second (e.g. both at the timeline start).
-      targetMarkerKey: activeTab,
-      onUpdateEventPoint: handleUpdateEventPoint,
-      onPopOut: handlePopOut,
-      headerLabel: "Compliance Violations",
-      onUndo: handleUndo,
-      onRedo: handleRedo,
-      canUndo,
-      canRedo,
-      onRemoveEventPoint: handleDeleteEventPoint,
-      onAcceptEventPoint: handleAcceptEventPoint,
-      onRejectEventPoint: handleRejectEventPoint,
-      onMarkAiIncorrect: handleMarkAiIncorrect,
-      onConvertEventPointToLocal: handleConvertEventPoint,
-      viewMode: "activity" as const,
-      activeTab,
-      onTabChange: setActiveTab,
-      menuItems: filteredMenuItems,
-      rangeSessions,
-      expandedIcon: !expandedCamera,
-      rowsLoadState: isReviewDataLoading || isPendingCameraGroupSwitch,
-      loadState:
-        isMonitoringLoading ||
-        isTrackersLoading ||
-        isTrackerGroupingsLoading ||
-        isPendingCameraGroupSwitch,
-      pendingReviewWallSec,
-      pausePlayback: isPunchDialogOpen,
-      ...tabTimelineProps,
-    }),
-    [
-      snapshot,
-      filteredEventPoints,
-      handleMarkerChange,
-      markerTimeSec,
-      restoreMarkerSec,
-      trackerTargetSec,
-      cameraGroupTargetSec,
-      timelineStartSec,
-      isTrackerTab,
-      isPunchesTab,
-      handleUpdateEventPoint,
-      handlePopOut,
-      handleUndo,
-      handleRedo,
-      canUndo,
-      canRedo,
-      handleDeleteEventPoint,
-      handleAcceptEventPoint,
-      handleRejectEventPoint,
-      handleMarkAiIncorrect,
-      handleConvertEventPoint,
-      activeTab,
-      setActiveTab,
-      filteredMenuItems,
-      rangeSessions,
-      expandedCamera,
-      isTrackersLoading,
-      isTrackerGroupingsLoading,
-      isPendingCameraGroupSwitch,
-      isMonitoringLoading,
-      isReviewDataLoading,
-      pendingReviewWallSec,
-      tabTimelineProps,
-      isPunchDialogOpen,
-    ],
-  );
 
   const expandedCameraTags = useExpandedCameraTags({
     filteredEventPoints,
@@ -480,7 +186,13 @@ const Monitor = () => {
             zIndex: expandedCamera !== null ? 2000 : 1000,
           }}
         >
-          <TimeLine {...timelineProps} />
+          <TimeLine
+            // Back from the popout, the marker stays where it was left there.
+            targetMarkerSec={restoreMarkerSec ?? tabTargetSec}
+            onPopOut={handlePopOut}
+            expandedIcon={!expandedCamera}
+            {...timelineProps}
+          />
         </Box>
       )}
       <ExpandedCameraDialog
@@ -502,9 +214,7 @@ const Monitor = () => {
         onRejectTag={handleRejectEventPoint}
         customHeight={timelinePopped ? "91%" : "70%"}
       />
-      <EmployeePunchDialog {...employeeFlow.dialogProps} />
-      <CustomerPunchDialog {...customerFlow.punchDialogProps} />
-      <CustomerReEnterDialog {...customerFlow.reEnterDialogProps} />
+      <PunchDialogs {...punchDialogProps} />
       <NoReviewGuard reason={noReviewReason} onGoBack={() => navigate(-1)} />
     </Box>
   );

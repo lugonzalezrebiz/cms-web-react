@@ -4,10 +4,7 @@ import type { NavTab } from "../../../components/timeline/types";
 // How many received marker seconds are remembered to avoid echoing them.
 const RECENT_RECEIVED_SECS = 30;
 
-export const useBroadcastSync = (
-  markerTimeSec: number | null,
-  onMarkerChange: (sec: number) => void,
-) => {
+export const useBroadcastSync = (onMarkerChange: (sec: number) => void) => {
   const channelRef = useRef<BroadcastChannel | null>(null);
   // Recent seconds received from the other window: never echoed back, even
   // when several arrive before this window re-renders (e.g. while dragging
@@ -51,16 +48,26 @@ export const useBroadcastSync = (
     };
   }, []);
 
-  useEffect(() => {
-    if (markerTimeSec === null || !channelRef.current) return;
-    if (receivedSecsRef.current.includes(markerTimeSec)) return;
-    channelRef.current.postMessage({ type: "marker", sec: markerTimeSec, source: "popout" });
-  }, [markerTimeSec]);
+  // Sends this window's marker to the main one (not a second just received
+  // from it). A function rather than an argument: the marker comes from data
+  // that needs this hook's camera group first.
+  const publishMarker = useCallback((sec: number | null) => {
+    if (sec === null || !channelRef.current) return;
+    if (receivedSecsRef.current.includes(sec)) return;
+    channelRef.current.postMessage({ type: "marker", sec, source: "popout" });
+  }, []);
 
   const changeTab = useCallback((tab: NavTab) => {
     setActiveTab(tab);
     channelRef.current?.postMessage({ type: "navTab", tab, source: "popout" });
   }, []);
 
-  return { cameraGroup, trackerOption, customTrackerIDs, activeTab, changeTab };
+  return {
+    cameraGroup,
+    trackerOption,
+    customTrackerIDs,
+    activeTab,
+    changeTab,
+    publishMarker,
+  };
 };
