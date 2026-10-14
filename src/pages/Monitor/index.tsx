@@ -111,7 +111,13 @@ const Monitor = () => {
     trackerResolution,
   });
 
-  const { timelinePopped, handlePopOut, restoreMarkerSec } = useTimelinePopout(
+  const {
+    timelinePopped,
+    handlePopOut,
+    restoreMarkerSec,
+    restoreSelection,
+    handleSelectionChange,
+  } = useTimelinePopout(
     handleMarkerChange,
     markerTimeSec,
     cameraGroup,
@@ -191,6 +197,10 @@ const Monitor = () => {
             targetMarkerSec={restoreMarkerSec ?? tabTargetSec}
             onPopOut={handlePopOut}
             expandedIcon={!expandedCamera}
+            // Back from the popout, so is the selection; and this window keeps
+            // track of it, to hand it to the popout.
+            restoreSelection={restoreSelection}
+            onSelectionChange={handleSelectionChange}
             {...timelineProps}
           />
         </Box>

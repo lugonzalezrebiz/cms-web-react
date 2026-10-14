@@ -32,6 +32,8 @@ const MonitorTimeline = () => {
     activeTab,
     changeTab,
     publishMarker,
+    restoreSelection,
+    publishSelection,
   } = useBroadcastSync(setTargetSec);
 
   // Reset broadcast target when filter changes so auto-pan fires immediately
@@ -78,6 +80,10 @@ const MonitorTimeline = () => {
         targetMarkerSec={targetSec ?? tabTargetSec}
         onPopOut={() => window.close()}
         expandedIcon={false}
+        // The main window's selection when it popped out; this window's goes
+        // back to it, for when the popout closes.
+        restoreSelection={restoreSelection}
+        onSelectionChange={publishSelection}
         {...timelineProps}
       />
       <PunchDialogs {...punchDialogProps} />

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { NavTab } from "../../../components/timeline/types";
+import type { TimelineSelection } from "../../../components/TimeLine";
 
 // How many received marker seconds are remembered to avoid echoing them.
 const RECENT_RECEIVED_SECS = 30;
@@ -17,17 +18,18 @@ export const useTimelinePopout =(
   const [searchParams] = useSearchParams();
   const [timelinePopped, setTimelinePopped] = useState(false);
   const [restoreMarkerSec, setRestoreMarkerSec] = useState<number | undefined>(undefined);
+  const [restoreSelection, setRestoreSelection] = useState<
+    (TimelineSelection & { key: number }) | undefined
+  >(undefined);
   const popoutRef = useRef<Window | null>(null);
 
   // Clear restoreMarkerSec when the filter changes so toggle auto-pan works after popout closes
-  const prevCameraGroupRef2 = useRef(cameraGroup);
-  const prevTrackerOptionRef = useRef(trackerOption);
+  const [prevFilter, setPrevFilter] = useState({ cameraGroup, trackerOption });
   if (
-    prevCameraGroupRef2.current !== cameraGroup ||
-    prevTrackerOptionRef.current !== trackerOption
+    prevFilter.cameraGroup !== cameraGroup ||
+    prevFilter.trackerOption !== trackerOption
   ) {
-    prevCameraGroupRef2.current = cameraGroup;
-    prevTrackerOptionRef.current = trackerOption;
+    setPrevFilter({ cameraGroup, trackerOption });
     if (restoreMarkerSec !== undefined) setRestoreMarkerSec(undefined);
   }
   const channelRef = useRef<BroadcastChannel | null>(null);
@@ -42,6 +44,12 @@ export const useTimelinePopout =(
   const customTrackerIDsRef = useRef(customTrackerIDs);
   const activeTabRef = useRef(activeTab);
   const onTabChangeRef = useRef(onTabChange);
+  // The latest selection, from this window's timeline or the popout's: sent to
+  // the popout when it opens, restored here when it closes.
+  const latestSelectionRef = useRef<TimelineSelection | null>(null);
+  const handleSelectionChange = useCallback((selection: TimelineSelection) => {
+    latestSelectionRef.current = selection;
+  }, []);
 
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; });
   useEffect(() => { markerTimeSecRef.current = markerTimeSec; }, [markerTimeSec]);
@@ -64,6 +72,9 @@ export const useTimelinePopout =(
           e.data.sec as number,
         ];
         onMarkerChangeRef.current(e.data.sec as number);
+      }
+      if (e.data?.type === "selection" && e.data?.source === "popout") {
+        latestSelectionRef.current = e.data.selection as TimelineSelection;
       }
       if (e.data?.type === "navTab" && e.data?.source === "popout") {
         onTabChangeRef.current?.(e.data.tab as NavTab);
@@ -112,6 +123,13 @@ export const useTimelinePopout =(
     }
     const params = new URLSearchParams(searchParams);
     if (cameraGroup) params.set("cameraGroup", cameraGroup);
+    // The popout starts on this tab, so a selection in it isn't lost to a
+    // tab switch once the tab arrives.
+    params.set("tab", activeTabRef.current);
+    // And with this window's selection, to take on as soon as its rows load.
+    if (latestSelectionRef.current) {
+      params.set("selection", JSON.stringify(latestSelectionRef.current));
+    }
     const currentSec = markerTimeSecRef.current;
     if (currentSec !== null) params.set("markerSec", String(Math.round(currentSec)));
     const route = `/monitor/timeline?${params.toString()}`;
@@ -135,11 +153,21 @@ export const useTimelinePopout =(
         if (markerTimeSecRef.current !== null) {
           setRestoreMarkerSec(markerTimeSecRef.current);
         }
+        // And the selection where the popout left it.
+        if (latestSelectionRef.current) {
+          setRestoreSelection({ ...latestSelectionRef.current, key: Date.now() });
+        }
         setTimelinePopped(false);
         popoutRef.current = null;
       }
     }, 500);
   }, [searchParams, cameraGroup]);
 
-  return { timelinePopped, handlePopOut, restoreMarkerSec };
+  return {
+    timelinePopped,
+    handlePopOut,
+    restoreMarkerSec,
+    restoreSelection,
+    handleSelectionChange,
+  };
 }

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { NavTab } from "../../../components/timeline/types";
+import type { TimelineSelection } from "../../../components/TimeLine";
 
 // How many received marker seconds are remembered to avoid echoing them.
 const RECENT_RECEIVED_SECS = 30;
@@ -13,10 +15,31 @@ export const useBroadcastSync = (onMarkerChange: (sec: number) => void) => {
   const onMarkerChangeRef = useRef(onMarkerChange);
   useEffect(() => { onMarkerChangeRef.current = onMarkerChange; }, [onMarkerChange]);
 
-  const [cameraGroup, setCameraGroup] = useState("0");
+  // Start from the main window's camera group and tab (in the URL), so their
+  // first sync isn't taken for a change — which would drop the marker it sent
+  // and, on a tab switch, the selection.
+  const [searchParams] = useSearchParams();
+  const [cameraGroup, setCameraGroup] = useState(
+    () => searchParams.get("cameraGroup") ?? "0",
+  );
   const [trackerOption, setTrackerOption] = useState("");
   const [customTrackerIDs, setCustomTrackerIDs] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<NavTab>("compliances");
+  const [activeTab, setActiveTab] = useState<NavTab>(
+    () => (searchParams.get("tab") as NavTab | null) ?? "compliances",
+  );
+  // The main window's selection (in the URL), to take on when the popout
+  // opens.
+  const [restoreSelection] = useState<
+    (TimelineSelection & { key: number }) | undefined
+  >(() => {
+    const param = searchParams.get("selection");
+    if (!param) return undefined;
+    try {
+      return { ...(JSON.parse(param) as TimelineSelection), key: 0 };
+    } catch {
+      return undefined;
+    }
+  });
 
   useEffect(() => {
     receivedSecsRef.current = [];
@@ -57,6 +80,16 @@ export const useBroadcastSync = (onMarkerChange: (sec: number) => void) => {
     channelRef.current.postMessage({ type: "marker", sec, source: "popout" });
   }, []);
 
+  // Sends this window's selection to the main one, which restores it when the
+  // popout closes.
+  const publishSelection = useCallback((selection: TimelineSelection) => {
+    channelRef.current?.postMessage({
+      type: "selection",
+      selection,
+      source: "popout",
+    });
+  }, []);
+
   const changeTab = useCallback((tab: NavTab) => {
     setActiveTab(tab);
     channelRef.current?.postMessage({ type: "navTab", tab, source: "popout" });
@@ -69,5 +102,7 @@ export const useBroadcastSync = (onMarkerChange: (sec: number) => void) => {
     activeTab,
     changeTab,
     publishMarker,
+    restoreSelection,
+    publishSelection,
   };
 };
