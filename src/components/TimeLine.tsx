@@ -759,18 +759,29 @@ const TimeLine = ({
     state.setSelectedSubRowId(selectedSubRowId);
   }
 
-  // Tell the parent what is selected, whenever it changes.
+  // Tell the parent what is selected, whenever it changes — not while a
+  // selection from outside is still waiting for its rows, so the empty one
+  // from before doesn't replace it there.
+  const isSelectionPending =
+    restoreSelection !== undefined &&
+    restoreSelection.key !== appliedSelectionKey;
   const onSelectionChangeRef = useRef(onSelectionChange);
   useEffect(() => {
     onSelectionChangeRef.current = onSelectionChange;
   });
   useEffect(() => {
+    if (isSelectionPending) return;
     onSelectionChangeRef.current?.({
       iTrackId: state.iTrackId,
       selectedBar: state.selectedBar,
       selectedSubRowId: state.selectedSubRowId,
     });
-  }, [state.iTrackId, state.selectedBar, state.selectedSubRowId]);
+  }, [
+    isSelectionPending,
+    state.iTrackId,
+    state.selectedBar,
+    state.selectedSubRowId,
+  ]);
 
   useMarkerSync({
     targetMarkerSec,
