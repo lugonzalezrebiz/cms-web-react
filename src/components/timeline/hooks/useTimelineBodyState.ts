@@ -10,6 +10,9 @@ import {
   getZoomForTickStep,
 } from "../constants";
 
+/** A session bar, by its row and start second. */
+export type SelectedBar = { rowId: number; start: number };
+
 interface UseTimelineBodyStateParams {
   snapshot?: TimelineSnapshot;
   flatRows: FlatRow[];
@@ -21,6 +24,13 @@ interface UseTimelineBodyStateParams {
   // view — the marker can never be moved past it until it's accepted or rejected.
   // undefined means nothing is pending — no restriction.
   pendingReviewWallSec?: number;
+  // Exact limit the marker can't pass (no tolerance), e.g. an employee's
+  // punch-out while one of their customers is still being tracked.
+  // undefined means no restriction.
+  sessionWallSec?: number;
+  // Exact limit the marker can't go back past, e.g. where a still-open
+  // customer was punched in or handed over. undefined means no restriction.
+  sessionFloorSec?: number;
   // When a diamond is selected, playback is scoped to reviewing just that clip (start,
   // end, and the position the marker snaps back to once playback finishes) instead of
   // the whole timeline. A ref (not a reactive value) because the window is derived from
@@ -35,6 +45,8 @@ export const useTimelineBodyState = ({
   timelineEndSec,
   firstActivitySec,
   pendingReviewWallSec,
+  sessionWallSec,
+  sessionFloorSec,
   playWindowRef,
 }: UseTimelineBodyStateParams) => {
   const { imagesInterval } = useCompanyConfig();
@@ -50,6 +62,12 @@ export const useTimelineBodyState = ({
   const [dragStartOffset, setDragStartOffset] = useState(0);
   const [markerSec, setMarkerSec] = useState<number | null>(null);
   const [selectedEventPointId, setSelectedEventPointId] = useState<number | null>(null);
+  // Punches tabs: the selected session bar (what Delete removes), like
+  // selectedEventPointId for diamonds.
+  const [selectedBar, setSelectedBar] = useState<SelectedBar | null>(null);
+  // Punches tabs: the open sub-row picked with ↑/↓ (or a click) under the
+  // selected line — the one "o" punches out.
+  const [selectedSubRowId, setSelectedSubRowId] = useState<number | null>(null);
   const [editingEventPointId, setEditingEventPointId] = useState<number | null>(null);
   // Smooth pan to marker when a different event point is selected and marker is off-screen
   const panOffsetSecRef = useRef(0);
@@ -119,6 +137,15 @@ export const useTimelineBodyState = ({
       ? pendingReviewWallSec + TAG_TOLERANCE_SEC
       : undefined;
 
+  // What the marker can't pass: the review wall and/or the exact session wall,
+  // whichever comes first. Without a session wall it's just the review wall.
+  const markerWallSec =
+    sessionWallSec === undefined
+      ? effectivePendingReviewWallSec
+      : effectivePendingReviewWallSec === undefined
+        ? sessionWallSec
+        : Math.min(effectivePendingReviewWallSec, sessionWallSec);
+
   const TICK_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 10800, 21600];
   const tickStepSec = TICK_STEPS.find((s) => s * pixelsPerSecond >= MIN_PIXELS_PER_TICK) ?? 21600;
 
@@ -170,16 +197,16 @@ export const useTimelineBodyState = ({
             ? (update as (p: number | null) => number | null)(prev)
             : update;
         if (candidate === null) return candidate;
-        if (
-          effectivePendingReviewWallSec !== undefined &&
-          candidate > effectivePendingReviewWallSec
-        ) {
-          return effectivePendingReviewWallSec;
+        if (markerWallSec !== undefined && candidate > markerWallSec) {
+          return markerWallSec;
+        }
+        if (sessionFloorSec !== undefined && candidate < sessionFloorSec) {
+          return sessionFloorSec;
         }
         return candidate;
       });
     },
-    [effectivePendingReviewWallSec],
+    [markerWallSec, sessionFloorSec],
   );
 
   useEffect(() => {
@@ -201,14 +228,9 @@ export const useTimelineBodyState = ({
           return next;
         }
 
-        if (
-          effectivePendingReviewWallSec !== undefined &&
-          next > effectivePendingReviewWallSec
-        ) {
+        if (markerWallSec !== undefined && next > markerWallSec) {
           setIsPlaying(false);
-          return effectivePendingReviewWallSec > base
-            ? effectivePendingReviewWallSec
-            : base;
+          return markerWallSec > base ? markerWallSec : base;
         }
         if (next >= timelineEndSec) {
           setIsPlaying(false);
@@ -222,7 +244,7 @@ export const useTimelineBodyState = ({
     isPlaying,
     timelineStartSec,
     timelineEndSec,
-    effectivePendingReviewWallSec,
+    markerWallSec,
     imagesInterval,
   ]);
 
@@ -298,6 +320,10 @@ export const useTimelineBodyState = ({
     setMarkerSecRaw: setMarkerSec,
     selectedEventPointId,
     setSelectedEventPointId,
+    selectedBar,
+    setSelectedBar,
+    selectedSubRowId,
+    setSelectedSubRowId,
     editingEventPointId,
     setEditingEventPointId,
     completedSessions,

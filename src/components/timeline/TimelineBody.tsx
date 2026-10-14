@@ -6,6 +6,8 @@ import { TimelineRowList } from "./TimelineRowList";
 import { TimelineTimeRuler } from "./TimelineTimeRuler";
 import { TimelineGridRows } from "./TimelineGridRows";
 import { TimelineMarker } from "./TimelineMarker";
+import type { SelectedBar } from "./hooks/useTimelineBodyState";
+import type { BarEdit, RowNotice } from "./rows/SessionRow";
 
 export interface TimelineBodyViewProps {
   flatRows: FlatRow[];
@@ -60,6 +62,31 @@ export interface TimelineBodyViewProps {
   loadState?: boolean;
   pendingReviewWallSec?: number;
   hasMultipleRows: boolean;
+  showAddButton?: boolean;
+  reassignOptions?: { id: number; label: string; disabled?: boolean }[];
+  onReassignRow?: (rowId: number, parentId: number) => void;
+  emptyGridMessage?: React.ReactNode;
+  selectedBar?: SelectedBar | null;
+  onSelectBar?: (rowId: number, start: number) => void;
+  rowNotice?: RowNotice;
+  /** Called when a click in the list selects a row. */
+  highlightedSubRowId?: number | null;
+  onSelectSubRow?: (rowId: number) => void;
+  rowNumberStart?: number;
+  getOpenHint?: (rowId: number) => React.ReactNode | undefined;
+  canReassignRow?: (rowId: number) => boolean;
+  getSelectedHint?: (rowId: number) => React.ReactNode | undefined;
+  getParentHint?: (rowId: number) => React.ReactNode | undefined;
+  punchedOut?: { rowId: number; sec: number; key: number };
+  onSelectLine?: (
+    rowId: number,
+    block: { start: number; end: number },
+  ) => void;
+  onEditBar?: (rowId: number, oldStart: number, next: BarEdit) => void;
+  getEditBounds?: (
+    rowId: number,
+    start: number,
+  ) => { min: number; max: number } | undefined;
 }
 
 const TimelineBody = ({
@@ -112,6 +139,24 @@ const TimelineBody = ({
   loadState,
   pendingReviewWallSec,
   hasMultipleRows,
+  showAddButton,
+  reassignOptions,
+  onReassignRow,
+  emptyGridMessage,
+  selectedBar,
+  onSelectBar,
+  rowNotice,
+  highlightedSubRowId,
+  onSelectSubRow,
+  rowNumberStart,
+  getOpenHint,
+  canReassignRow,
+  getSelectedHint,
+  getParentHint,
+  punchedOut,
+  onSelectLine,
+  onEditBar,
+  getEditBounds,
 }: TimelineBodyViewProps) => {
   return (
     <Box
@@ -137,6 +182,10 @@ const TimelineBody = ({
         setITrackId={setITrackId}
         setSelectedTracks={setSelectedTracks}
         loadState={rowsLoadState}
+        showAddButton={showAddButton}
+        highlightedSubRowId={highlightedSubRowId}
+        onSelectSubRow={onSelectSubRow}
+        rowNumberStart={rowNumberStart}
       />
 
       <Box
@@ -203,6 +252,21 @@ const TimelineBody = ({
           loadState={loadState}
           pendingReviewWallSec={pendingReviewWallSec}
           hasMultipleRows={hasMultipleRows}
+          reassignOptions={reassignOptions}
+          onReassignRow={onReassignRow}
+          emptyGridMessage={emptyGridMessage}
+          selectedBar={selectedBar}
+          onSelectBar={onSelectBar}
+          rowNotice={rowNotice}
+          highlightedSubRowId={highlightedSubRowId}
+          getOpenHint={getOpenHint}
+          canReassignRow={canReassignRow}
+          getSelectedHint={getSelectedHint}
+          getParentHint={getParentHint}
+          punchedOut={punchedOut}
+          onSelectLine={onSelectLine}
+          onEditBar={onEditBar}
+          getEditBounds={getEditBounds}
         />
 
         {!loadState && (
