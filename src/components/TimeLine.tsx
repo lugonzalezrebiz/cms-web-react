@@ -23,6 +23,15 @@ import { useMarkerSync } from "./timeline/hooks/useMarkerSync";
 import { TAG_TOLERANCE_SEC } from "../hooks/useTagsForCamera";
 import { isOverlapsBlue } from "./timeline/utils";
 import type { BarEdit, RowNotice } from "./timeline/rows/SessionRow";
+import type { SelectedBar } from "./timeline/hooks/useTimelineBodyState";
+
+// What is selected on the timeline: the line, the picked bar and the
+// sub-selected sub-row (e.g. a customer under its employee).
+export type TimelineSelection = {
+  iTrackId: number | null;
+  selectedBar: SelectedBar | null;
+  selectedSubRowId: number | null;
+};
 
 const NO_EVENT_POINTS: CameraEventPoint[] = [];
 
@@ -80,6 +89,8 @@ const TimeLine = ({
   sessionFloorSec,
   emptyGridMessage,
   pausePlayback = false,
+  restoreSelection,
+  onSelectionChange,
 }: {
   cameraEventPoints?: CameraEventPoint[];
   onMarkerChange?: (sec: number) => void;
@@ -184,6 +195,12 @@ const TimeLine = ({
   /** A dialog is open over the timeline: playback pauses and can't be
    * resumed until it closes. */
   pausePlayback?: boolean;
+  /** A selection to take on (e.g. the other window's, when the timeline pops
+   * out or comes back), applied once its rows are there; a new key applies
+   * it again. */
+  restoreSelection?: TimelineSelection & { key: number };
+  /** Told whenever the selected line, bar or sub-row changes. */
+  onSelectionChange?: (selection: TimelineSelection) => void;
 }) => {
   // Employee and Customer punches both list employee rows instead of cameras.
   const isPunchesTab = isPunchesNavTab(activeTab);
@@ -718,6 +735,42 @@ const TimeLine = ({
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusRowKey]);
+
+  // A selection from outside (the other window's) is taken on once the rows
+  // it names are there — they may still be arriving from that window.
+  const [appliedSelectionKey, setAppliedSelectionKey] = useState<number>();
+  if (
+    restoreSelection &&
+    restoreSelection.key !== appliedSelectionKey &&
+    (restoreSelection.iTrackId === null ||
+      flatRows.some((r) => r.id === restoreSelection.iTrackId)) &&
+    (restoreSelection.selectedBar === null ||
+      flatRows.some((r) => r.id === restoreSelection.selectedBar?.rowId))
+  ) {
+    setAppliedSelectionKey(restoreSelection.key);
+    const { iTrackId, selectedBar, selectedSubRowId } = restoreSelection;
+    state.setITrackId(iTrackId);
+    state.setSelectedTracks(
+      iTrackId !== null && activeSessionStarts[iTrackId] !== undefined
+        ? new Set([iTrackId])
+        : new Set(),
+    );
+    state.setSelectedBar(selectedBar);
+    state.setSelectedSubRowId(selectedSubRowId);
+  }
+
+  // Tell the parent what is selected, whenever it changes.
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  });
+  useEffect(() => {
+    onSelectionChangeRef.current?.({
+      iTrackId: state.iTrackId,
+      selectedBar: state.selectedBar,
+      selectedSubRowId: state.selectedSubRowId,
+    });
+  }, [state.iTrackId, state.selectedBar, state.selectedSubRowId]);
 
   useMarkerSync({
     targetMarkerSec,
