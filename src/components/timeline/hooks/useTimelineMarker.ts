@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import type { TimelineSnapshot } from "../types";
 import { secToTimeString, timeStringToSec } from "../utils";
 
@@ -13,18 +13,18 @@ export const useTimelineMarker = ({
 }) => {
   const [markerTimeSec, setMarkerTimeSec] = useState<number | null>(null);
 
+  // The time of day goes out with the marker, in the same update — not from
+  // an effect afterwards, which chained one more render per marker move and,
+  // with the marker moving fast (a held arrow), hit React's nested update
+  // limit.
   const handleMarkerChange = useCallback(
     (sec: number) => {
       setMarkerTimeSec(sec);
       onMarkerChange?.(sec);
+      onTimeChange?.(secToTimeString(sec));
     },
-    [onMarkerChange],
+    [onMarkerChange, onTimeChange],
   );
-
-  useEffect(() => {
-    if (markerTimeSec === null) return;
-    onTimeChange?.(secToTimeString(markerTimeSec));
-  }, [markerTimeSec, onTimeChange]);
 
   const timelineEndSec = snapshot?.timeline.times.end
     ? timeStringToSec(snapshot.timeline.times.end)
